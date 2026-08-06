@@ -32,56 +32,49 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
 
-  // Render terrain to offscreen canvas
+  // Optimized 32-bit fast terrain rendering to offscreen canvas
   const redrawOffscreenTerrain = useCallback(() => {
     const { width, height, grid, theme } = terrain.data;
     if (!offscreenCanvasRef.current) {
       offscreenCanvasRef.current = document.createElement('canvas');
     }
     const offCanvas = offscreenCanvasRef.current;
-    offCanvas.width = width;
-    offCanvas.height = height;
+    if (offCanvas.width !== width || offCanvas.height !== height) {
+      offCanvas.width = width;
+      offCanvas.height = height;
+    }
     const offCtx = offCanvas.getContext('2d');
     if (!offCtx) return;
 
     offCtx.clearRect(0, 0, width, height);
     const imgData = offCtx.createImageData(width, height);
-    const data = imgData.data;
+    const data32 = new Uint32Array(imgData.data.buffer);
 
-    let topR = 34, topG = 197, topB = 94;
-    let baseR = 133, baseG = 77, baseB = 14;
+    // Fast Little-Endian ABGR 32-bit integer colors
+    let topColor = 0xff5ec522; // Green
+    let baseColor = 0xff0e4d85; // Soil
 
     if (theme === 'CAVERN') {
-      topR = 192; topG = 132; topB = 252;
-      baseR = 76; baseG = 29; baseB = 149;
+      topColor = 0xfffc84c0;
+      baseColor = 0xff951d4c;
     } else if (theme === 'FORTRESS') {
-      topR = 148; topG = 163; topB = 184;
-      baseR = 51; baseG = 65; baseB = 85;
+      topColor = 0xffb8a394;
+      baseColor = 0xff554133;
     } else if (theme === 'FLOATING_CHAOS') {
-      topR = 250; topG = 204; topB = 21;
-      baseR = 154; baseG = 52; baseB = 18;
+      topColor = 0xff15caff;
+      baseColor = 0xff12349a;
     }
 
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
-      for (let x = 0; x < width; x++) {
-        const idx = (rowOffset + x) * 4;
-        if (grid[rowOffset + x] === 1) {
-          const isTopFringe = y > 0 && (grid[(y - 1) * width + x] === 0 || grid[(y - 2) * width + x] === 0);
-          const noise = ((x * 37 + y * 59) % 17) / 17;
+      const prevRowOffset = (y - 1) * width;
+      const prevRowOffset2 = (y - 2) * width;
 
-          if (isTopFringe) {
-            data[idx] = Math.min(255, topR + noise * 20);
-            data[idx + 1] = Math.min(255, topG + noise * 20);
-            data[idx + 2] = Math.min(255, topB + noise * 20);
-            data[idx + 3] = 255;
-          } else {
-            const grain = (noise - 0.5) * 24;
-            data[idx] = Math.max(0, Math.min(255, baseR + grain));
-            data[idx + 1] = Math.max(0, Math.min(255, baseG + grain));
-            data[idx + 2] = Math.max(0, Math.min(255, baseB + grain));
-            data[idx + 3] = 255;
-          }
+      for (let x = 0; x < width; x++) {
+        const idx = rowOffset + x;
+        if (grid[idx] === 1) {
+          const isTopFringe = y > 0 && (grid[prevRowOffset + x] === 0 || (y > 1 && grid[prevRowOffset2 + x] === 0));
+          data32[idx] = isTopFringe ? topColor : baseColor;
         }
       }
     }

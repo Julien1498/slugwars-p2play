@@ -452,8 +452,8 @@ export class SlugWarsEngine {
     if (this.state.projectiles.length > 0) {
       const remaining: typeof this.state.projectiles = [];
       for (const proj of this.state.projectiles) {
-        // Spawn Smoke & Fire Trail Particles behind active flying projectiles!
-        if (Math.hypot(proj.vx, proj.vy) > 0.5) {
+        // Spawn Smoke & Fire Trail Particles behind active flying projectiles (capped to 40 max)
+        if (Math.hypot(proj.vx, proj.vy) > 0.5 && this.state.particles.length < 40) {
           this.state.particles.push({
             x: proj.x - proj.vx * 0.8,
             y: proj.y - proj.vy * 0.8,
