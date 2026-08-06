@@ -254,30 +254,38 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
 
+      // Deep Water Backdrop (Prevents straight raw line under terrain!)
+      const waterBackdropGrad = ctx.createLinearGradient(0, waterLevel - 10, 0, height);
+      waterBackdropGrad.addColorStop(0, 'rgba(3, 105, 161, 0.7)');
+      waterBackdropGrad.addColorStop(1, 'rgba(12, 74, 110, 0.95)');
+      ctx.fillStyle = waterBackdropGrad;
+      ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
+
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
-      // Draw Animated Water & Mousse Foam Surface
+      // Draw Smooth & Slow Surface Waves (Gentle 1.2s Ocean Swell)
       const animTime = Date.now() / 300;
+      const slowTime = Date.now() / 1200;
       ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
       ctx.beginPath();
       ctx.moveTo(0, height);
-      for (let x = 0; x <= width; x += 20) {
-        const wy = waterLevel + Math.sin(x * 0.02 + animTime * 3) * 4;
+      for (let x = 0; x <= width; x += 10) {
+        const wy = waterLevel + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
         ctx.lineTo(x, wy);
       }
       ctx.lineTo(width, height);
       ctx.closePath();
       ctx.fill();
 
-      // White Foam Crest Line
-      ctx.strokeStyle = 'rgba(224, 242, 254, 0.8)';
-      ctx.lineWidth = 2;
+      // Gentle White Foam Crest Line
+      ctx.strokeStyle = 'rgba(224, 242, 254, 0.7)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      for (let x = 0; x <= width; x += 20) {
-        const wy = waterLevel + Math.sin(x * 0.02 + animTime * 3) * 4;
+      for (let x = 0; x <= width; x += 10) {
+        const wy = waterLevel + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
         if (x === 0) ctx.moveTo(x, wy);
         else ctx.lineTo(x, wy);
       }
