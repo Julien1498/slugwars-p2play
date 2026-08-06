@@ -271,7 +271,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      // Draw Slugs
+      // Draw Slugs (Worms Style Expressive Vector Design!)
       const animTime = Date.now() / 300;
 
       // Placement Ghost Preview
@@ -283,7 +283,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = team?.color || '#a855f7';
         ctx.beginPath();
-        ctx.arc(mousePos.x, mousePos.y - 8, 8, 0, Math.PI * 2);
+        ctx.arc(mousePos.x, mousePos.y - 8, 9, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = '#facc15';
@@ -321,24 +321,62 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.stroke();
         }
 
-        // Slug Body
+        // --- EXPRESSIVE VECTOR SLUG DRAWING ---
+        ctx.save();
+        ctx.translate(slug.x, slug.y - 8);
+        if (slug.facing === 'left') {
+          ctx.scale(-1, 1);
+        }
+
+        // Slug Body Goutte / Contour
         ctx.fillStyle = team?.color || '#ec4899';
         ctx.beginPath();
-        ctx.arc(slug.x, slug.y - 8, 8, 0, Math.PI * 2);
+        ctx.moveTo(-9, 4);
+        ctx.quadraticCurveTo(-11, 0, -6, -6);
+        ctx.quadraticCurveTo(0, -10, 6, -6);
+        ctx.quadraticCurveTo(10, 0, 7, 5);
+        ctx.quadraticCurveTo(0, 8, -9, 4);
+        ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = isActive ? '#facc15' : '#ffffff';
-        ctx.lineWidth = isActive ? 2.5 : 1;
+        ctx.strokeStyle = isActive ? '#facc15' : '#09090b';
+        ctx.lineWidth = isActive ? 2 : 1.2;
         ctx.stroke();
 
-        // Eye
-        const eyeX = slug.x + (slug.facing === 'right' ? 4 : -4);
+        // Team Headband / Soldier Helmet
+        ctx.fillStyle = team?.color || '#3b82f6';
+        ctx.beginPath();
+        ctx.ellipse(1, -7, 6.5, 3, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // Big Expressive Cartoon Eyes
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(eyeX, slug.y - 10, 2.5, 0, Math.PI * 2);
+        ctx.arc(3, -5, 3.2, 0, Math.PI * 2);
+        ctx.arc(7, -5, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Worms Style HP Pill Badge (Moved higher with discrete transparent backdrop)
-        ctx.fillStyle = 'rgba(9, 9, 11, 0.45)';
+        // Pupils (Target tracking direction)
+        ctx.fillStyle = '#09090b';
+        ctx.beginPath();
+        ctx.arc(4, -5, 1.3, 0, Math.PI * 2);
+        ctx.arc(7.8, -5, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Low HP Sweat Drop
+        if (slug.hp < 25) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(-4, -8, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        // Worms Style HP Pill Badge
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.55)';
         ctx.strokeStyle = team?.color || '#ffffff';
         ctx.lineWidth = 1;
         const tagW = 34;
@@ -374,7 +412,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Render Power Charging Bar Gauge above slug ONLY when actively charging power!
+        // Render Power Charging Bar Gauge
         if (activeSlug.isChargingPower) {
           const barW = 40;
           const barH = 6;
@@ -404,26 +442,107 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      // Draw Projectiles
+      // Draw Projectiles (Custom Vector Weapons & Smoke Trails!)
       for (const proj of gameState.projectiles) {
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        ctx.save();
+        ctx.translate(proj.x, proj.y);
+        const angle = Math.atan2(proj.vy, proj.vx);
+        ctx.rotate(angle);
+
+        if (proj.weaponId === 'bazooka' || proj.weaponId === 'homing_pigeon') {
+          // Bazooka Rocket Sprite
+          ctx.fillStyle = '#eab308'; // Rocket Body
+          ctx.fillRect(-6, -3, 9, 6);
+
+          ctx.fillStyle = '#ef4444'; // Nose Cone
+          ctx.beginPath();
+          ctx.moveTo(3, -3);
+          ctx.lineTo(8, 0);
+          ctx.lineTo(3, 3);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#3f3f46'; // Fins
+          ctx.fillRect(-7, -4.5, 3, 9);
+        } else if (proj.weaponId === 'grenade' || proj.weaponId === 'cluster_bomb') {
+          // Pineapple Grenade
+          ctx.fillStyle = '#15803d';
+          ctx.beginPath();
+          ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else if (proj.weaponId === 'holy_grenade') {
+          // Holy Hand Grenade
+          ctx.fillStyle = '#eab308';
+          ctx.beginPath();
+          ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1.5, -7, 3, 4);
+        } else if (proj.weaponId === 'super_sheep') {
+          // Super Sheep Sprite
+          ctx.fillStyle = '#ef4444'; // Red Flying Cape
+          ctx.fillRect(-8, -4, 6, 8);
+          ctx.fillStyle = '#f4f4f5'; // White Wool Body
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(0, 0, proj.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
       }
 
-      // Draw Explosions
+      // Draw Explosions (Fiery Shockwave Core!)
       const now = Date.now();
       for (const ex of gameState.explosions) {
         const age = now - (ex.createdAt || now);
         const alpha = Math.max(0, 1 - age / 350);
-        ctx.fillStyle = `rgba(239, 68, 68, ${alpha * 0.7})`;
+
+        // Outer Shockwave Ring
+        ctx.strokeStyle = `rgba(249, 115, 22, ${alpha})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ex.x, ex.y, ex.radius * (age / 350), 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner Fireball Core
+        const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, ex.radius);
+        exGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+        exGrad.addColorStop(0.3, `rgba(250, 204, 21, ${alpha * 0.9})`);
+        exGrad.addColorStop(0.7, `rgba(239, 68, 68, ${alpha * 0.7})`);
+        exGrad.addColorStop(1, `rgba(127, 29, 29, 0)`);
+
+        ctx.fillStyle = exGrad;
         ctx.beginPath();
         ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      // Floating Damage Numbers (Arcade Style bouncing -45 HP!)
+      if (gameState.floatingDamages) {
+        for (const fd of gameState.floatingDamages) {
+          const age = now - fd.createdAt;
+          const alpha = Math.max(0, 1 - age / 1000);
+          const floatY = fd.y - (age / 1000) * 25;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = '#facc15';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+          ctx.font = 'extrabold 14px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.strokeText(`-${fd.damage}`, fd.x, floatY);
+          ctx.fillText(`-${fd.damage}`, fd.x, floatY);
+          ctx.restore();
+        }
       }
 
       // DEBUG HITBOX OVERLAY RENDERING

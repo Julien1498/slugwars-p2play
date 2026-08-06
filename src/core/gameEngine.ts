@@ -35,6 +35,7 @@ export class SlugWarsEngine {
       projectiles: [],
       explosions: [],
       particles: [],
+      floatingDamages: [],
       journal: [],
       turnCount: 0,
     };
@@ -131,6 +132,7 @@ export class SlugWarsEngine {
       y: pt.y,
       isTriggered: false,
     }));
+    this.state.floatingDamages = [];
 
     this.state.phase = 'PLACEMENT';
     this.state.activeTeamId = this.state.teams[0].id;
@@ -425,6 +427,13 @@ export class SlugWarsEngine {
       if (phys.fallDamage) {
         this.addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');
         sfx.play('splash');
+        this.state.floatingDamages.push({
+          id: `fd_${Date.now()}_${Math.random()}`,
+          x: slug.x,
+          y: slug.y - 24,
+          damage: phys.fallDamage,
+          createdAt: Date.now(),
+        });
       }
     }
 
@@ -461,7 +470,16 @@ export class SlugWarsEngine {
           });
 
           sfx.play('explosion');
-          applyExplosionToSlugs(pt.x, pt.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain);
+          const expRes = applyExplosionToSlugs(pt.x, pt.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain);
+          for (const dm of expRes.damageEvents) {
+            this.state.floatingDamages.push({
+              id: `fd_${now}_${Math.random()}`,
+              x: dm.x,
+              y: dm.y,
+              damage: dm.damage,
+              createdAt: now,
+            });
+          }
         } else {
           remaining.push(proj);
         }
@@ -520,7 +538,16 @@ export class SlugWarsEngine {
             createdAt: now,
           });
           sfx.play('explosion');
-          applyExplosionToSlugs(mine.x, mine.y, radius, damage, this.state.slugs, this.terrain);
+          const mineExpRes = applyExplosionToSlugs(mine.x, mine.y, radius, damage, this.state.slugs, this.terrain);
+          for (const dm of mineExpRes.damageEvents) {
+            this.state.floatingDamages.push({
+              id: `fd_${now}_${Math.random()}`,
+              x: dm.x,
+              y: dm.y,
+              damage: dm.damage,
+              createdAt: now,
+            });
+          }
         } else {
           remainingMines.push(mine);
         }
@@ -528,10 +555,13 @@ export class SlugWarsEngine {
       this.state.mines = remainingMines;
     }
 
-    // Clean up expired explosions (older than 350ms)
+    // Clean up expired explosions and floating damage numbers
     const currentTime = Date.now();
     this.state.explosions = this.state.explosions.filter(
       (ex) => currentTime - (ex.createdAt || currentTime) < 350
+    );
+    this.state.floatingDamages = (this.state.floatingDamages || []).filter(
+      (fd) => currentTime - fd.createdAt < 1000
     );
 
     if (this.state.phase === 'AIMING') {

@@ -109,6 +109,14 @@ export interface Landmine {
   fuseTimerMs?: number;
 }
 
+export interface FloatingDamage {
+  id: string;
+  x: number;
+  y: number;
+  damage: number;
+  createdAt: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   config: GameConfig;
@@ -122,6 +130,7 @@ export interface GameState {
   projectiles: ActiveProjectile[];
   explosions: ExplosionEvent[];
   particles: Particle[];
+  floatingDamages: FloatingDamage[];
   winnerTeamId?: TeamId;
   journal: JournalEntry[];
   turnCount: number;
