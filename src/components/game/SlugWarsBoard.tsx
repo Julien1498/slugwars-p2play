@@ -5,6 +5,7 @@ import { TurnHeader } from './TurnHeader';
 import { SlugWarsCanvas } from './SlugWarsCanvas';
 import { WeaponPicker } from './WeaponPicker';
 import { RulesModal } from './RulesModal';
+import { MetricsModal } from './MetricsModal';
 import { TextChatPanel, JournalPanel } from 'p2play-core/chat';
 import { Trophy, RefreshCw, MessageSquare, Eye, X } from 'lucide-react';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
@@ -60,6 +61,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 }) => {
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showMetrics, setShowMetrics] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<'journal' | 'chat'>('journal');
   const [showHitboxes, setShowHitboxes] = useState(false);
@@ -157,6 +159,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         isMyTurn={isMyTurn}
         onOpenWeaponPicker={() => setShowWeaponPicker(true)}
         onOpenRules={() => setShowRules(true)}
+        onOpenMetrics={() => setShowMetrics(true)}
         onExit={onExit}
       />
 
@@ -341,6 +344,16 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
       {/* Rules Modal */}
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+
+      {/* Hardware & Network Performance Metrics Modal */}
+      {showMetrics && (
+        <MetricsModal
+          isOpen={showMetrics}
+          onClose={() => setShowMetrics(false)}
+          gameState={gameState}
+          hostPeerId={hostPeerId}
+        />
+      )}
     </div>
   );
 };

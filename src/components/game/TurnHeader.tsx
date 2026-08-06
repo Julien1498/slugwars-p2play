@@ -3,7 +3,7 @@ import { GameState } from '../../core/types';
 import { getWeapon } from '../../core/weapons/registry';
 import { WindIndicator } from './WindIndicator';
 import { RoomCodeBadge } from 'p2play-core';
-import { Clock, Crosshair, Heart } from 'lucide-react';
+import { Clock, Crosshair, Heart, Activity } from 'lucide-react';
 
 interface TurnHeaderProps {
   gameState: GameState;
@@ -11,6 +11,7 @@ interface TurnHeaderProps {
   isMyTurn: boolean;
   onOpenWeaponPicker: () => void;
   onOpenRules: () => void;
+  onOpenMetrics?: () => void;
   onExit?: () => void;
 }
 
@@ -20,6 +21,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
   isMyTurn,
   onOpenWeaponPicker,
   onOpenRules,
+  onOpenMetrics,
   onExit,
 }) => {
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
@@ -114,6 +116,16 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
         )}
 
         <RoomCodeBadge code={hostPeerId} label="Salon" accentClassName="text-violet-400" />
+        {onOpenMetrics && (
+          <button
+            onClick={onOpenMetrics}
+            title="Métriques de performances & réseau P2P"
+            className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/50 rounded-lg text-xs font-bold text-emerald-300 transition flex items-center gap-1 shadow-sm"
+          >
+            <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            <span>Perfs</span>
+          </button>
+        )}
         <button
           onClick={onOpenRules}
           className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-300 transition"
