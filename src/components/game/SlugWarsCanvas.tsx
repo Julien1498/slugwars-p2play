@@ -259,9 +259,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
-      // Draw Water Level
-      ctx.fillStyle = 'rgba(14, 165, 233, 0.6)';
-      ctx.fillRect(0, waterLevel, width, height - waterLevel);
+      // Draw Animated Water & Mousse Foam Surface
+      const animTime = Date.now() / 300;
+      ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let x = 0; x <= width; x += 20) {
+        const wy = waterLevel + Math.sin(x * 0.02 + animTime * 3) * 4;
+        ctx.lineTo(x, wy);
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // White Foam Crest Line
+      ctx.strokeStyle = 'rgba(224, 242, 254, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += 20) {
+        const wy = waterLevel + Math.sin(x * 0.02 + animTime * 3) * 4;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
+      }
+      ctx.stroke();
 
       // Draw Landmines (Tactical Artillery Style Classic Mines!)
       if (gameState.mines) {
@@ -296,8 +316,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Draw Slugs (Tactical Artillery Style Expressive Vector Design!)
-      const animTime = Date.now() / 300;
-
       // Placement Ghost Preview
       if (gameState.phase === 'PLACEMENT' && isMyTurn) {
         const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
@@ -345,11 +363,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.stroke();
         }
 
-        // --- EXPRESSIVE VECTOR SLUG DRAWING ---
+        // --- EXPRESSIVE VECTOR SLUG DRAWING WITH SQUISH & STRETCH ANIMATION ---
+        const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1;
+        const squishX = isMoving ? Math.sin(animTime * 14) * 0.12 : 0;
+        const squishY = isMoving ? -Math.sin(animTime * 14) * 0.12 : 0;
+
         ctx.save();
         ctx.translate(slug.x, slug.y - 8);
         if (slug.facing === 'left') {
-          ctx.scale(-1, 1);
+          ctx.scale(-1 * (1 + squishX), 1 + squishY);
+        } else {
+          ctx.scale(1 + squishX, 1 + squishY);
         }
 
         // Slug Body Goutte / Contour
@@ -395,6 +419,38 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.beginPath();
           ctx.arc(-4, -8, 1.8, 0, Math.PI * 2);
           ctx.fill();
+        }
+
+        // --- HELD WEAPON STANCE IN HAND WHEN AIMING ---
+        if (isActive && gameState.phase === 'AIMING') {
+          const weaponId = slug.selectedWeaponId;
+          const aimRad = (slug.aimAngle * Math.PI) / 180;
+
+          ctx.save();
+          ctx.translate(4, -3);
+          ctx.rotate(-aimRad);
+
+          if (weaponId === 'bazooka' || weaponId === 'homing_pigeon') {
+            ctx.fillStyle = '#3f3f46'; // Bazooka Tube
+            ctx.fillRect(0, -3, 14, 5);
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(10, -4, 3, 7);
+          } else if (weaponId === 'baseball_bat') {
+            ctx.fillStyle = '#b45309'; // Wooden Bat
+            ctx.fillRect(0, -2, 16, 4);
+          } else if (weaponId === 'holy_grenade') {
+            ctx.fillStyle = '#eab308'; // Holy Hand Grenade
+            ctx.beginPath();
+            ctx.arc(6, 0, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = '#15803d'; // Grenade in hand
+            ctx.beginPath();
+            ctx.arc(6, 0, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.restore();
         }
 
         ctx.restore();
@@ -506,13 +562,36 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(-1.5, -7, 3, 4);
         } else if (proj.weaponId === 'super_sheep') {
-          // Super Sheep Sprite
+          // Detailed Super Sheep Sprite
           ctx.fillStyle = '#ef4444'; // Red Flying Cape
-          ctx.fillRect(-8, -4, 6, 8);
-          ctx.fillStyle = '#f4f4f5'; // White Wool Body
           ctx.beginPath();
-          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.moveTo(-8, -4);
+          ctx.lineTo(-14, Math.sin(animTime * 10) * 3);
+          ctx.lineTo(-8, 4);
+          ctx.closePath();
           ctx.fill();
+
+          ctx.fillStyle = '#f4f4f5'; // White Wool Cloud Body
+          ctx.beginPath();
+          ctx.arc(-2, 0, 5, 0, Math.PI * 2);
+          ctx.arc(2, -2, 4.5, 0, Math.PI * 2);
+          ctx.arc(2, 2, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#18181b'; // Black Head & Snout
+          ctx.beginPath();
+          ctx.arc(6, -1, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(6, -2, 1.5, 1.5);
+        } else if (proj.weaponId === 'air_strike') {
+          // Aerodynamic Black Air Strike Bomb
+          ctx.fillStyle = '#18181b';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ef4444'; // Red Fins
+          ctx.fillRect(-8, -4, 3, 8);
         } else {
           ctx.fillStyle = '#ef4444';
           ctx.beginPath();
