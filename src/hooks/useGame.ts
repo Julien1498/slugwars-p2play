@@ -249,16 +249,26 @@ export function useGame(options?: {
     }
   }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastState]);
 
-  // Physics Loop
+  // Physics Loop (50ms interval) with throttled React state sync (20 FPS UI sync to preserve 60 FPS Canvas)
   useEffect(() => {
     if (!isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
+    let tickCount = 0;
+
     const interval = setInterval(() => {
       engineRef.current.tick();
-      syncState();
+      tickCount++;
+
+      // Broadcast state to peers every 50ms (20Hz)
       broadcastState(engineRef.current.state);
+
+      // Only trigger a React component re-render every 2 ticks (100ms / 10 FPS UI update)
+      // to keep React virtual DOM diffing completely off the 60 FPS Canvas thread!
+      if (tickCount % 2 === 0) {
+        setGameState({ ...engineRef.current.state });
+      }
     }, 50);
     return () => clearInterval(interval);
-  }, [isHost, gameState.phase, syncState, broadcastState]);
+  }, [isHost, gameState.phase, broadcastState]);
 
   // Action Sender
   const sendAction = useCallback(

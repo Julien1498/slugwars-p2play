@@ -96,7 +96,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     offCtx.restore();
   }, []);
 
-  // Calculate exact mouse position inside the rendered canvas area (taking object-contain letterboxing into account!)
+  const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
+
+  // Calculate exact mouse position inside the rendered canvas area
   const getCanvasMousePos = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): Vector2D => {
       const canvas = canvasRef.current;
@@ -115,11 +117,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       let offsetY = 0;
 
       if (rectAspect > canvasAspect) {
-        // Pillarboxed (vertical bars on left & right)
         drawWidth = rect.height * canvasAspect;
         offsetX = (rect.width - drawWidth) / 2;
       } else {
-        // Letterboxed (horizontal bars on top & bottom)
         drawHeight = rect.width / canvasAspect;
         offsetY = (rect.height - drawHeight) / 2;
       }
@@ -135,19 +135,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     [terrain]
   );
 
-  // Real-time Mouse Aiming Handler
+  // Throttled Real-time Mouse Aiming Handler (No React State Re-render on mouseMove!)
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const { x: mouseX, y: mouseY } = getCanvasMousePos(e);
-      setMousePos({ x: mouseX, y: mouseY });
+      const pos = getCanvasMousePos(e);
+      mousePosRef.current = pos;
 
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
 
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
 
-      const dx = mouseX - activeSlug.x;
-      const dy = mouseY - activeSlug.y;
+      const dx = pos.x - activeSlug.x;
+      const dy = pos.y - activeSlug.y;
       let angle = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
       angle = Math.max(5, Math.min(85, angle));
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
@@ -321,26 +321,27 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (gameState.phase === 'PLACEMENT' && isMyTurn) {
         const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
         const team = gameState.teams.find((t) => t.id === gameState.activeTeamId);
+        const mPos = mousePosRef.current;
 
         ctx.save();
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = team?.color || '#a855f7';
         ctx.beginPath();
-        ctx.arc(mousePos.x, mousePos.y - 8, 9, 0, Math.PI * 2);
+        ctx.arc(mPos.x, mPos.y - 8, 9, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = '#facc15';
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.arc(mousePos.x, mousePos.y - 8, 14, 0, Math.PI * 2);
+        ctx.arc(mPos.x, mPos.y - 8, 14, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
 
         ctx.fillStyle = '#facc15';
         ctx.font = 'bold 11px Outfit, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`📍 Placer ${activeSlug?.name || 'Limace'}`, mousePos.x, mousePos.y - 28);
+        ctx.fillText(`📍 Placer ${activeSlug?.name || 'Limace'}`, mPos.x, mPos.y - 28);
       }
 
       for (const slug of gameState.slugs) {
@@ -585,6 +586,35 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.fill();
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(6, -2, 1.5, 1.5);
+        } else if (proj.weaponId === 'banana_bomb') {
+          // Yellow Curved Banana Bomb Sprite
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 7, 3.5, 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#854d0e';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else if (proj.weaponId === 'dynamite') {
+          // Red Dynamite Stick Sprite with Blinking Fuse Spark
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(-6, -3, 12, 6);
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(7, -3, 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (proj.weaponId === 'homing_pigeon') {
+          // White Flying Pigeon Sprite
+          ctx.fillStyle = '#f4f4f5';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 6, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#f97316';
+          ctx.fillRect(5, -1.5, 3, 2);
+        } else if (proj.weaponId === 'shotgun') {
+          // High Speed Bullet Flare
+          ctx.fillStyle = '#fde047';
+          ctx.fillRect(-5, -1.5, 10, 3);
         } else if (proj.weaponId === 'air_strike') {
           // Aerodynamic Black Air Strike Bomb
           ctx.fillStyle = '#18181b';
