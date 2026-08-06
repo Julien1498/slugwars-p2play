@@ -34,7 +34,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
   // Render terrain to offscreen canvas
   const redrawOffscreenTerrain = useCallback(() => {
-    const { width, height, grid } = terrain.data;
+    const { width, height, grid, theme } = terrain.data;
     if (!offscreenCanvasRef.current) {
       offscreenCanvasRef.current = document.createElement('canvas');
     }
@@ -48,16 +48,40 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     const imgData = offCtx.createImageData(width, height);
     const data = imgData.data;
 
+    let topR = 34, topG = 197, topB = 94;
+    let baseR = 133, baseG = 77, baseB = 14;
+
+    if (theme === 'CAVERN') {
+      topR = 192; topG = 132; topB = 252;
+      baseR = 76; baseG = 29; baseB = 149;
+    } else if (theme === 'FORTRESS') {
+      topR = 148; topG = 163; topB = 184;
+      baseR = 51; baseG = 65; baseB = 85;
+    } else if (theme === 'FLOATING_CHAOS') {
+      topR = 250; topG = 204; topB = 21;
+      baseR = 154; baseG = 52; baseB = 18;
+    }
+
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
       for (let x = 0; x < width; x++) {
         const idx = (rowOffset + x) * 4;
         if (grid[rowOffset + x] === 1) {
-          const isTopGrass = y > 0 && grid[(y - 1) * width + x] === 0;
-          data[idx] = isTopGrass ? 34 : 120;
-          data[idx + 1] = isTopGrass ? 197 : 85;
-          data[idx + 2] = isTopGrass ? 94 : 57;
-          data[idx + 3] = 255;
+          const isTopFringe = y > 0 && (grid[(y - 1) * width + x] === 0 || grid[(y - 2) * width + x] === 0);
+          const noise = ((x * 37 + y * 59) % 17) / 17;
+
+          if (isTopFringe) {
+            data[idx] = Math.min(255, topR + noise * 20);
+            data[idx + 1] = Math.min(255, topG + noise * 20);
+            data[idx + 2] = Math.min(255, topB + noise * 20);
+            data[idx + 3] = 255;
+          } else {
+            const grain = (noise - 0.5) * 24;
+            data[idx] = Math.max(0, Math.min(255, baseR + grain));
+            data[idx + 1] = Math.max(0, Math.min(255, baseG + grain));
+            data[idx + 2] = Math.max(0, Math.min(255, baseB + grain));
+            data[idx + 3] = 255;
+          }
         }
       }
     }
@@ -497,6 +521,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
 
         ctx.restore();
+      }
+
+      // Draw Smoke & Fire Trail Particles
+      if (gameState.particles) {
+        for (const p of gameState.particles) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       // Draw Explosions (Fiery Shockwave Core!)

@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine } from './types';
+import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle } from './types';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
 import { generateProceduralTerrain } from './terrainGenerator';
@@ -452,6 +452,19 @@ export class SlugWarsEngine {
     if (this.state.projectiles.length > 0) {
       const remaining: typeof this.state.projectiles = [];
       for (const proj of this.state.projectiles) {
+        // Spawn Smoke & Fire Trail Particles behind active flying projectiles!
+        if (Math.hypot(proj.vx, proj.vy) > 0.5) {
+          this.state.particles.push({
+            x: proj.x - proj.vx * 0.8,
+            y: proj.y - proj.vy * 0.8,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: (Math.random() - 0.5) * 0.8,
+            color: Math.random() > 0.4 ? '#f97316' : '#71717a',
+            size: Math.random() * 3 + 2,
+            life: 1.0,
+          });
+        }
+
         const res = updateProjectilePhysics(proj, this.terrain, this.state.wind, this.state.slugs);
         if (res.exploded) {
           const pt = res.collisionPoint || { x: proj.x, y: proj.y };
@@ -553,6 +566,20 @@ export class SlugWarsEngine {
         }
       }
       this.state.mines = remainingMines;
+    }
+
+    // Update and decay flying smoke & fire particles
+    if (this.state.particles && this.state.particles.length > 0) {
+      const remainingParticles: Particle[] = [];
+      for (const p of this.state.particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.04;
+        if (p.life > 0) {
+          remainingParticles.push(p);
+        }
+      }
+      this.state.particles = remainingParticles;
     }
 
     // Clean up expired explosions and floating damage numbers
