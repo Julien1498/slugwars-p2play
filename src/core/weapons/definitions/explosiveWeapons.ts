@@ -105,3 +105,73 @@ export const holyGrenadeWeapon: WeaponDefinition = {
     ];
   },
 };
+
+export const bananaBombWeapon: WeaponDefinition = {
+  id: 'banana_bomb',
+  name: 'Bombe Banane',
+  category: 'EXPLOSIVE',
+  behavior: 'BOUNCING_TIMER',
+  icon: '🍌',
+  description: 'Provoque une explosion colossale qui se sépare en mini-bananes !',
+  damage: 75,
+  radius: 60,
+  defaultAmmo: 2,
+  windAffected: false,
+  bounces: true,
+  fuseTimeMs: 3000,
+  craftable: true,
+  customSoundKey: 'grenade_throw',
+  createProjectiles: (ctx) => {
+    const rad = (ctx.angleDeg * Math.PI) / 180;
+    const speed = (ctx.power / 100) * 14 + 3;
+    return [
+      {
+        id: `proj_${Date.now()}_${Math.random()}`,
+        weaponId: 'banana_bomb',
+        x: ctx.originX,
+        y: ctx.originY,
+        vx: Math.cos(rad) * speed,
+        vy: Math.sin(rad) * speed,
+        radius: 6,
+        bounces: true,
+        windAffected: false,
+        fuseTimeMs: 3000,
+        ownerSlugId: ctx.ownerSlugId,
+      },
+    ];
+  },
+};
+
+export const dynamiteWeapon: WeaponDefinition = {
+  id: 'dynamite',
+  name: 'Dynamite',
+  category: 'EXPLOSIVE',
+  behavior: 'BOUNCING_TIMER',
+  icon: '🧨',
+  description: 'Posée au sol. Mèche de 3 secondes déclenchant une explosion massive.',
+  damage: 70,
+  radius: 65,
+  defaultAmmo: 2,
+  windAffected: false,
+  bounces: false,
+  fuseTimeMs: 3000,
+  craftable: true,
+  customSoundKey: 'grenade_throw',
+  createProjectiles: (ctx) => {
+    return [
+      {
+        id: `proj_${Date.now()}_${Math.random()}`,
+        weaponId: 'dynamite',
+        x: ctx.originX,
+        y: ctx.originY,
+        vx: 0,
+        vy: 0,
+        radius: 6,
+        bounces: false,
+        windAffected: false,
+        fuseTimeMs: 3000,
+        ownerSlugId: ctx.ownerSlugId,
+      },
+    ];
+  },
+};

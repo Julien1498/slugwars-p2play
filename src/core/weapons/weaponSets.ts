@@ -15,6 +15,11 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
     inventory: {
       bazooka: -1,
       grenade: 5,
+      banana_bomb: 2,
+      dynamite: 3,
+      shotgun: 4,
+      homing_pigeon: 2,
+      prod: -1,
       baseball_bat: -1,
       holy_grenade: 1,
       air_strike: 2,
@@ -30,6 +35,11 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
     inventory: {
       bazooka: -1,
       grenade: 10,
+      banana_bomb: 4,
+      dynamite: 5,
+      shotgun: 8,
+      homing_pigeon: 4,
+      prod: -1,
       baseball_bat: -1,
       holy_grenade: 3,
       air_strike: 5,
