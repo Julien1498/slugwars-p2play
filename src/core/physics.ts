@@ -88,9 +88,10 @@ export function applyExplosionToSlugs(
   maxDamage: number,
   slugs: Slug[],
   terrain: DestructibleTerrain
-): { hitCount: number; killedCount: number } {
+): { hitCount: number; killedCount: number; damageEvents: Array<{ x: number; y: number; damage: number }> } {
   let hitCount = 0;
   let killedCount = 0;
+  const damageEvents: Array<{ x: number; y: number; damage: number }> = [];
 
   for (const slug of slugs) {
     if (!slug.isAlive || slug.isPlaced === false) continue;
@@ -104,10 +105,14 @@ export function applyExplosionToSlugs(
       const falloff = 1 - Math.min(1, dist / (radius + 15));
       const damage = Math.round(maxDamage * falloff);
 
-      slug.hp = Math.max(0, slug.hp - damage);
-      if (slug.hp === 0) {
-        slug.isAlive = false;
-        killedCount++;
+      if (damage > 0) {
+        slug.hp = Math.max(0, slug.hp - damage);
+        if (slug.hp === 0) {
+          slug.isAlive = false;
+          killedCount++;
+        }
+
+        damageEvents.push({ x: slug.x, y: slug.y - 20, damage });
       }
 
       const angle = Math.atan2(dy, dx);
@@ -117,7 +122,7 @@ export function applyExplosionToSlugs(
     }
   }
 
-  return { hitCount, killedCount };
+  return { hitCount, killedCount, damageEvents };
 }
 
 export function isSlugGrounded(slug: Slug, terrain: DestructibleTerrain, slugs: Slug[] = []): boolean {
