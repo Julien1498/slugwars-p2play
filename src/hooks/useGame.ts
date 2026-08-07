@@ -108,7 +108,7 @@ export function useGame(options?: {
             engine.stopSteer();
             break;
           case 'START_CHARGE':
-            engine.startCharge();
+            engine.startCharge(msg.payload?.targetPoint);
             break;
           case 'RELEASE_CHARGE':
             engine.releaseCharge(msg.payload?.targetPoint);

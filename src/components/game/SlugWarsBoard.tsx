@@ -28,7 +28,7 @@ interface SlugWarsBoardProps {
   onJump: () => void;
   onStartSteer?: (dir: 'left' | 'right') => void;
   onStopSteer?: () => void;
-  onStartCharge?: () => void;
+  onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   onDetonate?: () => void;
   onRestartGame: () => void;

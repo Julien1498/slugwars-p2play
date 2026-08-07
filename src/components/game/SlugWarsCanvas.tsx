@@ -12,7 +12,7 @@ interface SlugWarsCanvasProps {
   showHitboxes?: boolean;
   onFire: (targetPoint?: Vector2D) => void;
   onPlaceSlug?: (point: Vector2D) => void;
-  onStartCharge?: () => void;
+  onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
 }
@@ -437,7 +437,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
 
       if (!isInstantTarget) {
-        onStartCharge?.();
+        const targetPt = lockedTargetRef.current || { x: mouseX, y: mouseY };
+        onStartCharge?.(targetPt);
       }
     },
     [isMyTurn, gameState, getCanvasMousePos, onPlaceSlug, onStartCharge, onUpdateAim]
