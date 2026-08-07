@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
+import { SeededRandom } from '../../core/terrainGenerator';
 
 interface SlugWarsCanvasProps {
   gameState: GameState;
@@ -30,6 +31,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastSeedRef = useRef<number | null>(null);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
+  const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
 
   // Optimized 32-bit fast terrain rendering to offscreen canvas
@@ -51,34 +53,79 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     const data32 = new Uint32Array(imgData.data.buffer);
 
     // Fast Little-Endian ABGR 32-bit integer colors
-    let topColor = 0xff5ec522; // Green
-    let baseColor = 0xff0e4d85; // Soil
+    let topColor = 0xff22c55e; // Green grass
+    let lightSoilColor = 0xff184378; // Warm topsoil brown
+    let darkSoilColor = 0xff081a33; // Dark subsoil brown
 
     if (theme === 'CAVERN') {
       topColor = 0xfffc84c0;
-      baseColor = 0xff951d4c;
+      lightSoilColor = 0xff951d4c;
+      darkSoilColor = 0xff4a0822;
     } else if (theme === 'FORTRESS') {
       topColor = 0xffb8a394;
-      baseColor = 0xff554133;
+      lightSoilColor = 0xff554133;
+      darkSoilColor = 0xff261c14;
     } else if (theme === 'FLOATING_CHAOS') {
       topColor = 0xff15caff;
-      baseColor = 0xff12349a;
+      lightSoilColor = 0xff12349a;
+      darkSoilColor = 0xff071542;
     }
 
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
       const prevRowOffset = (y - 1) * width;
       const prevRowOffset2 = (y - 2) * width;
+      const depthFactor = y / height;
 
       for (let x = 0; x < width; x++) {
         const idx = rowOffset + x;
         if (grid[idx] === 1) {
           const isTopFringe = y > 0 && (grid[prevRowOffset + x] === 0 || (y > 1 && grid[prevRowOffset2 + x] === 0));
-          data32[idx] = isTopFringe ? topColor : baseColor;
+          if (isTopFringe) {
+            data32[idx] = topColor;
+          } else {
+            data32[idx] = depthFactor > 0.52 ? darkSoilColor : lightSoilColor;
+          }
         }
       }
     }
     offCtx.putImageData(imgData, 0, 0);
+
+    // Draw embedded procedural soil pebbles & underground bones
+    offCtx.fillStyle = '#6b3710';
+    offCtx.strokeStyle = '#3e1f07';
+    offCtx.lineWidth = 1;
+
+    const prng = new SeededRandom(terrain.data.seed + 888);
+    for (let i = 0; i < 110; i++) {
+      const rx = Math.floor(prng.range(30, width - 30));
+      const ry = Math.floor(prng.range(120, height - 90));
+      const rSize = prng.range(4, 14);
+
+      if (grid[ry * width + rx] === 1 && grid[(ry - 8) * width + rx] === 1) {
+        if (i % 14 === 0) {
+          // Bone / Fossil
+          offCtx.fillStyle = '#e4e4e7';
+          offCtx.fillRect(rx - 5, ry - 1, 10, 2);
+          offCtx.beginPath();
+          offCtx.arc(rx - 5, ry - 1, 2, 0, Math.PI * 2);
+          offCtx.arc(rx + 5, ry - 1, 2, 0, Math.PI * 2);
+          offCtx.fill();
+        } else {
+          // Pebble / Rock
+          const grad = offCtx.createRadialGradient(rx - 2, ry - 2, 1, rx, ry, rSize);
+          grad.addColorStop(0, '#a15822');
+          grad.addColorStop(0.7, '#63310d');
+          grad.addColorStop(1, '#3b1c05');
+
+          offCtx.fillStyle = grad;
+          offCtx.beginPath();
+          offCtx.ellipse(rx, ry, rSize, rSize * 0.75, prng.range(0, Math.PI), 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.stroke();
+        }
+      }
+    }
   }, [terrain]);
 
   // Carve crater on offscreen canvas when explosion happens
@@ -95,8 +142,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     offCtx.fill();
     offCtx.restore();
   }, []);
-
-  const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
 
   // Calculate exact mouse position inside the rendered canvas area
   const getCanvasMousePos = useCallback(
@@ -135,7 +180,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     [terrain]
   );
 
-  // Throttled Real-time Mouse Aiming Handler (No React State Re-render on mouseMove!)
+  // Throttled Real-time Mouse Aiming Handler
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const pos = getCanvasMousePos(e);
@@ -236,7 +281,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     let animId: number;
 
     const render = () => {
-      const { width, height, waterLevel } = terrain.data;
+      const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
       // Sky Background
@@ -247,20 +292,180 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Deep Water Backdrop (Prevents straight raw line under terrain!)
+      // Deep Water Backdrop
       const waterBackdropGrad = ctx.createLinearGradient(0, waterLevel - 10, 0, height);
       waterBackdropGrad.addColorStop(0, 'rgba(3, 105, 161, 0.7)');
       waterBackdropGrad.addColorStop(1, 'rgba(12, 74, 110, 0.95)');
       ctx.fillStyle = waterBackdropGrad;
       ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
 
+      const animTime = Date.now() / 300;
+
+      // Draw Background Decor Props (Giant Moles peaking behind hills!)
+      if (decorItems) {
+        for (const item of decorItems) {
+          if (item.type === 'mole') {
+            ctx.save();
+            ctx.translate(item.x, item.y);
+            const scale = item.scale || 1.0;
+            ctx.scale(scale, scale);
+
+            // Giant Mole Head peaking behind terrain hill
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.ellipse(0, -22, 28, 30, 0, Math.PI, 0);
+            ctx.fill();
+
+            // Pink Snout
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.ellipse(0, -26, 11, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes & Teeth
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-8, -34, 2.5, 0, Math.PI * 2);
+            ctx.arc(8, -34, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-3, -20, 2.5, 4);
+            ctx.fillRect(0.5, -20, 2.5, 4);
+            ctx.restore();
+          }
+        }
+      }
+
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
+      // Draw Foreground Decor Props (Giant Snail, Mushrooms, Flowers, Hanging Leaves, Butterflies)
+      if (decorItems) {
+        for (const item of decorItems) {
+          ctx.save();
+          ctx.translate(item.x, item.y);
+
+          if (item.type === 'snail') {
+            // Giant Snail atop cliff
+            const scale = item.scale || 1.0;
+            ctx.scale(scale, scale);
+
+            // Shell
+            ctx.fillStyle = '#b45309';
+            ctx.beginPath();
+            ctx.arc(4, -16, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Shell Spiral Detail
+            ctx.strokeStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(4, -16, 8, 0, Math.PI * 1.5);
+            ctx.stroke();
+
+            // Teardrop Green Slug Body
+            ctx.fillStyle = '#84cc16';
+            ctx.beginPath();
+            ctx.ellipse(-8, -6, 16, 6, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Stalk Eyes
+            ctx.strokeStyle = '#84cc16';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-16, -10);
+            ctx.lineTo(-20, -22);
+            ctx.moveTo(-12, -10);
+            ctx.lineTo(-14, -24);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-20, -22, 3.5, 0, Math.PI * 2);
+            ctx.arc(-14, -24, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-20, -22, 1.5, 0, Math.PI * 2);
+            ctx.arc(-14, -24, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (item.type === 'mushroom') {
+            // Red Spotted Mushroom
+            const scale = item.scale || 1.0;
+            ctx.scale(scale, scale);
+
+            // Cream Stem
+            ctx.fillStyle = '#fef3c7';
+            ctx.fillRect(-3, -12, 6, 12);
+
+            // Red Cap
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.ellipse(0, -14, 11, 8, 0, Math.PI, 0);
+            ctx.fill();
+
+            // White Dots
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-5, -17, 2, 0, Math.PI * 2);
+            ctx.arc(4, -18, 2, 0, Math.PI * 2);
+            ctx.arc(0, -13, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (item.type === 'flower') {
+            // Colorful Flower
+            ctx.fillStyle = '#15803d'; // Stem
+            ctx.fillRect(-1, -12, 2, 12);
+
+            ctx.fillStyle = item.variant === 1 ? '#ec4899' : item.variant === 2 ? '#3b82f6' : '#c084fc';
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+              ctx.beginPath();
+              ctx.arc(Math.cos(a) * 6, -14 + Math.sin(a) * 6, 4, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            ctx.fillStyle = '#facc15'; // Yellow Core
+            ctx.beginPath();
+            ctx.arc(0, -14, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (item.type === 'hanging_leaf') {
+            // Palm Leaf Roots hanging down from cliff overhang
+            const scale = item.scale || 1.0;
+            ctx.scale(scale, scale);
+
+            const sway = Math.sin(animTime + item.x) * 0.15;
+            ctx.rotate(sway);
+
+            ctx.fillStyle = '#16a34a';
+            for (let l = -1; l <= 1; l++) {
+              ctx.beginPath();
+              ctx.ellipse(l * 6, 12, 4, 14, l * 0.3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else if (item.type === 'butterfly') {
+            // Floating Butterfly in sky
+            const flap = Math.abs(Math.sin(animTime * 4 + item.x));
+            ctx.scale(flap, 1);
+
+            ctx.fillStyle = item.variant === 1 ? '#f97316' : '#a855f7';
+            ctx.beginPath();
+            ctx.ellipse(-5, 0, 5, 3, -0.4, 0, Math.PI * 2);
+            ctx.ellipse(5, 0, 5, 3, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-1, -3, 2, 6);
+          }
+
+          ctx.restore();
+        }
+      }
+
       // Draw Smooth & Slow Surface Waves (Gentle 1.2s Ocean Swell)
-      const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
       ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
       ctx.beginPath();
