@@ -59,6 +59,7 @@ export interface TerrainData {
   minePoints: Vector2D[];
   decorItems: DecorItem[];
   solidProps: SolidProp[];
+  caveCrystalPoints?: Vector2D[];
 }
 
 export function generateProceduralTerrain(
@@ -183,6 +184,20 @@ export function generateProceduralTerrain(
     for (let my = searchStartY; my < waterLevel - 20; my++) {
       if (grid[my * width + mx] === 1 && grid[(my - 1) * width + mx] === 0) {
         minePoints.push({ x: mx, y: my - 3 });
+        break;
+      }
+    }
+  }
+
+  // 5.b Bioluminescent Cave Crystals & Small Mushrooms Spawn Points Generator (Bound to solid rock floor!)
+  const caveCrystalPoints: Vector2D[] = [];
+  const crystalCount = theme === 'CAVERN' ? 10 : 6;
+  const crystalStep = Math.floor((width - 300) / crystalCount);
+  for (let i = 0; i < crystalCount; i++) {
+    const cx = Math.floor(150 + i * crystalStep + prng.range(-30, 30));
+    for (let cy = 120; cy < waterLevel - 30; cy++) {
+      if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
+        caveCrystalPoints.push({ x: cx, y: cy });
         break;
       }
     }
@@ -355,5 +370,5 @@ export function generateProceduralTerrain(
     });
   }
 
-  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems, solidProps };
+  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems, solidProps, caveCrystalPoints };
 }

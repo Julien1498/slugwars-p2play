@@ -942,22 +942,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Mushrooms Light Punch (Bound dynamically to actual solidProps!)
-        const { solidProps } = terrain.data;
-        if (solidProps) {
-          const punchRadius = 60;
-          for (const sprop of solidProps) {
-            if (sprop.type === 'mushroom') {
-              if (!terrain.isSolid(sprop.x, sprop.y + 4)) continue;
-              const cGrad = lCtx.createRadialGradient(sprop.x, sprop.y - 8, 2, sprop.x, sprop.y - 8, punchRadius);
-              cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-              cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
-              cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-              lCtx.fillStyle = cGrad;
-              lCtx.beginPath();
-              lCtx.arc(sprop.x, sprop.y - 8, punchRadius, 0, Math.PI * 2);
-              lCtx.fill();
-            }
+        // B. Bioluminescent Cave Crystals & Small Mushrooms Light Punch (Bound ONLY to rock floor caveCrystalPoints!)
+        const { caveCrystalPoints } = terrain.data;
+        if (caveCrystalPoints) {
+          const punchRadius = 55;
+          for (let i = 0; i < caveCrystalPoints.length; i++) {
+            const crys = caveCrystalPoints[i];
+            if (!terrain.isSolid(crys.x, crys.y)) continue; // Skip if rock floor destroyed!
+
+            const cGrad = lCtx.createRadialGradient(crys.x + 1, crys.y - 6, 2, crys.x + 1, crys.y - 6, punchRadius);
+            cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
+            cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            lCtx.fillStyle = cGrad;
+            lCtx.beginPath();
+            lCtx.arc(crys.x + 1, crys.y - 6, punchRadius, 0, Math.PI * 2);
+            lCtx.fill();
           }
         }
 
@@ -993,24 +993,43 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(lightmapCanvasRef.current, 0, 0);
       }
 
-      // Draw Radiant Bioluminescent Aura Light Spheres over Solid Mushrooms!
+      // Draw Radiant Bioluminescent Aura Light Spheres & Small Crystals over Rock Floor!
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      const { solidProps } = terrain.data;
-      if (solidProps) {
-        for (const sprop of solidProps) {
-          if (sprop.type === 'mushroom') {
-            if (!terrain.isSolid(sprop.x, sprop.y + 4)) continue;
-            const color = sprop.variant === 1 ? 'rgba(168, 85, 247, 0.55)' : sprop.variant === 2 ? 'rgba(56, 189, 248, 0.55)' : 'rgba(45, 212, 191, 0.55)';
-            const auraGrad = ctx.createRadialGradient(sprop.x, sprop.y - 8, 2, sprop.x, sprop.y - 8, 60);
-            auraGrad.addColorStop(0, color);
-            auraGrad.addColorStop(0.5, color.replace('0.55', '0.2'));
-            auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = auraGrad;
-            ctx.beginPath();
-            ctx.arc(sprop.x, sprop.y - 8, 60, 0, Math.PI * 2);
-            ctx.fill();
-          }
+      const { caveCrystalPoints } = terrain.data;
+      if (caveCrystalPoints) {
+        for (let i = 0; i < caveCrystalPoints.length; i++) {
+          const crys = caveCrystalPoints[i];
+          if (!terrain.isSolid(crys.x, crys.y)) continue; // Skip if rock floor destroyed!
+
+          const isPurple = i % 2 === 0;
+          const crystalColor = isPurple ? '#c084fc' : '#2dd4bf';
+          const auraColor = isPurple ? 'rgba(192, 132, 252, 0.55)' : 'rgba(45, 212, 191, 0.55)';
+
+          // 1. Draw Small Crystal Clusters growing directly on solid rock
+          ctx.fillStyle = crystalColor;
+          ctx.shadowColor = crystalColor;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.moveTo(crys.x - 3, crys.y);
+          ctx.lineTo(crys.x - 1, crys.y - 9);
+          ctx.lineTo(crys.x + 1, crys.y);
+          ctx.moveTo(crys.x, crys.y);
+          ctx.lineTo(crys.x + 3, crys.y - 12);
+          ctx.lineTo(crys.x + 5, crys.y);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // 2. Draw Soft Radiant Bioluminescent Aura Light Sphere
+          ctx.globalCompositeOperation = 'lighter';
+          const auraGrad = ctx.createRadialGradient(crys.x + 1, crys.y - 6, 2, crys.x + 1, crys.y - 6, 55);
+          auraGrad.addColorStop(0, auraColor);
+          auraGrad.addColorStop(0.5, auraColor.replace('0.55', '0.2'));
+          auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = auraGrad;
+          ctx.beginPath();
+          ctx.arc(crys.x + 1, crys.y - 6, 55, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
         }
       }
       ctx.restore();
