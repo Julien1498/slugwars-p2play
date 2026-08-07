@@ -48,6 +48,11 @@ export interface SolidProp {
   variant?: number;
 }
 
+export interface CaveGlowPoint extends Vector2D {
+  type: 'crystal' | 'mushroom';
+  color: string;
+}
+
 export interface TerrainData {
   width: number;
   height: number;
@@ -59,7 +64,7 @@ export interface TerrainData {
   minePoints: Vector2D[];
   decorItems: DecorItem[];
   solidProps: SolidProp[];
-  caveCrystalPoints?: Vector2D[];
+  caveCrystalPoints?: CaveGlowPoint[];
 }
 
 export function generateProceduralTerrain(
@@ -189,23 +194,31 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 5.b Bioluminescent Subterranean Cave Crystals Generator (Buried DEEP INSIDE solid earth/rock ONLY!)
-  const caveCrystalPoints: Vector2D[] = [];
-  const crystalCount = theme === 'CAVERN' ? 12 : 8;
-  const crystalStep = Math.floor((width - 240) / crystalCount);
-  for (let i = 0; i < crystalCount; i++) {
-    const cx = Math.floor(120 + i * crystalStep + prng.range(-25, 25));
-    // Find deep subterranean rock cell (well below surface, fully surrounded by solid dirt)
-    for (let cy = 180; cy < waterLevel - 50; cy += 8) {
+  // 5.b Deep Subterranean Bioluminescent Crystals & Glowing Mushrooms Generator (Deep inside earth cy >= 250px ONLY!)
+  const caveCrystalPoints: CaveGlowPoint[] = [];
+  const totalGlowCount = theme === 'CAVERN' ? 16 : 10;
+  const glowStep = Math.floor((width - 240) / totalGlowCount);
+
+  for (let i = 0; i < totalGlowCount; i++) {
+    const cx = Math.floor(120 + i * glowStep + prng.range(-20, 20));
+    // Spawn DEEP inside subterranean earth (cy >= 250px down to waterLevel - 40px)
+    for (let cy = 250; cy < waterLevel - 40; cy += 8) {
       const idx = cy * width + cx;
       if (
         grid[idx] === 1 &&
-        grid[(cy - 12) * width + cx] === 1 &&
-        grid[(cy + 12) * width + cx] === 1 &&
-        grid[idx - 12] === 1 &&
-        grid[idx + 12] === 1
+        grid[(cy - 10) * width + cx] === 1 &&
+        grid[(cy + 10) * width + cx] === 1 &&
+        grid[idx - 10] === 1 &&
+        grid[idx + 10] === 1
       ) {
-        caveCrystalPoints.push({ x: cx, y: cy });
+        const isMushroom = i % 2 === 1;
+        const isCyan = (i + Math.floor(cx)) % 3 === 0;
+        caveCrystalPoints.push({
+          x: cx,
+          y: cy,
+          type: isMushroom ? 'mushroom' : 'crystal',
+          color: isCyan ? '#2dd4bf' : '#c084fc',
+        });
         break;
       }
     }

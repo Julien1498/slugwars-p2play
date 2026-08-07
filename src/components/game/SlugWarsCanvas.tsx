@@ -190,29 +190,37 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       occCtx.putImageData(occImgData, 0, 0);
     }
 
-    // Draw Subterranean Bioluminescent Crystal Clusters embedded DEEP INSIDE earth rock pixels
+    // Draw Subterranean Bioluminescent Element Clusters (Crystals & Glowing Mushrooms) embedded DEEP INSIDE earth rock pixels
     const { caveCrystalPoints } = terrain.data;
     if (caveCrystalPoints) {
       for (let i = 0; i < caveCrystalPoints.length; i++) {
         const pt = caveCrystalPoints[i];
         if (grid[pt.y * width + pt.x] !== 1) continue;
 
-        const isPurple = i % 2 === 0;
-        const color = isPurple ? '#c084fc' : '#2dd4bf';
-
         offCtx.save();
-        offCtx.fillStyle = color;
-        offCtx.shadowColor = color;
-        offCtx.shadowBlur = 10;
+        offCtx.fillStyle = pt.color;
+        offCtx.shadowColor = pt.color;
+        offCtx.shadowBlur = 12;
 
-        offCtx.beginPath();
-        offCtx.moveTo(pt.x - 4, pt.y + 4);
-        offCtx.lineTo(pt.x - 1, pt.y - 8);
-        offCtx.lineTo(pt.x + 2, pt.y + 4);
-        offCtx.moveTo(pt.x, pt.y + 4);
-        offCtx.lineTo(pt.x + 3, pt.y - 11);
-        offCtx.lineTo(pt.x + 6, pt.y + 4);
-        offCtx.fill();
+        if (pt.type === 'mushroom') {
+          // Cute Mini Subterranean Glowing Mushroom
+          offCtx.fillStyle = '#ffffff';
+          offCtx.fillRect(pt.x - 1, pt.y - 7, 2, 7);
+          offCtx.fillStyle = pt.color;
+          offCtx.beginPath();
+          offCtx.arc(pt.x, pt.y - 7, 5, Math.PI, Math.PI * 2);
+          offCtx.fill();
+        } else {
+          // Embedded Crystal Shard Spikes
+          offCtx.beginPath();
+          offCtx.moveTo(pt.x - 4, pt.y + 4);
+          offCtx.lineTo(pt.x - 1, pt.y - 8);
+          offCtx.lineTo(pt.x + 2, pt.y + 4);
+          offCtx.moveTo(pt.x, pt.y + 4);
+          offCtx.lineTo(pt.x + 3, pt.y - 11);
+          offCtx.lineTo(pt.x + 6, pt.y + 4);
+          offCtx.fill();
+        }
 
         offCtx.restore();
       }
@@ -1032,16 +1040,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           // CRITICAL CHECK: Must be inside solid earth rock! (grid === 1)
           if (grid[crys.y * width + crys.x] !== 1) continue;
 
-          const isPurple = i % 2 === 0;
-          const auraColor = isPurple ? 'rgba(192, 132, 252, 0.65)' : 'rgba(45, 212, 191, 0.65)';
-
-          const auraGrad = ctx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, 50);
-          auraGrad.addColorStop(0, auraColor);
-          auraGrad.addColorStop(0.5, auraColor.replace('0.65', '0.25'));
+          const baseColor = crys.color === '#2dd4bf' ? 'rgba(45, 212, 191, 0.65)' : 'rgba(192, 132, 252, 0.65)';
+          const auraGrad = ctx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, 55);
+          auraGrad.addColorStop(0, baseColor);
+          auraGrad.addColorStop(0.5, baseColor.replace('0.65', '0.25'));
           auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = auraGrad;
           ctx.beginPath();
-          ctx.arc(crys.x, crys.y, 50, 0, Math.PI * 2);
+          ctx.arc(crys.x, crys.y, 55, 0, Math.PI * 2);
           ctx.fill();
         }
       }
