@@ -27,7 +27,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       teleport: 3,
       super_sheep: 1,
       concrete_donkey: 1,
-      blowtorch: -1,
+      blowtorch: 100,
     },
   },
   WMD_CRAZY: {
@@ -48,7 +48,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       teleport: 5,
       super_sheep: 4,
       concrete_donkey: 2,
-      blowtorch: -1,
+      blowtorch: 100,
     },
   },
   UNLIMITED_CHAOS: {

@@ -89,14 +89,16 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                   <span className="text-2xl">{w.icon}</span>
                   <span
                     className={`text-xs font-black px-2 py-0.5 rounded-full ${
-                      ammo === -1
+                      w.id === 'blowtorch'
+                        ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                        : ammo === -1
                         ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                         : ammo > 0
                         ? 'bg-violet-950 text-violet-300 border border-violet-800'
                         : 'bg-zinc-900 text-zinc-600'
                     }`}
                   >
-                    {ammo === -1 ? '∞' : `x${ammo}`}
+                    {w.id === 'blowtorch' ? `${Math.round(ammo)}% ⛽` : ammo === -1 ? '∞' : `x${ammo}`}
                   </span>
                 </div>
                 <div>
