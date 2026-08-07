@@ -11,9 +11,9 @@ export function updateProjectilePhysics(
   wind: number,
   slugs: Slug[]
 ): { exploded: boolean; collisionPoint?: Vector2D } {
-  // 1. Decrement Fuse Timer first on every tick
+  // 1. Decrement Fuse Timer first on every 50ms engine tick
   if (proj.fuseTimerMs !== undefined) {
-    proj.fuseTimerMs -= 16;
+    proj.fuseTimerMs -= 50;
     if (proj.fuseTimerMs <= 0) {
       return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
     }

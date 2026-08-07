@@ -544,7 +544,7 @@ export class SlugWarsEngine {
             }
           }
         } else if (mine.fuseTimerMs !== undefined) {
-          mine.fuseTimerMs -= 16;
+          mine.fuseTimerMs -= 50;
           if (mine.fuseTimerMs <= 0) {
             exploded = true;
           }
