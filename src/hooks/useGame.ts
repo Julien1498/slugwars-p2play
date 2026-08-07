@@ -258,14 +258,9 @@ export function useGame(options?: {
       engineRef.current.tick();
       tickCount++;
 
-      // Broadcast state to peers every 50ms (20Hz)
+      // Broadcast state to peers and update local state every tick (50ms / 20Hz)
       broadcastState(engineRef.current.state);
-
-      // Only trigger a React component re-render every 4 ticks (200ms / 5 FPS UI update)
-      // to keep React virtual DOM diffing completely off the 60 FPS Canvas thread!
-      if (tickCount % 4 === 0) {
-        setGameState({ ...engineRef.current.state });
-      }
+      setGameState({ ...engineRef.current.state });
     }, 50);
     return () => clearInterval(interval);
   }, [isHost, gameState.phase, broadcastState]);

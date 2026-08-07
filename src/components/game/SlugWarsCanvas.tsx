@@ -17,7 +17,7 @@ interface SlugWarsCanvasProps {
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
 }
 
-const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
+export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   gameState,
   terrain,
   isMyTurn,
@@ -1222,12 +1222,3 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     </div>
   );
 };
-
-export const SlugWarsCanvas = React.memo(SlugWarsCanvasComponent, (prev, next) => {
-  return (
-    prev.isMyTurn === next.isMyTurn &&
-    prev.showHitboxes === next.showHitboxes &&
-    prev.terrain.data.seed === next.terrain.data.seed &&
-    prev.gameState.phase === next.gameState.phase
-  );
-});
