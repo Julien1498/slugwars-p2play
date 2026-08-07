@@ -520,14 +520,59 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.translate(item.x, item.y);
 
           if (item.type === 'hanging_leaf') {
+            // HD Organic Swaying Jungle Vines & Creepers!
             const scale = item.scale || 1.0;
             ctx.scale(scale, scale);
-            const sway = Math.sin(animTime + item.x) * 0.15;
+
+            const sway = Math.sin(animTime * 1.8 + item.x) * 0.12;
             ctx.rotate(sway);
-            ctx.fillStyle = '#16a34a';
-            for (let l = -1; l <= 1; l++) {
+
+            // 1. Root Anchor Collar at Ceiling
+            ctx.fillStyle = '#63310d';
+            ctx.fillRect(-3, -2, 6, 3);
+
+            // 2. Main Thin Vine Stem
+            ctx.strokeStyle = '#15803d';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(-4, 10, 2, 20);
+            ctx.quadraticCurveTo(6, 28, 0, 36);
+            ctx.stroke();
+
+            // 3. Alternating Teardrop Tropical Leaves
+            const leaves = [
+              { x: -3, y: 7, rx: -0.4, size: 4 },
+              { x: 3, y: 13, rx: 0.5, size: 4.5 },
+              { x: -2, y: 19, rx: -0.6, size: 4 },
+              { x: 4, y: 26, rx: 0.4, size: 3.5 },
+              { x: 0, y: 36, rx: 0.1, size: 3 }, // Tip leaf
+            ];
+
+            for (const leaf of leaves) {
+              ctx.save();
+              ctx.translate(leaf.x, leaf.y);
+              ctx.rotate(leaf.rx);
+
+              ctx.fillStyle = '#22c55e';
               ctx.beginPath();
-              ctx.ellipse(l * 6, 12, 4, 14, l * 0.3, 0, Math.PI * 2);
+              ctx.ellipse(0, 0, leaf.size, leaf.size * 0.4, 0, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Leaf Center Vein Highlight
+              ctx.fillStyle = '#84cc16';
+              ctx.beginPath();
+              ctx.ellipse(0, 0, leaf.size * 0.6, leaf.size * 0.2, 0, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+
+            // 4. Little Red Berry on Tip
+            if ((item.variant || 0) % 2 === 1) {
+              ctx.fillStyle = '#f43f5e';
+              ctx.beginPath();
+              ctx.arc(2, 38, 2.2, 0, Math.PI * 2);
               ctx.fill();
             }
           } else if (item.type === 'butterfly') {
