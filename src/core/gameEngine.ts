@@ -252,12 +252,15 @@ export class SlugWarsEngine {
     }
   }
 
-  public startCharge(): void {
+  public startCharge(targetPoint?: Vector2D): void {
     if (this.state.phase !== 'AIMING') return;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (activeSlug && activeSlug.isAlive) {
       activeSlug.isChargingPower = true;
       activeSlug.aimPower = 5;
+      if (targetPoint) {
+        activeSlug.currentTargetPoint = targetPoint;
+      }
     }
   }
 
@@ -365,23 +368,6 @@ export class SlugWarsEngine {
       activeSlug.currentTargetPoint = targetPoint;
     } else if (activeSlug.currentTargetPoint) {
       targetPoint = activeSlug.currentTargetPoint;
-    }
-
-    if (weapon.requiresTarget && !targetPoint) {
-      const enemies = this.state.slugs.filter((s) => s.isAlive && s.teamId !== activeSlug.teamId);
-      if (enemies.length > 0) {
-        let nearest = enemies[0];
-        let minDist = Math.hypot(nearest.x - activeSlug.x, nearest.y - activeSlug.y);
-        for (let i = 1; i < enemies.length; i++) {
-          const d = Math.hypot(enemies[i].x - activeSlug.x, enemies[i].y - activeSlug.y);
-          if (d < minDist) {
-            minDist = d;
-            nearest = enemies[i];
-          }
-        }
-        targetPoint = { x: nearest.x, y: nearest.y - 8 };
-        activeSlug.currentTargetPoint = targetPoint;
-      }
     }
 
     if (weapon.behavior === 'TELEPORT' && targetPoint) {
