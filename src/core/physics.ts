@@ -19,7 +19,7 @@ export function updateProjectilePhysics(
     }
   }
 
-  // 2. Homing Pigeon Steering & 0 Gravity
+  // 2. Homing Pigeon & Homing Missile Steering & 0 Gravity
   if (proj.weaponId === 'homing_pigeon' && proj.targetPoint) {
     const dx = proj.targetPoint.x - proj.x;
     const dy = proj.targetPoint.y - proj.y;
@@ -33,11 +33,35 @@ export function updateProjectilePhysics(
     const speed = 7.5;
     proj.vx = Math.cos(desiredAngle) * speed;
     proj.vy = Math.sin(desiredAngle) * speed;
+  } else if (proj.weaponId === 'homing_missile' && proj.targetPoint) {
+    const dx = proj.targetPoint.x - proj.x;
+    const dy = proj.targetPoint.y - proj.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < 14) {
+      return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+    }
+
+    const desiredAngle = Math.atan2(dy, dx);
+    const currentAngle = Math.atan2(proj.vy, proj.vx);
+
+    let angleDiff = desiredAngle - currentAngle;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+    const turnSpeed = 0.12;
+    const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
+
+    const speed = Math.min(16, Math.max(8, Math.hypot(proj.vx, proj.vy)));
+    proj.vx = Math.cos(newAngle) * speed;
+    proj.vy = Math.sin(newAngle) * speed;
+  } else if (proj.weaponId === 'concrete_donkey') {
+    proj.vy = Math.min(18, proj.vy + GRAVITY * 1.5);
   } else {
     if (proj.windAffected) {
       proj.vx += wind * 0.02;
     }
-    if (proj.weaponId !== 'super_sheep' && proj.weaponId !== 'homing_pigeon') {
+    if (proj.weaponId !== 'super_sheep' && proj.weaponId !== 'homing_pigeon' && proj.weaponId !== 'homing_missile') {
       proj.vy += GRAVITY;
     }
   }

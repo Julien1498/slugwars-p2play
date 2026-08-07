@@ -34,6 +34,42 @@ export const bazookaWeapon: WeaponDefinition = {
   },
 };
 
+export const homingMissileWeapon: WeaponDefinition = {
+  id: 'homing_missile',
+  name: 'Bazooka Téléguidé',
+  category: 'EXPLOSIVE',
+  behavior: 'STEERABLE',
+  icon: '🎯',
+  description: 'Cliquez sur la carte pour marquer la cible, puis tirez au Bazooka ! La roquette pivote en l\'air pour rejoindre la cible !',
+  damage: 55,
+  radius: 45,
+  defaultAmmo: 3,
+  requiresTarget: true,
+  windAffected: false,
+  bounces: false,
+  craftable: true,
+  customSoundKey: 'bazooka_fire',
+  createProjectiles: (ctx) => {
+    const rad = (ctx.angleDeg * Math.PI) / 180;
+    const speed = (ctx.power / 100) * 16 + 4;
+    return [
+      {
+        id: `proj_${Date.now()}_${Math.random()}`,
+        weaponId: 'homing_missile',
+        x: ctx.originX,
+        y: ctx.originY,
+        vx: Math.cos(rad) * speed,
+        vy: Math.sin(rad) * speed,
+        radius: 4,
+        bounces: false,
+        windAffected: false,
+        ownerSlugId: ctx.ownerSlugId,
+        targetPoint: ctx.targetPoint,
+      },
+    ];
+  },
+};
+
 export const grenadeWeapon: WeaponDefinition = {
   id: 'grenade',
   name: 'Grenade',

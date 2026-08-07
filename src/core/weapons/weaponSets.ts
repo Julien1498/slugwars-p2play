@@ -14,6 +14,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
     description: 'Armes équilibrées et tactiques avec munitions limitées.',
     inventory: {
       bazooka: -1,
+      homing_missile: 3,
       grenade: 5,
       banana_bomb: 2,
       dynamite: 3,

@@ -2,6 +2,7 @@ import { Vector2D, SlugId, ActiveProjectile } from '../types';
 
 export type WeaponId =
   | 'bazooka'
+  | 'homing_missile'
   | 'grenade'
   | 'holy_grenade'
   | 'banana_bomb'
