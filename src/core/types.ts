@@ -74,6 +74,8 @@ export type GamePhase =
 
 export type MapTheme = 'ISLAND' | 'CAVERN' | 'FORTRESS' | 'FLOATING_CHAOS';
 
+export type DayNightCycle = 'DAY' | 'NIGHT';
+
 export interface GameConfig {
   weaponSetId: string;
   slugHp: number;
@@ -81,6 +83,7 @@ export interface GameConfig {
   turnDuration: number;
   windEnabled: boolean;
   vehiclesEnabled: boolean;
+  dayNightCycle?: DayNightCycle;
   mapTheme: MapTheme;
   mapSeed: number;
 }

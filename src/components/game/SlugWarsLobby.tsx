@@ -168,7 +168,35 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
           </div>
 
           {/* Options Toggles */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-3 gap-3 pt-1">
+            {/* Day / Night Selector */}
+            {isHost ? (
+              <button
+                onClick={() =>
+                  onChangeConfig({
+                    dayNightCycle: config.dayNightCycle === 'DAY' ? 'NIGHT' : 'DAY',
+                  })
+                }
+                className={`p-3 rounded-xl border text-left transition ${
+                  config.dayNightCycle === 'DAY'
+                    ? 'bg-amber-950/60 border-amber-500/60 text-amber-200'
+                    : 'bg-indigo-950/60 border-indigo-500/60 text-indigo-200'
+                }`}
+              >
+                <span className="text-xs text-zinc-400 font-medium">Ambiance</span>
+                <div className="text-sm font-bold flex items-center gap-1">
+                  {config.dayNightCycle === 'DAY' ? 'Jour ☀️' : 'Nuit 🌙'}
+                </div>
+              </button>
+            ) : (
+              <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
+                <span className="text-xs text-zinc-400 font-medium">Ambiance</span>
+                <div className="text-sm font-bold text-amber-400">
+                  {config.dayNightCycle === 'DAY' ? 'Jour ☀️' : 'Nuit 🌙'}
+                </div>
+              </div>
+            )}
+
             {isHost ? (
               <button
                 onClick={() => onChangeConfig({ windEnabled: !config.windEnabled })}
@@ -178,13 +206,13 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                     : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
                 }`}
               >
-                <span className="text-xs text-zinc-400">Vent Dynamique</span>
-                <div className="text-sm font-bold">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
+                <span className="text-xs text-zinc-400">Vent</span>
+                <div className="text-sm font-bold">{config.windEnabled ? 'Activé 💨' : 'Sans'}</div>
               </button>
             ) : (
               <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
-                <span className="text-xs text-zinc-400">Vent Dynamique</span>
-                <div className="text-sm font-bold text-emerald-400">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
+                <span className="text-xs text-zinc-400">Vent</span>
+                <div className="text-sm font-bold text-emerald-400">{config.windEnabled ? 'Activé 💨' : 'Sans'}</div>
               </div>
             )}
 
@@ -198,12 +226,12 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                 }`}
               >
                 <span className="text-xs text-zinc-400">Véhicules</span>
-                <div className="text-sm font-bold">{config.vehiclesEnabled ? 'Hélicoptère 🚁' : 'Sans'}</div>
+                <div className="text-sm font-bold">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
               </button>
             ) : (
               <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
                 <span className="text-xs text-zinc-400">Véhicules</span>
-                <div className="text-sm font-bold text-amber-400">{config.vehiclesEnabled ? 'Hélicoptère 🚁' : 'Sans'}</div>
+                <div className="text-sm font-bold text-amber-400">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
               </div>
             )}
           </div>
