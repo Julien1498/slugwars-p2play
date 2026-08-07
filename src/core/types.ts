@@ -76,11 +76,18 @@ export interface Team {
 export type GamePhase =
   | 'LOBBY'
   | 'PLACEMENT'
+  | 'TURN_START'
+  | 'TURN_TIME'
+  | 'ATTACK'
+  | 'RETREAT'
+  | 'RESOLVE'
+  | 'CASUALTIES'
+  | 'INTERTURN'
+  | 'GAME_OVER'
   | 'AIMING'
   | 'FIRING'
   | 'PROJECTILE_ACTIVE'
-  | 'RESOLVING'
-  | 'GAME_OVER';
+  | 'RESOLVING';
 
 export type MapTheme = 'ISLAND' | 'CAVERN' | 'FORTRESS' | 'FLOATING_CHAOS';
 
@@ -167,6 +174,8 @@ export interface GameState {
   activeTeamId: TeamId;
   activeSlugId: SlugId;
   turnTimer: number;
+  retreatTimer?: number;
+  phaseTimer?: number;
   wind: number;
   projectiles: ActiveProjectile[];
   explosions: ExplosionEvent[];
