@@ -40,7 +40,7 @@ export interface DecorItem {
 
 export interface SolidProp {
   id: string;
-  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower';
+  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree';
   x: number;
   y: number;
   width: number;
@@ -192,7 +192,7 @@ export function generateProceduralTerrain(
   const solidProps: SolidProp[] = [];
 
   const stampSolidProp = (
-    type: 'hedgehog' | 'chick' | 'mushroom' | 'flower',
+    type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree',
     px: number,
     py: number,
     pWidth: number,
@@ -295,6 +295,25 @@ export function generateProceduralTerrain(
       for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
         if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
           stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // Trees (2-4 solid destructible trees on surface cliffs)
+  const treeCount = Math.floor(prng.range(2, 4));
+  for (let i = 0; i < treeCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const tx = Math.floor(prng.range(150 + i * 320, 350 + i * 320));
+      if (!isFarFromProps(tx, 80)) continue;
+
+      let placed = false;
+      for (let ty = searchStartY; ty < waterLevel - 60; ty++) {
+        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
+          stampSolidProp('tree', tx, ty, 32, 48, Math.floor(prng.range(0, 2)));
           placed = true;
           break;
         }

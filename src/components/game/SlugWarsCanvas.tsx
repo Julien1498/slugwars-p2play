@@ -404,6 +404,61 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           offCtx.beginPath();
           offCtx.arc(0, -16, 5, 0, Math.PI * 2);
           offCtx.fill();
+        } else if (sprop.type === 'tree') {
+          // HD Solid Destructible Pine & Oak Trees
+          const trunkGrad = offCtx.createLinearGradient(-6, -45, 6, 0);
+          trunkGrad.addColorStop(0, '#78350f');
+          trunkGrad.addColorStop(0.5, '#451a03');
+          trunkGrad.addColorStop(1, '#27160a');
+          offCtx.fillStyle = trunkGrad;
+
+          offCtx.beginPath();
+          offCtx.moveTo(-5, 0);
+          offCtx.lineTo(-4, -22);
+          offCtx.lineTo(-7, -35);
+          offCtx.lineTo(-4, -36);
+          offCtx.lineTo(-2, -24);
+          offCtx.lineTo(2, -24);
+          offCtx.lineTo(5, -34);
+          offCtx.lineTo(7, -33);
+          offCtx.lineTo(4, -22);
+          offCtx.lineTo(6, 0);
+          offCtx.closePath();
+          offCtx.fill();
+
+          const isPine = sprop.variant === 1;
+          if (isPine) {
+            const pineTiers = [
+              { y: -18, r: 16, h: 14, color: '#14532d' },
+              { y: -28, r: 13, h: 12, color: '#15803d' },
+              { y: -37, r: 10, h: 10, color: '#22c55e' },
+              { y: -44, r: 6,  h: 8,  color: '#4ade80' },
+            ];
+            for (const tier of pineTiers) {
+              offCtx.fillStyle = tier.color;
+              offCtx.beginPath();
+              offCtx.moveTo(0, tier.y - tier.h);
+              offCtx.lineTo(tier.r, tier.y);
+              offCtx.lineTo(-tier.r, tier.y);
+              offCtx.closePath();
+              offCtx.fill();
+            }
+          } else {
+            const oakClusters = [
+              { x: 0,   y: -36, r: 16, color: '#14532d' },
+              { x: -10, y: -28, r: 13, color: '#15803d' },
+              { x: 10,  y: -28, r: 13, color: '#15803d' },
+              { x: -6,  y: -38, r: 12, color: '#22c55e' },
+              { x: 6,   y: -38, r: 12, color: '#22c55e' },
+              { x: 0,   y: -44, r: 9,  color: '#86efac' },
+            ];
+            for (const c of oakClusters) {
+              offCtx.fillStyle = c.color;
+              offCtx.beginPath();
+              offCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+              offCtx.fill();
+            }
+          }
         }
 
         offCtx.restore();
@@ -617,9 +672,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         skyGrad.addColorStop(0.8, '#7dd3fc');
         skyGrad.addColorStop(1, '#bae6fd');
       } else {
-        skyGrad.addColorStop(0, '#0b0f19');
-        skyGrad.addColorStop(0.5, '#1e1b4b');
-        skyGrad.addColorStop(1, '#020617');
+        // Luminous Night Sky (Twilight Indigo -> Deep Slate Sky)
+        skyGrad.addColorStop(0, '#1e1b4b');
+        skyGrad.addColorStop(0.5, '#0f172a');
+        skyGrad.addColorStop(1, '#1e293b');
       }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
@@ -670,26 +726,26 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
         ctx.globalAlpha = 1.0;
 
-        // Giant Luminous Cratered Moon
+        // Giant Luminous Golden Moon with Radiant Moonlight Corona Wash
         const moonX = width * 0.82;
         const moonY = 65;
-        const moonRadius = 26;
+        const moonRadius = 28;
 
-        const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.5, moonX, moonY, moonRadius * 2.5);
-        moonGlow.addColorStop(0, 'rgba(203, 213, 225, 0.4)');
-        moonGlow.addColorStop(0.5, 'rgba(148, 163, 184, 0.15)');
+        const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.4, moonX, moonY, moonRadius * 3.5);
+        moonGlow.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
+        moonGlow.addColorStop(0.4, 'rgba(186, 230, 253, 0.30)');
         moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
         ctx.fillStyle = moonGlow;
         ctx.beginPath();
-        ctx.arc(moonX, moonY, moonRadius * 2.5, 0, Math.PI * 2);
+        ctx.arc(moonX, moonY, moonRadius * 3.5, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#cbd5e1';
+        ctx.fillStyle = '#fef08a'; // Golden Luminous Cream Moon
         ctx.beginPath();
         ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#fde047';
         ctx.beginPath();
         ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
         ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
@@ -698,7 +754,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // 4. Parallax Mountain Silhouettes
-      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(30, 41, 59, 0.75)';
+      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(30, 58, 138, 0.65)';
       ctx.beginPath();
       ctx.moveTo(0, height * 0.65);
       const mtPeaks = [
@@ -719,7 +775,20 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       ctx.fill();
 
       // 5. Parallax Midground Forest Line
-      ctx.fillStyle = isDay ? '#15803d' : '#0f172a';
+      ctx.fillStyle = isDay ? '#15803d' : '#064e3b';
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.6);
+      for (let tx = 0; tx <= width; tx += 12) {
+        const treeH = 25 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
+        const ty = height * 0.55 - treeH;
+        ctx.lineTo(tx - 6, ty + treeH);
+        ctx.lineTo(tx, ty);
+        ctx.lineTo(tx + 6, ty + treeH);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fill();
       ctx.beginPath();
       ctx.moveTo(0, height * 0.6);
       for (let tx = 0; tx <= width; tx += 12) {
