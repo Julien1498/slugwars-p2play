@@ -773,18 +773,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (lCtx) {
         lCtx.clearRect(0, 0, width, height);
 
-        // Subterranean Depth Ambient Darkness Gradient Overlay (Day Mode keeps surface 100% bright!)
+        // Subterranean Depth Ambient Darkness Gradient Overlay (Day Mode: Bright Surface -> Terraria Deep Pitch Darkness!)
         const darkGrad = lCtx.createLinearGradient(0, 0, 0, height);
         if (isDay) {
           darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.35, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.65, 'rgba(15, 23, 42, 0.35)');
-          darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.65)');
+          darkGrad.addColorStop(0.25, 'rgba(0, 0, 0, 0.0)');
+          darkGrad.addColorStop(0.55, 'rgba(3, 7, 18, 0.65)');
+          darkGrad.addColorStop(1.0, 'rgba(2, 4, 10, 0.92)');
         } else {
           darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.35)');
-          darkGrad.addColorStop(0.45, 'rgba(3, 7, 18, 0.75)');
-          darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.92)');
+          darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.40)');
+          darkGrad.addColorStop(0.45, 'rgba(3, 7, 18, 0.78)');
+          darkGrad.addColorStop(1.0, 'rgba(2, 4, 10, 0.94)');
         }
 
         lCtx.fillStyle = darkGrad;
