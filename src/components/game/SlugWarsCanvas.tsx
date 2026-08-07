@@ -61,39 +61,52 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     const imgData = offCtx.createImageData(width, height);
     const data32 = new Uint32Array(imgData.data.buffer);
 
-    // Fast Little-Endian ABGR 32-bit integer colors
-    let topColor = 0xff22c55e; // Green grass
-    let lightSoilColor = 0xff184378; // Warm topsoil brown
-    let darkSoilColor = 0xff081a33; // Dark subsoil brown
+    // Fast Little-Endian ABGR 32-bit integer colors (Matching Image 2 Pixel-Art Earth & Grass!)
+    const grassHighlight = 0xff35e6a3; // #a3e635 Lime top edge
+    const grassBody = 0xff5ec522;      // #22c55e Rich grass green
+    const grassShadow = 0xff3d8015;    // #15803d Dark forest green
+    const grassDeep = 0xff2d5314;      // #14532d Deep undercoat shadow
 
-    if (theme === 'CAVERN') {
-      topColor = 0xfffc84c0;
-      lightSoilColor = 0xff951d4c;
-      darkSoilColor = 0xff4a0822;
-    } else if (theme === 'FORTRESS') {
-      topColor = 0xffb8a394;
-      lightSoilColor = 0xff554133;
-      darkSoilColor = 0xff261c14;
-    } else if (theme === 'FLOATING_CHAOS') {
-      topColor = 0xff15caff;
-      lightSoilColor = 0xff12349a;
-      darkSoilColor = 0xff071542;
-    }
+    // Soil colors matching Image 2 Warm Earth
+    const soilLight = 0xff183154;   // #543118 Warm topsoil
+    const soilMedium = 0xff11233d;  // #3d2311 Rich earthy brown
+    const soilDark = 0xff0a1627;    // #27160a Deep brown
+    const soilSeam = 0xff050c18;    // #180c05 Dark soil crack/seam
 
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
-      const prevRowOffset = (y - 1) * width;
-      const prevRowOffset2 = (y - 2) * width;
       const depthFactor = y / height;
 
       for (let x = 0; x < width; x++) {
         const idx = rowOffset + x;
         if (grid[idx] === 1) {
-          const isTopFringe = y > 0 && (grid[prevRowOffset + x] === 0 || (y > 1 && grid[prevRowOffset2 + x] === 0));
-          if (isTopFringe) {
-            data32[idx] = topColor;
+          // Check distance to top open air
+          let airDist = 0;
+          for (let d = 1; d <= 7; d++) {
+            const checkY = y - d;
+            if (checkY < 0 || grid[checkY * width + x] === 0) {
+              airDist = d;
+              break;
+            }
+          }
+
+          // Check distance to side/bottom open air (for inner crater moss rim!)
+          const isSideEdge = (x > 0 && grid[idx - 1] === 0) ||
+                             (x < width - 1 && grid[idx + 1] === 0) ||
+                             (y < height - 1 && grid[(y + 1) * width + x] === 0);
+
+          if (airDist === 1) {
+            data32[idx] = grassHighlight;
+          } else if (airDist >= 2 && airDist <= 4) {
+            data32[idx] = grassBody;
+          } else if (airDist >= 5 && airDist <= 6) {
+            data32[idx] = grassShadow;
+          } else if (airDist === 7) {
+            data32[idx] = grassDeep;
+          } else if (isSideEdge) {
+            data32[idx] = grassShadow; // Inner crater & cliff moss border!
           } else {
-            // Organic 4x4 soil block noise (No 1x1 pixel static!)
+            // Organic 4x4 Pixel-Art Earth Blocks with Soil Seams (Terraria Style)
             const bx = (x / 4) | 0;
             const by = (y / 4) | 0;
             const blockHash = getPixelHash(bx, by);
@@ -103,7 +116,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
             const cellY = (y / 24) | 0;
             const cellHash = getPixelHash(cellX * 23, cellY * 47);
 
-            // Only 18% cell density = sparse, clean, distinct pebbles!
             const hasPebble = (cellHash % 100) < 18;
             let isPebblePixel = false;
             let pebbleColor = 0;
@@ -111,8 +123,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
             if (hasPebble) {
               const pebbleX = (cellX * 24) + (cellHash % 12) + 6;
               const pebbleY = (cellY * 24) + ((cellHash >> 8) % 12) + 6;
-              const pebbleRadiusX = ((cellHash >> 16) % 2) + 2.5; // 2.5 to 3.5 px
-              const pebbleRadiusY = ((cellHash >> 20) % 2) + 2.0; // 2.0 to 3.0 px
+              const pebbleRadiusX = ((cellHash >> 16) % 2) + 2.5;
+              const pebbleRadiusY = ((cellHash >> 20) % 2) + 2.0;
 
               const dx = x - pebbleX;
               const dy = y - pebbleY;
@@ -120,44 +132,24 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
               if (distSq <= 1.0) {
                 isPebblePixel = true;
-                const pType = (cellHash >> 4) % 3;
-
                 const isHighlight = dy < -0.5 && dx < 0;
                 const isShadow = dy > 0.5 && dx > 0;
-
-                if (theme === 'CAVERN') {
-                  if (pType === 0) pebbleColor = isHighlight ? 0xfff472b6 : (isShadow ? 0xff4a0822 : 0xff951d4c);
-                  else if (pType === 1) pebbleColor = isHighlight ? 0xffe9d5ff : (isShadow ? 0xff581c87 : 0xffa855f7);
-                  else pebbleColor = isHighlight ? 0xffffffff : 0xffc084fc;
-                } else if (theme === 'FORTRESS') {
-                  if (pType === 0) pebbleColor = isHighlight ? 0xffcbd5e1 : (isShadow ? 0xff1e293b : 0xff475569);
-                  else if (pType === 1) pebbleColor = isHighlight ? 0xfffca5a5 : (isShadow ? 0xff450a0a : 0xff991b1b);
-                  else pebbleColor = isHighlight ? 0xff94a3b8 : 0xff0f172a;
-                } else if (theme === 'FLOATING_CHAOS') {
-                  if (pType === 0) pebbleColor = isHighlight ? 0xff7dd3fc : (isShadow ? 0xff0c4a6e : 0xff0284c7);
-                  else if (pType === 1) pebbleColor = isHighlight ? 0xfff0abfc : (isShadow ? 0xff4c1d95 : 0xffc084fc);
-                  else pebbleColor = isHighlight ? 0xffffffff : 0xff38bdf8;
-                } else {
-                  // ISLAND Theme (Classic Earth)
-                  if (pType === 0) pebbleColor = isHighlight ? 0xffcbd5e1 : (isShadow ? 0xff1e293b : 0xff64748b);
-                  else if (pType === 1) pebbleColor = isHighlight ? 0xfffde047 : (isShadow ? 0xff451a03 : 0xffb45309);
-                  else pebbleColor = isHighlight ? 0xff94a3b8 : 0xff334155;
-                }
+                pebbleColor = isHighlight ? 0xfffde047 : (isShadow ? 0xff050c18 : 0xff451a03);
               }
             }
 
             if (isPebblePixel) {
               data32[idx] = pebbleColor;
             } else {
-              // 2. Smooth Organic Soil Patches (4x4 clusters, 2 subtle tones)
-              const isDeep = depthFactor > 0.52;
-              const baseColor = isDeep ? darkSoilColor : lightSoilColor;
-              const patchTone = (blockHash % 100) < 22;
-
-              if (patchTone) {
-                data32[idx] = isDeep ? 0xff0b182d : 0xff1c4c87;
+              // 2. Pixel-Art Earth Block Tiles with Seams
+              const isSeam = (x % 4 === 0 && ((y >> 2) % 2 === 0)) || (y % 4 === 0);
+              if (isSeam && (blockHash % 100 < 45)) {
+                data32[idx] = soilSeam;
               } else {
-                data32[idx] = baseColor;
+                const tone = blockHash % 100;
+                if (tone < 28) data32[idx] = soilLight;
+                else if (tone < 72) data32[idx] = soilMedium;
+                else data32[idx] = soilDark;
               }
             }
           }
