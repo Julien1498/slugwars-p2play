@@ -19,21 +19,35 @@ export function updateProjectilePhysics(
     }
   }
 
-  // 2. Apply Wind & Gravity (Super Sheep flies with 0 gravity!)
-  if (proj.windAffected) {
-    proj.vx += wind * 0.02;
-  }
-  if (proj.weaponId !== 'super_sheep') {
-    proj.vy += GRAVITY;
+  // 2. Homing Pigeon Steering & 0 Gravity
+  if (proj.weaponId === 'homing_pigeon' && proj.targetPoint) {
+    const dx = proj.targetPoint.x - proj.x;
+    const dy = proj.targetPoint.y - proj.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < 15) {
+      return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+    }
+
+    const desiredAngle = Math.atan2(dy, dx);
+    const speed = 7.5;
+    proj.vx = Math.cos(desiredAngle) * speed;
+    proj.vy = Math.sin(desiredAngle) * speed;
+  } else {
+    if (proj.windAffected) {
+      proj.vx += wind * 0.02;
+    }
+    if (proj.weaponId !== 'super_sheep' && proj.weaponId !== 'homing_pigeon') {
+      proj.vy += GRAVITY;
+    }
   }
 
   const nextX = proj.x + proj.vx;
   const nextY = proj.y + proj.vy;
 
-  // 3. Solid Slug Impact Collision Check (Projectiles explode directly on hitting slugs!)
+  // 3. Solid Slug Impact Collision Check
   for (const slug of slugs) {
     if (!slug.isAlive || slug.isPlaced === false) continue;
-    // Skip collision with shooter at launch position (within 14px)
     if (slug.id === proj.ownerSlugId && Math.hypot(proj.x - slug.x, proj.y - (slug.y - 8)) < 14) {
       continue;
     }
@@ -43,7 +57,11 @@ export function updateProjectilePhysics(
     const distToSlug = Math.hypot(nextX - slug.x, nextY - slugCenterY);
 
     if (distToSlug <= proj.radius + slugRadius) {
-      if (proj.bounces) {
+      if (proj.weaponId === 'dynamite') {
+        proj.vx = 0;
+        proj.vy = 0;
+        return { exploded: false };
+      } else if (proj.bounces) {
         proj.vx *= -0.65;
         proj.vy *= -0.65;
         sfx.play('bounce');
@@ -58,7 +76,13 @@ export function updateProjectilePhysics(
   const ray = terrain.raycastSolid(proj.x, proj.y, nextX, nextY);
 
   if (ray.hit) {
-    if (proj.bounces) {
+    if (proj.weaponId === 'dynamite') {
+      proj.x = ray.x;
+      proj.y = ray.y - 2;
+      proj.vx = 0;
+      proj.vy = 0;
+      return { exploded: false };
+    } else if (proj.bounces) {
       proj.x = ray.x - Math.sign(proj.vx || 1) * 2;
       proj.y = ray.y - Math.sign(proj.vy || 1) * 2;
       proj.vx *= -0.65;

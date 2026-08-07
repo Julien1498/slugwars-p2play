@@ -78,9 +78,9 @@ export const shotgunWeapon: WeaponDefinition = {
   category: 'MELEE',
   behavior: 'BALLISTIC',
   icon: '🔫',
-  description: 'Tir rapide à haute vitesse infligeant 35 dégâts.',
-  damage: 35,
-  radius: 20,
+  description: 'Tire une gerbe de 6 cartouches en cône à haute vitesse.',
+  damage: 12,
+  radius: 16,
   defaultAmmo: 4,
   windAffected: false,
   bounces: false,
@@ -88,21 +88,24 @@ export const shotgunWeapon: WeaponDefinition = {
   customSoundKey: 'melee',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
-    const speed = 22;
-    return [
-      {
-        id: `proj_${Date.now()}_${Math.random()}`,
+    const pellets: ActiveProjectile[] = [];
+    for (let i = 0; i < 6; i++) {
+      const spread = rad + ((Math.random() - 0.5) * 12 * Math.PI) / 180;
+      const speed = 24 + Math.random() * 4;
+      pellets.push({
+        id: `proj_shotgun_${Date.now()}_${i}_${Math.random()}`,
         weaponId: 'shotgun',
         x: ctx.originX,
         y: ctx.originY,
-        vx: Math.cos(rad) * speed,
-        vy: Math.sin(rad) * speed,
-        radius: 3,
+        vx: Math.cos(spread) * speed,
+        vy: Math.sin(spread) * speed,
+        radius: 2,
         bounces: false,
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
-      },
-    ];
+      });
+    }
+    return pellets;
   },
 };
 
@@ -112,7 +115,7 @@ export const homingPigeonWeapon: WeaponDefinition = {
   category: 'SPECIAL',
   behavior: 'BALLISTIC',
   icon: '🕊️',
-  description: 'Vole vers la cible désignée avant d\'exploser.',
+  description: 'Vole et s\'oriente vers la cible cliquée avant d\'exploser.',
   damage: 60,
   radius: 45,
   defaultAmmo: 2,
@@ -124,22 +127,19 @@ export const homingPigeonWeapon: WeaponDefinition = {
   createProjectiles: (ctx) => {
     const targetX = ctx.targetPoint ? ctx.targetPoint.x : ctx.originX + 100;
     const targetY = ctx.targetPoint ? ctx.targetPoint.y : ctx.originY - 100;
-    const dx = targetX - ctx.originX;
-    const dy = targetY - ctx.originY;
-    const dist = Math.hypot(dx, dy) || 1;
-    const speed = 10;
     return [
       {
-        id: `proj_${Date.now()}_${Math.random()}`,
+        id: `proj_pigeon_${Date.now()}_${Math.random()}`,
         weaponId: 'homing_pigeon',
         x: ctx.originX,
-        y: ctx.originY,
-        vx: (dx / dist) * speed,
-        vy: (dy / dist) * speed,
+        y: ctx.originY - 10,
+        vx: 0,
+        vy: -5,
         radius: 5,
         bounces: false,
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
+        targetPoint: { x: targetX, y: targetY },
       },
     ];
   },

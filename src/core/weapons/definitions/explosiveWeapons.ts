@@ -175,3 +175,20 @@ export const dynamiteWeapon: WeaponDefinition = {
     ];
   },
 };
+
+export const clusterBananaWeapon: WeaponDefinition = {
+  id: 'cluster_banana',
+  name: 'Mini-Banane',
+  category: 'EXPLOSIVE',
+  behavior: 'BOUNCING_TIMER',
+  icon: '🍌',
+  description: 'Sous-munition de la bombe banane.',
+  damage: 40,
+  radius: 35,
+  defaultAmmo: 0,
+  windAffected: false,
+  bounces: true,
+  craftable: false,
+  customSoundKey: 'explosion',
+  createProjectiles: () => [],
+};

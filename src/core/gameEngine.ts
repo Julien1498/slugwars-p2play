@@ -493,6 +493,27 @@ export class SlugWarsEngine {
               createdAt: now,
             });
           }
+
+          // Banana Bomb Cluster Separation into 5 mini-bananas!
+          if (proj.weaponId === 'banana_bomb') {
+            for (let i = 0; i < 5; i++) {
+              const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+              const speed = 4 + Math.random() * 4;
+              remaining.push({
+                id: `proj_bananette_${now}_${i}_${Math.random()}`,
+                weaponId: 'cluster_banana',
+                x: pt.x,
+                y: pt.y - 6,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 3,
+                radius: 4,
+                bounces: true,
+                windAffected: false,
+                fuseTimerMs: 2000 + Math.random() * 800,
+                ownerSlugId: proj.ownerSlugId,
+              });
+            }
+          }
         } else {
           remaining.push(proj);
         }

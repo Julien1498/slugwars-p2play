@@ -5,6 +5,7 @@ export type WeaponId =
   | 'grenade'
   | 'holy_grenade'
   | 'banana_bomb'
+  | 'cluster_banana'
   | 'dynamite'
   | 'shotgun'
   | 'homing_pigeon'
