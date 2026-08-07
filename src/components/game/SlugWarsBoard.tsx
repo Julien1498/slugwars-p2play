@@ -133,8 +133,8 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         return;
       }
 
-      // Normal Aiming & Walking
-      if (gameState.phase === 'AIMING') {
+      // Normal Aiming, Walking & Retreating
+      if (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT') {
         if (key === 'arrowleft' || key === 'q' || key === 'a') {
           activeMovingKeyRef.current = key;
           onStartMove('left');
@@ -143,17 +143,17 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           onStartMove('right');
         } else if (key === ' ' || key === 'spacebar' || key === 'w' || key === 'z') {
           onJump();
-        } else if (key === 'arrowup') {
+        } else if (key === 'arrowup' && gameState.phase !== 'RETREAT') {
           if (activeSlug) {
             const newAngle = Math.min(85, activeSlug.aimAngle + 5);
             onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
           }
-        } else if (key === 'arrowdown') {
+        } else if (key === 'arrowdown' && gameState.phase !== 'RETREAT') {
           if (activeSlug) {
             const newAngle = Math.max(5, activeSlug.aimAngle - 5);
             onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
           }
-        } else if (key === 'enter') {
+        } else if (key === 'enter' && gameState.phase !== 'RETREAT') {
           // Press & Hold Enter to Charge Power!
           onStartCharge?.();
         }
