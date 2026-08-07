@@ -511,12 +511,33 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     redrawOffscreenTerrain();
   }, [terrain, redrawOffscreenTerrain]);
 
+  const rectRef = useRef<DOMRect | null>(null);
+
+  const updateCanvasRect = useCallback(() => {
+    if (canvasRef.current) {
+      rectRef.current = canvasRef.current.getBoundingClientRect();
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCanvasRect();
+    window.addEventListener('resize', updateCanvasRect);
+    window.addEventListener('scroll', updateCanvasRect, true);
+    return () => {
+      window.removeEventListener('resize', updateCanvasRect);
+      window.removeEventListener('scroll', updateCanvasRect, true);
+    };
+  }, [updateCanvasRect]);
+
   // Calculate exact mouse position inside the rendered canvas area
   const getCanvasMousePos = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): Vector2D => {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
-      const rect = canvas.getBoundingClientRect();
+      if (!rectRef.current) {
+        rectRef.current = canvas.getBoundingClientRect();
+      }
+      const rect = rectRef.current;
 
       const canvasWidth = terrain.data.width;
       const canvasHeight = terrain.data.height;
