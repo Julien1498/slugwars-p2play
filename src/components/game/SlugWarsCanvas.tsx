@@ -79,13 +79,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     const distMap = new Float32Array(width * height);
     distMap.fill(99);
 
+    const waterThreshold = (terrain.data.waterLevel ?? (height - 60)) - 10;
+
     // Pass 1: Top-Left to Bottom-Right
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
       const prevRowOffset = (y - 1) * width;
       for (let x = 0; x < width; x++) {
         const idx = rowOffset + x;
-        if (grid[idx] === 0) {
+        // Only open air ABOVE water counts as open sky surface air!
+        const isSkyAir = grid[idx] === 0 && y < waterThreshold;
+
+        if (isSkyAir) {
           distMap[idx] = 0;
         } else {
           let minD = 99;
@@ -792,7 +797,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
                 if (grid[idx] === 1) {
                   const d = distMap[idx];
                   if (d > 7) {
-                    const alpha = Math.min(215, Math.floor((d - 7) * 14));
+                    const alpha = Math.min(145, Math.floor((d - 7) * 9));
                     lightData32[idx] = (alpha << 24) | 0x0a0503;
                   }
                 }
@@ -826,7 +831,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch (Night Only / Subtle in Day)
+        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch (Full vibrant radius 65px!)
         const cavernCrystals = [
           { x: width * 0.12, y: height * 0.78 },
           { x: width * 0.38, y: height * 0.82 },
@@ -834,10 +839,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           { x: width * 0.22, y: height * 0.8 },
           { x: width * 0.78, y: height * 0.79 },
         ];
-        const punchRadius = isDay ? 25 : 60;
+        const punchRadius = 65;
         for (const crys of cavernCrystals) {
           const cGrad = lCtx.createRadialGradient(crys.x, crys.y - 8, 2, crys.x, crys.y - 8, punchRadius);
-          cGrad.addColorStop(0, isDay ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 1.0)');
+          cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+          cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
           cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
           lCtx.fillStyle = cGrad;
           lCtx.beginPath();
@@ -877,9 +883,31 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(lightmapCanvasRef.current, 0, 0);
       }
 
+      // Draw Radiant Bioluminescent Aura Light Spheres over Cavern Walls!
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const auraSpots = [
+        { x: width * 0.12, y: height * 0.78, color: 'rgba(168, 85, 247, 0.45)' }, // Purple Crystal
+        { x: width * 0.38, y: height * 0.82, color: 'rgba(56, 189, 248, 0.45)' }, // Blue Crystal
+        { x: width * 0.88, y: height * 0.8, color: 'rgba(168, 85, 247, 0.45)' },  // Purple Crystal
+        { x: width * 0.22, y: height * 0.8, color: 'rgba(45, 212, 191, 0.55)' },  // Teal Mushroom
+        { x: width * 0.78, y: height * 0.79, color: 'rgba(45, 212, 191, 0.55)' }, // Teal Mushroom
+      ];
+      for (const spot of auraSpots) {
+        const auraGrad = ctx.createRadialGradient(spot.x, spot.y - 8, 2, spot.x, spot.y - 8, 65);
+        auraGrad.addColorStop(0, spot.color);
+        auraGrad.addColorStop(0.5, spot.color.replace('0.45', '0.2').replace('0.55', '0.25'));
+        auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(spot.x, spot.y - 8, 65, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
       // Draw Bioluminescent Cavern Mushrooms & Glowing Crystals in Underground Tunnels!
       ctx.save();
-      ctx.shadowBlur = isDay ? 3 : 12;
+      ctx.shadowBlur = isDay ? 6 : 16;
       const cavernCrystals = [
         { x: width * 0.12, y: height * 0.78, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
         { x: width * 0.38, y: height * 0.82, color: '#38bdf8', shadow: 'rgba(56, 189, 248, 0.8)' },
