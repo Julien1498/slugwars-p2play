@@ -37,6 +37,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const occlusionCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const distMapRef = useRef<Float32Array | null>(null);
   const lastSeedRef = useRef<number | null>(null);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
@@ -157,6 +158,37 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
     }
     offCtx.putImageData(imgData, 0, 0);
+
+    // Pre-render Subterranean Soil Occlusion Mask to offscreen canvas (Zero 60FPS overhead!)
+    if (!occlusionCanvasRef.current) {
+      occlusionCanvasRef.current = document.createElement('canvas');
+    }
+    const occCanvas = occlusionCanvasRef.current;
+    if (occCanvas.width !== width || occCanvas.height !== height) {
+      occCanvas.width = width;
+      occCanvas.height = height;
+    }
+    const occCtx = occCanvas.getContext('2d');
+    if (occCtx) {
+      occCtx.clearRect(0, 0, width, height);
+      const occImgData = occCtx.createImageData(width, height);
+      const occData32 = new Uint32Array(occImgData.data.buffer);
+
+      for (let y = 0; y < height; y++) {
+        const rowOffset = y * width;
+        for (let x = 0; x < width; x++) {
+          const idx = rowOffset + x;
+          if (grid[idx] === 1) {
+            const d = distMap[idx];
+            if (d > 7) {
+              const alpha = Math.min(145, Math.floor((d - 7) * 9));
+              occData32[idx] = (alpha << 24) | 0x0a0503;
+            }
+          }
+        }
+      }
+      occCtx.putImageData(occImgData, 0, 0);
+    }
 
     // Draw Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers)
     const { solidProps } = terrain.data;
@@ -780,31 +812,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         if (!isDay) {
           lCtx.fillStyle = 'rgba(3, 7, 18, 0.88)';
           lCtx.fillRect(0, 0, width, height);
-        } else {
-          // Day Mode: Real-time Occlusion for pixels deep inside ground (> 8px from open air)
-          const lightImgData = lCtx.createImageData(width, height);
-          const lightData32 = new Uint32Array(lightImgData.data.buffer);
-          const distMap = distMapRef.current;
-
-          if (distMap) {
-            const grid = terrain.data.grid;
-            for (let y = 0; y < height; y++) {
-              const rowOffset = y * width;
-              for (let x = 0; x < width; x++) {
-                const idx = rowOffset + x;
-                // CRITICAL FIX: Only apply soil occlusion shadow to SOLID GROUND pixels!
-                // Open air void (grid === 0) has 0 shadow!
-                if (grid[idx] === 1) {
-                  const d = distMap[idx];
-                  if (d > 7) {
-                    const alpha = Math.min(145, Math.floor((d - 7) * 9));
-                    lightData32[idx] = (alpha << 24) | 0x0a0503;
-                  }
-                }
-              }
-            }
-            lCtx.putImageData(lightImgData, 0, 0);
-          }
+        } else if (occlusionCanvasRef.current) {
+          // Day Mode: Fast 1-line GPU blit of pre-rendered occlusion map (Zero CPU loops!)
+          lCtx.drawImage(occlusionCanvasRef.current, 0, 0);
         }
 
         // Cut out darkness in real-time for active dynamic light sources!
