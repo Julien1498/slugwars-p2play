@@ -5,7 +5,7 @@ interface WindIndicatorProps {
   wind: number; // -5 to +5
 }
 
-export const WindIndicator: React.FC<WindIndicatorProps> = ({ wind }) => {
+export const WindIndicatorComponent: React.FC<WindIndicatorProps> = ({ wind }) => {
   const isLeft = wind < 0;
   const absWind = Math.abs(wind);
 
@@ -33,3 +33,5 @@ export const WindIndicator: React.FC<WindIndicatorProps> = ({ wind }) => {
     </div>
   );
 };
+
+export const WindIndicator = React.memo(WindIndicatorComponent);
