@@ -13,7 +13,7 @@ export class DestructibleTerrain {
     if (ix < 0 || ix >= this.data.width) return false;
     if (iy < 0) return false; // Above ceiling is air
     if (iy >= this.data.height) return false; // Below floor is water/void
-    return this.data.grid[iy * this.data.width + ix] === 1;
+    return this.data.grid[iy * this.data.width + ix] > 0;
   }
 
   public carveExplosion(cx: number, cy: number, radius: number): number {
@@ -36,7 +36,7 @@ export class DestructibleTerrain {
         const dx = x - icx;
         if (dx * dx + dySq <= rSq) {
           const idx = rowOffset + x;
-          if (this.data.grid[idx] === 1) {
+          if (this.data.grid[idx] > 0) {
             this.data.grid[idx] = 0;
             carvedPixels++;
           }

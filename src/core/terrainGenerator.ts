@@ -206,7 +206,9 @@ export function generateProceduralTerrain(
 
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
-        grid[y * width + x] = 1; // Stamp solid pixel!
+        if (grid[y * width + x] === 0) {
+          grid[y * width + x] = 2; // Mark as IS_SOLID_PROP (solid for physics, transparent for terrain pixel pass!)
+        }
       }
     }
 
