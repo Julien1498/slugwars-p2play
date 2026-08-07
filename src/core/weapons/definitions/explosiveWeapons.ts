@@ -65,7 +65,7 @@ export const homingMissileWeapon: WeaponDefinition = {
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
         targetPoint: ctx.targetPoint,
-        behaviorData: { homingDelayMs: 700 },
+        behaviorData: { homingDelayMs: 400 },
       },
     ];
   },
