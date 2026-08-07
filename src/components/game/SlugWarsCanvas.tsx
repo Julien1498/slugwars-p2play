@@ -754,6 +754,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
+      // Sunlight Shafts / God Rays from Sun (Day Mode Only)
+      if (isDay) {
+        const sunX = width * 0.82;
+        const sunY = 70;
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.14)';
+        for (let r = 0; r < 5; r++) {
+          const rayAngle = 0.5 + r * 0.24 + Math.sin(animTime * 0.2 + r) * 0.03;
+          const rayLen = height * 1.3;
+          ctx.beginPath();
+          ctx.moveTo(sunX, sunY);
+          ctx.lineTo(sunX + Math.cos(rayAngle - 0.07) * rayLen, sunY + Math.sin(rayAngle - 0.07) * rayLen);
+          ctx.lineTo(sunX + Math.cos(rayAngle + 0.07) * rayLen, sunY + Math.sin(rayAngle + 0.07) * rayLen);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
       // 7. Dynamic Underground Subterranean Shadow Map & Lighting System!
       if (!lightmapCanvasRef.current) {
         lightmapCanvasRef.current = document.createElement('canvas');
@@ -767,12 +784,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (lCtx) {
         lCtx.clearRect(0, 0, width, height);
 
-        // Subterranean Depth Ambient Darkness Gradient Overlay
+        // Subterranean Depth Ambient Darkness Gradient Overlay (Bright in Day, Dark in Night)
         const darkGrad = lCtx.createLinearGradient(0, 0, 0, height);
-        darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-        darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.35)');
-        darkGrad.addColorStop(0.45, 'rgba(3, 7, 18, 0.75)');
-        darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.92)');
+        if (isDay) {
+          darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
+          darkGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.0)');
+          darkGrad.addColorStop(0.85, 'rgba(15, 23, 42, 0.25)');
+          darkGrad.addColorStop(1.0, 'rgba(15, 23, 42, 0.42)');
+        } else {
+          darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
+          darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.35)');
+          darkGrad.addColorStop(0.45, 'rgba(3, 7, 18, 0.75)');
+          darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.92)');
+        }
 
         lCtx.fillStyle = darkGrad;
         lCtx.fillRect(0, 0, width, height);
