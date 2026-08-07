@@ -223,51 +223,83 @@ export function generateProceduralTerrain(
     });
   };
 
+  const isFarFromProps = (testX: number, minDist: number = 65) => {
+    return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
+  };
+
   // Hedgehogs (2-3 solid destructible hedgehogs on cliff ledges)
   const hedgehogCount = Math.floor(prng.range(2, 4));
   for (let i = 0; i < hedgehogCount; i++) {
-    const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
-    for (let hy = searchStartY; hy < waterLevel - 60; hy++) {
-      if (grid[hy * width + hx] === 1 && grid[(hy - 1) * width + hx] === 0) {
-        stampSolidProp('hedgehog', hx, hy, 26, 22);
-        break;
+    for (let attempts = 0; attempts < 15; attempts++) {
+      const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
+      if (!isFarFromProps(hx, 70)) continue;
+
+      let placed = false;
+      for (let hy = searchStartY; hy < waterLevel - 60; hy++) {
+        if (grid[hy * width + hx] === 1 && grid[(hy - 1) * width + hx] === 0) {
+          stampSolidProp('hedgehog', hx, hy, 26, 22);
+          placed = true;
+          break;
+        }
       }
+      if (placed) break;
     }
   }
 
   // Chicks (2-3 solid destructible chicks on hill tops)
   const chickCount = Math.floor(prng.range(2, 4));
   for (let i = 0; i < chickCount; i++) {
-    const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
-    for (let cy = searchStartY; cy < waterLevel - 60; cy++) {
-      if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
-        stampSolidProp('chick', cx, cy, 28, 24);
-        break;
+    for (let attempts = 0; attempts < 15; attempts++) {
+      const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
+      if (!isFarFromProps(cx, 70)) continue;
+
+      let placed = false;
+      for (let cy = searchStartY; cy < waterLevel - 60; cy++) {
+        if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
+          stampSolidProp('chick', cx, cy, 28, 24);
+          placed = true;
+          break;
+        }
       }
+      if (placed) break;
     }
   }
 
-  // Mushrooms (8-12 solid destructible mushrooms)
-  const mushroomCount = Math.floor(prng.range(8, 13));
+  // Mushrooms (6-8 solid destructible mushrooms spaced out)
+  const mushroomCount = Math.floor(prng.range(6, 9));
   for (let i = 0; i < mushroomCount; i++) {
-    const rx = Math.floor(prng.range(100, width - 100));
-    for (let ry = searchStartY; ry < waterLevel - 20; ry++) {
-      if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
-        stampSolidProp('mushroom', rx, ry, 22, 22, Math.floor(prng.range(0, 3)));
-        break;
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const rx = Math.floor(prng.range(100, width - 100));
+      if (!isFarFromProps(rx, 65)) continue;
+
+      let placed = false;
+      for (let ry = searchStartY; ry < waterLevel - 20; ry++) {
+        if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
+          stampSolidProp('mushroom', rx, ry, 22, 22, Math.floor(prng.range(0, 3)));
+          placed = true;
+          break;
+        }
       }
+      if (placed) break;
     }
   }
 
-  // Flowers (12-16 solid destructible flowers)
-  const flowerCount = Math.floor(prng.range(12, 17));
+  // Flowers (8-11 solid destructible flowers spaced out)
+  const flowerCount = Math.floor(prng.range(8, 12));
   for (let i = 0; i < flowerCount; i++) {
-    const fx = Math.floor(prng.range(80, width - 80));
-    for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
-      if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
-        stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
-        break;
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const fx = Math.floor(prng.range(80, width - 80));
+      if (!isFarFromProps(fx, 60)) continue;
+
+      let placed = false;
+      for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
+        if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
+          stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
+          placed = true;
+          break;
+        }
       }
+      if (placed) break;
     }
   }
 
