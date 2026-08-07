@@ -190,6 +190,34 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       occCtx.putImageData(occImgData, 0, 0);
     }
 
+    // Draw Subterranean Bioluminescent Crystal Clusters embedded DEEP INSIDE earth rock pixels
+    const { caveCrystalPoints } = terrain.data;
+    if (caveCrystalPoints) {
+      for (let i = 0; i < caveCrystalPoints.length; i++) {
+        const pt = caveCrystalPoints[i];
+        if (grid[pt.y * width + pt.x] !== 1) continue;
+
+        const isPurple = i % 2 === 0;
+        const color = isPurple ? '#c084fc' : '#2dd4bf';
+
+        offCtx.save();
+        offCtx.fillStyle = color;
+        offCtx.shadowColor = color;
+        offCtx.shadowBlur = 10;
+
+        offCtx.beginPath();
+        offCtx.moveTo(pt.x - 4, pt.y + 4);
+        offCtx.lineTo(pt.x - 1, pt.y - 8);
+        offCtx.lineTo(pt.x + 2, pt.y + 4);
+        offCtx.moveTo(pt.x, pt.y + 4);
+        offCtx.lineTo(pt.x + 3, pt.y - 11);
+        offCtx.lineTo(pt.x + 6, pt.y + 4);
+        offCtx.fill();
+
+        offCtx.restore();
+      }
+    }
+
     // Draw Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers)
     const { solidProps } = terrain.data;
     if (solidProps) {
@@ -942,21 +970,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Cave Crystals & Small Mushrooms Light Punch (Bound ONLY to rock floor caveCrystalPoints!)
-        const { caveCrystalPoints } = terrain.data;
+        // B. Bioluminescent Subterranean Cave Crystals Light Punch (Buried DEEP INSIDE earth rock ONLY!)
+        const { caveCrystalPoints, grid } = terrain.data;
         if (caveCrystalPoints) {
-          const punchRadius = 55;
+          const punchRadius = 50;
           for (let i = 0; i < caveCrystalPoints.length; i++) {
             const crys = caveCrystalPoints[i];
-            if (!terrain.isSolid(crys.x, crys.y)) continue; // Skip if rock floor destroyed!
+            // CRITICAL CHECK: Must be inside solid earth rock! (grid === 1)
+            if (grid[crys.y * width + crys.x] !== 1) continue;
 
-            const cGrad = lCtx.createRadialGradient(crys.x + 1, crys.y - 6, 2, crys.x + 1, crys.y - 6, punchRadius);
+            const cGrad = lCtx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, punchRadius);
             cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
             cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
             cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
             lCtx.fillStyle = cGrad;
             lCtx.beginPath();
-            lCtx.arc(crys.x + 1, crys.y - 6, punchRadius, 0, Math.PI * 2);
+            lCtx.arc(crys.x, crys.y, punchRadius, 0, Math.PI * 2);
             lCtx.fill();
           }
         }
@@ -993,43 +1022,27 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(lightmapCanvasRef.current, 0, 0);
       }
 
-      // Draw Radiant Bioluminescent Aura Light Spheres & Small Crystals over Rock Floor!
+      // Draw Radiant Subterranean Bioluminescent Aura Light Spheres INSIDE Rock Walls ONLY!
       ctx.save();
-      const { caveCrystalPoints } = terrain.data;
+      const { caveCrystalPoints, grid } = terrain.data;
       if (caveCrystalPoints) {
+        ctx.globalCompositeOperation = 'lighter';
         for (let i = 0; i < caveCrystalPoints.length; i++) {
           const crys = caveCrystalPoints[i];
-          if (!terrain.isSolid(crys.x, crys.y)) continue; // Skip if rock floor destroyed!
+          // CRITICAL CHECK: Must be inside solid earth rock! (grid === 1)
+          if (grid[crys.y * width + crys.x] !== 1) continue;
 
           const isPurple = i % 2 === 0;
-          const crystalColor = isPurple ? '#c084fc' : '#2dd4bf';
-          const auraColor = isPurple ? 'rgba(192, 132, 252, 0.55)' : 'rgba(45, 212, 191, 0.55)';
+          const auraColor = isPurple ? 'rgba(192, 132, 252, 0.65)' : 'rgba(45, 212, 191, 0.65)';
 
-          // 1. Draw Small Crystal Clusters growing directly on solid rock
-          ctx.fillStyle = crystalColor;
-          ctx.shadowColor = crystalColor;
-          ctx.shadowBlur = 8;
-          ctx.beginPath();
-          ctx.moveTo(crys.x - 3, crys.y);
-          ctx.lineTo(crys.x - 1, crys.y - 9);
-          ctx.lineTo(crys.x + 1, crys.y);
-          ctx.moveTo(crys.x, crys.y);
-          ctx.lineTo(crys.x + 3, crys.y - 12);
-          ctx.lineTo(crys.x + 5, crys.y);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          // 2. Draw Soft Radiant Bioluminescent Aura Light Sphere
-          ctx.globalCompositeOperation = 'lighter';
-          const auraGrad = ctx.createRadialGradient(crys.x + 1, crys.y - 6, 2, crys.x + 1, crys.y - 6, 55);
+          const auraGrad = ctx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, 50);
           auraGrad.addColorStop(0, auraColor);
-          auraGrad.addColorStop(0.5, auraColor.replace('0.55', '0.2'));
+          auraGrad.addColorStop(0.5, auraColor.replace('0.65', '0.25'));
           auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = auraGrad;
           ctx.beginPath();
-          ctx.arc(crys.x + 1, crys.y - 6, 55, 0, Math.PI * 2);
+          ctx.arc(crys.x, crys.y, 50, 0, Math.PI * 2);
           ctx.fill();
-          ctx.globalCompositeOperation = 'source-over';
         }
       }
       ctx.restore();
