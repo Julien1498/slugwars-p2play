@@ -188,7 +188,7 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 6. Solid Destructible Decor Props Generator (Hedgehogs, Chicks, Mushrooms, Flowers stamped into terrain grid)
+  // 6. Solid Destructible Decor Props Generator (Trees, Hedgehogs, Chicks, Mushrooms, Flowers stamped into terrain grid)
   const solidProps: SolidProp[] = [];
 
   const stampSolidProp = (
@@ -207,7 +207,7 @@ export function generateProceduralTerrain(
     for (let y = minY; y <= maxY; y++) {
       for (let x = minX; x <= maxX; x++) {
         if (grid[y * width + x] === 0) {
-          grid[y * width + x] = 2; // Mark as IS_SOLID_PROP (solid for physics, transparent for terrain pixel pass!)
+          grid[y * width + x] = 2; // Mark as IS_SOLID_PROP
         }
       }
     }
@@ -223,16 +223,35 @@ export function generateProceduralTerrain(
     });
   };
 
-  const isFarFromProps = (testX: number, minDist: number = 65) => {
+  const isFarFromProps = (testX: number, minDist: number = 60) => {
     return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
   };
 
-  // Hedgehogs (2-3 solid destructible hedgehogs on cliff ledges)
+  // 1. Trees FIRST! (3-5 solid destructible trees on surface cliffs & hills)
+  const treeCount = Math.floor(prng.range(3, 6));
+  for (let i = 0; i < treeCount; i++) {
+    for (let attempts = 0; attempts < 25; attempts++) {
+      const tx = Math.floor(prng.range(120 + i * 220, 280 + i * 220));
+      if (!isFarFromProps(tx, 55)) continue;
+
+      let placed = false;
+      for (let ty = searchStartY; ty < waterLevel - 60; ty++) {
+        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
+          stampSolidProp('tree', tx, ty, 32, 48, Math.floor(prng.range(0, 2)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 2. Hedgehogs (2-3 solid destructible hedgehogs on cliff ledges)
   const hedgehogCount = Math.floor(prng.range(2, 4));
   for (let i = 0; i < hedgehogCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
-      if (!isFarFromProps(hx, 70)) continue;
+      if (!isFarFromProps(hx, 60)) continue;
 
       let placed = false;
       for (let hy = searchStartY; hy < waterLevel - 60; hy++) {
@@ -295,25 +314,6 @@ export function generateProceduralTerrain(
       for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
         if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
           stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
-          placed = true;
-          break;
-        }
-      }
-      if (placed) break;
-    }
-  }
-
-  // Trees (2-4 solid destructible trees on surface cliffs)
-  const treeCount = Math.floor(prng.range(2, 4));
-  for (let i = 0; i < treeCount; i++) {
-    for (let attempts = 0; attempts < 20; attempts++) {
-      const tx = Math.floor(prng.range(150 + i * 320, 350 + i * 320));
-      if (!isFarFromProps(tx, 80)) continue;
-
-      let placed = false;
-      for (let ty = searchStartY; ty < waterLevel - 60; ty++) {
-        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
-          stampSolidProp('tree', tx, ty, 32, 48, Math.floor(prng.range(0, 2)));
           placed = true;
           break;
         }
