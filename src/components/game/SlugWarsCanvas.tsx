@@ -511,6 +511,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     redrawOffscreenTerrain();
   }, [terrain, redrawOffscreenTerrain]);
 
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const zoomRef = useRef<number>(1.0);
+
+  useEffect(() => {
+    zoomRef.current = zoomLevel;
+  }, [zoomLevel]);
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoomLevel((z) => Math.max(0.5, Math.min(1.5, Math.round((z + delta) * 10) / 10)));
+  }, []);
+
   const rectRef = useRef<DOMRect | null>(null);
 
   const updateCanvasRect = useCallback(() => {
@@ -561,10 +573,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const clientX = e.clientX - rect.left - offsetX;
       const clientY = e.clientY - rect.top - offsetY;
 
-      const mouseX = Math.max(0, Math.min(canvasWidth, (clientX / drawWidth) * canvasWidth));
-      const mouseY = Math.max(0, Math.min(canvasHeight, (clientY / drawHeight) * canvasHeight));
+      let mouseX = Math.max(0, Math.min(canvasWidth, (clientX / drawWidth) * canvasWidth));
+      let mouseY = Math.max(0, Math.min(canvasHeight, (clientY / drawHeight) * canvasHeight));
 
-      return { x: mouseX, y: mouseY };
+      const currentZoom = zoomRef.current;
+      if (currentZoom !== 1.0) {
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2;
+        mouseX = centerX + (mouseX - centerX) / currentZoom;
+        mouseY = centerY + (mouseY - centerY) / currentZoom;
+      }
+
+      return { x: Math.round(mouseX), y: Math.round(mouseY) };
     },
     [terrain]
   );
@@ -1887,8 +1907,34 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onContextMenu={handleContextMenu}
+        onWheel={handleWheel}
         className="w-full h-full object-contain cursor-crosshair block"
       />
+
+      {/* Worms Style Floating Camera Zoom Controls */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10">
+        <button
+          onClick={() => setZoomLevel((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))}
+          className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
+          title="Dézoomer (Molette Bas / PageDown)"
+        >
+          -
+        </button>
+        <button
+          onClick={() => setZoomLevel(1.0)}
+          className="px-2 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-mono text-xs font-bold rounded-lg border border-zinc-600/50 transition"
+          title="Réinitialiser le zoom (100% / Home)"
+        >
+          {Math.round(zoomLevel * 100)}%
+        </button>
+        <button
+          onClick={() => setZoomLevel((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))}
+          className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
+          title="Zoomer (Molette Haut / PageUp)"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 };
