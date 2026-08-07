@@ -434,7 +434,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
       onUpdateAim?.(angle, activeSlug.aimPower, facing);
 
-      if (!weapon.requiresTarget) {
+      const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
+
+      if (!isInstantTarget) {
         onStartCharge?.();
       }
     },
@@ -453,8 +455,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
       const targetPt = lockedTargetRef.current || { x: clickX, y: clickY };
+      const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
 
-      if (weapon.requiresTarget) {
+      if (isInstantTarget) {
         onFire(targetPt);
         lockedTargetRef.current = null;
       } else {
@@ -466,6 +469,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
         onReleaseCharge?.(targetPt);
+        lockedTargetRef.current = null;
       }
     },
     [isMyTurn, gameState, getCanvasMousePos, onFire, onReleaseCharge, onUpdateAim]
