@@ -85,6 +85,8 @@ export function updateProjectilePhysics(
         proj.vx = 0;
         proj.vy = 0;
         return { exploded: false };
+      } else if (proj.weaponId === 'concrete_donkey') {
+        return { exploded: true, collisionPoint: { x: slug.x, y: slugCenterY } };
       } else if (proj.bounces) {
         proj.vx *= -0.65;
         proj.vy *= -0.65;
@@ -106,11 +108,15 @@ export function updateProjectilePhysics(
       proj.vx = 0;
       proj.vy = 0;
       return { exploded: false };
+    } else if (proj.weaponId === 'concrete_donkey') {
+      return { exploded: true, collisionPoint: { x: ray.x, y: ray.y } };
     } else if (proj.bounces) {
+      // Normal bouncing grenade physics
       proj.x = ray.x - Math.sign(proj.vx || 1) * 2;
       proj.y = ray.y - Math.sign(proj.vy || 1) * 2;
       proj.vx *= -0.65;
       proj.vy *= -0.65;
+
       sfx.play('bounce');
       return { exploded: false };
     } else {

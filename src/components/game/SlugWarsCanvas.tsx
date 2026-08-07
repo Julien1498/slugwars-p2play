@@ -3,6 +3,7 @@ import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
 import { SeededRandom } from '../../core/terrainGenerator';
+import { sfx } from '../../core/audio';
 
 interface SlugWarsCanvasProps {
   gameState: GameState;
@@ -386,10 +387,33 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     [isMyTurn, gameState, getCanvasMousePos, onUpdateAim]
   );
 
+  const lockedTargetRef = useRef<Vector2D | null>(null);
+
+  // Right-Click Target Locking Handler (Clic Droit = Poser la Cible!)
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      if (!isMyTurn || gameState.phase !== 'AIMING') return;
+
+      const pos = getCanvasMousePos(e);
+      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      if (!activeSlug) return;
+      const weapon = getWeapon(activeSlug.selectedWeaponId);
+
+      if (weapon.requiresTarget) {
+        lockedTargetRef.current = pos;
+        sfx.play('tick');
+      }
+    },
+    [isMyTurn, gameState, getCanvasMousePos]
+  );
+
   // Mouse Charging / Placement Handlers
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isMyTurn) return;
+      if (e.button !== 0) return; // Left Click Only for charging/aiming!
+
       const { x: mouseX, y: mouseY } = getCanvasMousePos(e);
 
       if (gameState.phase === 'PLACEMENT') {
@@ -420,14 +444,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const handleMouseUp = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
+      if (e.button !== 0) return; // Left Click Only!
+
       const { x: clickX, y: clickY } = getCanvasMousePos(e);
 
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
+      const targetPt = lockedTargetRef.current || { x: clickX, y: clickY };
+
       if (weapon.requiresTarget) {
-        onFire({ x: clickX, y: clickY });
+        onFire(targetPt);
+        lockedTargetRef.current = null;
       } else {
         const dx = clickX - activeSlug.x;
         const dy = clickY - activeSlug.y;
@@ -436,7 +465,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         const facing = dx >= 0 ? 'right' : 'left';
 
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
-        onReleaseCharge?.({ x: clickX, y: clickY });
+        onReleaseCharge?.(targetPt);
       }
     },
     [isMyTurn, gameState, getCanvasMousePos, onFire, onReleaseCharge, onUpdateAim]
@@ -829,6 +858,35 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.textAlign = 'center';
           ctx.fillText(`${Math.round(activeSlug.aimPower)}%`, activeSlug.x, barY - 3);
         }
+
+        // Homing Target Crosshair Reticle (for weapons requiring a target!)
+        const weapon = getWeapon(activeSlug.selectedWeaponId);
+        if (weapon.requiresTarget) {
+          const targetPt = lockedTargetRef.current || mousePosRef.current;
+
+          ctx.save();
+          ctx.strokeStyle = lockedTargetRef.current ? '#ef4444' : '#3b82f6';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(targetPt.x, targetPt.y, 14, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(targetPt.x - 20, targetPt.y);
+          ctx.lineTo(targetPt.x + 20, targetPt.y);
+          ctx.moveTo(targetPt.x, targetPt.y - 20);
+          ctx.lineTo(targetPt.x, targetPt.y + 20);
+          ctx.stroke();
+
+          ctx.fillStyle = lockedTargetRef.current ? '#ef4444' : '#60a5fa';
+          ctx.font = 'bold 10px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          const label = lockedTargetRef.current
+            ? '🎯 Cible verrouillée ! (Clic gauche pour tirer)'
+            : '🎯 Clic Droit = Placer Cible | Clic Gauche = Tirer';
+          ctx.fillText(label, targetPt.x, targetPt.y - 22);
+          ctx.restore();
+        }
       }
 
       // Draw Projectiles (Custom Vector Weapons & Smoke Trails!)
@@ -1150,6 +1208,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
+        onContextMenu={handleContextMenu}
         className="w-full h-full object-contain cursor-crosshair block"
       />
     </div>
