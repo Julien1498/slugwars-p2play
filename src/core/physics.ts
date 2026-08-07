@@ -112,10 +112,10 @@ export function applyExplosionToSlugs(
   maxDamage: number,
   slugs: Slug[],
   terrain: DestructibleTerrain
-): { hitCount: number; killedCount: number; damageEvents: Array<{ x: number; y: number; damage: number }> } {
+): { hitCount: number; killedCount: number; damageEvents: Array<{ x: number; y: number; damage: number; slugId?: string }> } {
   let hitCount = 0;
   let killedCount = 0;
-  const damageEvents: Array<{ x: number; y: number; damage: number }> = [];
+  const damageEvents: Array<{ x: number; y: number; damage: number; slugId?: string }> = [];
 
   for (const slug of slugs) {
     if (!slug.isAlive || slug.isPlaced === false) continue;
@@ -136,7 +136,7 @@ export function applyExplosionToSlugs(
           killedCount++;
         }
 
-        damageEvents.push({ x: slug.x, y: slug.y - 20, damage });
+        damageEvents.push({ x: slug.x, y: slug.y - 20, damage, slugId: slug.id });
       }
 
       const angle = Math.atan2(dy, dx);
