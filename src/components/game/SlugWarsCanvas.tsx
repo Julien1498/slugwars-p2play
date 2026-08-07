@@ -910,7 +910,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch (Full vibrant radius 65px!)
+        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch
         const cavernCrystals = [
           { x: width * 0.12, y: height * 0.78 },
           { x: width * 0.38, y: height * 0.82 },
@@ -920,6 +920,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ];
         const punchRadius = 65;
         for (const crys of cavernCrystals) {
+          // CRITICAL FIX: Only punch light if solid terrain actually exists under the crystal/mushroom!
+          if (!terrain.isSolid(crys.x, crys.y + 4)) continue;
+
           const cGrad = lCtx.createRadialGradient(crys.x, crys.y - 8, 2, crys.x, crys.y - 8, punchRadius);
           cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
           cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
@@ -973,6 +976,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         { x: width * 0.78, y: height * 0.79, color: 'rgba(45, 212, 191, 0.55)' }, // Teal Mushroom
       ];
       for (const spot of auraSpots) {
+        // CRITICAL FIX: Only draw aura if solid terrain actually exists under the spot!
+        if (!terrain.isSolid(spot.x, spot.y + 4)) continue;
+
         const auraGrad = ctx.createRadialGradient(spot.x, spot.y - 8, 2, spot.x, spot.y - 8, 65);
         auraGrad.addColorStop(0, spot.color);
         auraGrad.addColorStop(0.5, spot.color.replace('0.45', '0.2').replace('0.55', '0.25'));
