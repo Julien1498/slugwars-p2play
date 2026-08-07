@@ -1,9 +1,9 @@
-import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle } from './types';
+import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle } from './types';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
 import { generateProceduralTerrain } from './terrainGenerator';
 import { DestructibleTerrain } from './terrain';
-import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded } from './physics';
+import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded, updateHelicopterPhysics } from './physics';
 import { sfx } from './audio';
 
 export class SlugWarsEngine {
@@ -17,6 +17,7 @@ export class SlugWarsEngine {
       slugsPerTeam: 3,
       turnDuration: 45,
       windEnabled: true,
+      vehiclesEnabled: true,
       mapTheme: 'ISLAND',
       mapSeed: Math.floor(Math.random() * 1000000),
       ...initialConfig,
@@ -28,6 +29,7 @@ export class SlugWarsEngine {
       teams: [],
       slugs: [],
       mines: [],
+      helicopters: [],
       activeTeamId: '',
       activeSlugId: '',
       turnTimer: config.turnDuration,
@@ -146,6 +148,27 @@ export class SlugWarsEngine {
       isTriggered: false,
     }));
 
+    if (this.state.config.vehiclesEnabled) {
+      const spawnX = Math.floor(this.terrain.data.width * 0.5);
+      const spawnY = Math.floor(this.terrain.data.height * 0.35);
+      this.state.helicopters = [
+        {
+          id: `heli_1`,
+          x: spawnX,
+          y: spawnY,
+          vx: 0,
+          vy: 0,
+          hp: 150,
+          maxHp: 150,
+          facing: 'right',
+          pilotSlugId: null,
+          rotorAngle: 0,
+        },
+      ];
+    } else {
+      this.state.helicopters = [];
+    }
+
     this.state.phase = 'PLACEMENT';
     this.state.activeTeamId = this.state.teams[0].id;
     const firstSlug = this.state.slugs.find((s) => s.teamId === this.state.activeTeamId && !s.isPlaced);
@@ -153,6 +176,63 @@ export class SlugWarsEngine {
     this.state.turnTimer = 30;
     this.addLog('Phase de Placement ! Placez vos limaces à tour de rôle sur le terrain.', 'info');
     return true;
+  }
+
+  public enterVehicle(): boolean {
+    if (this.state.phase !== 'AIMING') return false;
+    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+    if (!activeSlug || !activeSlug.isAlive || activeSlug.inVehicleId) return false;
+
+    const nearbyHeli = this.state.helicopters.find(
+      (h) => !h.pilotSlugId && Math.hypot(h.x - activeSlug.x, h.y - activeSlug.y) < 65
+    );
+
+    if (nearbyHeli) {
+      nearbyHeli.pilotSlugId = activeSlug.id;
+      activeSlug.inVehicleId = nearbyHeli.id;
+      sfx.play('teleport');
+      this.addLog(`${activeSlug.name} s'est installé aux commandes de l'hélicoptère ! 🚁`, 'info');
+      return true;
+    }
+    return false;
+  }
+
+  public exitVehicle(): boolean {
+    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+    if (!activeSlug || !activeSlug.inVehicleId) return false;
+
+    const heli = this.state.helicopters.find((h) => h.id === activeSlug.inVehicleId);
+    if (heli) {
+      heli.pilotSlugId = null;
+      activeSlug.inVehicleId = null;
+      activeSlug.x = heli.x + (heli.facing === 'right' ? 25 : -25);
+      activeSlug.y = heli.y - 10;
+      activeSlug.vy = -4;
+      this.addLog(`${activeSlug.name} est sorti de l'hélicoptère.`, 'info');
+      return true;
+    }
+    return false;
+  }
+
+  public steerVehicle(dir: 'left' | 'right' | 'up' | 'down'): void {
+    if (this.state.phase !== 'AIMING') return;
+    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+    if (!activeSlug || !activeSlug.inVehicleId) return;
+
+    const heli = this.state.helicopters.find((h) => h.id === activeSlug.inVehicleId);
+    if (!heli) return;
+
+    if (dir === 'left') {
+      heli.vx = -4.5;
+      heli.facing = 'left';
+    } else if (dir === 'right') {
+      heli.vx = 4.5;
+      heli.facing = 'right';
+    } else if (dir === 'up') {
+      heli.vy = -4.8;
+    } else if (dir === 'down') {
+      heli.vy = 3.5;
+    }
   }
 
   public placeSlug(point: Vector2D): boolean {
@@ -441,6 +521,32 @@ export class SlugWarsEngine {
     const activeSheep = this.state.projectiles.find((p) => p.weaponId === 'super_sheep');
     if (activeSheep && activeSlug && activeSlug.steeringDir) {
       this.steerSheep(activeSlug.steeringDir);
+    }
+
+    if (this.state.helicopters && this.state.helicopters.length > 0) {
+      for (const heli of this.state.helicopters) {
+        const pilot = this.state.slugs.find((s) => s.id === heli.pilotSlugId);
+        const res = updateHelicopterPhysics(heli, this.terrain, pilot);
+
+        if (res.crashed || heli.hp <= 0) {
+          this.state.explosions.push({
+            id: `ex_heli_${Date.now()}_${Math.random()}`,
+            x: heli.x,
+            y: heli.y,
+            radius: 55,
+            damage: 45,
+            createdAt: Date.now(),
+          });
+          if (pilot) {
+            pilot.inVehicleId = null;
+            pilot.hp = Math.max(0, pilot.hp - 35);
+            pilot.vy = -8;
+          }
+          this.addLog(`💥 L'hélicoptère s'est crashé et a explosé !`, 'combat');
+          heli.hp = 0;
+        }
+      }
+      this.state.helicopters = this.state.helicopters.filter((h) => h.hp > 0 && h.y < this.terrain.data.waterLevel);
     }
 
     for (const slug of this.state.slugs) {

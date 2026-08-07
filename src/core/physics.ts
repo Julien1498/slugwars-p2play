@@ -1,9 +1,63 @@
-import { Slug, ActiveProjectile, Vector2D } from './types';
+import { Slug, ActiveProjectile, Vector2D, HelicopterVehicle } from './types';
 import { DestructibleTerrain } from './terrain';
 import { sfx } from './audio';
 
 export const GRAVITY = 0.4;
 export const FRICTION = 0.85;
+
+export function updateHelicopterPhysics(
+  heli: HelicopterVehicle,
+  terrain: DestructibleTerrain,
+  pilotSlug?: Slug
+): { crashed?: boolean } {
+  if (heli.pilotSlugId) {
+    heli.rotorAngle = (heli.rotorAngle + 0.6) % (Math.PI * 2);
+    heli.isFlying = true;
+  } else {
+    heli.rotorAngle = (heli.rotorAngle + 0.08) % (Math.PI * 2);
+    heli.isFlying = false;
+  }
+
+  if (heli.pilotSlugId && pilotSlug) {
+    heli.vx *= 0.92;
+    heli.vy *= 0.92;
+
+    pilotSlug.x = heli.x;
+    pilotSlug.y = heli.y;
+    pilotSlug.vx = heli.vx;
+    pilotSlug.vy = heli.vy;
+  } else {
+    heli.vy += 0.25;
+    heli.vx *= 0.94;
+  }
+
+  heli.x += heli.vx;
+  heli.y += heli.vy;
+
+  if (heli.x < 35) { heli.x = 35; heli.vx = 0; }
+  if (heli.x > terrain.data.width - 35) { heli.x = terrain.data.width - 35; heli.vx = 0; }
+
+  if (heli.y >= terrain.data.waterLevel - 10) {
+    return { crashed: true };
+  }
+
+  const bottomY = Math.floor(heli.y + 12);
+  const centerX = Math.floor(heli.x);
+
+  if (bottomY >= 0 && bottomY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
+    const idx = bottomY * terrain.data.width + centerX;
+    if (terrain.data.grid[idx] === 1) {
+      if (Math.abs(heli.vy) > 8) {
+        return { crashed: true };
+      }
+      heli.y = bottomY - 13;
+      heli.vy = 0;
+      heli.vx *= 0.75;
+    }
+  }
+
+  return {};
+}
 
 export function updateProjectilePhysics(
   proj: ActiveProjectile,
