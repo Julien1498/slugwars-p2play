@@ -50,11 +50,26 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
           </div>
         </div>
 
-        {/* Turn Timer Clock */}
-        <div className="flex items-center gap-1.5 bg-zinc-950 border border-amber-500/40 px-3 py-1 rounded-xl text-sm font-black text-amber-400 shadow-inner">
-          <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
-          <span className="font-mono text-base">{Math.max(0, Math.ceil(gameState.turnTimer))}s</span>
-        </div>
+        {/* Turn Timer Clock or RETREAT / TURN_START Phase Badge */}
+        {gameState.phase === 'RETREAT' ? (
+          <div className="flex items-center gap-1.5 bg-red-950 border border-red-500/80 px-3 py-1 rounded-xl text-sm font-black text-red-400 shadow-inner animate-pulse">
+            <Clock className="w-4 h-4 text-red-400 animate-spin" style={{ animationDuration: '1s' }} />
+            <span className="font-mono text-base uppercase">🏃 FUITE : {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
+          </div>
+        ) : gameState.phase === 'TURN_START' ? (
+          <div className="flex items-center gap-1.5 bg-purple-950 border border-purple-500/80 px-3 py-1 rounded-xl text-xs font-black text-purple-300 shadow-inner animate-bounce">
+            <span>📣 DÉBUT DU TOUR !</span>
+          </div>
+        ) : gameState.phase === 'CASUALTIES' ? (
+          <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-3 py-1 rounded-xl text-xs font-black text-amber-300 shadow-inner">
+            <span>💀 BILAN DES DÉGÂTS</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 bg-zinc-950 border border-amber-500/40 px-3 py-1 rounded-xl text-sm font-black text-amber-400 shadow-inner">
+            <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+            <span className="font-mono text-base">{Math.max(0, Math.ceil(gameState.turnTimer))}s</span>
+          </div>
+        )}
       </div>
 
       {/* Worms Team Total HP Leaderboard */}

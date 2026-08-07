@@ -408,7 +408,7 @@ export class SlugWarsEngine {
   }
 
   public moveSlug(dir: 'left' | 'right'): boolean {
-    if (this.state.phase !== 'AIMING') return false;
+    if (this.state.phase !== 'AIMING' && this.state.phase !== 'TURN_TIME' && this.state.phase !== 'RETREAT') return false;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (!activeSlug || !activeSlug.isAlive) return false;
 
@@ -462,7 +462,7 @@ export class SlugWarsEngine {
   }
 
   public jumpSlug(): boolean {
-    if (this.state.phase !== 'AIMING') return false;
+    if (this.state.phase !== 'AIMING' && this.state.phase !== 'TURN_TIME' && this.state.phase !== 'RETREAT') return false;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (!activeSlug || !activeSlug.isAlive) return false;
 
@@ -549,6 +549,13 @@ export class SlugWarsEngine {
 
     this.state.projectiles.push(...projs);
     this.state.phase = 'PROJECTILE_ACTIVE';
+
+    if (weapon.id === 'dynamite' || weapon.id === 'holy_grenade' || weapon.id === 'banana_bomb' || weapon.behavior === 'BOUNCING_TIMER') {
+      this.state.phase = 'RETREAT';
+      this.state.retreatTimer = 4.0;
+      this.addLog(`🏃 TEMPS DE FUITE (RETREAT) ! 4s pour vous mettre à l'abri !`, 'info');
+    }
+
     sfx.play('fire');
     this.addLog(`${activeSlug.name} a tiré avec ${weapon.name} ! (Puissance: ${Math.round(activeSlug.aimPower)}%)`, 'weapon');
     return true;
@@ -558,8 +565,39 @@ export class SlugWarsEngine {
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     const activeSlugHpBefore = activeSlug && activeSlug.isAlive ? activeSlug.hp : 0;
 
+    // 1. TURN_START Phase (Banner transition)
+    if (this.state.phase === 'TURN_START') {
+      if (this.state.phaseTimer !== undefined) {
+        this.state.phaseTimer -= 0.05;
+        if (this.state.phaseTimer <= 0) {
+          this.state.phase = 'AIMING';
+          this.state.phaseTimer = undefined;
+        }
+      }
+    }
+
+    // 2. RETREAT Phase (3 to 5 second retreat countdown with fast beeps)
+    if (this.state.phase === 'RETREAT') {
+      if (this.state.retreatTimer !== undefined) {
+        const prevSec = Math.ceil(this.state.retreatTimer);
+        this.state.retreatTimer -= 0.05;
+        const newSec = Math.ceil(this.state.retreatTimer);
+        if (newSec < prevSec && newSec > 0) {
+          sfx.play('tick');
+        }
+        if (this.state.retreatTimer <= 0) {
+          this.state.retreatTimer = undefined;
+          if (this.state.projectiles.length > 0) {
+            this.state.phase = 'PROJECTILE_ACTIVE';
+          } else {
+            this.endTurn();
+          }
+        }
+      }
+    }
+
     // If active slug dies (e.g. drowns or dies from explosion), end turn immediately!
-    if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE')) {
+    if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')) {
       this.endTurn();
       return;
     }
