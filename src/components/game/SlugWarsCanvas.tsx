@@ -630,6 +630,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.fill();
         }
 
+        // Bouncing Timer Projectile Fuse Countdown Badge (Tactical Artillery Classic ⚠️ 2.4s)
+        if (proj.fuseTimerMs !== undefined && proj.fuseTimerMs > 0) {
+          const sec = (proj.fuseTimerMs / 1000).toFixed(1);
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'extrabold 11px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+          ctx.strokeText(`⚠️ ${sec}s`, 0, -12);
+          ctx.fillText(`⚠️ ${sec}s`, 0, -12);
+        }
+
         ctx.restore();
       }
 
