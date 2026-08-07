@@ -37,6 +37,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const distMapRef = useRef<Float32Array | null>(null);
   const lastSeedRef = useRef<number | null>(null);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
@@ -111,6 +112,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         distMap[idx] = minD;
       }
     }
+
+    distMapRef.current = distMap;
 
     // Render Terrain Pixels based on Geometric Distance to Open Air!
     for (let y = 0; y < height; y++) {
@@ -751,7 +754,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.fillRect(0, 0, width, height);
       }
 
-      // 7. Subterranean Dynamic Shadow Map & Lighting System (No top-to-bottom linear filter!)
+      // 7. Subterranean Real-Time Dynamic Light & Occlusion Engine!
       if (!lightmapCanvasRef.current) {
         lightmapCanvasRef.current = document.createElement('canvas');
       }
@@ -764,7 +767,33 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (lCtx) {
         lCtx.clearRect(0, 0, width, height);
 
-        // Punch holes through darkness for dynamic light sources!
+        // Fill Base Dynamic Occlusion Darkness Overlay
+        if (!isDay) {
+          lCtx.fillStyle = 'rgba(3, 7, 18, 0.88)';
+          lCtx.fillRect(0, 0, width, height);
+        } else {
+          // Day Mode: Real-time Occlusion for pixels deep inside ground (> 8px from open air)
+          const lightImgData = lCtx.createImageData(width, height);
+          const lightData32 = new Uint32Array(lightImgData.data.buffer);
+          const distMap = distMapRef.current;
+
+          if (distMap) {
+            for (let y = 0; y < height; y++) {
+              const rowOffset = y * width;
+              for (let x = 0; x < width; x++) {
+                const idx = rowOffset + x;
+                const d = distMap[idx];
+                if (d > 7) {
+                  const alpha = Math.min(215, Math.floor((d - 7) * 14));
+                  lightData32[idx] = (alpha << 24) | 0x0a0503;
+                }
+              }
+            }
+            lCtx.putImageData(lightImgData, 0, 0);
+          }
+        }
+
+        // Cut out darkness in real-time for active dynamic light sources!
         lCtx.globalCompositeOperation = 'destination-out';
 
         // A. Helicopter Searchlight Spotlight Punch
