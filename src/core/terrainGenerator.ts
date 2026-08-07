@@ -31,10 +31,20 @@ export class SeededRandom {
 
 export interface DecorItem {
   id: string;
-  type: 'mole' | 'snail' | 'mushroom' | 'flower' | 'hanging_leaf' | 'butterfly';
+  type: 'hanging_leaf' | 'butterfly';
   x: number;
   y: number;
   scale?: number;
+  variant?: number;
+}
+
+export interface SolidProp {
+  id: string;
+  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   variant?: number;
 }
 
@@ -48,6 +58,7 @@ export interface TerrainData {
   spawnPoints: Vector2D[];
   minePoints: Vector2D[];
   decorItems: DecorItem[];
+  solidProps: SolidProp[];
 }
 
 export function generateProceduralTerrain(
@@ -70,24 +81,21 @@ export function generateProceduralTerrain(
     let groundY = height * 0.52;
 
     if (theme === 'ISLAND') {
-      // Twin-peak Island with central valley and steep sea cliffs
       const distFromCenter = Math.abs(x - width / 2) / (width / 2);
       const edgeDrop = Math.pow(distFromCenter, 2.8) * 550;
       const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3);
       groundY = height * 0.42 + noise + edgeDrop;
     } else if (theme === 'FORTRESS') {
-      // Two opposing high cliff castles divided by a deep central ravine with a center pillar
       const centerDist = Math.abs(x - width / 2);
       let castleHeight = 0;
       if (centerDist < 120) {
-        castleHeight = 260; // Deep center ravine
+        castleHeight = 260;
       } else if (centerDist > 120 && centerDist < 200) {
-        castleHeight = -50; // Ramparts wall
+        castleHeight = -50;
       }
       const noise = prng.harmonicNoise(x, baseFreq * 0.8, p1, p2, p3) * 0.8;
       groundY = height * 0.4 + noise + castleHeight;
     } else if (theme === 'CAVERN') {
-      // Underground Cavern with complex roof stalactites & floor stalagmites
       const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3);
       groundY = height * 0.6 + noise * 0.9;
 
@@ -98,7 +106,6 @@ export function generateProceduralTerrain(
         grid[y * width + x] = 1;
       }
     } else {
-      // Archipelago / Wacky: Multi-peak islands divided by natural channels
       const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
       const channel = Math.sin(x * 0.007 + p2) * 200;
       groundY = height * 0.48 + noise + channel;
@@ -181,85 +188,95 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 6. Procedural Decorative Elements Generator (Moles, Snails, Mushrooms, Flowers, Hanging Leaves, Butterflies)
-  const decorItems: DecorItem[] = [];
+  // 6. Solid Destructible Decor Props Generator (Hedgehogs, Chicks, Mushrooms, Flowers stamped into terrain grid)
+  const solidProps: SolidProp[] = [];
 
-  // Moles (1-2 big moles in background hills)
-  const moleCount = Math.floor(prng.range(1, 3));
-  for (let i = 0; i < moleCount; i++) {
-    const moleX = Math.floor(prng.range(200 + i * 400, 350 + i * 400));
-    for (let my = searchStartY; my < waterLevel - 50; my++) {
-      if (grid[my * width + moleX] === 1 && grid[(my - 1) * width + moleX] === 0) {
-        decorItems.push({
-          id: `mole_${i}`,
-          type: 'mole',
-          x: moleX,
-          y: my,
-          scale: prng.range(0.9, 1.2),
-        });
+  const stampSolidProp = (
+    type: 'hedgehog' | 'chick' | 'mushroom' | 'flower',
+    px: number,
+    py: number,
+    pWidth: number,
+    pHeight: number,
+    variant?: number
+  ) => {
+    const minX = Math.max(0, px - Math.floor(pWidth / 2));
+    const maxX = Math.min(width - 1, px + Math.floor(pWidth / 2));
+    const minY = Math.max(0, py - pHeight);
+    const maxY = py;
+
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        grid[y * width + x] = 1; // Stamp solid pixel!
+      }
+    }
+
+    solidProps.push({
+      id: `sprop_${type}_${solidProps.length}`,
+      type,
+      x: px,
+      y: py,
+      width: pWidth,
+      height: pHeight,
+      variant,
+    });
+  };
+
+  // Hedgehogs (2-3 solid destructible hedgehogs on cliff ledges)
+  const hedgehogCount = Math.floor(prng.range(2, 4));
+  for (let i = 0; i < hedgehogCount; i++) {
+    const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
+    for (let hy = searchStartY; hy < waterLevel - 60; hy++) {
+      if (grid[hy * width + hx] === 1 && grid[(hy - 1) * width + hx] === 0) {
+        stampSolidProp('hedgehog', hx, hy, 26, 22);
         break;
       }
     }
   }
 
-  // Giant Snail (1 on a high cliff)
-  const snailX = Math.floor(prng.range(width * 0.6, width * 0.8));
-  for (let sy = searchStartY; sy < waterLevel - 80; sy++) {
-    if (grid[sy * width + snailX] === 1 && grid[(sy - 1) * width + snailX] === 0) {
-      decorItems.push({
-        id: 'snail_0',
-        type: 'snail',
-        x: snailX,
-        y: sy,
-        scale: 1.1,
-      });
-      break;
+  // Chicks (2-3 solid destructible chicks on hill tops)
+  const chickCount = Math.floor(prng.range(2, 4));
+  for (let i = 0; i < chickCount; i++) {
+    const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
+    for (let cy = searchStartY; cy < waterLevel - 60; cy++) {
+      if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
+        stampSolidProp('chick', cx, cy, 28, 24);
+        break;
+      }
     }
   }
 
-  // Mushrooms (6-10 mushrooms on top ground)
-  const mushroomCount = Math.floor(prng.range(6, 10));
+  // Mushrooms (8-12 solid destructible mushrooms)
+  const mushroomCount = Math.floor(prng.range(8, 13));
   for (let i = 0; i < mushroomCount; i++) {
     const rx = Math.floor(prng.range(100, width - 100));
     for (let ry = searchStartY; ry < waterLevel - 20; ry++) {
       if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
-        decorItems.push({
-          id: `shroom_${i}`,
-          type: 'mushroom',
-          x: rx,
-          y: ry,
-          variant: Math.floor(prng.range(0, 3)),
-          scale: prng.range(0.8, 1.3),
-        });
+        stampSolidProp('mushroom', rx, ry, 22, 22, Math.floor(prng.range(0, 3)));
         break;
       }
     }
   }
 
-  // Flowers (12-18 colorful flowers on top grass)
-  const flowerCount = Math.floor(prng.range(12, 18));
+  // Flowers (12-16 solid destructible flowers)
+  const flowerCount = Math.floor(prng.range(12, 17));
   for (let i = 0; i < flowerCount; i++) {
     const fx = Math.floor(prng.range(80, width - 80));
     for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
       if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
-        decorItems.push({
-          id: `flower_${i}`,
-          type: 'flower',
-          x: fx,
-          y: fy,
-          variant: Math.floor(prng.range(0, 4)),
-        });
+        stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
         break;
       }
     }
   }
+
+  // 7. Visual Background Decor Items (Hanging Leaf Roots & Floating Butterflies)
+  const decorItems: DecorItem[] = [];
 
   // Hanging Leaf Roots under ceiling overhangs (10-16 leaves)
   const leafCount = Math.floor(prng.range(10, 16));
   for (let i = 0; i < leafCount; i++) {
     const lx = Math.floor(prng.range(100, width - 100));
     for (let ly = searchStartY + 40; ly < waterLevel - 100; ly++) {
-      // Find a ceiling: air below, solid above
       if (grid[ly * width + lx] === 0 && grid[(ly - 1) * width + lx] === 1) {
         decorItems.push({
           id: `hleaf_${i}`,
@@ -285,5 +302,5 @@ export function generateProceduralTerrain(
     });
   }
 
-  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems };
+  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems, solidProps };
 }
