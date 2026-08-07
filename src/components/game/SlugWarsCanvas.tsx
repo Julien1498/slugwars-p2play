@@ -754,6 +754,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
+      // Warm Radiant Sunlight Wash over Surface Terrain in Day Mode!
+      if (isDay) {
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.12)';
+        ctx.fillRect(0, 0, width, height);
+      }
+
       // 7. Dynamic Underground Subterranean Shadow Map & Lighting System!
       if (!lightmapCanvasRef.current) {
         lightmapCanvasRef.current = document.createElement('canvas');
@@ -767,13 +773,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (lCtx) {
         lCtx.clearRect(0, 0, width, height);
 
-        // Subterranean Depth Ambient Darkness Gradient Overlay (Bright Surface, Deep Cavern Shadow)
+        // Subterranean Depth Ambient Darkness Gradient Overlay (Day Mode keeps surface 100% bright!)
         const darkGrad = lCtx.createLinearGradient(0, 0, 0, height);
         if (isDay) {
           darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.22, 'rgba(3, 7, 18, 0.15)');
-          darkGrad.addColorStop(0.55, 'rgba(3, 7, 18, 0.55)');
-          darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.82)');
+          darkGrad.addColorStop(0.35, 'rgba(0, 0, 0, 0.0)');
+          darkGrad.addColorStop(0.65, 'rgba(15, 23, 42, 0.35)');
+          darkGrad.addColorStop(1.0, 'rgba(2, 5, 12, 0.65)');
         } else {
           darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
           darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.35)');
@@ -808,7 +814,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch
+        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch (Night Only / Subtle in Day)
         const cavernCrystals = [
           { x: width * 0.12, y: height * 0.78 },
           { x: width * 0.38, y: height * 0.82 },
@@ -816,14 +822,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           { x: width * 0.22, y: height * 0.8 },
           { x: width * 0.78, y: height * 0.79 },
         ];
+        const punchRadius = isDay ? 25 : 60;
         for (const crys of cavernCrystals) {
-          const cGrad = lCtx.createRadialGradient(crys.x, crys.y - 8, 2, crys.x, crys.y - 8, 60);
-          cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-          cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.5)');
+          const cGrad = lCtx.createRadialGradient(crys.x, crys.y - 8, 2, crys.x, crys.y - 8, punchRadius);
+          cGrad.addColorStop(0, isDay ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 1.0)');
           cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
           lCtx.fillStyle = cGrad;
           lCtx.beginPath();
-          lCtx.arc(crys.x, crys.y - 8, 60, 0, Math.PI * 2);
+          lCtx.arc(crys.x, crys.y - 8, punchRadius, 0, Math.PI * 2);
           lCtx.fill();
         }
 
@@ -861,7 +867,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // Draw Bioluminescent Cavern Mushrooms & Glowing Crystals in Underground Tunnels!
       ctx.save();
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = isDay ? 3 : 12;
       const cavernCrystals = [
         { x: width * 0.12, y: height * 0.78, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
         { x: width * 0.38, y: height * 0.82, color: '#38bdf8', shadow: 'rgba(56, 189, 248, 0.8)' },
