@@ -26,6 +26,7 @@ export interface Slug {
   aimAngle: number;
   aimPower: number;
   selectedWeaponId: string;
+  currentTargetPoint?: Vector2D;
 }
 
 export interface Team {

@@ -477,9 +477,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
   // Render Loop
   useEffect(() => {
-    if (lastSeedRef.current !== terrain.data.seed) {
+    if (lastSeedRef.current !== terrain.data.seed || gameState.phase === 'PLACEMENT' || gameState.phase === 'LOBBY') {
       lastSeedRef.current = terrain.data.seed;
       carvedExplosionsRef.current.clear();
+      lockedTargetRef.current = null;
       redrawOffscreenTerrain();
     }
 
