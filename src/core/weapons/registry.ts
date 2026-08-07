@@ -1,10 +1,11 @@
 import { WeaponId, WeaponDefinition, WeaponCategory } from './types';
-import { bazookaWeapon, grenadeWeapon, holyGrenadeWeapon, bananaBombWeapon, clusterBananaWeapon, dynamiteWeapon } from './definitions/explosiveWeapons';
+import { bazookaWeapon, homingMissileWeapon, grenadeWeapon, holyGrenadeWeapon, bananaBombWeapon, clusterBananaWeapon, dynamiteWeapon } from './definitions/explosiveWeapons';
 import { concreteDonkeyWeapon, superSheepWeapon } from './definitions/wackyWeapons';
 import { baseballBatWeapon, airStrikeWeapon, teleportWeapon, shotgunWeapon, homingPigeonWeapon, prodWeapon } from './definitions/tacticalWeapons';
 
 export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   bazooka: bazookaWeapon,
+  homing_missile: homingMissileWeapon,
   grenade: grenadeWeapon,
   holy_grenade: holyGrenadeWeapon,
   banana_bomb: bananaBombWeapon,

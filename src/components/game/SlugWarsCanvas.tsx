@@ -922,6 +922,63 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           // High Speed Bullet Flare
           ctx.fillStyle = '#fde047';
           ctx.fillRect(-5, -1.5, 10, 3);
+        } else if (proj.weaponId === 'homing_missile') {
+          // Military Homing Missile Sprite
+          ctx.fillStyle = '#2563eb'; // Blue Metallic Body
+          ctx.fillRect(-8, -3, 11, 6);
+
+          ctx.fillStyle = '#ef4444'; // Red Nose Cone
+          ctx.beginPath();
+          ctx.moveTo(3, -3);
+          ctx.lineTo(9, 0);
+          ctx.lineTo(3, 3);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#facc15'; // Yellow Fins
+          ctx.fillRect(-9, -4.5, 3, 9);
+        } else if (proj.weaponId === 'concrete_donkey') {
+          // Massive 3D Grey Concrete Donkey Statue Sprite (Worms Classic!)
+          ctx.save();
+          ctx.rotate(-angle);
+
+          // Pedestal Base
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(-18, 10, 36, 8);
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-18, 10, 36, 8);
+
+          // Concrete Body
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(-14, -10, 28, 20);
+          ctx.strokeRect(-14, -10, 28, 20);
+
+          // Concrete Head & Snout
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(4, -22, 16, 14);
+          ctx.strokeRect(4, -22, 16, 14);
+
+          // Big Funny Ears
+          ctx.fillStyle = '#cbd5e1';
+          ctx.beginPath();
+          ctx.moveTo(2, -22);
+          ctx.lineTo(-4, -34);
+          ctx.lineTo(6, -22);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Goofy Donkey Eyes & Teeth Grin
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.arc(10, -18, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(14, -12, 5, 4);
+
+          ctx.restore();
         } else if (proj.weaponId === 'air_strike') {
           // Aerodynamic Black Air Strike Bomb
           ctx.fillStyle = '#18181b';

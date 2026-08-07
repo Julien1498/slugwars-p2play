@@ -514,6 +514,22 @@ export class SlugWarsEngine {
               });
             }
           }
+
+          // Concrete Donkey Multiple Bounce Tunneling (Crushes straight down through terrain!)
+          if (proj.weaponId === 'concrete_donkey') {
+            const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
+            if (bouncesLeft > 0 && pt.y < this.terrain.data.waterLevel - 30) {
+              remaining.push({
+                ...proj,
+                id: `proj_donkey_${now}_${bouncesLeft}`,
+                x: pt.x,
+                y: pt.y + 16,
+                vx: 0,
+                vy: 14,
+                behaviorData: { bouncesLeft },
+              });
+            }
+          }
         } else {
           remaining.push(proj);
         }
