@@ -6,6 +6,7 @@ import { SlugWarsCanvas } from './SlugWarsCanvas';
 import { WeaponPicker } from './WeaponPicker';
 import { RulesModal } from './RulesModal';
 import { MetricsModal } from './MetricsModal';
+import { GameOverStatsModal } from './GameOverStatsModal';
 import { TextChatPanel, JournalPanel } from 'p2play-core/chat';
 import { Trophy, RefreshCw, MessageSquare, Eye, X } from 'lucide-react';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
@@ -354,29 +355,13 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </div>
       )}
 
-      {/* Victory / Game Over Modal */}
+      {/* Victory / Game Over Stats Modal */}
       {gameState.phase === 'GAME_OVER' && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-violet-500/50 rounded-2xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl">
-            <Trophy className="w-16 h-16 text-amber-400 mx-auto animate-bounce" />
-            <div>
-              <h2 className="text-2xl font-black text-violet-300">Fin de la Partie !</h2>
-              <p className="text-sm text-zinc-300 mt-1">
-                {gameState.winnerTeamId
-                  ? `Victoire écrasante de l'équipe ${gameState.teams.find((t) => t.id === gameState.winnerTeamId)?.name} !`
-                  : 'Égalité parfaite ! Aucune survivante.'}
-              </p>
-            </div>
-            {isHost && (
-              <button
-                onClick={onRestartGame}
-                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition"
-              >
-                <RefreshCw className="w-4 h-4" /> Revenir au Salon d'Avant-Partie
-              </button>
-            )}
-          </div>
-        </div>
+        <GameOverStatsModal
+          gameState={gameState}
+          isHost={isHost}
+          onRestartGame={onRestartGame}
+        />
       )}
 
       {/* Weapon Picker Modal */}
