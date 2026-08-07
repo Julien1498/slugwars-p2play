@@ -1908,7 +1908,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         onMouseUp={handleMouseUp}
         onContextMenu={handleContextMenu}
         onWheel={handleWheel}
-        className="w-full h-full object-contain cursor-crosshair block"
+        style={{
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.15s ease-out',
+        }}
+        className="w-full h-full object-contain cursor-crosshair block shadow-2xl"
       />
 
       {/* Worms Style Floating Camera Zoom Controls */}
