@@ -577,29 +577,197 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      // Sky Background
+      // 1. Midnight Sky Gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-      skyGrad.addColorStop(0, '#0f172a');
-      skyGrad.addColorStop(0.7, '#1e1b4b');
+      skyGrad.addColorStop(0, '#0b0f19');
+      skyGrad.addColorStop(0.5, '#1e1b4b');
       skyGrad.addColorStop(1, '#020617');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Deep Water Backdrop
+      // 2. Twinkling Night Stars
+      const animTime = Date.now() / 300;
+      const slowTime = Date.now() / 1200;
+
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 65; i++) {
+        const sx = (i * 137.5) % width;
+        const sy = (i * 73.1) % (height * 0.5);
+        const alpha = 0.3 + 0.7 * Math.abs(Math.sin(animTime * 0.8 + i));
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(sx, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+      }
+      ctx.globalAlpha = 1.0;
+
+      // 3. Giant Luminous Cratered Moon (Top Right)
+      const moonX = width * 0.82;
+      const moonY = 65;
+      const moonRadius = 26;
+
+      // Soft Moon Glow Aura
+      const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.5, moonX, moonY, moonRadius * 2.5);
+      moonGlow.addColorStop(0, 'rgba(203, 213, 225, 0.4)');
+      moonGlow.addColorStop(0.5, 'rgba(148, 163, 184, 0.15)');
+      moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      ctx.fillStyle = moonGlow;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonRadius * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Moon Body
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Moon Craters
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(moonX + 7, moonY - 10, 3, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Parallax Distant Mountain Silhouettes (Layer 1 - Grey Blue Peaks)
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.65);
+      const mtPeaks = [
+        { x: 0, y: height * 0.45 },
+        { x: width * 0.15, y: height * 0.25 },
+        { x: width * 0.3, y: height * 0.4 },
+        { x: width * 0.45, y: height * 0.22 },
+        { x: width * 0.65, y: height * 0.38 },
+        { x: width * 0.8, y: height * 0.18 },
+        { x: width, y: height * 0.42 },
+      ];
+      for (const p of mtPeaks) {
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // 5. Parallax Midground Pine Forest Silhouettes (Layer 2 - Dark Pine Tree Line)
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.6);
+      for (let tx = 0; tx <= width; tx += 12) {
+        const treeH = 25 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
+        const ty = height * 0.55 - treeH;
+        ctx.lineTo(tx - 6, ty + treeH);
+        ctx.lineTo(tx, ty);
+        ctx.lineTo(tx + 6, ty + treeH);
+      }
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // 6. Deep Water Backdrop & Caustics
       const waterBackdropGrad = ctx.createLinearGradient(0, waterLevel - 10, 0, height);
-      waterBackdropGrad.addColorStop(0, 'rgba(3, 105, 161, 0.7)');
-      waterBackdropGrad.addColorStop(1, 'rgba(12, 74, 110, 0.95)');
+      waterBackdropGrad.addColorStop(0, 'rgba(2, 132, 199, 0.78)');
+      waterBackdropGrad.addColorStop(0.5, 'rgba(15, 23, 42, 0.9)');
+      waterBackdropGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
       ctx.fillStyle = waterBackdropGrad;
       ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
+
+      // Underwater Caustic Light Rays
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      for (let r = 0; r < 5; r++) {
+        const rx = width * (0.15 + r * 0.18) + Math.sin(animTime * 0.5 + r) * 15;
+        ctx.beginPath();
+        ctx.moveTo(rx, waterLevel);
+        ctx.lineTo(rx - 25, height);
+        ctx.lineTo(rx + 35, height);
+        ctx.lineTo(rx + 20, waterLevel);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Underwater Kelp & Seaweed Plants
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 2.5;
+      for (let k = 0; k < 8; k++) {
+        const kx = width * (0.05 + k * 0.12);
+        const ky = height;
+        const kSway = Math.sin(animTime * 1.5 + k) * 12;
+        ctx.beginPath();
+        ctx.moveTo(kx, ky);
+        ctx.quadraticCurveTo(kx + kSway * 0.5, ky - 20, kx + kSway, ky - 40);
+        ctx.stroke();
+      }
+
+      // Swimming Little Fish Silhouettes
+      ctx.fillStyle = '#38bdf8';
+      for (let f = 0; f < 4; f++) {
+        const fishX = ((Date.now() * 0.04 + f * 180) % (width + 40)) - 20;
+        const fishY = waterLevel + 20 + (f * 15) % 35;
+        ctx.beginPath();
+        ctx.ellipse(fishX, fishY, 4, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(fishX - 4, fishY);
+        ctx.lineTo(fishX - 7, fishY - 2);
+        ctx.lineTo(fishX - 7, fishY + 2);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Draw Pre-rendered Offscreen Terrain (Includes all Solid Destructible Props & Soil Pebbles!)
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
+      // Draw Bioluminescent Cavern Mushrooms & Glowing Crystals in Underground Tunnels!
+      ctx.save();
+      ctx.shadowBlur = 12;
+      const cavernCrystals = [
+        { x: width * 0.12, y: height * 0.78, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
+        { x: width * 0.38, y: height * 0.82, color: '#38bdf8', shadow: 'rgba(56, 189, 248, 0.8)' },
+        { x: width * 0.88, y: height * 0.8, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
+      ];
+
+      for (const crys of cavernCrystals) {
+        if (!terrain.isSolid(crys.x, crys.y + 4)) {
+          ctx.shadowColor = crys.shadow;
+          ctx.fillStyle = crys.color;
+          ctx.beginPath();
+          ctx.moveTo(crys.x, crys.y);
+          ctx.lineTo(crys.x - 4, crys.y - 12);
+          ctx.lineTo(crys.x, crys.y - 16);
+          ctx.lineTo(crys.x + 4, crys.y - 10);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(crys.x + 4, crys.y);
+          ctx.lineTo(crys.x + 2, crys.y - 8);
+          ctx.lineTo(crys.x + 7, crys.y - 12);
+          ctx.lineTo(crys.x + 9, crys.y - 4);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Bioluminescent Glow Mushrooms inside Caverns
+      const bioShrooms = [
+        { x: width * 0.22, y: height * 0.8, color: '#2dd4bf' },
+        { x: width * 0.78, y: height * 0.79, color: '#2dd4bf' },
+      ];
+      for (const sh of bioShrooms) {
+        ctx.shadowColor = 'rgba(45, 212, 191, 0.9)';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(sh.x - 1, sh.y - 8, 2, 8);
+        ctx.fillStyle = '#2dd4bf';
+        ctx.beginPath();
+        ctx.arc(sh.x, sh.y - 9, 6, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
       // Draw Smooth & Slow Surface Waves
-      const slowTime = Date.now() / 1200;
-      const animTime = Date.now() / 300;
       ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
       ctx.beginPath();
       ctx.moveTo(0, height);
@@ -832,6 +1000,50 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.beginPath();
           ctx.arc(0, -16, 2.5, 0, Math.PI * 2);
           ctx.fill();
+
+          // Blinking LED Nav Lights
+          // Red LED on Tail
+          const redBlink = Math.floor(Date.now() / 400) % 2 === 0;
+          ctx.fillStyle = redBlink ? '#ef4444' : '#7f1d1d';
+          ctx.beginPath();
+          ctx.arc(-35, -3, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Green LED on Main Rotor Tip
+          const greenBlink = Math.floor(Date.now() / 200) % 2 === 0;
+          ctx.fillStyle = greenBlink ? '#22c55e' : '#14532d';
+          ctx.beginPath();
+          ctx.arc(bladeWidth, -16, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Searchlight Spotlight Cone (Golden Beam from Nose)
+          ctx.save();
+          const lightOriginX = 14;
+          const lightOriginY = 4;
+          
+          const lightGrad = ctx.createLinearGradient(lightOriginX, lightOriginY, lightOriginX + 60, lightOriginY + 120);
+          lightGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+          lightGrad.addColorStop(0.6, 'rgba(245, 158, 11, 0.15)');
+          lightGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+          ctx.fillStyle = lightGrad;
+          ctx.beginPath();
+          ctx.moveTo(lightOriginX, lightOriginY);
+          ctx.lineTo(lightOriginX - 35, lightOriginY + 130);
+          ctx.lineTo(lightOriginX + 75, lightOriginY + 130);
+          ctx.closePath();
+          ctx.fill();
+
+          // Floating Light Dust Motes in Cone
+          ctx.fillStyle = 'rgba(254, 240, 138, 0.8)';
+          for (let m = 0; m < 5; m++) {
+            const mx = lightOriginX + Math.sin(Date.now() * 0.002 + m) * 20;
+            const my = lightOriginY + 20 + ((Date.now() * 0.03 + m * 25) % 100);
+            ctx.beginPath();
+            ctx.arc(mx, my, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
 
           // 7. Side Rocket Pod
           ctx.fillStyle = '#475569';
