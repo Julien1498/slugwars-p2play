@@ -68,90 +68,81 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     const grassShadow = 0xff3d8015;    // #15803d Dark forest green
     const grassDeep = 0xff2d5314;      // #14532d Deep undercoat shadow
 
-    // Soil colors matching Image 2 Warm Earth
+    // Soil colors matching Image 2 Earth (Light surface -> Dark deep cavern rock)
     const soilLight = 0xff183154;   // #543118 Warm topsoil
     const soilMedium = 0xff11233d;  // #3d2311 Rich earthy brown
-    const soilDark = 0xff0a1627;    // #27160a Deep brown
-    const soilSeam = 0xff050c18;    // #180c05 Dark soil crack/seam
+    const soilDark = 0xff040914;    // #140904 Deep subterranean dark rock
+    const soilSeam = 0xff02050b;    // #0b0502 Deep dark soil crack/seam
 
+    // Fast 2-Pass Distance Transform: calculate distance to nearest open air (grid === 0) for every pixel
+    const distMap = new Float32Array(width * height);
+    distMap.fill(99);
+
+    // Pass 1: Top-Left to Bottom-Right
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width;
-      const depthFactor = y / height;
+      const prevRowOffset = (y - 1) * width;
+      for (let x = 0; x < width; x++) {
+        const idx = rowOffset + x;
+        if (grid[idx] === 0) {
+          distMap[idx] = 0;
+        } else {
+          let minD = 99;
+          if (x > 0) minD = Math.min(minD, distMap[idx - 1] + 1);
+          if (y > 0) minD = Math.min(minD, distMap[prevRowOffset + x] + 1);
+          if (x > 0 && y > 0) minD = Math.min(minD, distMap[prevRowOffset + x - 1] + 1.4);
+          if (x < width - 1 && y > 0) minD = Math.min(minD, distMap[prevRowOffset + x + 1] + 1.4);
+          distMap[idx] = minD;
+        }
+      }
+    }
 
+    // Pass 2: Bottom-Right to Top-Left
+    for (let y = height - 1; y >= 0; y--) {
+      const rowOffset = y * width;
+      const nextRowOffset = (y + 1) * width;
+      for (let x = width - 1; x >= 0; x--) {
+        const idx = rowOffset + x;
+        let minD = distMap[idx];
+        if (x < width - 1) minD = Math.min(minD, distMap[idx + 1] + 1);
+        if (y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x] + 1);
+        if (x < width - 1 && y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x + 1] + 1.4);
+        if (x > 0 && y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x - 1] + 1.4);
+        distMap[idx] = minD;
+      }
+    }
+
+    // Render Terrain Pixels based on Geometric Distance to Open Air!
+    for (let y = 0; y < height; y++) {
+      const rowOffset = y * width;
       for (let x = 0; x < width; x++) {
         const idx = rowOffset + x;
         if (grid[idx] === 1) {
-          // Check distance to top open air
-          let airDist = 0;
-          for (let d = 1; d <= 7; d++) {
-            const checkY = y - d;
-            if (checkY < 0 || grid[checkY * width + x] === 0) {
-              airDist = d;
-              break;
-            }
-          }
+          const airDist = distMap[idx];
 
-          // Check distance to side/bottom open air (for inner crater moss rim!)
-          const isSideEdge = (x > 0 && grid[idx - 1] === 0) ||
-                             (x < width - 1 && grid[idx + 1] === 0) ||
-                             (y < height - 1 && grid[(y + 1) * width + x] === 0);
-
-          if (airDist === 1) {
+          if (airDist <= 1.5) {
             data32[idx] = grassHighlight;
-          } else if (airDist >= 2 && airDist <= 4) {
+          } else if (airDist <= 3.5) {
             data32[idx] = grassBody;
-          } else if (airDist >= 5 && airDist <= 6) {
+          } else if (airDist <= 5.5) {
             data32[idx] = grassShadow;
-          } else if (airDist === 7) {
+          } else if (airDist <= 7.0) {
             data32[idx] = grassDeep;
-          } else if (isSideEdge) {
-            data32[idx] = grassShadow; // Inner crater & cliff moss border!
           } else {
-            // Organic 4x4 Pixel-Art Earth Blocks with Soil Seams (Terraria Style)
+            // Soil Shading based on Distance to Air Surface (Near Air = Light, Far from Air = Dark Cavern!)
             const bx = (x / 4) | 0;
             const by = (y / 4) | 0;
             const blockHash = getPixelHash(bx, by);
 
-            // 1. Sparse 3D Pebbles & Rocks (Cell Grid 24x24 px)
-            const cellX = (x / 24) | 0;
-            const cellY = (y / 24) | 0;
-            const cellHash = getPixelHash(cellX * 23, cellY * 47);
-
-            const hasPebble = (cellHash % 100) < 18;
-            let isPebblePixel = false;
-            let pebbleColor = 0;
-
-            if (hasPebble) {
-              const pebbleX = (cellX * 24) + (cellHash % 12) + 6;
-              const pebbleY = (cellY * 24) + ((cellHash >> 8) % 12) + 6;
-              const pebbleRadiusX = ((cellHash >> 16) % 2) + 2.5;
-              const pebbleRadiusY = ((cellHash >> 20) % 2) + 2.0;
-
-              const dx = x - pebbleX;
-              const dy = y - pebbleY;
-              const distSq = (dx * dx) / (pebbleRadiusX * pebbleRadiusX) + (dy * dy) / (pebbleRadiusY * pebbleRadiusY);
-
-              if (distSq <= 1.0) {
-                isPebblePixel = true;
-                const isHighlight = dy < -0.5 && dx < 0;
-                const isShadow = dy > 0.5 && dx > 0;
-                pebbleColor = isHighlight ? 0xfffde047 : (isShadow ? 0xff050c18 : 0xff451a03);
-              }
-            }
-
-            if (isPebblePixel) {
-              data32[idx] = pebbleColor;
+            const isSeam = (x % 4 === 0 && ((y >> 2) % 2 === 0)) || (y % 4 === 0);
+            if (isSeam && (blockHash % 100 < 35)) {
+              data32[idx] = soilSeam;
+            } else if (airDist <= 12) {
+              data32[idx] = soilLight; // Sunlit Shallow Soil
+            } else if (airDist <= 24) {
+              data32[idx] = soilMedium; // Medium Subsoil
             } else {
-              // 2. Pixel-Art Earth Block Tiles with Seams
-              const isSeam = (x % 4 === 0 && ((y >> 2) % 2 === 0)) || (y % 4 === 0);
-              if (isSeam && (blockHash % 100 < 45)) {
-                data32[idx] = soilSeam;
-              } else {
-                const tone = blockHash % 100;
-                if (tone < 28) data32[idx] = soilLight;
-                else if (tone < 72) data32[idx] = soilMedium;
-                else data32[idx] = soilDark;
-              }
+              data32[idx] = soilDark; // Deep Cavern Pitch Dark Soil!
             }
           }
         }
@@ -760,7 +751,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.fillRect(0, 0, width, height);
       }
 
-      // 7. Dynamic Underground Subterranean Shadow Map & Lighting System!
+      // 7. Subterranean Dynamic Shadow Map & Lighting System (No top-to-bottom linear filter!)
       if (!lightmapCanvasRef.current) {
         lightmapCanvasRef.current = document.createElement('canvas');
       }
@@ -772,23 +763,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const lCtx = lightCanvas.getContext('2d');
       if (lCtx) {
         lCtx.clearRect(0, 0, width, height);
-
-        // Subterranean Depth Ambient Darkness Gradient Overlay (Day Mode: Bright Surface -> Terraria Deep Pitch Darkness!)
-        const darkGrad = lCtx.createLinearGradient(0, 0, 0, height);
-        if (isDay) {
-          darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.25, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.55, 'rgba(3, 7, 18, 0.65)');
-          darkGrad.addColorStop(1.0, 'rgba(2, 4, 10, 0.92)');
-        } else {
-          darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-          darkGrad.addColorStop(0.18, 'rgba(3, 7, 18, 0.40)');
-          darkGrad.addColorStop(0.45, 'rgba(3, 7, 18, 0.78)');
-          darkGrad.addColorStop(1.0, 'rgba(2, 4, 10, 0.94)');
-        }
-
-        lCtx.fillStyle = darkGrad;
-        lCtx.fillRect(0, 0, width, height);
 
         // Punch holes through darkness for dynamic light sources!
         lCtx.globalCompositeOperation = 'destination-out';
