@@ -6,6 +6,16 @@ export interface Vector2D {
 export type TeamId = string;
 export type SlugId = string;
 
+export interface SolidProp {
+  id: string;
+  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  variant?: number;
+}
+
 export interface Slug {
   id: SlugId;
   teamId: TeamId;

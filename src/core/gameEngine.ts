@@ -154,17 +154,33 @@ export class SlugWarsEngine {
     }));
 
     if (this.state.config.vehiclesEnabled) {
-      const spawnX = Math.floor(this.terrain.data.width * 0.5);
-      let groundY = -1;
-      for (let y = 30; y < this.terrain.data.height - 20; y++) {
-        const idx = y * this.terrain.data.width + spawnX;
-        if (this.terrain.data.grid[idx] === 1) {
-          groundY = y;
+      let spawnX = Math.floor(this.terrain.data.width * 0.5);
+      let spawnY = 150;
+
+      // Scan X positions near center to find a safe open cavern floor with open airspace above
+      for (const offsetX of [0, -80, 80, -160, 160]) {
+        const testX = Math.max(80, Math.min(this.terrain.data.width - 80, spawnX + offsetX));
+        let insideCeiling = true;
+        let openAirTop = -1;
+        let groundFloor = -1;
+
+        for (let y = 0; y < this.terrain.data.height - 30; y++) {
+          const isSolid = this.terrain.isSolid(testX, y);
+          if (insideCeiling && !isSolid) {
+            insideCeiling = false;
+            openAirTop = y;
+          } else if (!insideCeiling && isSolid) {
+            groundFloor = y;
+            break;
+          }
+        }
+
+        if (groundFloor > 0 && openAirTop > 0 && (groundFloor - openAirTop) >= 35) {
+          spawnX = testX;
+          spawnY = groundFloor - 18;
           break;
         }
       }
-
-      const spawnY = groundY > 0 ? groundY - 13 : 150;
 
       this.state.helicopters = [
         {
