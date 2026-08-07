@@ -387,7 +387,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     offCtx.arc(x, y, radius, 0, Math.PI * 2);
     offCtx.fill();
     offCtx.restore();
-  }, []);
+
+    // Synchronize grid array & recalculate distance-to-air map for new crater
+    terrain.carveExplosion(x, y, radius);
+    redrawOffscreenTerrain();
+  }, [terrain, redrawOffscreenTerrain]);
 
   // Calculate exact mouse position inside the rendered canvas area
   const getCanvasMousePos = useCallback(
@@ -778,14 +782,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           const distMap = distMapRef.current;
 
           if (distMap) {
+            const grid = terrain.data.grid;
             for (let y = 0; y < height; y++) {
               const rowOffset = y * width;
               for (let x = 0; x < width; x++) {
                 const idx = rowOffset + x;
-                const d = distMap[idx];
-                if (d > 7) {
-                  const alpha = Math.min(215, Math.floor((d - 7) * 14));
-                  lightData32[idx] = (alpha << 24) | 0x0a0503;
+                // CRITICAL FIX: Only apply soil occlusion shadow to SOLID GROUND pixels!
+                // Open air void (grid === 0) has 0 shadow!
+                if (grid[idx] === 1) {
+                  const d = distMap[idx];
+                  if (d > 7) {
+                    const alpha = Math.min(215, Math.floor((d - 7) * 14));
+                    lightData32[idx] = (alpha << 24) | 0x0a0503;
+                  }
                 }
               }
             }
