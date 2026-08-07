@@ -189,14 +189,22 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 5.b Bioluminescent Cave Crystals & Small Mushrooms Spawn Points Generator (Bound to solid rock floor!)
+  // 5.b Bioluminescent Subterranean Cave Crystals Generator (Buried DEEP INSIDE solid earth/rock ONLY!)
   const caveCrystalPoints: Vector2D[] = [];
-  const crystalCount = theme === 'CAVERN' ? 10 : 6;
-  const crystalStep = Math.floor((width - 300) / crystalCount);
+  const crystalCount = theme === 'CAVERN' ? 12 : 8;
+  const crystalStep = Math.floor((width - 240) / crystalCount);
   for (let i = 0; i < crystalCount; i++) {
-    const cx = Math.floor(150 + i * crystalStep + prng.range(-30, 30));
-    for (let cy = 120; cy < waterLevel - 30; cy++) {
-      if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
+    const cx = Math.floor(120 + i * crystalStep + prng.range(-25, 25));
+    // Find deep subterranean rock cell (well below surface, fully surrounded by solid dirt)
+    for (let cy = 180; cy < waterLevel - 50; cy += 8) {
+      const idx = cy * width + cx;
+      if (
+        grid[idx] === 1 &&
+        grid[(cy - 12) * width + cx] === 1 &&
+        grid[(cy + 12) * width + cx] === 1 &&
+        grid[idx - 12] === 1 &&
+        grid[idx + 12] === 1
+      ) {
         caveCrystalPoints.push({ x: cx, y: cy });
         break;
       }
