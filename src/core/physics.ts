@@ -1,4 +1,4 @@
-import { Slug, ActiveProjectile, Vector2D, HelicopterVehicle } from './types';
+import { Slug, ActiveProjectile, Vector2D, HelicopterVehicle, Team } from './types';
 import { DestructibleTerrain } from './terrain';
 import { sfx } from './audio';
 
@@ -206,7 +206,9 @@ export function applyExplosionToSlugs(
   radius: number,
   maxDamage: number,
   slugs: Slug[],
-  terrain: DestructibleTerrain
+  terrain: DestructibleTerrain,
+  teams: Team[] = [],
+  attackerSlugId?: string
 ): { hitCount: number; killedCount: number; damageEvents: Array<{ x: number; y: number; damage: number; slugId?: string }> } {
   let hitCount = 0;
   let killedCount = 0;
@@ -225,13 +227,49 @@ export function applyExplosionToSlugs(
       const damage = Math.round(maxDamage * falloff);
 
       if (damage > 0) {
+        const victimHpBefore = slug.hp;
+        const actualDamage = Math.min(victimHpBefore, damage);
         slug.hp = Math.max(0, slug.hp - damage);
-        if (slug.hp === 0) {
-          slug.isAlive = false;
-          killedCount++;
+
+        // Update Victim Team Stats
+        const victimTeam = teams.find((t) => t.id === slug.teamId);
+        if (victimTeam) {
+          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+          victimTeam.stats.damageTaken += actualDamage;
         }
 
-        damageEvents.push({ x: slug.x, y: slug.y - 20, damage, slugId: slug.id });
+        // Update Attacker Team Stats
+        if (attackerSlugId) {
+          const attackerSlug = slugs.find((s) => s.id === attackerSlugId);
+          if (attackerSlug && attackerSlug.teamId !== slug.teamId) {
+            const attackerTeam = teams.find((t) => t.id === attackerSlug.teamId);
+            if (attackerTeam) {
+              if (!attackerTeam.stats) attackerTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+              attackerTeam.stats.damageDealt += actualDamage;
+            }
+          }
+        }
+
+        if (slug.hp === 0 && victimHpBefore > 0) {
+          slug.isAlive = false;
+          killedCount++;
+          if (victimTeam) {
+            if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+            victimTeam.stats.deaths++;
+          }
+          if (attackerSlugId) {
+            const attackerSlug = slugs.find((s) => s.id === attackerSlugId);
+            if (attackerSlug && attackerSlug.teamId !== slug.teamId) {
+              const attackerTeam = teams.find((t) => t.id === attackerSlug.teamId);
+              if (attackerTeam) {
+                if (!attackerTeam.stats) attackerTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+                attackerTeam.stats.kills++;
+              }
+            }
+          }
+        }
+
+        damageEvents.push({ x: slug.x, y: slug.y - 20, damage: actualDamage, slugId: slug.id });
       }
 
       const angle = Math.atan2(dy, dx);

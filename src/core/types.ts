@@ -46,6 +46,13 @@ export interface HelicopterVehicle {
   isFlying?: boolean;
 }
 
+export interface TeamStats {
+  kills: number;
+  deaths: number;
+  damageDealt: number;
+  damageTaken: number;
+}
+
 export interface Team {
   id: TeamId;
   name: string;
@@ -53,6 +60,7 @@ export interface Team {
   avatar: string;
   isHost: boolean;
   inventory: Record<string, number>;
+  stats?: TeamStats;
 }
 
 export type GamePhase =
