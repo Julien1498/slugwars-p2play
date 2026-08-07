@@ -101,9 +101,22 @@ export class SlugWarsEngine {
     this.state.slugs = [];
     this.teamLastSlugIndex = {};
 
+    // 1. Reset Inventory Ammo for all Teams!
+    const weaponSet = getWeaponSet(this.state.config.weaponSetId);
+    for (const team of this.state.teams) {
+      team.inventory = { ...weaponSet.inventory };
+      this.teamLastSlugIndex[team.id] = -1;
+    }
+
+    // 2. Clear all transient visual effects & active entities!
+    this.state.explosions = [];
+    this.state.particles = [];
+    this.state.projectiles = [];
+    this.state.floatingDamages = [];
+    this.state.journal = [];
+
     let slugIndex = 1;
     for (const team of this.state.teams) {
-      this.teamLastSlugIndex[team.id] = -1;
       for (let i = 0; i < this.state.config.slugsPerTeam; i++) {
         this.state.slugs.push({
           id: `slug_${team.id}_${i}`,
@@ -132,7 +145,6 @@ export class SlugWarsEngine {
       y: pt.y,
       isTriggered: false,
     }));
-    this.state.floatingDamages = [];
 
     this.state.phase = 'PLACEMENT';
     this.state.activeTeamId = this.state.teams[0].id;
@@ -349,6 +361,29 @@ export class SlugWarsEngine {
       if (currentAmmo > 0) activeTeam.inventory[weapon.id]--;
     }
 
+    if (targetPoint) {
+      activeSlug.currentTargetPoint = targetPoint;
+    } else if (activeSlug.currentTargetPoint) {
+      targetPoint = activeSlug.currentTargetPoint;
+    }
+
+    if (weapon.requiresTarget && !targetPoint) {
+      const enemies = this.state.slugs.filter((s) => s.isAlive && s.teamId !== activeSlug.teamId);
+      if (enemies.length > 0) {
+        let nearest = enemies[0];
+        let minDist = Math.hypot(nearest.x - activeSlug.x, nearest.y - activeSlug.y);
+        for (let i = 1; i < enemies.length; i++) {
+          const d = Math.hypot(enemies[i].x - activeSlug.x, enemies[i].y - activeSlug.y);
+          if (d < minDist) {
+            minDist = d;
+            nearest = enemies[i];
+          }
+        }
+        targetPoint = { x: nearest.x, y: nearest.y - 8 };
+        activeSlug.currentTargetPoint = targetPoint;
+      }
+    }
+
     if (weapon.behavior === 'TELEPORT' && targetPoint) {
       const safePt = this.findSafeTeleportPoint(targetPoint.x, targetPoint.y);
       activeSlug.x = safePt.x;
@@ -412,7 +447,7 @@ export class SlugWarsEngine {
         if (activeSlug.aimPower >= 100) {
           activeSlug.aimPower = 100;
           activeSlug.isChargingPower = false;
-          this.fireWeapon();
+          this.fireWeapon(activeSlug.currentTargetPoint);
         }
       }
     }
@@ -652,6 +687,7 @@ export class SlugWarsEngine {
       activeSlug.movingDir = null;
       activeSlug.steeringDir = null;
       activeSlug.isChargingPower = false;
+      activeSlug.currentTargetPoint = undefined;
     }
 
     this.checkWinner();
