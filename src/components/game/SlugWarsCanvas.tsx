@@ -582,21 +582,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         const squishY = isMoving ? -Math.sin(animTime * 14) * 0.12 : 0;
 
         ctx.save();
-        ctx.translate(slug.x, slug.y - 8);
+        ctx.translate(slug.x, slug.y - 2);
         if (slug.facing === 'left') {
           ctx.scale(-1 * (1 + squishX), 1 + squishY);
         } else {
           ctx.scale(1 + squishX, 1 + squishY);
         }
 
-        // Slug Body Goutte / Contour
+        // Slug Body Goutte / Contour (Flat belly resting solidly on terrain grass)
         ctx.fillStyle = team?.color || '#ec4899';
         ctx.beginPath();
-        ctx.moveTo(-9, 4);
-        ctx.quadraticCurveTo(-11, 0, -6, -6);
-        ctx.quadraticCurveTo(0, -10, 6, -6);
-        ctx.quadraticCurveTo(10, 0, 7, 5);
-        ctx.quadraticCurveTo(0, 8, -9, 4);
+        ctx.moveTo(-9, 1);
+        ctx.quadraticCurveTo(-11, -3, -6, -8);
+        ctx.quadraticCurveTo(0, -12, 6, -8);
+        ctx.quadraticCurveTo(10, -3, 7, 2);
+        ctx.quadraticCurveTo(0, 3, -9, 1);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = isActive ? '#facc15' : '#09090b';
