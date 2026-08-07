@@ -570,59 +570,100 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Midnight Sky Gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-      skyGrad.addColorStop(0, '#0b0f19');
-      skyGrad.addColorStop(0.5, '#1e1b4b');
-      skyGrad.addColorStop(1, '#020617');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, height);
-
-      // 2. Twinkling Night Stars
+      const isDay = gameState.config.dayNightCycle === 'DAY';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
-      ctx.fillStyle = '#ffffff';
-      for (let i = 0; i < 65; i++) {
-        const sx = (i * 137.5) % width;
-        const sy = (i * 73.1) % (height * 0.5);
-        const alpha = 0.3 + 0.7 * Math.abs(Math.sin(animTime * 0.8 + i));
-        ctx.globalAlpha = alpha;
-        ctx.fillRect(sx, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+      // 1. Sky Gradient (Day Azure vs Night Midnight)
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+      if (isDay) {
+        skyGrad.addColorStop(0, '#0284c7');
+        skyGrad.addColorStop(0.5, '#38bdf8');
+        skyGrad.addColorStop(0.8, '#7dd3fc');
+        skyGrad.addColorStop(1, '#bae6fd');
+      } else {
+        skyGrad.addColorStop(0, '#0b0f19');
+        skyGrad.addColorStop(0.5, '#1e1b4b');
+        skyGrad.addColorStop(1, '#020617');
       }
-      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, width, height);
 
-      // 3. Giant Luminous Cratered Moon (Top Right)
-      const moonX = width * 0.82;
-      const moonY = 65;
-      const moonRadius = 26;
+      // 2. Sun (Day) vs Moon & Stars (Night)
+      if (isDay) {
+        // Radiant Golden Sun
+        const sunX = width * 0.82;
+        const sunY = 70;
+        const sunRadius = 28;
 
-      // Soft Moon Glow Aura
-      const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.5, moonX, moonY, moonRadius * 2.5);
-      moonGlow.addColorStop(0, 'rgba(203, 213, 225, 0.4)');
-      moonGlow.addColorStop(0.5, 'rgba(148, 163, 184, 0.15)');
-      moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
-      ctx.fillStyle = moonGlow;
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonRadius * 2.5, 0, Math.PI * 2);
-      ctx.fill();
+        // Glowing Sun Corona Halo
+        const sunGlow = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.5, sunX, sunY, sunRadius * 3);
+        sunGlow.addColorStop(0, 'rgba(250, 204, 21, 0.6)');
+        sunGlow.addColorStop(0.5, 'rgba(253, 224, 71, 0.2)');
+        sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = sunGlow;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunRadius * 3, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Moon Body
-      ctx.fillStyle = '#cbd5e1';
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
-      ctx.fill();
+        // Sun Body
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Moon Craters
-      ctx.fillStyle = '#94a3b8';
-      ctx.beginPath();
-      ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
-      ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
-      ctx.ellipse(moonX + 7, moonY - 10, 3, 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
+        // Fluffy Sunny White Clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        for (let c = 0; c < 4; c++) {
+          const cx = ((Date.now() * 0.015 + c * 350) % (width + 200)) - 100;
+          const cy = 40 + (c * 25) % 60;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 35, 14, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx - 18, cy - 8, 20, 14, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 18, cy - 6, 22, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Twinkling Night Stars
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 65; i++) {
+          const sx = (i * 137.5) % width;
+          const sy = (i * 73.1) % (height * 0.5);
+          const alpha = 0.3 + 0.7 * Math.abs(Math.sin(animTime * 0.8 + i));
+          ctx.globalAlpha = alpha;
+          ctx.fillRect(sx, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+        }
+        ctx.globalAlpha = 1.0;
 
-      // 4. Parallax Distant Mountain Silhouettes (Layer 1 - Grey Blue Peaks)
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
+        // Giant Luminous Cratered Moon
+        const moonX = width * 0.82;
+        const moonY = 65;
+        const moonRadius = 26;
+
+        const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.5, moonX, moonY, moonRadius * 2.5);
+        moonGlow.addColorStop(0, 'rgba(203, 213, 225, 0.4)');
+        moonGlow.addColorStop(0.5, 'rgba(148, 163, 184, 0.15)');
+        moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+        ctx.fillStyle = moonGlow;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moonRadius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
+        ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
+        ctx.ellipse(moonX + 7, moonY - 10, 3, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 4. Parallax Mountain Silhouettes
+      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(30, 41, 59, 0.75)';
       ctx.beginPath();
       ctx.moveTo(0, height * 0.65);
       const mtPeaks = [
@@ -642,8 +683,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       ctx.closePath();
       ctx.fill();
 
-      // 5. Parallax Midground Pine Forest Silhouettes (Layer 2 - Dark Pine Tree Line)
-      ctx.fillStyle = '#0f172a';
+      // 5. Parallax Midground Forest Line
+      ctx.fillStyle = isDay ? '#15803d' : '#0f172a';
       ctx.beginPath();
       ctx.moveTo(0, height * 0.6);
       for (let tx = 0; tx <= width; tx += 12) {
