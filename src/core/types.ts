@@ -27,6 +27,21 @@ export interface Slug {
   aimPower: number;
   selectedWeaponId: string;
   currentTargetPoint?: Vector2D;
+  inVehicleId?: string | null;
+}
+
+export interface HelicopterVehicle {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  hp: number;
+  maxHp: number;
+  facing: 'left' | 'right';
+  pilotSlugId?: SlugId | null;
+  rotorAngle: number;
+  isFlying?: boolean;
 }
 
 export interface Team {
@@ -55,6 +70,7 @@ export interface GameConfig {
   slugsPerTeam: number;
   turnDuration: number;
   windEnabled: boolean;
+  vehiclesEnabled: boolean;
   mapTheme: MapTheme;
   mapSeed: number;
 }
@@ -124,6 +140,7 @@ export interface GameState {
   teams: Team[];
   slugs: Slug[];
   mines: Landmine[];
+  helicopters: HelicopterVehicle[];
   activeTeamId: TeamId;
   activeSlugId: SlugId;
   turnTimer: number;

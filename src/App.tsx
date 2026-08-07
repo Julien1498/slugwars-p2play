@@ -124,6 +124,9 @@ export const App: React.FC<AppProps> = ({
         onStartCharge={(targetPoint) => sendAction('START_CHARGE', { targetPoint })}
         onReleaseCharge={(targetPoint) => sendAction('RELEASE_CHARGE', { targetPoint })}
         onDetonate={() => sendAction('DETONATE')}
+        onEnterVehicle={() => sendAction('ENTER_VEHICLE')}
+        onExitVehicle={() => sendAction('EXIT_VEHICLE')}
+        onSteerVehicle={(dir) => sendAction('STEER_VEHICLE', { dir })}
         onRestartGame={() => sendAction('RESTART_GAME')}
         onExit={onExit}
       />

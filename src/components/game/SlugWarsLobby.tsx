@@ -116,15 +116,48 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
           </div>
 
           {/* Options Toggles */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
               <span className="text-xs text-zinc-400">PV / Limace</span>
               <div className="text-lg font-bold text-violet-300">{config.slugHp} HP</div>
             </div>
-            <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
-              <span className="text-xs text-zinc-400">Vent Dynamique</span>
-              <div className="text-lg font-bold text-emerald-400">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
-            </div>
+            {isHost ? (
+              <button
+                onClick={() => onChangeConfig({ windEnabled: !config.windEnabled })}
+                className={`p-3 rounded-lg border text-left transition ${
+                  config.windEnabled
+                    ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-200'
+                    : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
+                }`}
+              >
+                <span className="text-xs text-zinc-400">Vent</span>
+                <div className="text-sm font-bold">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
+              </button>
+            ) : (
+              <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
+                <span className="text-xs text-zinc-400">Vent</span>
+                <div className="text-sm font-bold text-emerald-400">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
+              </div>
+            )}
+
+            {isHost ? (
+              <button
+                onClick={() => onChangeConfig({ vehiclesEnabled: !config.vehiclesEnabled })}
+                className={`p-3 rounded-lg border text-left transition ${
+                  config.vehiclesEnabled
+                    ? 'bg-violet-950/60 border-violet-500/60 text-violet-200'
+                    : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
+                }`}
+              >
+                <span className="text-xs text-zinc-400">Véhicules</span>
+                <div className="text-sm font-bold">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
+              </button>
+            ) : (
+              <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
+                <span className="text-xs text-zinc-400">Véhicules</span>
+                <div className="text-sm font-bold text-amber-400">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
+              </div>
+            )}
           </div>
         </div>
 

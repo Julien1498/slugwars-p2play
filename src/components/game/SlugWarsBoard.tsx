@@ -31,6 +31,9 @@ interface SlugWarsBoardProps {
   onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   onDetonate?: () => void;
+  onEnterVehicle?: () => void;
+  onExitVehicle?: () => void;
+  onSteerVehicle?: (dir: 'left' | 'right' | 'up' | 'down') => void;
   onRestartGame: () => void;
   onExit?: () => void;
 }
@@ -56,25 +59,27 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   onStartCharge,
   onReleaseCharge,
   onDetonate,
+  onEnterVehicle,
+  onExitVehicle,
+  onSteerVehicle,
   onRestartGame,
   onExit,
 }) => {
+  const [showHitboxes, setShowHitboxes] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<'journal' | 'chat'>('journal');
-  const [showHitboxes, setShowHitboxes] = useState(false);
-
-  const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
-  const isMyTurn = activeTeam?.id === myPeerId;
-  const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-  const myTeam = gameState.teams.find((t) => t.id === myPeerId);
-
-  const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep');
   const activeMovingKeyRef = useRef<string | null>(null);
 
-  // Keyboard Keydown / Keyup Event Handler
+  const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+  const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
+  const myTeam = gameState.teams.find((t) => (t.isHost ? isHost : myPeerId === t.id)) || activeTeam;
+  const isMyTurn = !!(activeTeam && (activeTeam.isHost ? isHost : myPeerId === activeTeam.id));
+  const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep');
+
+  // Keyboard Shortcuts for Movement, Aiming, Jumping, Vehicle & Super Sheep Steering
   useEffect(() => {
     if (!isMyTurn) return;
 
@@ -82,8 +87,35 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       if (e.repeat) return; // Ignore OS auto-repeat!
 
       const key = e.key.toLowerCase();
-      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' ', 'a', 'd', 'w', 's', 'q', 'z', 'enter'].includes(key)) {
+      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' ', 'a', 'd', 'w', 's', 'q', 'z', 'e', 'enter'].includes(key)) {
         e.preventDefault();
+      }
+
+      // Vehicle Flight Controls (Helicopter 🚁)
+      if (activeSlug && activeSlug.inVehicleId && gameState.phase === 'AIMING') {
+        if (key === 'arrowleft' || key === 'q' || key === 'a') {
+          onSteerVehicle?.('left');
+        } else if (key === 'arrowright' || key === 'd') {
+          onSteerVehicle?.('right');
+        } else if (key === 'arrowup' || key === 'w' || key === 'z') {
+          onSteerVehicle?.('up');
+        } else if (key === 'arrowdown' || key === 's') {
+          onSteerVehicle?.('down');
+        } else if (key === 'e') {
+          onExitVehicle?.();
+        }
+        return;
+      }
+
+      // Enter Vehicle (When standing near helicopter)
+      if (key === 'e' && activeSlug && !activeSlug.inVehicleId && gameState.phase === 'AIMING') {
+        const nearbyHeli = gameState.helicopters?.find(
+          (h) => !h.pilotSlugId && Math.hypot(h.x - activeSlug.x, h.y - activeSlug.y) < 65
+        );
+        if (nearbyHeli) {
+          onEnterVehicle?.();
+          return;
+        }
       }
 
       // Super Sheep Active
@@ -188,7 +220,22 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       {/* Sleek Worms Bottom HUD Controls Bar */}
       <div className="bg-zinc-900/90 border border-zinc-800 p-2 rounded-xl flex items-center justify-between text-xs text-zinc-300 gap-2 flex-wrap shadow-xl shrink-0">
           <div className="flex items-center gap-4">
-            {activeSheep ? (
+            {activeSlug?.inVehicleId ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/80 px-3 py-1 rounded-lg text-amber-200 font-black animate-pulse">
+                  <span>🚁 Hélicoptère aux Commandes !</span>
+                  <span className="font-mono text-xs text-amber-300">[ZQSD / Flèches] Voler</span>
+                </div>
+                {isMyTurn && (
+                  <button
+                    onClick={onExitVehicle}
+                    className="px-3 py-1 bg-red-900/80 hover:bg-red-800 border border-red-500/80 text-red-200 font-bold rounded-lg transition"
+                  >
+                    Sortir [E]
+                  </button>
+                )}
+              </div>
+            ) : activeSheep ? (
               <div className="flex items-center gap-2 bg-amber-950/60 border border-amber-500/60 px-3 py-1 rounded-lg text-amber-200 font-bold animate-pulse">
                 <span>🐑 Super Mouton en Vol !</span>
                 <span className="font-mono text-zinc-300">[◄ / ►] Mettre le cap</span>

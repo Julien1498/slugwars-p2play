@@ -17,6 +17,9 @@ export type SlugWarsActionType =
   | 'FIRE'
   | 'PLACE_SLUG'
   | 'NEXT_TURN'
+  | 'ENTER_VEHICLE'
+  | 'EXIT_VEHICLE'
+  | 'STEER_VEHICLE'
   | 'RESTART_GAME';
 
 export interface SlugWarsNetworkPayload {

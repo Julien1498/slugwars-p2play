@@ -107,6 +107,17 @@ export function useGame(options?: {
           case 'STOP_STEER':
             engine.stopSteer();
             break;
+          case 'ENTER_VEHICLE':
+            engine.enterVehicle();
+            break;
+          case 'EXIT_VEHICLE':
+            engine.exitVehicle();
+            break;
+          case 'STEER_VEHICLE':
+            if (msg.payload?.dir) {
+              engine.steerVehicle(msg.payload.dir);
+            }
+            break;
           case 'START_CHARGE':
             engine.startCharge(msg.payload?.targetPoint);
             break;
