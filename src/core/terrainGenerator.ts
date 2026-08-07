@@ -48,11 +48,6 @@ export interface SolidProp {
   variant?: number;
 }
 
-export interface CaveGlowPoint extends Vector2D {
-  type: 'crystal' | 'mushroom';
-  color: string;
-}
-
 export interface TerrainData {
   width: number;
   height: number;
@@ -64,7 +59,6 @@ export interface TerrainData {
   minePoints: Vector2D[];
   decorItems: DecorItem[];
   solidProps: SolidProp[];
-  caveCrystalPoints?: CaveGlowPoint[];
 }
 
 export function generateProceduralTerrain(
@@ -189,36 +183,6 @@ export function generateProceduralTerrain(
     for (let my = searchStartY; my < waterLevel - 20; my++) {
       if (grid[my * width + mx] === 1 && grid[(my - 1) * width + mx] === 0) {
         minePoints.push({ x: mx, y: my - 3 });
-        break;
-      }
-    }
-  }
-
-  // 5.b Deep Subterranean Bioluminescent Crystals & Glowing Mushrooms Generator (Deep inside earth cy >= 250px ONLY!)
-  const caveCrystalPoints: CaveGlowPoint[] = [];
-  const totalGlowCount = theme === 'CAVERN' ? 16 : 10;
-  const glowStep = Math.floor((width - 240) / totalGlowCount);
-
-  for (let i = 0; i < totalGlowCount; i++) {
-    const cx = Math.floor(120 + i * glowStep + prng.range(-20, 20));
-    // Spawn DEEP inside subterranean earth (cy >= 250px down to waterLevel - 40px)
-    for (let cy = 250; cy < waterLevel - 40; cy += 8) {
-      const idx = cy * width + cx;
-      if (
-        grid[idx] === 1 &&
-        grid[(cy - 10) * width + cx] === 1 &&
-        grid[(cy + 10) * width + cx] === 1 &&
-        grid[idx - 10] === 1 &&
-        grid[idx + 10] === 1
-      ) {
-        const isMushroom = i % 2 === 1;
-        const isCyan = (i + Math.floor(cx)) % 3 === 0;
-        caveCrystalPoints.push({
-          x: cx,
-          y: cy,
-          type: isMushroom ? 'mushroom' : 'crystal',
-          color: isCyan ? '#2dd4bf' : '#c084fc',
-        });
         break;
       }
     }
@@ -391,5 +355,5 @@ export function generateProceduralTerrain(
     });
   }
 
-  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems, solidProps, caveCrystalPoints };
+  return { width, height, theme, seed, waterLevel, grid, spawnPoints, minePoints, decorItems, solidProps };
 }
