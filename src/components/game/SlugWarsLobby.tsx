@@ -115,27 +115,75 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             </div>
           </div>
 
-          {/* Options Toggles */}
-          <div className="grid grid-cols-3 gap-3 pt-2">
-            <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
-              <span className="text-xs text-zinc-400">PV / Limace</span>
-              <div className="text-lg font-bold text-violet-300">{config.slugHp} HP</div>
+          {/* Slugs Count & HP Options */}
+          <div className="space-y-2 pt-2">
+            <label className="text-xs font-semibold uppercase text-zinc-400">Configuration des Limaces</label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Slugs Per Team Button */}
+              {isHost ? (
+                <button
+                  onClick={() => {
+                    const counts = [1, 2, 3, 4, 6, 8];
+                    const next = counts[(counts.indexOf(config.slugsPerTeam ?? 3) + 1) % counts.length];
+                    onChangeConfig({ slugsPerTeam: next });
+                  }}
+                  className="p-3 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/80 rounded-xl text-left transition"
+                >
+                  <div className="text-[11px] text-zinc-400 font-medium">Limaces / Équipe</div>
+                  <div className="text-base font-bold text-violet-300 flex items-center justify-between">
+                    <span>🐌 {config.slugsPerTeam} {config.slugsPerTeam > 1 ? 'Limaces' : 'Limace'}</span>
+                    <span className="text-[10px] bg-violet-950 text-violet-300 border border-violet-800 px-1.5 py-0.5 rounded font-mono uppercase">Changer</span>
+                  </div>
+                </button>
+              ) : (
+                <div className="p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-xl">
+                  <div className="text-[11px] text-zinc-400 font-medium">Limaces / Équipe</div>
+                  <div className="text-base font-bold text-violet-300">🐌 {config.slugsPerTeam} Limaces</div>
+                </div>
+              )}
+
+              {/* HP Per Slug Button */}
+              {isHost ? (
+                <button
+                  onClick={() => {
+                    const hps = [50, 100, 150, 200];
+                    const next = hps[(hps.indexOf(config.slugHp ?? 100) + 1) % hps.length];
+                    onChangeConfig({ slugHp: next });
+                  }}
+                  className="p-3 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/80 rounded-xl text-left transition"
+                >
+                  <div className="text-[11px] text-zinc-400 font-medium">PV Initial / Limace</div>
+                  <div className="text-base font-bold text-emerald-400 flex items-center justify-between">
+                    <span>❤️ {config.slugHp} HP</span>
+                    <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-mono uppercase">Changer</span>
+                  </div>
+                </button>
+              ) : (
+                <div className="p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-xl">
+                  <div className="text-[11px] text-zinc-400 font-medium">PV Initial / Limace</div>
+                  <div className="text-base font-bold text-emerald-400">❤️ {config.slugHp} HP</div>
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Options Toggles */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
             {isHost ? (
               <button
                 onClick={() => onChangeConfig({ windEnabled: !config.windEnabled })}
-                className={`p-3 rounded-lg border text-left transition ${
+                className={`p-3 rounded-xl border text-left transition ${
                   config.windEnabled
                     ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-200'
                     : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
                 }`}
               >
-                <span className="text-xs text-zinc-400">Vent</span>
+                <span className="text-xs text-zinc-400">Vent Dynamique</span>
                 <div className="text-sm font-bold">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
               </button>
             ) : (
-              <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
-                <span className="text-xs text-zinc-400">Vent</span>
+              <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
+                <span className="text-xs text-zinc-400">Vent Dynamique</span>
                 <div className="text-sm font-bold text-emerald-400">{config.windEnabled ? 'Activé 💨' : 'Désactivé'}</div>
               </div>
             )}
@@ -143,19 +191,19 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             {isHost ? (
               <button
                 onClick={() => onChangeConfig({ vehiclesEnabled: !config.vehiclesEnabled })}
-                className={`p-3 rounded-lg border text-left transition ${
+                className={`p-3 rounded-xl border text-left transition ${
                   config.vehiclesEnabled
                     ? 'bg-violet-950/60 border-violet-500/60 text-violet-200'
                     : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
                 }`}
               >
                 <span className="text-xs text-zinc-400">Véhicules</span>
-                <div className="text-sm font-bold">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
+                <div className="text-sm font-bold">{config.vehiclesEnabled ? 'Hélicoptère 🚁' : 'Sans'}</div>
               </button>
             ) : (
-              <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50">
+              <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
                 <span className="text-xs text-zinc-400">Véhicules</span>
-                <div className="text-sm font-bold text-amber-400">{config.vehiclesEnabled ? 'Hélico 🚁' : 'Sans'}</div>
+                <div className="text-sm font-bold text-amber-400">{config.vehiclesEnabled ? 'Hélicoptère 🚁' : 'Sans'}</div>
               </div>
             )}
           </div>
