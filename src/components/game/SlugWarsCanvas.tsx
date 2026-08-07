@@ -17,7 +17,7 @@ interface SlugWarsCanvasProps {
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
 }
 
-export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
+const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   gameState,
   terrain,
   isMyTurn,
@@ -33,6 +33,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   const lastSeedRef = useRef<number | null>(null);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
   const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
 
   // Optimized 32-bit fast terrain rendering to offscreen canvas
@@ -1220,3 +1222,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     </div>
   );
 };
+
+export const SlugWarsCanvas = React.memo(SlugWarsCanvasComponent, (prev, next) => {
+  return (
+    prev.isMyTurn === next.isMyTurn &&
+    prev.showHitboxes === next.showHitboxes &&
+    prev.terrain.data.seed === next.terrain.data.seed &&
+    prev.gameState.phase === next.gameState.phase
+  );
+});
