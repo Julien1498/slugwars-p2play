@@ -190,42 +190,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       occCtx.putImageData(occImgData, 0, 0);
     }
 
-    // Draw Subterranean Bioluminescent Element Clusters (Crystals & Glowing Mushrooms) embedded DEEP INSIDE earth rock pixels
-    const { caveCrystalPoints } = terrain.data;
-    if (caveCrystalPoints) {
-      for (let i = 0; i < caveCrystalPoints.length; i++) {
-        const pt = caveCrystalPoints[i];
-        if (grid[pt.y * width + pt.x] !== 1) continue;
-
-        offCtx.save();
-        offCtx.fillStyle = pt.color;
-        offCtx.shadowColor = pt.color;
-        offCtx.shadowBlur = 12;
-
-        if (pt.type === 'mushroom') {
-          // Cute Mini Subterranean Glowing Mushroom
-          offCtx.fillStyle = '#ffffff';
-          offCtx.fillRect(pt.x - 1, pt.y - 7, 2, 7);
-          offCtx.fillStyle = pt.color;
-          offCtx.beginPath();
-          offCtx.arc(pt.x, pt.y - 7, 5, Math.PI, Math.PI * 2);
-          offCtx.fill();
-        } else {
-          // Embedded Crystal Shard Spikes
-          offCtx.beginPath();
-          offCtx.moveTo(pt.x - 4, pt.y + 4);
-          offCtx.lineTo(pt.x - 1, pt.y - 8);
-          offCtx.lineTo(pt.x + 2, pt.y + 4);
-          offCtx.moveTo(pt.x, pt.y + 4);
-          offCtx.lineTo(pt.x + 3, pt.y - 11);
-          offCtx.lineTo(pt.x + 6, pt.y + 4);
-          offCtx.fill();
-        }
-
-        offCtx.restore();
-      }
-    }
-
     // Draw Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers)
     const { solidProps } = terrain.data;
     if (solidProps) {
@@ -978,26 +942,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Subterranean Cave Crystals Light Punch (Buried DEEP INSIDE earth rock ONLY!)
-        const { caveCrystalPoints, grid } = terrain.data;
-        if (caveCrystalPoints) {
-          const punchRadius = 50;
-          for (let i = 0; i < caveCrystalPoints.length; i++) {
-            const crys = caveCrystalPoints[i];
-            // CRITICAL CHECK: Must be inside solid earth rock! (grid === 1)
-            if (grid[crys.y * width + crys.x] !== 1) continue;
-
-            const cGrad = lCtx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, punchRadius);
-            cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-            cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
-            cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            lCtx.fillStyle = cGrad;
-            lCtx.beginPath();
-            lCtx.arc(crys.x, crys.y, punchRadius, 0, Math.PI * 2);
-            lCtx.fill();
-          }
-        }
-
         // C. Living Slugs Ambient Halo Punch
         for (const slug of gameState.slugs) {
           if (slug.isAlive && slug.isPlaced) {
@@ -1029,76 +973,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       if (lightmapCanvasRef.current) {
         ctx.drawImage(lightmapCanvasRef.current, 0, 0);
       }
-
-      // Draw Radiant Subterranean Bioluminescent Aura Light Spheres INSIDE Rock Walls ONLY!
-      ctx.save();
-      const { caveCrystalPoints, grid } = terrain.data;
-      if (caveCrystalPoints) {
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < caveCrystalPoints.length; i++) {
-          const crys = caveCrystalPoints[i];
-          // CRITICAL CHECK: Must be inside solid earth rock! (grid === 1)
-          if (grid[crys.y * width + crys.x] !== 1) continue;
-
-          const baseColor = crys.color === '#2dd4bf' ? 'rgba(45, 212, 191, 0.65)' : 'rgba(192, 132, 252, 0.65)';
-          const auraGrad = ctx.createRadialGradient(crys.x, crys.y, 2, crys.x, crys.y, 55);
-          auraGrad.addColorStop(0, baseColor);
-          auraGrad.addColorStop(0.5, baseColor.replace('0.65', '0.25'));
-          auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          ctx.fillStyle = auraGrad;
-          ctx.beginPath();
-          ctx.arc(crys.x, crys.y, 55, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.restore();
-
-      // Draw Bioluminescent Cavern Mushrooms & Glowing Crystals in Underground Tunnels!
-      ctx.save();
-      ctx.shadowBlur = isDay ? 6 : 16;
-      const cavernCrystals = [
-        { x: width * 0.12, y: height * 0.78, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
-        { x: width * 0.38, y: height * 0.82, color: '#38bdf8', shadow: 'rgba(56, 189, 248, 0.8)' },
-        { x: width * 0.88, y: height * 0.8, color: '#a855f7', shadow: 'rgba(168, 85, 247, 0.8)' },
-      ];
-
-      for (const crys of cavernCrystals) {
-        if (!terrain.isSolid(crys.x, crys.y + 4)) {
-          ctx.shadowColor = crys.shadow;
-          ctx.fillStyle = crys.color;
-          ctx.beginPath();
-          ctx.moveTo(crys.x, crys.y);
-          ctx.lineTo(crys.x - 4, crys.y - 12);
-          ctx.lineTo(crys.x, crys.y - 16);
-          ctx.lineTo(crys.x + 4, crys.y - 10);
-          ctx.closePath();
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.moveTo(crys.x + 4, crys.y);
-          ctx.lineTo(crys.x + 2, crys.y - 8);
-          ctx.lineTo(crys.x + 7, crys.y - 12);
-          ctx.lineTo(crys.x + 9, crys.y - 4);
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
-
-      // Bioluminescent Glow Mushrooms inside Caverns
-      const bioShrooms = [
-        { x: width * 0.22, y: height * 0.8, color: '#2dd4bf' },
-        { x: width * 0.78, y: height * 0.79, color: '#2dd4bf' },
-      ];
-      for (const sh of bioShrooms) {
-        ctx.shadowColor = 'rgba(45, 212, 191, 0.9)';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(sh.x - 1, sh.y - 8, 2, 8);
-        ctx.fillStyle = '#2dd4bf';
-        ctx.beginPath();
-        ctx.arc(sh.x, sh.y - 9, 6, Math.PI, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
 
       // Draw Smooth & Slow Surface Waves
       ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
