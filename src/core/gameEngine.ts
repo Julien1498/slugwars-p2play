@@ -154,32 +154,39 @@ export class SlugWarsEngine {
     }));
 
     if (this.state.config.vehiclesEnabled) {
-      let spawnX = Math.floor(this.terrain.data.width * 0.5);
+      const { width, height, theme, waterLevel } = this.terrain.data;
+      let spawnX = Math.floor(width * 0.5);
       let spawnY = 150;
+      let foundGround = false;
 
-      // Scan X positions near center to find a safe open cavern floor with open airspace above
-      for (const offsetX of [0, -80, 80, -160, 160]) {
-        const testX = Math.max(80, Math.min(this.terrain.data.width - 80, spawnX + offsetX));
-        let insideCeiling = true;
-        let openAirTop = -1;
-        let groundFloor = -1;
+      const scanStartY = theme === 'CAVERN' ? 70 : 20;
 
-        for (let y = 0; y < this.terrain.data.height - 30; y++) {
-          const isSolid = this.terrain.isSolid(testX, y);
-          if (insideCeiling && !isSolid) {
-            insideCeiling = false;
-            openAirTop = y;
-          } else if (!insideCeiling && isSolid) {
-            groundFloor = y;
-            break;
+      // Scan X columns from center outward to find solid earth ground with clear open headroom
+      const candidateOffsets = [0, -100, 100, -200, 200, -300, 300, -400, 400];
+      for (const offsetX of candidateOffsets) {
+        const testX = Math.max(100, Math.min(width - 100, Math.floor(width * 0.5) + offsetX));
+
+        for (let y = scanStartY; y < waterLevel - 45; y++) {
+          // Check for solid ground pixel
+          if (this.terrain.isSolid(testX, y)) {
+            // Verify there is at least 32px of OPEN AIR headroom directly above this ground!
+            let hasOpenHeadroom = true;
+            for (let check = 1; check <= 32; check++) {
+              if (this.terrain.isSolid(testX, y - check)) {
+                hasOpenHeadroom = false;
+                break;
+              }
+            }
+
+            if (hasOpenHeadroom) {
+              spawnX = testX;
+              spawnY = y - 14; // Place helicopter skids sitting flat ON TOP of solid ground!
+              foundGround = true;
+              break;
+            }
           }
         }
-
-        if (groundFloor > 0 && openAirTop > 0 && (groundFloor - openAirTop) >= 35) {
-          spawnX = testX;
-          spawnY = groundFloor - 18;
-          break;
-        }
+        if (foundGround) break;
       }
 
       this.state.helicopters = [
