@@ -40,7 +40,7 @@ export const homingMissileWeapon: WeaponDefinition = {
   category: 'EXPLOSIVE',
   behavior: 'STEERABLE',
   icon: '🎯',
-  description: 'Cliquez sur la carte pour marquer la cible, puis tirez au Bazooka ! La roquette pivote en l\'air pour rejoindre la cible !',
+  description: 'Posez la cible au Clic Droit, ajustez l\'angle et chargez la puissance au Clic Gauche ! La roquette s\'élance puis se réoriente vers la cible !',
   damage: 55,
   radius: 45,
   defaultAmmo: 3,
@@ -65,6 +65,7 @@ export const homingMissileWeapon: WeaponDefinition = {
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
         targetPoint: ctx.targetPoint,
+        behaviorData: { homingDelayMs: 700 },
       },
     ];
   },

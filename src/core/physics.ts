@@ -42,19 +42,26 @@ export function updateProjectilePhysics(
       return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
     }
 
-    const desiredAngle = Math.atan2(dy, dx);
-    const currentAngle = Math.atan2(proj.vy, proj.vx);
+    const delay = proj.behaviorData?.homingDelayMs ?? 0;
+    if (delay > 0) {
+      if (!proj.behaviorData) proj.behaviorData = {};
+      proj.behaviorData.homingDelayMs = delay - 50;
+      proj.vy += GRAVITY * 0.7;
+    } else {
+      const desiredAngle = Math.atan2(dy, dx);
+      const currentAngle = Math.atan2(proj.vy, proj.vx);
 
-    let angleDiff = desiredAngle - currentAngle;
-    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      let angleDiff = desiredAngle - currentAngle;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
 
-    const turnSpeed = 0.12;
-    const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
+      const turnSpeed = 0.12;
+      const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
 
-    const speed = Math.min(16, Math.max(8, Math.hypot(proj.vx, proj.vy)));
-    proj.vx = Math.cos(newAngle) * speed;
-    proj.vy = Math.sin(newAngle) * speed;
+      const speed = Math.min(16, Math.max(8, Math.hypot(proj.vx, proj.vy)));
+      proj.vx = Math.cos(newAngle) * speed;
+      proj.vy = Math.sin(newAngle) * speed;
+    }
   } else if (proj.weaponId === 'concrete_donkey') {
     proj.vy = Math.min(18, proj.vy + GRAVITY * 1.5);
   } else {
