@@ -91,39 +91,107 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     }
     offCtx.putImageData(imgData, 0, 0);
 
-    // Draw embedded procedural soil pebbles & underground bones
-    offCtx.fillStyle = '#6b3710';
-    offCtx.strokeStyle = '#3e1f07';
-    offCtx.lineWidth = 1;
+    // Draw Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers)
+    const { solidProps } = terrain.data;
+    if (solidProps) {
+      for (const sprop of solidProps) {
+        offCtx.save();
+        offCtx.translate(sprop.x, sprop.y);
 
-    const prng = new SeededRandom(terrain.data.seed + 888);
-    for (let i = 0; i < 110; i++) {
-      const rx = Math.floor(prng.range(30, width - 30));
-      const ry = Math.floor(prng.range(120, height - 90));
-      const rSize = prng.range(4, 14);
+        if (sprop.type === 'hedgehog') {
+          // Purple/Pink Spiky Hedgehog (Hedgewars Classic!)
+          offCtx.fillStyle = '#a855f7'; // Purple Spikes
+          for (let s = -12; s <= 12; s += 4) {
+            offCtx.beginPath();
+            offCtx.moveTo(s, -10);
+            offCtx.lineTo(s * 1.25, -20);
+            offCtx.lineTo(s + 3, -10);
+            offCtx.fill();
+          }
 
-      if (grid[ry * width + rx] === 1 && grid[(ry - 8) * width + rx] === 1) {
-        if (i % 14 === 0) {
-          // Bone / Fossil
-          offCtx.fillStyle = '#e4e4e7';
-          offCtx.fillRect(rx - 5, ry - 1, 10, 2);
+          offCtx.fillStyle = '#ec4899'; // Pink Body
           offCtx.beginPath();
-          offCtx.arc(rx - 5, ry - 1, 2, 0, Math.PI * 2);
-          offCtx.arc(rx + 5, ry - 1, 2, 0, Math.PI * 2);
+          offCtx.ellipse(0, -9, 13, 9, 0, 0, Math.PI * 2);
           offCtx.fill();
-        } else {
-          // Pebble / Rock
-          const grad = offCtx.createRadialGradient(rx - 2, ry - 2, 1, rx, ry, rSize);
-          grad.addColorStop(0, '#a15822');
-          grad.addColorStop(0.7, '#63310d');
-          grad.addColorStop(1, '#3b1c05');
 
-          offCtx.fillStyle = grad;
+          offCtx.fillStyle = '#fef3c7'; // White/Cream Face
           offCtx.beginPath();
-          offCtx.ellipse(rx, ry, rSize, rSize * 0.75, prng.range(0, Math.PI), 0, Math.PI * 2);
+          offCtx.ellipse(6, -9, 7, 6, 0, 0, Math.PI * 2);
           offCtx.fill();
-          offCtx.stroke();
+
+          offCtx.fillStyle = '#000000'; // Eye & Nose
+          offCtx.beginPath();
+          offCtx.arc(8, -10, 2, 0, Math.PI * 2);
+          offCtx.arc(12, -8, 1.8, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // White Glove Paws
+          offCtx.fillStyle = '#ffffff';
+          offCtx.beginPath();
+          offCtx.arc(-6, -2, 3, 0, Math.PI * 2);
+          offCtx.arc(6, -2, 3, 0, Math.PI * 2);
+          offCtx.fill();
+        } else if (sprop.type === 'chick') {
+          // Bright Yellow Chick / Poulet
+          offCtx.fillStyle = '#eab308'; // Yellow Body
+          offCtx.beginPath();
+          offCtx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
+          offCtx.fill();
+
+          offCtx.fillStyle = '#ca8a04'; // Wing
+          offCtx.beginPath();
+          offCtx.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
+          offCtx.fill();
+
+          offCtx.fillStyle = '#f97316'; // Orange Beak
+          offCtx.beginPath();
+          offCtx.moveTo(10, -14);
+          offCtx.lineTo(17, -11);
+          offCtx.lineTo(10, -8);
+          offCtx.closePath();
+          offCtx.fill();
+
+          offCtx.fillStyle = '#000000'; // Cute Black Eye
+          offCtx.beginPath();
+          offCtx.arc(7, -15, 2.2, 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.fillStyle = '#ffffff';
+          offCtx.fillRect(7.5, -16, 1, 1);
+        } else if (sprop.type === 'mushroom') {
+          // Red Spotted Mushroom
+          offCtx.fillStyle = '#fef3c7'; // Cream Stem
+          offCtx.fillRect(-4, -12, 8, 12);
+
+          offCtx.fillStyle = '#ef4444'; // Red Cap
+          offCtx.beginPath();
+          offCtx.ellipse(0, -14, 12, 9, 0, Math.PI, 0);
+          offCtx.fill();
+
+          offCtx.fillStyle = '#ffffff'; // White Dots
+          offCtx.beginPath();
+          offCtx.arc(-6, -17, 2, 0, Math.PI * 2);
+          offCtx.arc(4, -18, 2, 0, Math.PI * 2);
+          offCtx.arc(0, -13, 2, 0, Math.PI * 2);
+          offCtx.fill();
+        } else if (sprop.type === 'flower') {
+          // Colorful Flower
+          offCtx.fillStyle = '#15803d'; // Green Stem
+          offCtx.fillRect(-1.5, -14, 3, 14);
+
+          offCtx.fillStyle = sprop.variant === 1 ? '#ec4899' : sprop.variant === 2 ? '#3b82f6' : '#c084fc';
+          for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+            offCtx.beginPath();
+            offCtx.arc(Math.cos(a) * 7, -16 + Math.sin(a) * 7, 4.5, 0, Math.PI * 2);
+            offCtx.fill();
+          }
+
+          offCtx.fillStyle = '#facc15'; // Yellow Core
+          offCtx.beginPath();
+          offCtx.arc(0, -16, 5, 0, Math.PI * 2);
+          offCtx.fill();
         }
+
+        offCtx.restore();
       }
     }
   }, [terrain]);
@@ -299,174 +367,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       ctx.fillStyle = waterBackdropGrad;
       ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
 
-      const animTime = Date.now() / 300;
-
-      // Draw Background Decor Props (Giant Moles peaking behind hills!)
-      if (decorItems) {
-        for (const item of decorItems) {
-          if (item.type === 'mole') {
-            ctx.save();
-            ctx.translate(item.x, item.y);
-            const scale = item.scale || 1.0;
-            ctx.scale(scale, scale);
-
-            // Giant Mole Head peaking behind terrain hill
-            ctx.fillStyle = '#78350f';
-            ctx.beginPath();
-            ctx.ellipse(0, -22, 28, 30, 0, Math.PI, 0);
-            ctx.fill();
-
-            // Pink Snout
-            ctx.fillStyle = '#f472b6';
-            ctx.beginPath();
-            ctx.ellipse(0, -26, 11, 7, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Eyes & Teeth
-            ctx.fillStyle = '#000000';
-            ctx.beginPath();
-            ctx.arc(-8, -34, 2.5, 0, Math.PI * 2);
-            ctx.arc(8, -34, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-3, -20, 2.5, 4);
-            ctx.fillRect(0.5, -20, 2.5, 4);
-            ctx.restore();
-          }
-        }
-      }
-
-      // Draw Pre-rendered Offscreen Terrain
+      // Draw Pre-rendered Offscreen Terrain (Includes all Solid Destructible Props & Soil Pebbles!)
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
-      // Draw Foreground Decor Props (Giant Snail, Mushrooms, Flowers, Hanging Leaves, Butterflies)
-      if (decorItems) {
-        for (const item of decorItems) {
-          ctx.save();
-          ctx.translate(item.x, item.y);
-
-          if (item.type === 'snail') {
-            // Giant Snail atop cliff
-            const scale = item.scale || 1.0;
-            ctx.scale(scale, scale);
-
-            // Shell
-            ctx.fillStyle = '#b45309';
-            ctx.beginPath();
-            ctx.arc(4, -16, 14, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#78350f';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Shell Spiral Detail
-            ctx.strokeStyle = '#f59e0b';
-            ctx.beginPath();
-            ctx.arc(4, -16, 8, 0, Math.PI * 1.5);
-            ctx.stroke();
-
-            // Teardrop Green Slug Body
-            ctx.fillStyle = '#84cc16';
-            ctx.beginPath();
-            ctx.ellipse(-8, -6, 16, 6, -0.2, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Stalk Eyes
-            ctx.strokeStyle = '#84cc16';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(-16, -10);
-            ctx.lineTo(-20, -22);
-            ctx.moveTo(-12, -10);
-            ctx.lineTo(-14, -24);
-            ctx.stroke();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(-20, -22, 3.5, 0, Math.PI * 2);
-            ctx.arc(-14, -24, 3.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.arc(-20, -22, 1.5, 0, Math.PI * 2);
-            ctx.arc(-14, -24, 1.5, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (item.type === 'mushroom') {
-            // Red Spotted Mushroom
-            const scale = item.scale || 1.0;
-            ctx.scale(scale, scale);
-
-            // Cream Stem
-            ctx.fillStyle = '#fef3c7';
-            ctx.fillRect(-3, -12, 6, 12);
-
-            // Red Cap
-            ctx.fillStyle = '#ef4444';
-            ctx.beginPath();
-            ctx.ellipse(0, -14, 11, 8, 0, Math.PI, 0);
-            ctx.fill();
-
-            // White Dots
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(-5, -17, 2, 0, Math.PI * 2);
-            ctx.arc(4, -18, 2, 0, Math.PI * 2);
-            ctx.arc(0, -13, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (item.type === 'flower') {
-            // Colorful Flower
-            ctx.fillStyle = '#15803d'; // Stem
-            ctx.fillRect(-1, -12, 2, 12);
-
-            ctx.fillStyle = item.variant === 1 ? '#ec4899' : item.variant === 2 ? '#3b82f6' : '#c084fc';
-            for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
-              ctx.beginPath();
-              ctx.arc(Math.cos(a) * 6, -14 + Math.sin(a) * 6, 4, 0, Math.PI * 2);
-              ctx.fill();
-            }
-
-            ctx.fillStyle = '#facc15'; // Yellow Core
-            ctx.beginPath();
-            ctx.arc(0, -14, 4.5, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (item.type === 'hanging_leaf') {
-            // Palm Leaf Roots hanging down from cliff overhang
-            const scale = item.scale || 1.0;
-            ctx.scale(scale, scale);
-
-            const sway = Math.sin(animTime + item.x) * 0.15;
-            ctx.rotate(sway);
-
-            ctx.fillStyle = '#16a34a';
-            for (let l = -1; l <= 1; l++) {
-              ctx.beginPath();
-              ctx.ellipse(l * 6, 12, 4, 14, l * 0.3, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          } else if (item.type === 'butterfly') {
-            // Floating Butterfly in sky
-            const flap = Math.abs(Math.sin(animTime * 4 + item.x));
-            ctx.scale(flap, 1);
-
-            ctx.fillStyle = item.variant === 1 ? '#f97316' : '#a855f7';
-            ctx.beginPath();
-            ctx.ellipse(-5, 0, 5, 3, -0.4, 0, Math.PI * 2);
-            ctx.ellipse(5, 0, 5, 3, 0.4, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#000';
-            ctx.fillRect(-1, -3, 2, 6);
-          }
-
-          ctx.restore();
-        }
-      }
-
-      // Draw Smooth & Slow Surface Waves (Gentle 1.2s Ocean Swell)
+      // Draw Smooth & Slow Surface Waves
       const slowTime = Date.now() / 1200;
+      const animTime = Date.now() / 300;
       ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
       ctx.beginPath();
       ctx.moveTo(0, height);
@@ -488,6 +396,39 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         else ctx.lineTo(x, wy);
       }
       ctx.stroke();
+
+      // Draw Visual Decor Items (Hanging Leaf Roots & Floating Butterflies)
+      if (decorItems) {
+        for (const item of decorItems) {
+          ctx.save();
+          ctx.translate(item.x, item.y);
+
+          if (item.type === 'hanging_leaf') {
+            const scale = item.scale || 1.0;
+            ctx.scale(scale, scale);
+            const sway = Math.sin(animTime + item.x) * 0.15;
+            ctx.rotate(sway);
+            ctx.fillStyle = '#16a34a';
+            for (let l = -1; l <= 1; l++) {
+              ctx.beginPath();
+              ctx.ellipse(l * 6, 12, 4, 14, l * 0.3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else if (item.type === 'butterfly') {
+            const flap = Math.abs(Math.sin(animTime * 4 + item.x));
+            ctx.scale(flap, 1);
+            ctx.fillStyle = item.variant === 1 ? '#f97316' : '#a855f7';
+            ctx.beginPath();
+            ctx.ellipse(-5, 0, 5, 3, -0.4, 0, Math.PI * 2);
+            ctx.ellipse(5, 0, 5, 3, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-1, -3, 2, 6);
+          }
+
+          ctx.restore();
+        }
+      }
 
       // Draw Landmines (Worms Style Classic Mines!)
       if (gameState.mines) {
