@@ -462,6 +462,15 @@ export class SlugWarsEngine {
       return true;
     }
 
+    if (weapon.behavior === 'BLOWTORCH') {
+      activeSlug.isBlowtorching = true;
+      activeSlug.blowtorchTimerMs = 3500;
+      this.state.phase = 'PROJECTILE_ACTIVE';
+      sfx.play('fire');
+      this.addLog(`${activeSlug.name} a allumé le Chalumeau ! 🔥`, 'weapon');
+      return true;
+    }
+
     if (weapon.behavior === 'MELEE_PUSH') {
       const targetSlug = this.state.slugs.find(
         (s) => s.id !== activeSlug.id && s.isAlive && Math.hypot(s.x - activeSlug.x, s.y - activeSlug.y) < 40
@@ -515,6 +524,64 @@ export class SlugWarsEngine {
           activeSlug.isChargingPower = false;
           this.fireWeapon(activeSlug.currentTargetPoint);
         }
+      }
+    }
+
+    // Active Blowtorch Tunneling
+    if (activeSlug && activeSlug.isAlive && activeSlug.isBlowtorching) {
+      if (activeSlug.blowtorchTimerMs !== undefined) {
+        activeSlug.blowtorchTimerMs -= 50;
+      }
+
+      const angleRad = (activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle) * (Math.PI / 180);
+      const dirX = Math.cos(angleRad);
+      const dirY = Math.sin(angleRad);
+
+      const flameX = activeSlug.x + dirX * 18;
+      const flameY = activeSlug.y - 8 + dirY * 18;
+
+      // 1. Carve destructible terrain tunnel
+      this.terrain.carveExplosion(flameX, flameY, 18);
+      this.state.explosions.push({
+        id: `ex_bt_${Date.now()}_${Math.random()}`,
+        x: flameX,
+        y: flameY,
+        radius: 18,
+        damage: 0,
+        createdAt: Date.now(),
+      });
+
+      // 2. Move slug forward along blowtorch angle
+      activeSlug.x += dirX * 1.3;
+      activeSlug.y += dirY * 1.3;
+
+      // 3. Flame particles
+      for (let i = 0; i < 3; i++) {
+        this.state.particles.push({
+          x: flameX + (Math.random() - 0.5) * 6,
+          y: flameY + (Math.random() - 0.5) * 6,
+          vx: dirX * 4 + (Math.random() - 0.5) * 2,
+          vy: dirY * 4 + (Math.random() - 0.5) * 2,
+          color: Math.random() > 0.3 ? '#f97316' : '#fde047',
+          size: Math.random() * 4 + 2,
+          life: 0.8,
+        });
+      }
+
+      // 4. Damage & push enemy slugs touched by torch beam
+      for (const other of this.state.slugs) {
+        if (other.id !== activeSlug.id && other.isAlive && Math.hypot(other.x - flameX, other.y - flameY) < 22) {
+          other.hp = Math.max(0, other.hp - 2);
+          other.vx = dirX * 4;
+          other.vy = dirY * 4 - 1;
+        }
+      }
+
+      // Stop blowtorch when timer expires or slug falls in water
+      if ((activeSlug.blowtorchTimerMs || 0) <= 0 || activeSlug.y >= this.terrain.data.waterLevel) {
+        activeSlug.isBlowtorching = false;
+        this.endTurn();
+        return;
       }
     }
 
@@ -779,6 +846,7 @@ export class SlugWarsEngine {
       activeSlug.movingDir = null;
       activeSlug.steeringDir = null;
       activeSlug.isChargingPower = false;
+      activeSlug.isBlowtorching = false;
       activeSlug.currentTargetPoint = undefined;
     }
 

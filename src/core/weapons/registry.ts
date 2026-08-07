@@ -1,7 +1,7 @@
 import { WeaponId, WeaponDefinition, WeaponCategory } from './types';
 import { bazookaWeapon, homingMissileWeapon, grenadeWeapon, holyGrenadeWeapon, bananaBombWeapon, clusterBananaWeapon, dynamiteWeapon } from './definitions/explosiveWeapons';
 import { concreteDonkeyWeapon, superSheepWeapon } from './definitions/wackyWeapons';
-import { baseballBatWeapon, airStrikeWeapon, teleportWeapon, shotgunWeapon, homingPigeonWeapon, prodWeapon } from './definitions/tacticalWeapons';
+import { baseballBatWeapon, airStrikeWeapon, teleportWeapon, shotgunWeapon, homingPigeonWeapon, prodWeapon, blowtorchWeapon } from './definitions/tacticalWeapons';
 
 export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   bazooka: bazookaWeapon,
@@ -18,6 +18,7 @@ export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   air_strike: airStrikeWeapon,
   concrete_donkey: concreteDonkeyWeapon,
   super_sheep: superSheepWeapon,
+  blowtorch: blowtorchWeapon,
   teleport: teleportWeapon,
 };
 

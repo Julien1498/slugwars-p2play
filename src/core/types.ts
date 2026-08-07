@@ -28,6 +28,8 @@ export interface Slug {
   selectedWeaponId: string;
   currentTargetPoint?: Vector2D;
   inVehicleId?: string | null;
+  isBlowtorching?: boolean;
+  blowtorchTimerMs?: number;
 }
 
 export interface HelicopterVehicle {

@@ -990,6 +990,40 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
             ctx.beginPath();
             ctx.arc(6, 0, 4.5, 0, Math.PI * 2);
             ctx.fill();
+          } else if (weaponId === 'blowtorch' || slug.isBlowtorching) {
+            // Blowtorch Metal Canister & Nozzle
+            ctx.fillStyle = '#dc2626'; // Red Gas Tank
+            ctx.fillRect(-2, 0, 7, 10);
+            ctx.fillStyle = '#64748b'; // Nozzle
+            ctx.fillRect(5, -3, 10, 4);
+
+            // Animated Blowtorch Plasma Flame Jet
+            const flamePulse = Math.sin(Date.now() * 0.05) * 4;
+            const flameLen = 30 + flamePulse;
+
+            // Outer Orange Glow
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.moveTo(15, -5);
+            ctx.lineTo(15 + flameLen, -1);
+            ctx.lineTo(15, 3);
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner Yellow Core
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.moveTo(15, -3);
+            ctx.lineTo(15 + flameLen * 0.7, -1);
+            ctx.lineTo(15, 1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Blue Plasma Base
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(15, -1, 3, 0, Math.PI * 2);
+            ctx.fill();
           } else {
             ctx.fillStyle = '#15803d'; // Grenade in hand
             ctx.beginPath();
