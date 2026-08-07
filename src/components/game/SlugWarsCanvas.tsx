@@ -17,6 +17,12 @@ interface SlugWarsCanvasProps {
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
 }
 
+function getPixelHash(x: number, y: number): number {
+  let h = (x * 374761393 + y * 668265263) ^ 0x5bf03635;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
 export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   gameState,
   terrain,
@@ -87,7 +93,73 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           if (isTopFringe) {
             data32[idx] = topColor;
           } else {
-            data32[idx] = depthFactor > 0.52 ? darkSoilColor : lightSoilColor;
+            // Organic 4x4 soil block noise (No 1x1 pixel static!)
+            const bx = (x / 4) | 0;
+            const by = (y / 4) | 0;
+            const blockHash = getPixelHash(bx, by);
+
+            // 1. Sparse 3D Pebbles & Rocks (Cell Grid 24x24 px)
+            const cellX = (x / 24) | 0;
+            const cellY = (y / 24) | 0;
+            const cellHash = getPixelHash(cellX * 23, cellY * 47);
+
+            // Only 18% cell density = sparse, clean, distinct pebbles!
+            const hasPebble = (cellHash % 100) < 18;
+            let isPebblePixel = false;
+            let pebbleColor = 0;
+
+            if (hasPebble) {
+              const pebbleX = (cellX * 24) + (cellHash % 12) + 6;
+              const pebbleY = (cellY * 24) + ((cellHash >> 8) % 12) + 6;
+              const pebbleRadiusX = ((cellHash >> 16) % 2) + 2.5; // 2.5 to 3.5 px
+              const pebbleRadiusY = ((cellHash >> 20) % 2) + 2.0; // 2.0 to 3.0 px
+
+              const dx = x - pebbleX;
+              const dy = y - pebbleY;
+              const distSq = (dx * dx) / (pebbleRadiusX * pebbleRadiusX) + (dy * dy) / (pebbleRadiusY * pebbleRadiusY);
+
+              if (distSq <= 1.0) {
+                isPebblePixel = true;
+                const pType = (cellHash >> 4) % 3;
+
+                const isHighlight = dy < -0.5 && dx < 0;
+                const isShadow = dy > 0.5 && dx > 0;
+
+                if (theme === 'CAVERN') {
+                  if (pType === 0) pebbleColor = isHighlight ? 0xfff472b6 : (isShadow ? 0xff4a0822 : 0xff951d4c);
+                  else if (pType === 1) pebbleColor = isHighlight ? 0xffe9d5ff : (isShadow ? 0xff581c87 : 0xffa855f7);
+                  else pebbleColor = isHighlight ? 0xffffffff : 0xffc084fc;
+                } else if (theme === 'FORTRESS') {
+                  if (pType === 0) pebbleColor = isHighlight ? 0xffcbd5e1 : (isShadow ? 0xff1e293b : 0xff475569);
+                  else if (pType === 1) pebbleColor = isHighlight ? 0xfffca5a5 : (isShadow ? 0xff450a0a : 0xff991b1b);
+                  else pebbleColor = isHighlight ? 0xff94a3b8 : 0xff0f172a;
+                } else if (theme === 'FLOATING_CHAOS') {
+                  if (pType === 0) pebbleColor = isHighlight ? 0xff7dd3fc : (isShadow ? 0xff0c4a6e : 0xff0284c7);
+                  else if (pType === 1) pebbleColor = isHighlight ? 0xfff0abfc : (isShadow ? 0xff4c1d95 : 0xffc084fc);
+                  else pebbleColor = isHighlight ? 0xffffffff : 0xff38bdf8;
+                } else {
+                  // ISLAND Theme (Classic Earth)
+                  if (pType === 0) pebbleColor = isHighlight ? 0xffcbd5e1 : (isShadow ? 0xff1e293b : 0xff64748b);
+                  else if (pType === 1) pebbleColor = isHighlight ? 0xfffde047 : (isShadow ? 0xff451a03 : 0xffb45309);
+                  else pebbleColor = isHighlight ? 0xff94a3b8 : 0xff334155;
+                }
+              }
+            }
+
+            if (isPebblePixel) {
+              data32[idx] = pebbleColor;
+            } else {
+              // 2. Smooth Organic Soil Patches (4x4 clusters, 2 subtle tones)
+              const isDeep = depthFactor > 0.52;
+              const baseColor = isDeep ? darkSoilColor : lightSoilColor;
+              const patchTone = (blockHash % 100) < 22;
+
+              if (patchTone) {
+                data32[idx] = isDeep ? 0xff0b182d : 0xff1c4c87;
+              } else {
+                data32[idx] = baseColor;
+              }
+            }
           }
         }
       }
