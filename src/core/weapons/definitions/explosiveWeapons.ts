@@ -135,7 +135,7 @@ export const bananaBombWeapon: WeaponDefinition = {
         radius: 6,
         bounces: true,
         windAffected: false,
-        fuseTimeMs: 3000,
+        fuseTimerMs: 3000,
         ownerSlugId: ctx.ownerSlugId,
       },
     ];
@@ -169,7 +169,7 @@ export const dynamiteWeapon: WeaponDefinition = {
         radius: 6,
         bounces: false,
         windAffected: false,
-        fuseTimeMs: 3000,
+        fuseTimerMs: 3000,
         ownerSlugId: ctx.ownerSlugId,
       },
     ];
