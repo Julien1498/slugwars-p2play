@@ -158,20 +158,85 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           offCtx.fillStyle = '#ffffff';
           offCtx.fillRect(7.5, -16, 1, 1);
         } else if (sprop.type === 'mushroom') {
-          // Red Spotted Mushroom
-          offCtx.fillStyle = '#fef3c7'; // Cream Stem
-          offCtx.fillRect(-4, -12, 8, 12);
+          // HD Organic Worms/Super Mario Toadstool!
+          const isPurple = sprop.variant === 1;
+          const isGold = sprop.variant === 2;
 
-          offCtx.fillStyle = '#ef4444'; // Red Cap
+          // 1. Grass Tufts at Base (Seamless terrain blending)
+          offCtx.fillStyle = '#22c55e';
           offCtx.beginPath();
-          offCtx.ellipse(0, -14, 12, 9, 0, Math.PI, 0);
+          offCtx.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
+          offCtx.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
           offCtx.fill();
 
-          offCtx.fillStyle = '#ffffff'; // White Dots
+          // 2. Organic Curved Stem (Flared base & soft outline)
+          const stemGrad = offCtx.createLinearGradient(0, -16, 0, 0);
+          stemGrad.addColorStop(0, '#fef9c3');
+          stemGrad.addColorStop(1, '#fde047');
+
+          offCtx.fillStyle = stemGrad;
+          offCtx.strokeStyle = '#a16207';
+          offCtx.lineWidth = 1.2;
           offCtx.beginPath();
-          offCtx.arc(-6, -17, 2, 0, Math.PI * 2);
-          offCtx.arc(4, -18, 2, 0, Math.PI * 2);
-          offCtx.arc(0, -13, 2, 0, Math.PI * 2);
+          offCtx.moveTo(-4, -16);
+          offCtx.quadraticCurveTo(-6, -6, -7, 0);
+          offCtx.lineTo(7, 0);
+          offCtx.quadraticCurveTo(6, -6, 4, -16);
+          offCtx.closePath();
+          offCtx.fill();
+          offCtx.stroke();
+
+          // Ring Veil under cap
+          offCtx.fillStyle = '#ffffff';
+          offCtx.beginPath();
+          offCtx.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // 3. Dark Shadow under Cap Gills
+          offCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          offCtx.beginPath();
+          offCtx.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // 4. Plump 3D Umbrella Dome Cap
+          const capGrad = offCtx.createLinearGradient(0, -28, 0, -14);
+          if (isPurple) {
+            capGrad.addColorStop(0, '#c084fc');
+            capGrad.addColorStop(0.5, '#9333ea');
+            capGrad.addColorStop(1, '#581c87');
+          } else if (isGold) {
+            capGrad.addColorStop(0, '#fde047');
+            capGrad.addColorStop(0.5, '#d97706');
+            capGrad.addColorStop(1, '#78350f');
+          } else {
+            capGrad.addColorStop(0, '#f87171');
+            capGrad.addColorStop(0.5, '#dc2626');
+            capGrad.addColorStop(1, '#7f1d1d');
+          }
+
+          offCtx.fillStyle = capGrad;
+          offCtx.beginPath();
+          offCtx.moveTo(-14, -16);
+          offCtx.quadraticCurveTo(-15, -28, 0, -28);
+          offCtx.quadraticCurveTo(15, -28, 14, -16);
+          offCtx.quadraticCurveTo(0, -13, -14, -16);
+          offCtx.closePath();
+          offCtx.fill();
+
+          // Highlight Gloss Arc on Cap
+          offCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          offCtx.lineWidth = 1.8;
+          offCtx.beginPath();
+          offCtx.arc(0, -22, 10, -Math.PI * 0.8, -Math.PI * 0.2);
+          offCtx.stroke();
+
+          // 5. Polka Dots
+          offCtx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
+          offCtx.beginPath();
+          offCtx.arc(0, -21, 2.8, 0, Math.PI * 2);
+          offCtx.arc(-7, -20, 2.2, 0, Math.PI * 2);
+          offCtx.arc(7, -19, 2.4, 0, Math.PI * 2);
+          offCtx.arc(-2, -25, 1.8, 0, Math.PI * 2);
           offCtx.fill();
         } else if (sprop.type === 'flower') {
           // Colorful Flower

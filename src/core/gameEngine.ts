@@ -582,6 +582,16 @@ export class SlugWarsEngine {
               createdAt: now,
             });
           }
+
+          // If the active slug took damage from a mine explosion, immediately end their turn!
+          const activeSlugTookDamage = mineExpRes.damageEvents.some(
+            (dm) => dm.slugId === this.state.activeSlugId
+          );
+          if (activeSlugTookDamage && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE')) {
+            const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+            this.addLog(`💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`, 'combat');
+            this.endTurn();
+          }
         } else {
           remainingMines.push(mine);
         }
