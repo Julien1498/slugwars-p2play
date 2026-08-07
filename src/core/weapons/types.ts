@@ -15,6 +15,7 @@ export type WeaponId =
   | 'air_strike'
   | 'concrete_donkey'
   | 'super_sheep'
+  | 'blowtorch'
   | 'teleport';
 
 export type WeaponCategory =
@@ -31,6 +32,7 @@ export type WeaponBehavior =
   | 'AIR_STRIKE'
   | 'HEAVY_FALL'
   | 'STEERABLE'
+  | 'BLOWTORCH'
   | 'TELEPORT';
 
 export interface FireContext {

@@ -161,3 +161,20 @@ export const prodWeapon: WeaponDefinition = {
   customSoundKey: 'melee',
   createProjectiles: () => [],
 };
+
+export const blowtorchWeapon: WeaponDefinition = {
+  id: 'blowtorch',
+  name: 'Chalumeau',
+  category: 'UTILITY',
+  behavior: 'BLOWTORCH',
+  icon: '🔥',
+  description: 'Creuse des galeries et détruit le sol devant vous avec un jet de flammes haute température.',
+  damage: 5,
+  radius: 18,
+  defaultAmmo: -1,
+  windAffected: false,
+  bounces: false,
+  craftable: false,
+  customSoundKey: 'fire',
+  createProjectiles: () => [],
+};
