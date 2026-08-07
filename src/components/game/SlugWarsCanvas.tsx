@@ -405,7 +405,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           offCtx.arc(0, -16, 5, 0, Math.PI * 2);
           offCtx.fill();
         } else if (sprop.type === 'tree') {
-          // HD Solid Destructible Pine & Oak Trees
+          // HD Solid Destructible Oak & Pine Trees
+          const isPine = sprop.variant === 1;
+
+          // 1. Wood Trunk & Flared Roots
           const trunkGrad = offCtx.createLinearGradient(-6, -45, 6, 0);
           trunkGrad.addColorStop(0, '#78350f');
           trunkGrad.addColorStop(0.5, '#451a03');
@@ -413,26 +416,36 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           offCtx.fillStyle = trunkGrad;
 
           offCtx.beginPath();
-          offCtx.moveTo(-5, 0);
-          offCtx.lineTo(-4, -22);
-          offCtx.lineTo(-7, -35);
-          offCtx.lineTo(-4, -36);
-          offCtx.lineTo(-2, -24);
-          offCtx.lineTo(2, -24);
-          offCtx.lineTo(5, -34);
-          offCtx.lineTo(7, -33);
-          offCtx.lineTo(4, -22);
-          offCtx.lineTo(6, 0);
+          offCtx.moveTo(-7, 0);
+          offCtx.lineTo(-4, -20);
+          offCtx.lineTo(-8, -32);
+          offCtx.lineTo(-5, -33);
+          offCtx.lineTo(-2, -22);
+          offCtx.lineTo(2, -22);
+          offCtx.lineTo(6, -31);
+          offCtx.lineTo(8, -30);
+          offCtx.lineTo(4, -20);
+          offCtx.lineTo(7, 0);
           offCtx.closePath();
           offCtx.fill();
 
-          const isPine = sprop.variant === 1;
+          // Wood Bark Texture Lines
+          offCtx.strokeStyle = '#27160a';
+          offCtx.lineWidth = 1;
+          offCtx.beginPath();
+          offCtx.moveTo(-2, -5);
+          offCtx.lineTo(-1, -18);
+          offCtx.moveTo(2, -8);
+          offCtx.lineTo(3, -16);
+          offCtx.stroke();
+
           if (isPine) {
+            // Majestic Evergreen Pine Tree (4 Triangular Needle Tiers)
             const pineTiers = [
-              { y: -18, r: 16, h: 14, color: '#14532d' },
-              { y: -28, r: 13, h: 12, color: '#15803d' },
-              { y: -37, r: 10, h: 10, color: '#22c55e' },
-              { y: -44, r: 6,  h: 8,  color: '#4ade80' },
+              { y: -16, r: 18, h: 16, color: '#064e3b' },
+              { y: -26, r: 15, h: 14, color: '#047857' },
+              { y: -35, r: 12, h: 12, color: '#10b981' },
+              { y: -43, r: 8,  h: 10, color: '#34d399' },
             ];
             for (const tier of pineTiers) {
               offCtx.fillStyle = tier.color;
@@ -443,14 +456,20 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
               offCtx.closePath();
               offCtx.fill();
             }
+            // Small Brown Pinecones
+            offCtx.fillStyle = '#78350f';
+            offCtx.beginPath();
+            offCtx.arc(-8, -20, 2.5, 0, Math.PI * 2);
+            offCtx.arc(7, -28, 2.2, 0, Math.PI * 2);
+            offCtx.fill();
           } else {
+            // Lush Plump Oak Tree (5 Overlapping Foliage Domes & Red Wild Apples)
             const oakClusters = [
-              { x: 0,   y: -36, r: 16, color: '#14532d' },
-              { x: -10, y: -28, r: 13, color: '#15803d' },
-              { x: 10,  y: -28, r: 13, color: '#15803d' },
-              { x: -6,  y: -38, r: 12, color: '#22c55e' },
-              { x: 6,   y: -38, r: 12, color: '#22c55e' },
-              { x: 0,   y: -44, r: 9,  color: '#86efac' },
+              { x: -11, y: -28, r: 14, color: '#14532d' },
+              { x: 11,  y: -28, r: 14, color: '#14532d' },
+              { x: -7,  y: -38, r: 13, color: '#15803d' },
+              { x: 7,   y: -38, r: 13, color: '#15803d' },
+              { x: 0,   y: -44, r: 11, color: '#22c55e' },
             ];
             for (const c of oakClusters) {
               offCtx.fillStyle = c.color;
@@ -458,6 +477,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
               offCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
               offCtx.fill();
             }
+            // Cute Red Wild Apples / Blossoms
+            offCtx.fillStyle = '#ef4444';
+            offCtx.beginPath();
+            offCtx.arc(-8, -32, 2.2, 0, Math.PI * 2);
+            offCtx.arc(6, -36, 2.0, 0, Math.PI * 2);
+            offCtx.arc(-2, -42, 2.3, 0, Math.PI * 2);
+            offCtx.fill();
           }
         }
 
@@ -879,7 +905,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
         // Fill Base Dynamic Occlusion Darkness Overlay
         if (!isDay) {
-          lCtx.fillStyle = 'rgba(3, 7, 18, 0.88)';
+          // Night Mode: Shadow overlay ONLY over subsoil ground (y > 140), 0% over sky & moon!
+          const nightGrad = lCtx.createLinearGradient(0, 0, 0, height);
+          nightGrad.addColorStop(0, 'rgba(3, 7, 18, 0.0)');
+          nightGrad.addColorStop(0.20, 'rgba(3, 7, 18, 0.0)');
+          nightGrad.addColorStop(0.40, 'rgba(3, 7, 18, 0.50)');
+          nightGrad.addColorStop(1.0, 'rgba(3, 7, 18, 0.88)');
+          lCtx.fillStyle = nightGrad;
           lCtx.fillRect(0, 0, width, height);
         } else if (occlusionCanvasRef.current) {
           // Day Mode: Fast 1-line GPU blit of pre-rendered occlusion map (Zero CPU loops!)
@@ -910,27 +942,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
         }
 
-        // B. Bioluminescent Cavern Mushrooms & Crystals Light Punch
-        const cavernCrystals = [
-          { x: width * 0.12, y: height * 0.78 },
-          { x: width * 0.38, y: height * 0.82 },
-          { x: width * 0.88, y: height * 0.8 },
-          { x: width * 0.22, y: height * 0.8 },
-          { x: width * 0.78, y: height * 0.79 },
-        ];
-        const punchRadius = 65;
-        for (const crys of cavernCrystals) {
-          // CRITICAL FIX: Only punch light if solid terrain actually exists under the crystal/mushroom!
-          if (!terrain.isSolid(crys.x, crys.y + 4)) continue;
-
-          const cGrad = lCtx.createRadialGradient(crys.x, crys.y - 8, 2, crys.x, crys.y - 8, punchRadius);
-          cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-          cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
-          cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          lCtx.fillStyle = cGrad;
-          lCtx.beginPath();
-          lCtx.arc(crys.x, crys.y - 8, punchRadius, 0, Math.PI * 2);
-          lCtx.fill();
+        // B. Bioluminescent Mushrooms Light Punch (Bound dynamically to actual solidProps!)
+        const { solidProps } = terrain.data;
+        if (solidProps) {
+          const punchRadius = 60;
+          for (const sprop of solidProps) {
+            if (sprop.type === 'mushroom') {
+              if (!terrain.isSolid(sprop.x, sprop.y + 4)) continue;
+              const cGrad = lCtx.createRadialGradient(sprop.x, sprop.y - 8, 2, sprop.x, sprop.y - 8, punchRadius);
+              cGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+              cGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.7)');
+              cGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+              lCtx.fillStyle = cGrad;
+              lCtx.beginPath();
+              lCtx.arc(sprop.x, sprop.y - 8, punchRadius, 0, Math.PI * 2);
+              lCtx.fill();
+            }
+          }
         }
 
         // C. Living Slugs Ambient Halo Punch
@@ -965,28 +993,25 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.drawImage(lightmapCanvasRef.current, 0, 0);
       }
 
-      // Draw Radiant Bioluminescent Aura Light Spheres over Cavern Walls!
+      // Draw Radiant Bioluminescent Aura Light Spheres over Solid Mushrooms!
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const auraSpots = [
-        { x: width * 0.12, y: height * 0.78, color: 'rgba(168, 85, 247, 0.45)' }, // Purple Crystal
-        { x: width * 0.38, y: height * 0.82, color: 'rgba(56, 189, 248, 0.45)' }, // Blue Crystal
-        { x: width * 0.88, y: height * 0.8, color: 'rgba(168, 85, 247, 0.45)' },  // Purple Crystal
-        { x: width * 0.22, y: height * 0.8, color: 'rgba(45, 212, 191, 0.55)' },  // Teal Mushroom
-        { x: width * 0.78, y: height * 0.79, color: 'rgba(45, 212, 191, 0.55)' }, // Teal Mushroom
-      ];
-      for (const spot of auraSpots) {
-        // CRITICAL FIX: Only draw aura if solid terrain actually exists under the spot!
-        if (!terrain.isSolid(spot.x, spot.y + 4)) continue;
-
-        const auraGrad = ctx.createRadialGradient(spot.x, spot.y - 8, 2, spot.x, spot.y - 8, 65);
-        auraGrad.addColorStop(0, spot.color);
-        auraGrad.addColorStop(0.5, spot.color.replace('0.45', '0.2').replace('0.55', '0.25'));
-        auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = auraGrad;
-        ctx.beginPath();
-        ctx.arc(spot.x, spot.y - 8, 65, 0, Math.PI * 2);
-        ctx.fill();
+      const { solidProps } = terrain.data;
+      if (solidProps) {
+        for (const sprop of solidProps) {
+          if (sprop.type === 'mushroom') {
+            if (!terrain.isSolid(sprop.x, sprop.y + 4)) continue;
+            const color = sprop.variant === 1 ? 'rgba(168, 85, 247, 0.55)' : sprop.variant === 2 ? 'rgba(56, 189, 248, 0.55)' : 'rgba(45, 212, 191, 0.55)';
+            const auraGrad = ctx.createRadialGradient(sprop.x, sprop.y - 8, 2, sprop.x, sprop.y - 8, 60);
+            auraGrad.addColorStop(0, color);
+            auraGrad.addColorStop(0.5, color.replace('0.55', '0.2'));
+            auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = auraGrad;
+            ctx.beginPath();
+            ctx.arc(sprop.x, sprop.y - 8, 60, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
       ctx.restore();
 
