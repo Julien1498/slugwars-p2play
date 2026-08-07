@@ -548,7 +548,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     [terrain]
   );
 
-  // Throttled Real-time Mouse Aiming Handler
+  const lastAimTimeRef = useRef<number>(0);
+
+  // Throttled Real-time Mouse Aiming Handler (30 FPS max to prevent React re-render lag)
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const pos = getCanvasMousePos(e);
@@ -559,13 +561,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
 
+      const now = Date.now();
+      if (now - lastAimTimeRef.current < 33) return;
+
       const dx = pos.x - activeSlug.x;
       const dy = pos.y - activeSlug.y;
-      let angle = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
+      let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
       angle = Math.max(5, Math.min(85, angle));
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
 
-      onUpdateAim?.(angle, activeSlug.aimPower, facing);
+      if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+        lastAimTimeRef.current = now;
+        onUpdateAim?.(angle, activeSlug.aimPower, facing);
+      }
     },
     [isMyTurn, gameState, getCanvasMousePos, onUpdateAim]
   );
@@ -802,19 +810,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // 5. Parallax Midground Forest Line
       ctx.fillStyle = isDay ? '#15803d' : '#064e3b';
-      ctx.beginPath();
-      ctx.moveTo(0, height * 0.6);
-      for (let tx = 0; tx <= width; tx += 12) {
-        const treeH = 25 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
-        const ty = height * 0.55 - treeH;
-        ctx.lineTo(tx - 6, ty + treeH);
-        ctx.lineTo(tx, ty);
-        ctx.lineTo(tx + 6, ty + treeH);
-      }
-      ctx.lineTo(width, height);
-      ctx.lineTo(0, height);
-      ctx.closePath();
-      ctx.fill();
       ctx.beginPath();
       ctx.moveTo(0, height * 0.6);
       for (let tx = 0; tx <= width; tx += 12) {
