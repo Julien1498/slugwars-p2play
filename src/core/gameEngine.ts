@@ -86,11 +86,15 @@ export class SlugWarsEngine {
   public teamLastSlugIndex: Record<string, number> = {};
 
   public getNextSlugForTeam(teamId: string): string {
-    const teamSlugs = this.state.slugs.filter((s) => s.teamId === teamId && s.isAlive);
+    const teamSlugs = this.state.slugs.filter((s) => s.teamId === teamId && s.isAlive && s.hp > 0);
     if (teamSlugs.length === 0) return '';
 
-    const currentIndex = this.teamLastSlugIndex[teamId] ?? -1;
-    const nextIndex = (currentIndex + 1) % teamSlugs.length;
+    let prevIndex = this.teamLastSlugIndex[teamId];
+    if (prevIndex === undefined || prevIndex < 0 || prevIndex >= teamSlugs.length) {
+      prevIndex = -1;
+    }
+
+    const nextIndex = (prevIndex + 1) % teamSlugs.length;
     this.teamLastSlugIndex[teamId] = nextIndex;
 
     return teamSlugs[nextIndex].id;
@@ -150,7 +154,17 @@ export class SlugWarsEngine {
 
     if (this.state.config.vehiclesEnabled) {
       const spawnX = Math.floor(this.terrain.data.width * 0.5);
-      const spawnY = Math.floor(this.terrain.data.height * 0.35);
+      let groundY = -1;
+      for (let y = 30; y < this.terrain.data.height - 20; y++) {
+        const idx = y * this.terrain.data.width + spawnX;
+        if (this.terrain.data.grid[idx] === 1) {
+          groundY = y;
+          break;
+        }
+      }
+
+      const spawnY = groundY > 0 ? groundY - 13 : 150;
+
       this.state.helicopters = [
         {
           id: `heli_1`,
@@ -488,6 +502,9 @@ export class SlugWarsEngine {
       if (targetSlug) {
         const dir = activeSlug.facing === 'right' ? 1 : -1;
         targetSlug.hp = Math.max(0, targetSlug.hp - weapon.damage);
+        if (targetSlug.hp === 0) {
+          targetSlug.isAlive = false;
+        }
         targetSlug.vx = dir * 18;
         targetSlug.vy = -10;
         this.addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
@@ -868,11 +885,19 @@ export class SlugWarsEngine {
       activeSlug.currentTargetPoint = undefined;
     }
 
+    // Ensure all 0 HP slugs are marked as dead!
+    for (const slug of this.state.slugs) {
+      if (slug.hp <= 0) {
+        slug.hp = 0;
+        slug.isAlive = false;
+      }
+    }
+
     this.checkWinner();
     if (this.state.phase === 'GAME_OVER') return;
 
     const aliveTeams = this.state.teams.filter((t) =>
-      this.state.slugs.some((s) => s.teamId === t.id && s.isAlive)
+      this.state.slugs.some((s) => s.teamId === t.id && s.isAlive && s.hp > 0)
     );
     if (aliveTeams.length <= 1) {
       this.checkWinner();
@@ -883,7 +908,20 @@ export class SlugWarsEngine {
     const nextTeam = aliveTeams[(currentIdx + 1) % aliveTeams.length];
     this.state.activeTeamId = nextTeam.id;
 
-    this.state.activeSlugId = this.getNextSlugForTeam(nextTeam.id);
+    const nextSlugId = this.getNextSlugForTeam(nextTeam.id);
+    if (!nextSlugId) {
+      const fallbackSlug = this.state.slugs.find((s) => s.isAlive && s.hp > 0 && s.isPlaced);
+      if (fallbackSlug) {
+        this.state.activeTeamId = fallbackSlug.teamId;
+        this.state.activeSlugId = fallbackSlug.id;
+      } else {
+        this.checkWinner();
+        return;
+      }
+    } else {
+      this.state.activeSlugId = nextSlugId;
+    }
+
     this.state.turnTimer = this.state.config.turnDuration;
     this.state.phase = 'AIMING';
     this.randomizeWind();

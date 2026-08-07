@@ -47,7 +47,7 @@ export function updateHelicopterPhysics(
   if (bottomY >= 0 && bottomY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
     const idx = bottomY * terrain.data.width + centerX;
     if (terrain.data.grid[idx] === 1) {
-      if (Math.abs(heli.vy) > 8) {
+      if (Math.abs(heli.vy) > 12 && heli.pilotSlugId) {
         return { crashed: true };
       }
       heli.y = bottomY - 13;
@@ -274,6 +274,10 @@ export function updateSlugPhysics(
   terrain: DestructibleTerrain,
   slugs: Slug[] = []
 ): { fallDamage?: number } {
+  if (slug.hp <= 0) {
+    slug.hp = 0;
+    slug.isAlive = false;
+  }
   if (!slug.isAlive || slug.isPlaced === false) return {};
 
   const result: { fallDamage?: number } = {};
