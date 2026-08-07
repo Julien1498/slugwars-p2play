@@ -3,3 +3,6 @@ dist
 dist-lib
 .DS_Store
 *.log
+
+Trace-*.json
+
