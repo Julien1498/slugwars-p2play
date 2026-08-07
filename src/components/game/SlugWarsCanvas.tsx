@@ -99,37 +99,95 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         offCtx.translate(sprop.x, sprop.y);
 
         if (sprop.type === 'hedgehog') {
-          // Purple/Pink Spiky Hedgehog (Hedgewars Classic!)
-          offCtx.fillStyle = '#a855f7'; // Purple Spikes
-          for (let s = -12; s <= 12; s += 4) {
+          // HD Super Cute Hedgewars Style Hedgehog!
+          const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+          // 1. Dark Undercoat Spikes
+          offCtx.fillStyle = '#451a03';
+          for (const a of spikeAngles) {
+            const sx = Math.cos(a - 0.7) * 14;
+            const sy = Math.sin(a - 0.7) * 11 - 10;
             offCtx.beginPath();
-            offCtx.moveTo(s, -10);
-            offCtx.lineTo(s * 1.25, -20);
-            offCtx.lineTo(s + 3, -10);
+            offCtx.moveTo(sx * 0.5, sy * 0.5 - 6);
+            offCtx.lineTo(sx * 1.35, sy * 1.35);
+            offCtx.lineTo(sx * 0.5 + 3, sy * 0.5 - 6);
+            offCtx.closePath();
             offCtx.fill();
           }
 
-          offCtx.fillStyle = '#ec4899'; // Pink Body
+          // Golden/Brown Foreground Spikes
+          offCtx.fillStyle = '#b45309';
+          offCtx.strokeStyle = '#f59e0b';
+          offCtx.lineWidth = 0.8;
+          for (const a of spikeAngles) {
+            const sx = Math.cos(a - 0.75) * 12;
+            const sy = Math.sin(a - 0.75) * 9 - 10;
+            offCtx.beginPath();
+            offCtx.moveTo(sx * 0.4, sy * 0.4 - 5);
+            offCtx.lineTo(sx * 1.2, sy * 1.2);
+            offCtx.lineTo(sx * 0.4 + 2, sy * 0.4 - 5);
+            offCtx.closePath();
+            offCtx.fill();
+            offCtx.stroke();
+          }
+
+          // 2. Plump Brown Body
+          offCtx.fillStyle = '#78350f';
           offCtx.beginPath();
-          offCtx.ellipse(0, -9, 13, 9, 0, 0, Math.PI * 2);
+          offCtx.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
           offCtx.fill();
 
-          offCtx.fillStyle = '#fef3c7'; // White/Cream Face
+          // 3. Soft Peach Face & Snout
+          offCtx.fillStyle = '#fef08a';
           offCtx.beginPath();
-          offCtx.ellipse(6, -9, 7, 6, 0, 0, Math.PI * 2);
+          offCtx.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
           offCtx.fill();
 
-          offCtx.fillStyle = '#000000'; // Eye & Nose
+          // Snout Tip Point
           offCtx.beginPath();
-          offCtx.arc(8, -10, 2, 0, Math.PI * 2);
-          offCtx.arc(12, -8, 1.8, 0, Math.PI * 2);
+          offCtx.moveTo(8, -10);
+          offCtx.lineTo(13, -7);
+          offCtx.lineTo(8, -4);
+          offCtx.closePath();
           offCtx.fill();
 
-          // White Glove Paws
+          // Pink Cheek Blush
+          offCtx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+          offCtx.beginPath();
+          offCtx.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // Black Button Nose
+          offCtx.fillStyle = '#09090b';
+          offCtx.beginPath();
+          offCtx.arc(13, -7, 1.8, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // 4. Glossy Eye with White Sparkle
+          offCtx.fillStyle = '#09090b';
+          offCtx.beginPath();
+          offCtx.arc(7, -10, 2.2, 0, Math.PI * 2);
+          offCtx.fill();
+
           offCtx.fillStyle = '#ffffff';
           offCtx.beginPath();
-          offCtx.arc(-6, -2, 3, 0, Math.PI * 2);
-          offCtx.arc(6, -2, 3, 0, Math.PI * 2);
+          offCtx.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
+          offCtx.fill();
+
+          // Cute Ear
+          offCtx.fillStyle = '#fde047';
+          offCtx.strokeStyle = '#78350f';
+          offCtx.lineWidth = 1;
+          offCtx.beginPath();
+          offCtx.arc(-2, -14, 2.5, 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.stroke();
+
+          // 5. Cute Dark Paws on Ground
+          offCtx.fillStyle = '#542608';
+          offCtx.beginPath();
+          offCtx.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
+          offCtx.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
           offCtx.fill();
         } else if (sprop.type === 'chick') {
           // Bright Yellow Chick / Poulet
@@ -222,13 +280,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           offCtx.quadraticCurveTo(0, -13, -14, -16);
           offCtx.closePath();
           offCtx.fill();
-
-          // Highlight Gloss Arc on Cap
-          offCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-          offCtx.lineWidth = 1.8;
-          offCtx.beginPath();
-          offCtx.arc(0, -22, 10, -Math.PI * 0.8, -Math.PI * 0.2);
-          offCtx.stroke();
 
           // 5. Polka Dots
           offCtx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
