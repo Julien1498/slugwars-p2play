@@ -1,4 +1,5 @@
-import { GameState, Vector2D } from '../core/types';
+import { GameState, Vector2D, JournalEntry } from '../core/types';
+import { CompactStateDelta } from './netSerializer';
 
 export type SlugWarsActionType =
   | 'JOIN_GAME'
@@ -37,12 +38,18 @@ export interface SlugWarsNetworkPayload {
 }
 
 export interface SlugWarsNetworkMessage {
-  type: 'ACTION' | 'STATE_UPDATE';
+  type: 'ACTION' | 'STATE_UPDATE' | 'DELTA_STATE_UPDATE' | 'FULL_STATE_UPDATE' | 'JOURNAL_LOG';
   actionName?: SlugWarsActionType;
   payload?: SlugWarsNetworkPayload;
   state?: GameState;
+  delta?: CompactStateDelta;
+  journalEntry?: JournalEntry;
 }
 
 export function sanitizeGameState(state: GameState): GameState {
-  return JSON.parse(JSON.stringify(state));
+  const cleanState = JSON.parse(JSON.stringify(state));
+  // Remove temporary visual particles & floating damages from network payload
+  delete cleanState.particles;
+  delete cleanState.floatingDamages;
+  return cleanState;
 }
