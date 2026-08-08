@@ -490,22 +490,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         offCtx.restore();
       }
     }
+
+    // Clip all active explosion craters out of terrain canvas so solid props stay carved pixel-by-pixel
+    if (gameStateRef.current && gameStateRef.current.explosions && gameStateRef.current.explosions.length > 0) {
+      offCtx.save();
+      offCtx.globalCompositeOperation = 'destination-out';
+      for (const ex of gameStateRef.current.explosions) {
+        offCtx.beginPath();
+        offCtx.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
+        offCtx.fill();
+      }
+      offCtx.restore();
+    }
   }, [terrain]);
 
   // Carve crater on offscreen terrain canvas & occlusion shadow canvas when explosion happens
   const carveOffscreenCrater = useCallback((x: number, y: number, radius: number) => {
-    if (offscreenCanvasRef.current) {
-      const offCtx = offscreenCanvasRef.current.getContext('2d');
-      if (offCtx) {
-        offCtx.save();
-        offCtx.globalCompositeOperation = 'destination-out';
-        offCtx.beginPath();
-        offCtx.arc(x, y, radius, 0, Math.PI * 2);
-        offCtx.fill();
-        offCtx.restore();
-      }
-    }
+    // 1. Synchronize grid array for physical collision carving
+    terrain.carveExplosion(x, y, radius);
 
+    // 2. Redraw offscreen terrain to recompute grass highlight rim outline around new crater
+    redrawOffscreenTerrain();
+
+    // 3. Cut crater out of subterranean shadow occlusion canvas
     if (occlusionCanvasRef.current) {
       const occCtx = occlusionCanvasRef.current.getContext('2d');
       if (occCtx) {
@@ -517,10 +524,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         occCtx.restore();
       }
     }
-
-    // Synchronize grid array for physical collision carving
-    terrain.carveExplosion(x, y, radius);
-  }, [terrain]);
+  }, [terrain, redrawOffscreenTerrain]);
 
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const zoomRef = useRef<number>(1.0);
