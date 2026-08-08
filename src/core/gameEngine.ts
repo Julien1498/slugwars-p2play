@@ -947,8 +947,12 @@ export class SlugWarsEngine {
       activeSlug.currentTargetPoint = undefined;
     }
 
-    // Ensure all 0 HP slugs are marked as dead!
+    // Ensure all 0 HP slugs are marked as dead & reset charging power
     for (const slug of this.state.slugs) {
+      slug.isChargingPower = false;
+      slug.aimPower = 5;
+      slug.movingDir = null;
+      slug.vx = 0;
       if (slug.hp <= 0) {
         slug.hp = 0;
         slug.isAlive = false;

@@ -492,19 +492,31 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     }
   }, [terrain]);
 
-  // Carve crater on offscreen canvas when explosion happens
+  // Carve crater on offscreen terrain canvas & occlusion shadow canvas when explosion happens
   const carveOffscreenCrater = useCallback((x: number, y: number, radius: number) => {
-    const offCanvas = offscreenCanvasRef.current;
-    if (!offCanvas) return;
-    const offCtx = offCanvas.getContext('2d');
-    if (!offCtx) return;
+    if (offscreenCanvasRef.current) {
+      const offCtx = offscreenCanvasRef.current.getContext('2d');
+      if (offCtx) {
+        offCtx.save();
+        offCtx.globalCompositeOperation = 'destination-out';
+        offCtx.beginPath();
+        offCtx.arc(x, y, radius, 0, Math.PI * 2);
+        offCtx.fill();
+        offCtx.restore();
+      }
+    }
 
-    offCtx.save();
-    offCtx.globalCompositeOperation = 'destination-out';
-    offCtx.beginPath();
-    offCtx.arc(x, y, radius, 0, Math.PI * 2);
-    offCtx.fill();
-    offCtx.restore();
+    if (occlusionCanvasRef.current) {
+      const occCtx = occlusionCanvasRef.current.getContext('2d');
+      if (occCtx) {
+        occCtx.save();
+        occCtx.globalCompositeOperation = 'destination-out';
+        occCtx.beginPath();
+        occCtx.arc(x, y, radius, 0, Math.PI * 2);
+        occCtx.fill();
+        occCtx.restore();
+      }
+    }
 
     // Synchronize grid array for physical collision carving
     terrain.carveExplosion(x, y, radius);
@@ -1529,8 +1541,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.setLineDash([]);
         }
 
-        // Render Power Charging Bar Gauge & Percentage Text (Visible for Host & Guest!)
-        if (activeSlug.isChargingPower || activeSlug.aimPower > 5) {
+        // Render Power Charging Bar Gauge & Percentage Text (Visible when actively charging!)
+        if (activeSlug.isChargingPower) {
           const barW = 40;
           const barH = 6;
           const barX = activeSlug.x - barW / 2;
