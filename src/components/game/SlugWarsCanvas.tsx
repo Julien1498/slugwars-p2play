@@ -1639,10 +1639,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // Draw Projectiles (Custom Vector Weapons & Smoke Trails!)
       for (const proj of gameState.projectiles) {
+        if (!proj || !Number.isFinite(proj.x) || !Number.isFinite(proj.y)) continue;
+
         ctx.save();
         ctx.translate(proj.x, proj.y);
-        const angle = Math.atan2(proj.vy, proj.vx);
-        ctx.rotate(angle);
+        const vx = Number.isFinite(proj.vx) ? proj.vx : 0;
+        const vy = Number.isFinite(proj.vy) ? proj.vy : 0;
+        const angle = Math.atan2(vy, vx);
+        if (Number.isFinite(angle)) {
+          ctx.rotate(angle);
+        }
 
         if (proj.weaponId === 'bazooka' || proj.weaponId === 'homing_pigeon') {
           // Bazooka Rocket Sprite
