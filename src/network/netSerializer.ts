@@ -1,4 +1,4 @@
-import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent } from '../core/types';
+import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, FloatingDamage, Particle } from '../core/types';
 
 export function quantizeFloat(val: number, decimals: number = 2): number {
   const factor = Math.pow(10, decimals);
@@ -33,6 +33,8 @@ export interface CompactStateDelta {
   mines?: Partial<Landmine>[];
   projectiles?: Partial<ActiveProjectile>[];
   explosions?: Partial<ExplosionEvent>[];
+  floatingDamages?: FloatingDamage[];
+  particles?: Partial<Particle>[];
 }
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
@@ -61,7 +63,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     if (!prevSlug || prevSlug.hp !== slug.hp) { sDelta.hp = slug.hp; hasChange = true; }
     if (!prevSlug || prevSlug.facing !== slug.facing) { sDelta.f = slug.facing; hasChange = true; }
     if (!prevSlug || prevSlug.aimAngle !== slug.aimAngle) { sDelta.a = slug.aimAngle; hasChange = true; }
-    if (!prevSlug || prevSlug.aimPower !== slug.aimPower) { sDelta.p = slug.aimPower; hasChange = true; }
+    if (!prevSlug || Math.abs(prevSlug.aimPower - slug.aimPower) > 0.1) { sDelta.p = quantizeFloat(slug.aimPower, 1); hasChange = true; }
     if (!prevSlug || prevSlug.selectedWeaponId !== slug.selectedWeaponId) { sDelta.w = slug.selectedWeaponId; hasChange = true; }
     if (!prevSlug || prevSlug.isAlive !== slug.isAlive) { sDelta.al = slug.isAlive; hasChange = true; }
     if (!prevSlug || prevSlug.isPlaced !== slug.isPlaced) { sDelta.pl = slug.isPlaced; hasChange = true; }
@@ -97,6 +99,28 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     }));
   } else if (prevState && prevState.explosions.length > 0) {
     delta.explosions = [];
+  }
+
+  // Floating Damages
+  if (currentState.floatingDamages && currentState.floatingDamages.length > 0) {
+    delta.floatingDamages = currentState.floatingDamages;
+  } else if (prevState && prevState.floatingDamages && prevState.floatingDamages.length > 0) {
+    delta.floatingDamages = [];
+  }
+
+  // Particles
+  if (currentState.particles && currentState.particles.length > 0) {
+    delta.particles = currentState.particles.map((p) => ({
+      x: quantizeFloat(p.x, 1),
+      y: quantizeFloat(p.y, 1),
+      vx: quantizeFloat(p.vx, 1),
+      vy: quantizeFloat(p.vy, 1),
+      color: p.color,
+      size: p.size,
+      life: quantizeFloat(p.life, 2),
+    }));
+  } else if (prevState && prevState.particles && prevState.particles.length > 0) {
+    delta.particles = [];
   }
 
   // Mines
@@ -159,6 +183,14 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 
   if (delta.explosions !== undefined) {
     localState.explosions = delta.explosions as any;
+  }
+
+  if (delta.floatingDamages !== undefined) {
+    localState.floatingDamages = delta.floatingDamages as any;
+  }
+
+  if (delta.particles !== undefined) {
+    localState.particles = delta.particles as any;
   }
 
   if (delta.mines !== undefined) {

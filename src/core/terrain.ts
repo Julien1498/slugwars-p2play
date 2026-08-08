@@ -43,6 +43,15 @@ export class DestructibleTerrain {
         }
       }
     }
+    // Destroy & remove solid props overlapping the explosion crater
+    if (this.data.solidProps && this.data.solidProps.length > 0) {
+      this.data.solidProps = this.data.solidProps.filter((p) => {
+        const propCenterY = p.y - p.height / 2;
+        const dist = Math.hypot(p.x - cx, propCenterY - cy);
+        return dist > radius + Math.max(p.width, p.height) * 0.4;
+      });
+    }
+
     return carvedPixels;
   }
 
