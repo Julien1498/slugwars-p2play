@@ -85,6 +85,31 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     }));
   }
 
+  // Explosions (Crater Carving & Shockwave VFX)
+  if (currentState.explosions.length > 0) {
+    delta.explosions = currentState.explosions.map((ex) => ({
+      id: ex.id,
+      x: quantizeFloat(ex.x, 2),
+      y: quantizeFloat(ex.y, 2),
+      radius: ex.radius,
+      damage: ex.damage,
+      createdAt: ex.createdAt,
+    }));
+  } else if (prevState && prevState.explosions.length > 0) {
+    delta.explosions = [];
+  }
+
+  // Mines
+  if (currentState.mines && currentState.mines.length > 0) {
+    delta.mines = currentState.mines.map((m) => ({
+      id: m.id,
+      x: m.x,
+      y: m.y,
+      isTriggered: m.isTriggered,
+      fuseTimerMs: m.fuseTimerMs,
+    }));
+  }
+
   // Helicopters
   if (currentState.helicopters && currentState.helicopters.length > 0) {
     delta.helicopters = currentState.helicopters.map((h) => ({
@@ -130,6 +155,14 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 
   if (delta.projectiles !== undefined) {
     localState.projectiles = delta.projectiles as any;
+  }
+
+  if (delta.explosions !== undefined) {
+    localState.explosions = delta.explosions as any;
+  }
+
+  if (delta.mines !== undefined) {
+    localState.mines = delta.mines as any;
   }
 
   if (delta.helicopters !== undefined) {
