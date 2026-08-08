@@ -20,6 +20,7 @@ export interface CompactSlugDelta {
   al?: boolean; // isAlive
   pl?: boolean; // isPlaced
   v?: string | null; // inVehicleId
+  tp?: { x: number; y: number }; // currentTargetPoint
 }
 
 export interface CompactStateDelta {
@@ -70,6 +71,10 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     if (!prevSlug || prevSlug.isAlive !== slug.isAlive) { sDelta.al = slug.isAlive; hasChange = true; }
     if (!prevSlug || prevSlug.isPlaced !== slug.isPlaced) { sDelta.pl = slug.isPlaced; hasChange = true; }
     if (!prevSlug || prevSlug.inVehicleId !== slug.inVehicleId) { sDelta.v = slug.inVehicleId; hasChange = true; }
+    if (!prevSlug || prevSlug.currentTargetPoint !== slug.currentTargetPoint) {
+      sDelta.tp = slug.currentTargetPoint ? { x: quantizeFloat(slug.currentTargetPoint.x, 1), y: quantizeFloat(slug.currentTargetPoint.y, 1) } : undefined;
+      hasChange = true;
+    }
 
     if (hasChange) slugDeltas.push(sDelta);
   }
@@ -79,13 +84,18 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   if (currentState.projectiles.length > 0 || (prevState && prevState.projectiles.length > 0)) {
     delta.projectiles = currentState.projectiles.map((p) => ({
       id: p.id,
+      weaponId: p.weaponId,
       x: quantizeFloat(p.x, 2),
       y: quantizeFloat(p.y, 2),
       vx: quantizeFloat(p.vx, 2),
       vy: quantizeFloat(p.vy, 2),
       radius: p.radius,
-      weaponId: p.weaponId,
       fuseTimerMs: p.fuseTimerMs,
+      bounces: p.bounces,
+      windAffected: p.windAffected,
+      ownerSlugId: p.ownerSlugId,
+      targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
+      behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
     }));
   }
 
@@ -176,6 +186,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.al !== undefined) slug.isAlive = dSlug.al;
         if (dSlug.pl !== undefined) slug.isPlaced = dSlug.pl;
         if (dSlug.v !== undefined) slug.inVehicleId = dSlug.v;
+        if (dSlug.tp !== undefined) slug.currentTargetPoint = dSlug.tp;
       }
     }
   }
