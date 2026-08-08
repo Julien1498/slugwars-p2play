@@ -1,6 +1,7 @@
 import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, FloatingDamage, Particle } from '../core/types';
 
-export function quantizeFloat(val: number, decimals: number = 2): number {
+export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
+  if (val === undefined || val === null || isNaN(val)) return 0;
   const factor = Math.pow(10, decimals);
   return Math.round(val * factor) / factor;
 }
