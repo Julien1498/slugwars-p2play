@@ -167,6 +167,12 @@ export function useGame(options?: {
             break;
           case 'RELEASE_CHARGE':
             if (playerId === engine.state.activeTeamId) {
+              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+              if (activeSlug) {
+                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
+              }
               engine.releaseCharge(msg.payload?.targetPoint);
             }
             break;
@@ -192,6 +198,12 @@ export function useGame(options?: {
           }
           case 'FIRE':
             if (playerId === engine.state.activeTeamId) {
+              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+              if (activeSlug) {
+                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
+              }
               engine.fireWeapon(msg.payload?.targetPoint);
             }
             break;

@@ -80,24 +80,22 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
   if (slugDeltas.length > 0) delta.slugs = slugDeltas;
 
-  // Projectiles
-  if (currentState.projectiles.length > 0 || (prevState && prevState.projectiles.length > 0)) {
-    delta.projectiles = currentState.projectiles.map((p) => ({
-      id: p.id,
-      weaponId: p.weaponId,
-      x: quantizeFloat(p.x, 2),
-      y: quantizeFloat(p.y, 2),
-      vx: quantizeFloat(p.vx, 2),
-      vy: quantizeFloat(p.vy, 2),
-      radius: p.radius,
-      fuseTimerMs: p.fuseTimerMs,
-      bounces: p.bounces,
-      windAffected: p.windAffected,
-      ownerSlugId: p.ownerSlugId,
-      targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
-      behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
-    }));
-  }
+  // Projectiles (Always synchronized every tick so Guest is 100% in sync with Host!)
+  delta.projectiles = currentState.projectiles.map((p) => ({
+    id: p.id,
+    weaponId: p.weaponId,
+    x: quantizeFloat(p.x, 2),
+    y: quantizeFloat(p.y, 2),
+    vx: quantizeFloat(p.vx, 2),
+    vy: quantizeFloat(p.vy, 2),
+    radius: p.radius,
+    fuseTimerMs: p.fuseTimerMs,
+    bounces: p.bounces,
+    windAffected: p.windAffected,
+    ownerSlugId: p.ownerSlugId,
+    targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
+    behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
+  }));
 
   // Explosions (Crater Carving & Shockwave VFX)
   if (currentState.explosions.length > 0) {

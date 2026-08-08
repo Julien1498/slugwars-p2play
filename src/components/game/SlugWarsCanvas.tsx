@@ -5,15 +5,17 @@ import { getWeapon } from '../../core/weapons/registry';
 import { SeededRandom } from '../../core/terrainGenerator';
 import { sfx } from '../../core/audio';
 
+export type TargetPointPayload = Vector2D & { aimAngle?: number; aimPower?: number; facing?: 'left' | 'right' };
+
 interface SlugWarsCanvasProps {
   gameState: GameState;
   terrain: DestructibleTerrain;
   isMyTurn: boolean;
   showHitboxes?: boolean;
-  onFire: (targetPoint?: Vector2D) => void;
+  onFire: (targetPoint?: TargetPointPayload) => void;
   onPlaceSlug?: (point: Vector2D) => void;
-  onStartCharge?: (targetPoint?: Vector2D) => void;
-  onReleaseCharge?: (targetPoint?: Vector2D) => void;
+  onStartCharge?: (targetPoint?: TargetPointPayload) => void;
+  onReleaseCharge?: (targetPoint?: TargetPointPayload) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
 }
 
@@ -732,7 +734,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
 
       if (isInstantTarget) {
-        onFire(targetPt);
+        onFire({ ...targetPt, aimAngle: activeSlug.aimAngle, aimPower: activeSlug.aimPower, facing: activeSlug.facing });
         lockedTargetRef.current = null;
       } else {
         const dx = clickX - activeSlug.x;
@@ -742,7 +744,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         const facing = dx >= 0 ? 'right' : 'left';
 
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
-        onReleaseCharge?.(targetPt);
+        onReleaseCharge?.({ ...targetPt, aimAngle: angle, aimPower: activeSlug.aimPower, facing });
         lockedTargetRef.current = null;
       }
     },
