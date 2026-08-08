@@ -69,4 +69,23 @@ export class DestructibleTerrain {
     }
     return { hit: false, x: x1, y: y1 };
   }
+
+  public drawTerrainToCanvas(ctx: CanvasRenderingContext2D): void {
+    const { width, height, grid, theme } = this.data;
+    const imgData = ctx.createImageData(width, height);
+    const data32 = new Uint32Array(imgData.data.buffer);
+
+    // Color theme in 32-bit ABGR format
+    let color32 = 0xff15803d; // Island Green
+    if (theme === 'CAVERN') color32 = 0xff52525b;
+    else if (theme === 'FORTRESS') color32 = 0xff3b82f6;
+    else if (theme === 'FLOATING_CHAOS') color32 = 0xffa855f7;
+
+    for (let i = 0; i < grid.length; i++) {
+      if (grid[i] > 0) {
+        data32[i] = color32;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
 }
