@@ -15,6 +15,7 @@ export interface CompactSlugDelta {
   f?: 'left' | 'right';
   a?: number; // aimAngle
   p?: number; // aimPower
+  c?: boolean; // isChargingPower
   w?: string; // selectedWeaponId
   al?: boolean; // isAlive
   pl?: boolean; // isPlaced
@@ -64,6 +65,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     if (!prevSlug || prevSlug.facing !== slug.facing) { sDelta.f = slug.facing; hasChange = true; }
     if (!prevSlug || prevSlug.aimAngle !== slug.aimAngle) { sDelta.a = slug.aimAngle; hasChange = true; }
     if (!prevSlug || Math.abs(prevSlug.aimPower - slug.aimPower) > 0.1) { sDelta.p = quantizeFloat(slug.aimPower, 1); hasChange = true; }
+    if (!prevSlug || prevSlug.isChargingPower !== slug.isChargingPower) { sDelta.c = slug.isChargingPower; hasChange = true; }
     if (!prevSlug || prevSlug.selectedWeaponId !== slug.selectedWeaponId) { sDelta.w = slug.selectedWeaponId; hasChange = true; }
     if (!prevSlug || prevSlug.isAlive !== slug.isAlive) { sDelta.al = slug.isAlive; hasChange = true; }
     if (!prevSlug || prevSlug.isPlaced !== slug.isPlaced) { sDelta.pl = slug.isPlaced; hasChange = true; }
@@ -169,6 +171,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.f !== undefined) slug.facing = dSlug.f;
         if (dSlug.a !== undefined) slug.aimAngle = dSlug.a;
         if (dSlug.p !== undefined) slug.aimPower = dSlug.p;
+        if (dSlug.c !== undefined) slug.isChargingPower = dSlug.c;
         if (dSlug.w !== undefined) slug.selectedWeaponId = dSlug.w;
         if (dSlug.al !== undefined) slug.isAlive = dSlug.al;
         if (dSlug.pl !== undefined) slug.isPlaced = dSlug.pl;
