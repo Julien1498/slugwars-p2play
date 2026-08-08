@@ -242,6 +242,13 @@ export function useGame(options?: {
 
       if (payload.isDelta && payload.delta) {
         applyStateDelta(engine.state, payload.delta);
+
+        if (engine.state.explosions && engine.state.explosions.length > 0) {
+          for (const ex of engine.state.explosions) {
+            engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
+          }
+        }
+
         setGameState({ ...engine.state });
       } else if (payload.config) {
         const newState = payload as GameState;
