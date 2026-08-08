@@ -506,10 +506,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     offCtx.fill();
     offCtx.restore();
 
-    // Synchronize grid array & recalculate distance-to-air map for new crater
+    // Synchronize grid array for physical collision carving
     terrain.carveExplosion(x, y, radius);
-    redrawOffscreenTerrain();
-  }, [terrain, redrawOffscreenTerrain]);
+  }, [terrain]);
 
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const zoomRef = useRef<number>(1.0);
@@ -1512,24 +1511,26 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // Trajectory Line & Aim Guide & Charging Power Bar
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-      if (activeSlug && isMyTurn && gameState.phase === 'AIMING') {
-        const rad = (activeSlug.aimAngle * Math.PI) / 180;
-        const dir = activeSlug.facing === 'right' ? 1 : -1;
-        const aimLength = (activeSlug.aimPower / 100) * 60;
-        const targetX = activeSlug.x + Math.cos(rad) * aimLength * dir;
-        const targetY = activeSlug.y - Math.sin(rad) * aimLength;
+      if (activeSlug && (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME')) {
+        if (isMyTurn) {
+          const rad = (activeSlug.aimAngle * Math.PI) / 180;
+          const dir = activeSlug.facing === 'right' ? 1 : -1;
+          const aimLength = (activeSlug.aimPower / 100) * 60;
+          const targetX = activeSlug.x + Math.cos(rad) * aimLength * dir;
+          const targetY = activeSlug.y - Math.sin(rad) * aimLength;
 
-        ctx.strokeStyle = activeSlug.isChargingPower ? '#ef4444' : '#facc15';
-        ctx.lineWidth = activeSlug.isChargingPower ? 3 : 2;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(activeSlug.x, activeSlug.y - 8);
-        ctx.lineTo(targetX, targetY);
-        ctx.stroke();
-        ctx.setLineDash([]);
+          ctx.strokeStyle = activeSlug.isChargingPower ? '#ef4444' : '#facc15';
+          ctx.lineWidth = activeSlug.isChargingPower ? 3 : 2;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(activeSlug.x, activeSlug.y - 8);
+          ctx.lineTo(targetX, targetY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
 
-        // Render Power Charging Bar Gauge
-        if (activeSlug.isChargingPower) {
+        // Render Power Charging Bar Gauge & Percentage Text (Visible for Host & Guest!)
+        if (activeSlug.isChargingPower || activeSlug.aimPower > 5) {
           const barW = 40;
           const barH = 6;
           const barX = activeSlug.x - barW / 2;
