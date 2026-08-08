@@ -3,7 +3,6 @@ import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState, Vector2D } from '../core/types';
 import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
-import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 
@@ -33,36 +32,25 @@ export function useGame(options?: {
   const engineRef = useRef<SlugWarsEngine>(new SlugWarsEngine());
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const prevMapKeyRef = useRef<string | null>(null);
-  const lastSentStateRef = useRef<GameState | null>(null);
 
   const syncState = useCallback(() => {
     setGameState({ ...engineRef.current.state });
   }, []);
 
-  const sendFullStateToConn = useCallback(
-    (conn: any) => {
-      const sanitized = sanitizeGameState(engineRef.current.state);
-      conn.send({ type: 'FULL_STATE_UPDATE', state: sanitized });
-    },
-    []
-  );
-
-  const broadcastDeltaState = useCallback(
+  const broadcastState = useCallback(
     (state: GameState) => {
       const activeId = myPeerId || peerManager.myPeerId;
       if (!activeId) return;
-
-      const delta = buildStateDelta(lastSentStateRef.current, state);
-      lastSentStateRef.current = JSON.parse(JSON.stringify(state));
+      const sanitized = sanitizeGameState(state);
 
       if (peerManager.onStateReceived) {
-        peerManager.onStateReceived(state);
+        peerManager.onStateReceived(sanitized);
       }
 
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            conn.send({ type: 'DELTA_STATE_UPDATE', delta });
+            conn.send({ type: 'STATE_UPDATE', state: sanitized });
           }
         }
       }
@@ -70,9 +58,9 @@ export function useGame(options?: {
     [peerManager, myPeerId]
   );
 
-  // Host Action Handler with Sender Verification
+  // Host Action Handler
   const handleHostAction = useCallback(
-    (senderPeerId: string, rawMsg: any, conn?: any) => {
+    (senderPeerId: string, rawMsg: any) => {
       const msg = rawMsg as SlugWarsNetworkMessage;
       if (!isHost) return;
       const engine = engineRef.current;
@@ -90,112 +78,85 @@ export function useGame(options?: {
               msg.payload?.avatar || '🐌',
               playerId === (myPeerId || peerManager.myPeerId)
             );
-            if (conn && conn.open) {
-              sendFullStateToConn(conn);
-            }
             break;
           }
           case 'CHANGE_CONFIG':
-            if (msg.payload?.config && playerId === (myPeerId || peerManager.myPeerId)) {
+            if (msg.payload?.config) {
               engine.setConfig(msg.payload.config);
             }
             break;
           case 'START_GAME':
-            if (playerId === (myPeerId || peerManager.myPeerId)) {
-              engine.startGame();
-            }
+            engine.startGame();
             break;
           case 'START_MOVE':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if (msg.payload?.dir) {
               engine.startMove(msg.payload.dir);
             }
             break;
           case 'STOP_MOVE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.stopMove();
-            }
+            engine.stopMove();
             break;
           case 'JUMP':
-            if (playerId === engine.state.activeTeamId) {
-              engine.jumpSlug();
-            }
+            engine.jumpSlug();
             break;
           case 'START_STEER':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if (msg.payload?.dir) {
               engine.startSteer(msg.payload.dir);
             }
             break;
           case 'STOP_STEER':
-            if (playerId === engine.state.activeTeamId) {
-              engine.stopSteer();
-            }
+            engine.stopSteer();
             break;
           case 'ENTER_VEHICLE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.enterVehicle();
-            }
+            engine.enterVehicle();
             break;
           case 'EXIT_VEHICLE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.exitVehicle();
-            }
+            engine.exitVehicle();
             break;
           case 'STEER_VEHICLE':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if (msg.payload?.dir) {
               engine.steerVehicle(msg.payload.dir);
             }
             break;
           case 'START_CHARGE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.startCharge(msg.payload?.targetPoint);
-            }
+            engine.startCharge(msg.payload?.targetPoint);
             break;
           case 'RELEASE_CHARGE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.releaseCharge(msg.payload?.targetPoint);
-            }
+            engine.releaseCharge(msg.payload?.targetPoint);
             break;
           case 'AIM': {
-            if (playerId === engine.state.activeTeamId) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug && activeSlug.teamId === playerId) {
-                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
-                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
-                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
-              }
+            const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+            if (activeSlug && activeSlug.teamId === playerId) {
+              if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+              if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+              if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
             }
             break;
           }
           case 'SELECT_WEAPON': {
-            if (playerId === engine.state.activeTeamId) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug && activeSlug.teamId === playerId && msg.payload?.weaponId) {
-                activeSlug.selectedWeaponId = msg.payload.weaponId;
-              }
+            const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+            if (activeSlug && activeSlug.teamId === playerId && msg.payload?.weaponId) {
+              activeSlug.selectedWeaponId = msg.payload.weaponId;
             }
             break;
           }
           case 'FIRE':
-            if (playerId === engine.state.activeTeamId) {
-              engine.fireWeapon(msg.payload?.targetPoint);
-            }
+            engine.fireWeapon(msg.payload?.targetPoint);
             break;
           case 'PLACE_SLUG':
-            if (playerId === engine.state.activeTeamId && msg.payload?.point) {
+            if (msg.payload?.point) {
               engine.placeSlug(msg.payload.point);
             }
             break;
           case 'RESTART_GAME':
-            if (playerId === (myPeerId || peerManager.myPeerId)) {
-              engine.state.phase = 'LOBBY';
-            }
+            engine.state.phase = 'LOBBY';
             break;
         }
         syncState();
-        broadcastDeltaState(engine.state);
+        broadcastState(engine.state);
       }
     },
-    [isHost, myPeerId, peerManager, syncState, broadcastDeltaState, sendFullStateToConn]
+    [isHost, myPeerId, peerManager, syncState, broadcastState]
   );
 
   // Presence / Reconnect Handlers
@@ -212,38 +173,33 @@ export function useGame(options?: {
           remapPlayerId: () => false,
           removePlayer: (id) => engineRef.current.removeTeam(id),
         }),
-      onBroadcast: () => broadcastDeltaState(engineRef.current.state),
+      onBroadcast: () => broadcastState(engineRef.current.state),
       onHostAction: handleHostAction,
     });
     return () => presence.dispose();
-  }, [isHost, peerManager, handleHostAction, broadcastDeltaState]);
+  }, [isHost, peerManager, handleHostAction, broadcastState]);
 
-  // Guest State / Delta receiver
+  // Set guest state receiver callback
   useEffect(() => {
     if (isHost) return;
-    peerManager.onStateReceived = (msg: any) => {
-      if (!msg) return;
-      const engine = engineRef.current;
+    peerManager.onStateReceived = (newState: any) => {
+      if (newState && newState.config) {
+        const engine = engineRef.current;
+        engine.state = newState;
 
-      if (msg.type === 'FULL_STATE_UPDATE' || msg.config) {
-        const newState = msg.state || msg;
-        if (newState && newState.config) {
-          engine.state = newState;
-          const mapKey = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-          if (prevMapKeyRef.current !== mapKey) {
-            prevMapKeyRef.current = mapKey;
-            engine.initTerrain();
-          }
-          if (newState.explosions && newState.explosions.length > 0) {
-            for (const ex of newState.explosions) {
-              engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
-            }
-          }
-          setGameState(newState);
+        const mapKey = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+        if (prevMapKeyRef.current !== mapKey) {
+          prevMapKeyRef.current = mapKey;
+          engine.initTerrain();
         }
-      } else if (msg.type === 'DELTA_STATE_UPDATE' && msg.delta) {
-        applyStateDelta(engine.state, msg.delta);
-        setGameState({ ...engine.state });
+
+        if (newState.explosions && newState.explosions.length > 0) {
+          for (const ex of newState.explosions) {
+            engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
+          }
+        }
+
+        setGameState(newState);
       }
     };
   }, [isHost, peerManager]);
@@ -256,9 +212,9 @@ export function useGame(options?: {
       engineRef.current = engine;
       engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true);
       syncState();
-      broadcastDeltaState(engine.state);
+      broadcastState(engine.state);
     },
-    [hostGame, syncState, broadcastDeltaState]
+    [hostGame, syncState, broadcastState]
   );
 
   // Guest room join wrapper
@@ -300,21 +256,25 @@ export function useGame(options?: {
       }
 
       syncState();
-      broadcastDeltaState(engineRef.current.state);
+      broadcastState(engineRef.current.state);
     }
-  }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastDeltaState]);
+  }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastState]);
 
-  // Physics Loop (50ms interval) with 20 Hz delta broadcasting
+  // Physics Loop (50ms interval) with throttled React state sync (20 FPS UI sync to preserve 60 FPS Canvas)
   useEffect(() => {
     if (!isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
+    let tickCount = 0;
 
     const interval = setInterval(() => {
       engineRef.current.tick();
-      broadcastDeltaState(engineRef.current.state);
+      tickCount++;
+
+      // Broadcast state to peers and update local state every tick (50ms / 20Hz)
+      broadcastState(engineRef.current.state);
       setGameState({ ...engineRef.current.state });
     }, 50);
     return () => clearInterval(interval);
-  }, [isHost, gameState.phase, broadcastDeltaState]);
+  }, [isHost, gameState.phase, broadcastState]);
 
   // Action Sender
   const sendAction = useCallback(
