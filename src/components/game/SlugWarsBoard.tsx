@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Profiler } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { TurnHeader } from './TurnHeader';
@@ -11,6 +11,7 @@ import { TextChatPanel, JournalPanel } from 'p2play-core/chat';
 import { Trophy, RefreshCw, MessageSquare, Eye, X } from 'lucide-react';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
 import { sfx } from '../../core/audio';
+import { perfTracker } from '../../core/perfTracker';
 
 interface SlugWarsBoardProps {
   gameState: GameState;
@@ -231,15 +232,17 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   return (
     <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-zinc-950 p-2 text-zinc-100 relative">
       {/* Tactical Artillery Top Header */}
-      <TurnHeader
-        gameState={gameState}
-        hostPeerId={hostPeerId}
-        isMyTurn={isMyTurn}
-        onOpenWeaponPicker={() => setShowWeaponPicker(true)}
-        onOpenRules={() => setShowRules(true)}
-        onOpenMetrics={() => setShowMetrics(true)}
-        onExit={onExit}
-      />
+      <Profiler id="TurnHeader" onRender={perfTracker.onReactRender}>
+        <TurnHeader
+          gameState={gameState}
+          hostPeerId={hostPeerId}
+          isMyTurn={isMyTurn}
+          onOpenWeaponPicker={() => setShowWeaponPicker(true)}
+          onOpenRules={() => setShowRules(true)}
+          onOpenMetrics={() => setShowMetrics(true)}
+          onExit={onExit}
+        />
+      </Profiler>
 
       {/* Placement Phase Header Banner */}
       {gameState.phase === 'PLACEMENT' && (
@@ -250,17 +253,19 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
       {/* Main Full-Width Canvas Container */}
       <div className="relative flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden py-1">
-        <SlugWarsCanvas
-          gameState={gameState}
-          terrain={terrain}
-          isMyTurn={isMyTurn}
-          showHitboxes={showHitboxes}
-          onFire={onFire}
-          onPlaceSlug={onPlaceSlug}
-          onStartCharge={onStartCharge}
-          onReleaseCharge={onReleaseCharge}
-          onUpdateAim={onUpdateAim}
-        />
+        <Profiler id="SlugWarsCanvas" onRender={perfTracker.onReactRender}>
+          <SlugWarsCanvas
+            gameState={gameState}
+            terrain={terrain}
+            isMyTurn={isMyTurn}
+            showHitboxes={showHitboxes}
+            onFire={onFire}
+            onPlaceSlug={onPlaceSlug}
+            onStartCharge={onStartCharge}
+            onReleaseCharge={onReleaseCharge}
+            onUpdateAim={onUpdateAim}
+          />
+        </Profiler>
       </div>
 
       {/* Sleek Tactical Artillery Bottom HUD Controls Bar */}
@@ -402,37 +407,47 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
       {/* Victory / Game Over Stats Modal */}
       {gameState.phase === 'GAME_OVER' && (
-        <GameOverStatsModal
-          gameState={gameState}
-          isHost={isHost}
-          onRestartGame={onRestartGame}
-        />
+        <Profiler id="GameOverStatsModal" onRender={perfTracker.onReactRender}>
+          <GameOverStatsModal
+            gameState={gameState}
+            isHost={isHost}
+            onRestartGame={onRestartGame}
+          />
+        </Profiler>
       )}
 
       {/* Weapon Picker Modal */}
       {showWeaponPicker && myTeam && (
-        <WeaponPicker
-          inventory={myTeam.inventory}
-          selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
-          onSelectWeapon={(wId) => {
-            sfx.play('tick');
-            onSelectWeapon(wId);
-          }}
-          onClose={() => setShowWeaponPicker(false)}
-        />
+        <Profiler id="WeaponPicker" onRender={perfTracker.onReactRender}>
+          <WeaponPicker
+            inventory={myTeam.inventory}
+            selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
+            onSelectWeapon={(wId) => {
+              sfx.play('tick');
+              onSelectWeapon(wId);
+            }}
+            onClose={() => setShowWeaponPicker(false)}
+          />
+        </Profiler>
       )}
 
       {/* Rules Modal */}
-      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+      {showRules && (
+        <Profiler id="RulesModal" onRender={perfTracker.onReactRender}>
+          <RulesModal onClose={() => setShowRules(false)} />
+        </Profiler>
+      )}
 
       {/* Hardware & Network Performance Metrics Modal */}
       {showMetrics && (
-        <MetricsModal
-          isOpen={showMetrics}
-          onClose={() => setShowMetrics(false)}
-          gameState={gameState}
-          hostPeerId={hostPeerId}
-        />
+        <Profiler id="MetricsModal" onRender={perfTracker.onReactRender}>
+          <MetricsModal
+            isOpen={showMetrics}
+            onClose={() => setShowMetrics(false)}
+            gameState={gameState}
+            hostPeerId={hostPeerId}
+          />
+        </Profiler>
       )}
     </div>
   );
