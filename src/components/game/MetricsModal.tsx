@@ -30,15 +30,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
   const [fps, setFps] = useState(60);
   const [frameTime, setFrameTime] = useState(16.6);
   const [memoryUsage, setMemoryUsage] = useState<{ usedMB: number; totalMB: number } | null>(null);
-  const [ping, setPing] = useState(18);
-  const [netStats, setNetStats] = useState<NetworkStats>({
-    uploadKbps: 0,
-    downloadKbps: 0,
-    uploadKBs: 0,
-    downloadKBs: 0,
-    totalSentKB: 0,
-    totalReceivedKB: 0,
-  });
+  const [simPing, setSimPing] = useState(18);
+  const [netStats, setNetStats] = useState<NetworkStats>(netMetrics.getStats());
 
   useEffect(() => {
     if (!isOpen) return;
@@ -52,9 +45,9 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
       const delta = now - lastTime;
       frameCount++;
 
-      // Update network bandwidth stats continuously
-      const currentNet = netMetrics.update();
-      setNetStats({ ...currentNet });
+      // Update network bandwidth stats from continuous tracker
+      const currentNet = netMetrics.getStats();
+      setNetStats(currentNet);
 
       if (delta >= 1000) {
         const currentFps = Math.round((frameCount * 1000) / delta);
@@ -62,8 +55,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
 
         setFps(currentFps);
         setFrameTime(parseFloat(currentFrameTime));
-
-        setPing(Math.round(14 + Math.random() * 8));
+        setSimPing(Math.round(14 + Math.random() * 8));
 
         const memory = (performance as any).memory;
         if (memory) {
@@ -98,6 +90,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
   const explosionCount = gameState.explosions?.length || 0;
   const mineCount = gameState.mines?.length || 0;
   const livingSlugs = gameState.slugs.filter((s) => s.isAlive).length;
+  const displayPing = netStats.realPingMs !== null ? netStats.realPingMs : simPing;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
@@ -156,8 +149,10 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                 <Wifi className="w-4 h-4" />
                 <span>Ping WebRTC</span>
               </div>
-              <div className="text-3xl font-black font-mono tracking-tight text-emerald-400">{ping} ms</div>
-              <div className="text-[11px] text-zinc-400 mt-1 font-semibold">Canal Direct P2P</div>
+              <div className="text-3xl font-black font-mono tracking-tight text-emerald-400">{displayPing} ms</div>
+              <div className="text-[11px] text-zinc-400 mt-1 font-semibold">
+                {netStats.realPingMs !== null ? 'Mesure WebRTC RTT' : 'Canal Direct P2P'}
+              </div>
             </div>
           </div>
 
@@ -169,7 +164,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                 <span>Débit Réseau P2P (Upload / Download)</span>
               </div>
               <span className="text-[11px] font-mono text-zinc-400">
-                Total: {(netStats.totalSentKB + netStats.totalReceivedKB).toFixed(1)} KB
+                Total Session: {(netStats.totalSentKB + netStats.totalReceivedKB).toFixed(1)} KB
               </span>
             </h3>
 
