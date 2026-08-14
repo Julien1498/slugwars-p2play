@@ -7,6 +7,7 @@ import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
+import { netMetrics } from '../core/networkMetrics';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -55,7 +56,9 @@ export function useGame(options?: {
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            conn.send({ type: 'STATE_UPDATE', state: sanitized });
+            const msg = { type: 'STATE_UPDATE', state: sanitized };
+            conn.send(msg);
+            netMetrics.recordUpload(msg);
           }
         }
       }
@@ -77,7 +80,9 @@ export function useGame(options?: {
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            conn.send({ type: 'STATE_UPDATE', state: payload });
+            const msg = { type: 'STATE_UPDATE', state: payload };
+            conn.send(msg);
+            netMetrics.recordUpload(msg);
           }
         }
       }
@@ -88,6 +93,7 @@ export function useGame(options?: {
   // Host Action Handler with Strict Anti-Cheat Validation
   const handleHostAction = useCallback(
     (senderPeerId: string, rawMsg: any) => {
+      netMetrics.recordDownload(rawMsg);
       const msg = rawMsg as SlugWarsNetworkMessage;
       if (!isHost) return;
       const engine = engineRef.current;
@@ -255,6 +261,7 @@ export function useGame(options?: {
     if (isHost) return;
     peerManager.onStateReceived = (payload: any) => {
       if (!payload) return;
+      netMetrics.recordDownload(payload);
       const engine = engineRef.current;
 
       if (payload.isDelta && payload.delta) {
@@ -400,6 +407,7 @@ export function useGame(options?: {
         if (myPeerId) handleHostAction(myPeerId, msg);
       } else {
         peerManager.sendToHost('ACTION', { actionName, payload });
+        netMetrics.recordUpload(msg);
       }
     },
     [isHost, myPeerId, peerManager, handleHostAction]
@@ -407,6 +415,7 @@ export function useGame(options?: {
 
   const sendChat = useCallback(
     (text: string) => {
+      netMetrics.recordUpload(text);
       sendChatRaw(options?.playerName || 'Limace', text);
     },
     [sendChatRaw, options?.playerName]
