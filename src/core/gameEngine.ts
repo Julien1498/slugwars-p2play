@@ -704,7 +704,7 @@ export class SlugWarsEngine {
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
-      // Active Ninja Rope Swinging & Climbing
+      // Active Ninja Rope Swinging & Climbing with Wall Collision & Rebound
       if (activeSlug.ropeState) {
         const rope = activeSlug.ropeState;
         const g = 24;
@@ -724,11 +724,40 @@ export class SlugWarsEngine {
           rope.length = Math.min(450, rope.length + 3.5);
         }
 
+        const prevAngle = rope.angleRad;
         rope.angularVelocity = (rope.angularVelocity + alpha) * 0.992;
         rope.angleRad += rope.angularVelocity;
 
-        const newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
-        const newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+        let newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
+        let newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+
+        // Check if slug body collides with solid terrain (wall/ceiling/ground)
+        const isBodySolid =
+          this.terrain.isSolid(newX, newY) ||
+          this.terrain.isSolid(newX - 6, newY - 4) ||
+          this.terrain.isSolid(newX + 6, newY - 4) ||
+          this.terrain.isSolid(newX, newY - 10);
+
+        if (isBodySolid) {
+          // Bounce off wall with elastic loss
+          rope.angularVelocity = -rope.angularVelocity * 0.45;
+          rope.angleRad = prevAngle + rope.angularVelocity;
+          newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
+          newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          sfx.play('bounce');
+        }
+
+        // Check if rope line crosses terrain corner
+        const ray = this.terrain.raycastSolid(rope.hookX, rope.hookY, newX, newY);
+        if (ray.hit) {
+          const hitDist = Math.hypot(ray.x - rope.hookX, ray.y - rope.hookY);
+          if (hitDist < rope.length - 8) {
+            rope.angularVelocity = -rope.angularVelocity * 0.5;
+            rope.angleRad = prevAngle;
+            newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
+            newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          }
+        }
 
         if (newY >= this.terrain.data.waterLevel) {
           activeSlug.ropeState = null;

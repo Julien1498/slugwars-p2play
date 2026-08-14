@@ -1,9 +1,17 @@
-import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, FloatingDamage, Particle } from '../core/types';
+import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, FloatingDamage, Particle, PlacedGirder, SupplyCrate } from '../core/types';
 
 export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
   if (val === undefined || val === null || isNaN(val)) return 0;
   const factor = Math.pow(10, decimals);
   return Math.round(val * factor) / factor;
+}
+
+export interface CompactRopeDelta {
+  hx: number;
+  hy: number;
+  l: number;
+  a: number;
+  w: number;
 }
 
 export interface CompactSlugDelta {
@@ -22,6 +30,7 @@ export interface CompactSlugDelta {
   pl?: boolean; // isPlaced
   v?: string | null; // inVehicleId
   tp?: { x: number; y: number }; // currentTargetPoint
+  rs?: CompactRopeDelta | null; // ropeState
 }
 
 export interface CompactStateDelta {
@@ -38,6 +47,8 @@ export interface CompactStateDelta {
   explosions?: Partial<ExplosionEvent>[];
   floatingDamages?: FloatingDamage[];
   particles?: Partial<Particle>[];
+  supplyCrates?: Partial<SupplyCrate>[];
+  girders?: PlacedGirder[];
 }
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
@@ -77,6 +88,21 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       hasChange = true;
     }
 
+    // Ninja Rope State Sync
+    if (slug.ropeState) {
+      sDelta.rs = {
+        hx: quantizeFloat(slug.ropeState.hookX, 1),
+        hy: quantizeFloat(slug.ropeState.hookY, 1),
+        l: quantizeFloat(slug.ropeState.length, 1),
+        a: quantizeFloat(slug.ropeState.angleRad, 3),
+        w: quantizeFloat(slug.ropeState.angularVelocity, 3),
+      };
+      hasChange = true;
+    } else if (prevSlug?.ropeState) {
+      sDelta.rs = null;
+      hasChange = true;
+    }
+
     if (hasChange) slugDeltas.push(sDelta);
   }
   if (slugDeltas.length > 0) delta.slugs = slugDeltas;
@@ -97,6 +123,26 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
     behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
   }));
+
+  // Girders Sync
+  if (currentState.girders && currentState.girders.length > 0) {
+    delta.girders = currentState.girders;
+  }
+
+  // Supply Crates Sync
+  if (currentState.supplyCrates && currentState.supplyCrates.length > 0) {
+    delta.supplyCrates = currentState.supplyCrates.map((c) => ({
+      id: c.id,
+      x: quantizeFloat(c.x, 2),
+      y: quantizeFloat(c.y, 2),
+      vy: quantizeFloat(c.vy, 2),
+      isLanded: c.isLanded,
+      crateType: c.crateType,
+      healAmount: c.healAmount,
+    }));
+  } else if (prevState && prevState.supplyCrates && prevState.supplyCrates.length > 0) {
+    delta.supplyCrates = [];
+  }
 
   // Explosions (Crater Carving & Shockwave VFX)
   if (currentState.explosions.length > 0) {
@@ -186,12 +232,33 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.pl !== undefined) slug.isPlaced = dSlug.pl;
         if (dSlug.v !== undefined) slug.inVehicleId = dSlug.v;
         if (dSlug.tp !== undefined) slug.currentTargetPoint = dSlug.tp;
+
+        // Apply Ninja Rope State
+        if (dSlug.rs === null) {
+          slug.ropeState = null;
+        } else if (dSlug.rs) {
+          slug.ropeState = {
+            hookX: dSlug.rs.hx,
+            hookY: dSlug.rs.hy,
+            length: dSlug.rs.l,
+            angleRad: dSlug.rs.a,
+            angularVelocity: dSlug.rs.w,
+          };
+        }
       }
     }
   }
 
   if (delta.projectiles !== undefined) {
     localState.projectiles = delta.projectiles as any;
+  }
+
+  if (delta.girders !== undefined) {
+    localState.girders = delta.girders;
+  }
+
+  if (delta.supplyCrates !== undefined) {
+    localState.supplyCrates = delta.supplyCrates as any;
   }
 
   if (delta.explosions !== undefined) {

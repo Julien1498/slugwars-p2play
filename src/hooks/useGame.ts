@@ -258,6 +258,7 @@ export function useGame(options?: {
 
   const knownProjIdsRef = useRef<Set<string>>(new Set());
   const knownExplosionIdsRef = useRef<Set<string>>(new Set());
+  const knownGirderIdsRef = useRef<Set<string>>(new Set());
   const prevPhaseRef = useRef<string>('LOBBY');
 
   // Set guest state / delta receiver callback with sound effects and terrain carving
@@ -305,6 +306,33 @@ export function useGame(options?: {
 
         applyStateDelta(engine.state, payload.delta);
 
+        // Stamp newly received girders into guest's terrain grid
+        if (engine.state.girders && engine.state.girders.length > 0) {
+          for (const g of engine.state.girders) {
+            if (!knownGirderIdsRef.current.has(g.id)) {
+              knownGirderIdsRef.current.add(g.id);
+              const rad = (g.angleDeg * Math.PI) / 180;
+              const cos = Math.cos(rad);
+              const sin = Math.sin(rad);
+              const halfL = g.length / 2;
+              const halfT = g.thickness / 2;
+              const w = engine.terrain.data.width;
+              const h = engine.terrain.data.height;
+
+              for (let dl = -halfL; dl <= halfL; dl++) {
+                for (let dt = -halfT; dt <= halfT; dt++) {
+                  const px = Math.round(g.x + dl * cos - dt * sin);
+                  const py = Math.round(g.y + dl * sin + dt * cos);
+                  if (px >= 0 && px < w && py >= 0 && py < h) {
+                    engine.terrain.data.grid[py * w + px] = 1;
+                  }
+                }
+              }
+              sfx.play('girder');
+            }
+          }
+        }
+
         if (engine.state.explosions && engine.state.explosions.length > 0) {
           for (const ex of engine.state.explosions) {
             engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
@@ -322,6 +350,32 @@ export function useGame(options?: {
           engine.initTerrain();
           knownProjIdsRef.current.clear();
           knownExplosionIdsRef.current.clear();
+          knownGirderIdsRef.current.clear();
+        }
+
+        if (newState.girders && newState.girders.length > 0) {
+          for (const g of newState.girders) {
+            if (!knownGirderIdsRef.current.has(g.id)) {
+              knownGirderIdsRef.current.add(g.id);
+              const rad = (g.angleDeg * Math.PI) / 180;
+              const cos = Math.cos(rad);
+              const sin = Math.sin(rad);
+              const halfL = g.length / 2;
+              const halfT = g.thickness / 2;
+              const w = engine.terrain.data.width;
+              const h = engine.terrain.data.height;
+
+              for (let dl = -halfL; dl <= halfL; dl++) {
+                for (let dt = -halfT; dt <= halfT; dt++) {
+                  const px = Math.round(g.x + dl * cos - dt * sin);
+                  const py = Math.round(g.y + dl * sin + dt * cos);
+                  if (px >= 0 && px < w && py >= 0 && py < h) {
+                    engine.terrain.data.grid[py * w + px] = 1;
+                  }
+                }
+              }
+            }
+          }
         }
 
         if (newState.explosions && newState.explosions.length > 0) {
