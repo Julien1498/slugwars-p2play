@@ -852,7 +852,6 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
 }, (prev, next) => {
   if (prev.isOpen !== next.isOpen) return false;
   if (prev.hostPeerId !== next.hostPeerId) return false;
-  if (prev.onClose !== next.onClose) return false;
   if (!next.isOpen) return true;
 
   const pState = prev.gameState;
