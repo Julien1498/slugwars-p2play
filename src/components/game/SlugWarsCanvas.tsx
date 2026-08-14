@@ -26,7 +26,7 @@ function getPixelHash(x: number, y: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
-export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
+export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   gameState,
   terrain,
   isMyTurn,
@@ -2174,4 +2174,4 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       </div>
     </div>
   );
-};
+});

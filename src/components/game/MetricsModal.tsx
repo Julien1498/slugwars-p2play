@@ -72,9 +72,6 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
       const delta = now - lastTime;
       frameCount++;
 
-      const currentNet = netMetrics.getStats();
-      setNetStats(currentNet);
-
       if (delta >= 1000) {
         const currentFps = Math.round((frameCount * 1000) / delta);
         const currentFrameTime = (delta / frameCount).toFixed(1);
@@ -82,6 +79,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
         setFps(currentFps);
         setFrameTime(parseFloat(currentFrameTime));
         setSimPing(Math.round(14 + Math.random() * 8));
+        setNetStats(netMetrics.getStats());
 
         const memory = (performance as any).memory;
         if (memory) {
