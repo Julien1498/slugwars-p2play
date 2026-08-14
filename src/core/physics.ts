@@ -18,58 +18,69 @@ export function updateHelicopterPhysics(
     heli.isFlying = false;
   }
 
-  const initialBottomY = Math.floor(heli.y + 12);
-  const initialCenterX = Math.floor(heli.x);
-  const isInitiallyGrounded =
-    initialBottomY >= 0 &&
-    initialBottomY < terrain.data.height &&
-    initialCenterX >= 0 &&
-    initialCenterX < terrain.data.width &&
-    terrain.data.grid[initialBottomY * terrain.data.width + initialCenterX] === 1;
-
+  // If piloted by active slug
   if (heli.pilotSlugId && pilotSlug) {
     heli.vx *= 0.92;
     heli.vy *= 0.92;
+
+    heli.x += heli.vx;
+    heli.y += heli.vy;
 
     pilotSlug.x = heli.x;
     pilotSlug.y = heli.y;
     pilotSlug.vx = heli.vx;
     pilotSlug.vy = heli.vy;
+
+    const bottomY = Math.floor(heli.y + 13);
+    const centerX = Math.floor(heli.x);
+    if (bottomY >= 0 && bottomY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
+      if (terrain.data.grid[bottomY * terrain.data.width + centerX] === 1) {
+        if (Math.abs(heli.vy) > 12) {
+          return { crashed: true };
+        }
+        heli.y = bottomY - 13;
+        heli.vy = 0;
+        heli.vx *= 0.75;
+      }
+    }
   } else {
-    if (isInitiallyGrounded) {
+    // Unpiloted helicopter: rest completely motionless if resting on solid ground
+    const centerX = Math.floor(heli.x);
+    const feetY = Math.floor(heli.y + 13);
+    const isSolidBelow =
+      feetY >= 0 &&
+      feetY < terrain.data.height &&
+      centerX >= 0 &&
+      centerX < terrain.data.width &&
+      (terrain.data.grid[feetY * terrain.data.width + centerX] === 1 ||
+       terrain.data.grid[(feetY + 1) * terrain.data.width + centerX] === 1);
+
+    if (isSolidBelow) {
+      heli.vx = 0;
       heli.vy = 0;
-      heli.vx *= 0.8;
-      if (Math.abs(heli.vx) < 0.05) heli.vx = 0;
     } else {
-      heli.vy += 0.25;
-      heli.vx *= 0.94;
+      heli.vy = Math.min(10, heli.vy + 0.35);
+      heli.vx *= 0.92;
+      heli.x += heli.vx;
+      heli.y += heli.vy;
+
+      // Check ground landing
+      const newFeetY = Math.floor(heli.y + 13);
+      if (newFeetY >= 0 && newFeetY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
+        if (terrain.data.grid[newFeetY * terrain.data.width + centerX] === 1) {
+          heli.y = newFeetY - 13;
+          heli.vy = 0;
+          heli.vx = 0;
+        }
+      }
     }
   }
-
-  heli.x += heli.vx;
-  heli.y += heli.vy;
 
   if (heli.x < 35) { heli.x = 35; heli.vx = 0; }
   if (heli.x > terrain.data.width - 35) { heli.x = terrain.data.width - 35; heli.vx = 0; }
 
   if (heli.y >= terrain.data.waterLevel - 10) {
     return { crashed: true };
-  }
-
-  const bottomY = Math.floor(heli.y + 12);
-  const centerX = Math.floor(heli.x);
-
-  if (bottomY >= 0 && bottomY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
-    const idx = bottomY * terrain.data.width + centerX;
-    if (terrain.data.grid[idx] === 1) {
-      if (Math.abs(heli.vy) > 12 && heli.pilotSlugId) {
-        return { crashed: true };
-      }
-      heli.y = bottomY - 13;
-      heli.vy = 0;
-      heli.vx *= 0.75;
-      if (Math.abs(heli.vx) < 0.05) heli.vx = 0;
-    }
   }
 
   return {};

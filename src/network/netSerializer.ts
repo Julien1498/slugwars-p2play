@@ -225,7 +225,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   const changedHelis: typeof curHelis = [];
   for (const h of curHelis) {
     const prevH = prevHelis.find((p) => p.id === h.id);
-    const hasMoved = !prevH || Math.abs(prevH.x - h.x) > 0.2 || Math.abs(prevH.y - h.y) > 0.2;
+    const threshold = h.pilotSlugId ? 0.2 : 0.8;
+    const hasMoved = !prevH || Math.abs(prevH.x - h.x) > threshold || Math.abs(prevH.y - h.y) > threshold;
     const hasStatusChanged = !prevH || prevH.hp !== h.hp || prevH.pilotSlugId !== h.pilotSlugId || prevH.facing !== h.facing;
 
     if (hasMoved || hasStatusChanged) {
