@@ -217,9 +217,24 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.floatingDamages = [];
   }
 
-  // Helicopters
-  if (currentState.helicopters && currentState.helicopters.length > 0) {
-    delta.helicopters = currentState.helicopters.map((h) => ({
+  // Helicopters: only sync when count changes or when any helicopter moves / changes pilot / changes HP
+  const curHelis = currentState.helicopters || [];
+  const prevHelis = prevState?.helicopters || [];
+  const heliCountChanged = curHelis.length !== prevHelis.length;
+
+  const changedHelis: typeof curHelis = [];
+  for (const h of curHelis) {
+    const prevH = prevHelis.find((p) => p.id === h.id);
+    const hasMoved = !prevH || Math.abs(prevH.x - h.x) > 0.2 || Math.abs(prevH.y - h.y) > 0.2;
+    const hasStatusChanged = !prevH || prevH.hp !== h.hp || prevH.pilotSlugId !== h.pilotSlugId || prevH.facing !== h.facing;
+
+    if (hasMoved || hasStatusChanged) {
+      changedHelis.push(h);
+    }
+  }
+
+  if (heliCountChanged || changedHelis.length > 0) {
+    delta.helicopters = changedHelis.map((h) => ({
       id: h.id,
       x: quantizeFloat(h.x, 2),
       y: quantizeFloat(h.y, 2),
@@ -227,6 +242,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       facing: h.facing,
       pilotSlugId: h.pilotSlugId,
     }));
+  } else if (prevState && prevState.helicopters && prevState.helicopters.length > 0 && curHelis.length === 0) {
+    delta.helicopters = [];
   }
 
   return delta;

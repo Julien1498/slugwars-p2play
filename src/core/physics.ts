@@ -18,6 +18,15 @@ export function updateHelicopterPhysics(
     heli.isFlying = false;
   }
 
+  const initialBottomY = Math.floor(heli.y + 12);
+  const initialCenterX = Math.floor(heli.x);
+  const isInitiallyGrounded =
+    initialBottomY >= 0 &&
+    initialBottomY < terrain.data.height &&
+    initialCenterX >= 0 &&
+    initialCenterX < terrain.data.width &&
+    terrain.data.grid[initialBottomY * terrain.data.width + initialCenterX] === 1;
+
   if (heli.pilotSlugId && pilotSlug) {
     heli.vx *= 0.92;
     heli.vy *= 0.92;
@@ -27,8 +36,14 @@ export function updateHelicopterPhysics(
     pilotSlug.vx = heli.vx;
     pilotSlug.vy = heli.vy;
   } else {
-    heli.vy += 0.25;
-    heli.vx *= 0.94;
+    if (isInitiallyGrounded) {
+      heli.vy = 0;
+      heli.vx *= 0.8;
+      if (Math.abs(heli.vx) < 0.05) heli.vx = 0;
+    } else {
+      heli.vy += 0.25;
+      heli.vx *= 0.94;
+    }
   }
 
   heli.x += heli.vx;
@@ -53,6 +68,7 @@ export function updateHelicopterPhysics(
       heli.y = bottomY - 13;
       heli.vy = 0;
       heli.vx *= 0.75;
+      if (Math.abs(heli.vx) < 0.05) heli.vx = 0;
     }
   }
 
