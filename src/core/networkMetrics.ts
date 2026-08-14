@@ -47,9 +47,18 @@ class NetworkMetricsTracker {
   }
 
   public recordUpload(bytesOrData: number | any): void {
-    const rawBytes = typeof bytesOrData === 'number'
-      ? bytesOrData
-      : (typeof bytesOrData === 'string' ? bytesOrData.length : JSON.stringify(bytesOrData).length);
+    let rawBytes = 0;
+    if (typeof bytesOrData === 'number') {
+      rawBytes = bytesOrData;
+    } else if (bytesOrData instanceof ArrayBuffer) {
+      rawBytes = bytesOrData.byteLength;
+    } else if (ArrayBuffer.isView(bytesOrData)) {
+      rawBytes = bytesOrData.byteLength;
+    } else if (typeof bytesOrData === 'string') {
+      rawBytes = bytesOrData.length;
+    } else {
+      rawBytes = JSON.stringify(bytesOrData).length;
+    }
     // Add realistic WebRTC / SCTP / DTLS transport packet overhead (~64 bytes per message)
     const totalBytes = rawBytes + 64;
     this.appSentBytes += totalBytes;
@@ -58,9 +67,18 @@ class NetworkMetricsTracker {
   }
 
   public recordDownload(bytesOrData: number | any): void {
-    const rawBytes = typeof bytesOrData === 'number'
-      ? bytesOrData
-      : (typeof bytesOrData === 'string' ? bytesOrData.length : JSON.stringify(bytesOrData).length);
+    let rawBytes = 0;
+    if (typeof bytesOrData === 'number') {
+      rawBytes = bytesOrData;
+    } else if (bytesOrData instanceof ArrayBuffer) {
+      rawBytes = bytesOrData.byteLength;
+    } else if (ArrayBuffer.isView(bytesOrData)) {
+      rawBytes = bytesOrData.byteLength;
+    } else if (typeof bytesOrData === 'string') {
+      rawBytes = bytesOrData.length;
+    } else {
+      rawBytes = JSON.stringify(bytesOrData).length;
+    }
     const totalBytes = rawBytes + 64;
     this.appReceivedBytes += totalBytes;
     this.totalReceivedBytes += totalBytes;
