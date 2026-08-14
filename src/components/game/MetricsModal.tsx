@@ -33,7 +33,7 @@ interface MetricsModalProps {
   hostPeerId: string;
 }
 
-export const MetricsModal: React.FC<MetricsModalProps> = ({
+export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
   isOpen,
   onClose,
   gameState,
@@ -849,4 +849,21 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
       </div>
     </div>
   );
-};
+}, (prev, next) => {
+  if (prev.isOpen !== next.isOpen) return false;
+  if (prev.hostPeerId !== next.hostPeerId) return false;
+  if (prev.onClose !== next.onClose) return false;
+  if (!next.isOpen) return true;
+
+  const pState = prev.gameState;
+  const nState = next.gameState;
+  if (pState === nState) return true;
+
+  if (pState.slugs.length !== nState.slugs.length) return false;
+  if (pState.projectiles.length !== nState.projectiles.length) return false;
+  if (pState.mines.length !== nState.mines.length) return false;
+  if (pState.explosions.length !== nState.explosions.length) return false;
+  if (pState.particles.length !== nState.particles.length) return false;
+
+  return true;
+});
