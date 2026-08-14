@@ -28,6 +28,9 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       super_sheep: 1,
       concrete_donkey: 1,
       blowtorch: 100,
+      ninja_rope: -1,
+      girder: 3,
+      airdrop: 2,
     },
   },
   WMD_CRAZY: {
@@ -49,6 +52,9 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       super_sheep: 4,
       concrete_donkey: 2,
       blowtorch: 100,
+      ninja_rope: -1,
+      girder: 5,
+      airdrop: 4,
     },
   },
   UNLIMITED_CHAOS: {

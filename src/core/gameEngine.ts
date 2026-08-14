@@ -120,6 +120,8 @@ export class SlugWarsEngine {
     this.state.particles = [];
     this.state.projectiles = [];
     this.state.floatingDamages = [];
+    this.state.supplyCrates = [];
+    this.state.girders = [];
     this.state.journal = [];
 
     let slugIndex = 1;
@@ -466,6 +468,16 @@ export class SlugWarsEngine {
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (!activeSlug || !activeSlug.isAlive) return false;
 
+    if (activeSlug.ropeState) {
+      // Detach from rope with full swinging momentum!
+      const rope = activeSlug.ropeState;
+      activeSlug.vx = Math.cos(rope.angleRad) * rope.length * rope.angularVelocity * 1.25;
+      activeSlug.vy = -Math.sin(rope.angleRad) * rope.length * rope.angularVelocity * 1.25 - 2;
+      activeSlug.ropeState = null;
+      sfx.play('jump');
+      return true;
+    }
+
     if (isSlugGrounded(activeSlug, this.terrain, this.state.slugs)) {
       activeSlug.vy = -7.5;
       activeSlug.vx += activeSlug.facing === 'right' ? 2 : -2;
@@ -516,6 +528,95 @@ export class SlugWarsEngine {
       this.state.phase = 'AIMING';
       sfx.play('fire');
       this.addLog(`${activeSlug.name} utilise le Chalumeau ! (Carburant: ${Math.round(currentFuel)}%) 🔥`, 'weapon');
+      return true;
+    }
+
+    if (weapon.behavior === 'NINJA_ROPE') {
+      const originX = activeSlug.x;
+      const originY = activeSlug.y - 10;
+      const angleRad = (activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle) * (Math.PI / 180);
+      const targetX = originX + Math.cos(angleRad) * 450;
+      const targetY = originY + Math.sin(angleRad) * 450;
+
+      const hit = this.terrain.raycastSolid(originX, originY, targetX, targetY);
+      if (hit.hit) {
+        const dx = activeSlug.x - hit.x;
+        const dy = activeSlug.y - hit.y;
+        const length = Math.max(30, Math.hypot(dx, dy));
+        const angle = Math.atan2(dx, dy);
+        activeSlug.ropeState = {
+          hookX: hit.x,
+          hookY: hit.y,
+          length,
+          angleRad: angle,
+          angularVelocity: 0,
+        };
+        sfx.play('rope_attach');
+        this.addLog(`${activeSlug.name} s'accroche avec la Corde Ninja ! 🪢`, 'weapon');
+      } else {
+        sfx.play('rope_shoot');
+        this.addLog(`${activeSlug.name} a manqué son tir de grappin !`, 'info');
+      }
+      return true;
+    }
+
+    if (weapon.behavior === 'GIRDER' && targetPoint) {
+      const gx = Math.round(targetPoint.x);
+      const gy = Math.round(targetPoint.y);
+      const angleDeg = activeSlug.aimAngle || 0;
+      const length = 80;
+      const thickness = 12;
+
+      // Stamp solid girder pixels into terrain grid
+      const rad = (angleDeg * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const halfL = length / 2;
+      const halfT = thickness / 2;
+      const w = this.terrain.data.width;
+      const h = this.terrain.data.height;
+
+      for (let dl = -halfL; dl <= halfL; dl++) {
+        for (let dt = -halfT; dt <= halfT; dt++) {
+          const px = Math.round(gx + dl * cos - dt * sin);
+          const py = Math.round(gy + dl * sin + dt * cos);
+          if (px >= 0 && px < w && py >= 0 && py < h) {
+            this.terrain.data.grid[py * w + px] = 1;
+          }
+        }
+      }
+
+      if (!this.state.girders) this.state.girders = [];
+      this.state.girders.push({
+        id: `girder_${Date.now()}_${Math.random()}`,
+        x: gx,
+        y: gy,
+        angleDeg,
+        length,
+        thickness,
+      });
+
+      sfx.play('girder');
+      this.addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
+      this.endTurn();
+      return true;
+    }
+
+    if (weapon.behavior === 'AIRDROP' && targetPoint) {
+      if (!this.state.supplyCrates) this.state.supplyCrates = [];
+      this.state.supplyCrates.push({
+        id: `crate_${Date.now()}_${Math.random()}`,
+        x: targetPoint.x,
+        y: -30,
+        vy: 2.0,
+        isLanded: false,
+        crateType: 'health',
+        healAmount: 50,
+      });
+
+      sfx.play('airdrop');
+      this.addLog(`✈️ Largage aérien d'une Caisse de Ravitaillement en cours ! 📦`, 'weapon');
+      this.state.phase = 'PROJECTILE_ACTIVE';
       return true;
     }
 
@@ -603,15 +704,52 @@ export class SlugWarsEngine {
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
-      if (activeSlug.movingDir) {
-        this.moveSlug(activeSlug.movingDir);
-      }
-      if (activeSlug.isChargingPower) {
-        activeSlug.aimPower += 2.5;
-        if (activeSlug.aimPower >= 100) {
-          activeSlug.aimPower = 100;
-          activeSlug.isChargingPower = false;
-          this.fireWeapon(activeSlug.currentTargetPoint);
+      // Active Ninja Rope Swinging & Climbing
+      if (activeSlug.ropeState) {
+        const rope = activeSlug.ropeState;
+        const g = 24;
+        let alpha = -(g / rope.length) * Math.sin(rope.angleRad);
+
+        // Swing pump with movement keys (A/D or Left/Right)
+        if (activeSlug.movingDir === 'left') {
+          alpha -= 0.12;
+        } else if (activeSlug.movingDir === 'right') {
+          alpha += 0.12;
+        }
+
+        // Climb / descend with steer keys (W/S or Up/Down)
+        if (activeSlug.steeringDir === 'left') {
+          rope.length = Math.max(30, rope.length - 3.5);
+        } else if (activeSlug.steeringDir === 'right') {
+          rope.length = Math.min(450, rope.length + 3.5);
+        }
+
+        rope.angularVelocity = (rope.angularVelocity + alpha) * 0.992;
+        rope.angleRad += rope.angularVelocity;
+
+        const newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
+        const newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+
+        if (newY >= this.terrain.data.waterLevel) {
+          activeSlug.ropeState = null;
+          activeSlug.y = this.terrain.data.waterLevel;
+        } else {
+          activeSlug.x = newX;
+          activeSlug.y = newY;
+          activeSlug.vx = Math.cos(rope.angleRad) * rope.length * rope.angularVelocity;
+          activeSlug.vy = -Math.sin(rope.angleRad) * rope.length * rope.angularVelocity;
+        }
+      } else {
+        if (activeSlug.movingDir) {
+          this.moveSlug(activeSlug.movingDir);
+        }
+        if (activeSlug.isChargingPower) {
+          activeSlug.aimPower += 2.5;
+          if (activeSlug.aimPower >= 100) {
+            activeSlug.aimPower = 100;
+            activeSlug.isChargingPower = false;
+            this.fireWeapon(activeSlug.currentTargetPoint);
+          }
         }
       }
     }
@@ -906,6 +1044,50 @@ export class SlugWarsEngine {
       this.state.mines = remainingMines;
     }
 
+    // 6. Update Supply Crates (Falling with Parachute & Ground Pickup)
+    if (this.state.supplyCrates && this.state.supplyCrates.length > 0) {
+      const remainingCrates: typeof this.state.supplyCrates = [];
+      for (const crate of this.state.supplyCrates) {
+        if (!crate.isLanded) {
+          crate.x += this.state.wind * 0.15;
+          crate.y += crate.vy;
+
+          if (this.terrain.isSolid(crate.x, crate.y + 10) || crate.y >= this.terrain.data.waterLevel - 15) {
+            crate.isLanded = true;
+            crate.vy = 0;
+          }
+        }
+
+        let collected = false;
+        // Check if collected by any living slug
+        for (const s of this.state.slugs) {
+          if (s.isAlive && Math.hypot(s.x - crate.x, (s.y - 8) - crate.y) < 20) {
+            const oldHp = s.hp;
+            s.hp = Math.min(s.maxHp, s.hp + crate.healAmount);
+            const gained = s.hp - oldHp;
+
+            this.state.floatingDamages.push({
+              id: `heal_${Date.now()}_${Math.random()}`,
+              x: s.x,
+              y: s.y - 22,
+              damage: -gained,
+              createdAt: Date.now(),
+            });
+
+            sfx.play('airdrop');
+            this.addLog(`📦 ${s.name} a ramassé une Caisse de Ravitaillement (+${gained} HP) !`, 'combat');
+            collected = true;
+            break;
+          }
+        }
+
+        if (!collected && crate.y < this.terrain.data.waterLevel) {
+          remainingCrates.push(crate);
+        }
+      }
+      this.state.supplyCrates = remainingCrates;
+    }
+
     // Update and decay flying smoke & fire particles
     if (this.state.particles && this.state.particles.length > 0) {
       const remainingParticles: Particle[] = [];
@@ -944,6 +1126,7 @@ export class SlugWarsEngine {
       activeSlug.steeringDir = null;
       activeSlug.isChargingPower = false;
       activeSlug.isBlowtorching = false;
+      activeSlug.ropeState = null;
       activeSlug.currentTargetPoint = undefined;
     }
 

@@ -134,26 +134,65 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         return;
       }
 
-      // Normal Aiming, Walking & Retreating
+      // Normal Aiming, Walking, Rope Climbing & Retreating
       if (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT') {
+        if (key === 'r' && activeSlug && activeSlug.selectedWeaponId === 'girder') {
+          // Rotate Girder orientation (0, 45, 90, 135)
+          const angles = [0, 45, 90, 135];
+          const curIdx = angles.indexOf(activeSlug.aimAngle);
+          const nextAngle = angles[(curIdx + 1) % angles.length];
+          onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+          sfx.play('tick');
+          return;
+        }
+
         if (key === 'arrowleft' || key === 'q' || key === 'a') {
           activeMovingKeyRef.current = key;
           onStartMove('left');
         } else if (key === 'arrowright' || key === 'd') {
           activeMovingKeyRef.current = key;
           onStartMove('right');
-        } else if (key === ' ' || key === 'spacebar' || key === 'w' || key === 'z') {
-          sfx.play('jump');
+        } else if (key === ' ' || key === 'spacebar') {
           onJump();
+        } else if (key === 'w' || key === 'z') {
+          if (activeSlug?.ropeState) {
+            onStartSteer?.('left'); // Climb up
+          } else {
+            onJump();
+          }
+        } else if (key === 's') {
+          if (activeSlug?.ropeState) {
+            onStartSteer?.('right'); // Descend down
+          }
         } else if (key === 'arrowup' && gameState.phase !== 'RETREAT') {
           if (activeSlug) {
-            const newAngle = Math.min(85, activeSlug.aimAngle + 5);
-            onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            if (activeSlug.ropeState) {
+              onStartSteer?.('left'); // Climb up
+            } else if (activeSlug.selectedWeaponId === 'girder') {
+              const angles = [0, 45, 90, 135];
+              const curIdx = angles.indexOf(activeSlug.aimAngle);
+              const nextAngle = angles[(curIdx + 1) % angles.length];
+              onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+              sfx.play('tick');
+            } else {
+              const newAngle = Math.min(85, activeSlug.aimAngle + 5);
+              onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            }
           }
         } else if (key === 'arrowdown' && gameState.phase !== 'RETREAT') {
           if (activeSlug) {
-            const newAngle = Math.max(5, activeSlug.aimAngle - 5);
-            onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            if (activeSlug.ropeState) {
+              onStartSteer?.('right'); // Descend down
+            } else if (activeSlug.selectedWeaponId === 'girder') {
+              const angles = [0, 45, 90, 135];
+              const curIdx = angles.indexOf(activeSlug.aimAngle);
+              const nextAngle = angles[(curIdx - 1 + angles.length) % angles.length];
+              onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+              sfx.play('tick');
+            } else {
+              const newAngle = Math.max(5, activeSlug.aimAngle - 5);
+              onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            }
           }
         } else if (key === 'enter' && gameState.phase !== 'RETREAT') {
           // Press & Hold Enter to Charge Power!
@@ -171,6 +210,10 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           onStopMove();
         }
         activeMovingKeyRef.current = null;
+      } else if (['arrowup', 'arrowdown', 'w', 's', 'z'].includes(key)) {
+        if (activeSlug?.ropeState) {
+          onStopSteer?.();
+        }
       } else if (key === 'enter' && !activeSheep && gameState.phase === 'AIMING') {
         // Release Enter to Fire at Charged Power!
         onReleaseCharge?.();
