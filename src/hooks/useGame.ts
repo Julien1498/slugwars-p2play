@@ -6,6 +6,7 @@ import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
 import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
+import { sfx } from '../core/audio';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -245,7 +246,11 @@ export function useGame(options?: {
     return () => presence.dispose();
   }, [isHost, peerManager, handleHostAction, broadcastState]);
 
-  // Set guest state / delta receiver callback
+  const knownProjIdsRef = useRef<Set<string>>(new Set());
+  const knownExplosionIdsRef = useRef<Set<string>>(new Set());
+  const prevPhaseRef = useRef<string>('LOBBY');
+
+  // Set guest state / delta receiver callback with sound effects and terrain carving
   useEffect(() => {
     if (isHost) return;
     peerManager.onStateReceived = (payload: any) => {
@@ -253,6 +258,40 @@ export function useGame(options?: {
       const engine = engineRef.current;
 
       if (payload.isDelta && payload.delta) {
+        // Sound effects for Guest on incoming new projectiles
+        if (payload.delta.projectiles && Array.isArray(payload.delta.projectiles)) {
+          for (const p of payload.delta.projectiles) {
+            if (p.id && !knownProjIdsRef.current.has(p.id)) {
+              knownProjIdsRef.current.add(p.id);
+              if (p.weaponId === 'super_sheep') {
+                sfx.play('baah');
+              } else if (p.weaponId === 'baseball_bat') {
+                sfx.play('melee');
+              } else if (p.weaponId !== 'teleport') {
+                sfx.play('fire');
+              }
+            }
+          }
+        }
+
+        // Sound effects for Guest on incoming explosions
+        if (payload.delta.explosions && Array.isArray(payload.delta.explosions)) {
+          for (const ex of payload.delta.explosions) {
+            if (ex.id && !knownExplosionIdsRef.current.has(ex.id)) {
+              knownExplosionIdsRef.current.add(ex.id);
+              sfx.play('explosion');
+            }
+          }
+        }
+
+        // Victory sound on Game Over
+        if (payload.delta.phase && payload.delta.phase !== prevPhaseRef.current) {
+          if (payload.delta.phase === 'GAME_OVER') {
+            sfx.play('victory');
+          }
+          prevPhaseRef.current = payload.delta.phase;
+        }
+
         applyStateDelta(engine.state, payload.delta);
 
         if (engine.state.explosions && engine.state.explosions.length > 0) {
@@ -270,6 +309,8 @@ export function useGame(options?: {
         if (prevMapKeyRef.current !== mapKey) {
           prevMapKeyRef.current = mapKey;
           engine.initTerrain();
+          knownProjIdsRef.current.clear();
+          knownExplosionIdsRef.current.clear();
         }
 
         if (newState.explosions && newState.explosions.length > 0) {

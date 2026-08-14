@@ -10,6 +10,7 @@ import { GameOverStatsModal } from './GameOverStatsModal';
 import { TextChatPanel, JournalPanel } from 'p2play-core/chat';
 import { Trophy, RefreshCw, MessageSquare, Eye, X } from 'lucide-react';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
+import { sfx } from '../../core/audio';
 
 interface SlugWarsBoardProps {
   gameState: GameState;
@@ -142,6 +143,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           activeMovingKeyRef.current = key;
           onStartMove('right');
         } else if (key === ' ' || key === 'spacebar' || key === 'w' || key === 'z') {
+          sfx.play('jump');
           onJump();
         } else if (key === 'arrowup' && gameState.phase !== 'RETREAT') {
           if (activeSlug) {
@@ -369,7 +371,10 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         <WeaponPicker
           inventory={myTeam.inventory}
           selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
-          onSelectWeapon={onSelectWeapon}
+          onSelectWeapon={(wId) => {
+            sfx.play('tick');
+            onSelectWeapon(wId);
+          }}
           onClose={() => setShowWeaponPicker(false)}
         />
       )}
