@@ -41,6 +41,10 @@ export function useGame(options?: {
     setGameState({ ...engineRef.current.state });
   }, []);
 
+  useEffect(() => {
+    netMetrics.setPeerManager(peerManager);
+  }, [peerManager]);
+
   // Broadcast Full State (Lobby, Reconnects, Initial Join)
   const broadcastState = useCallback(
     (state: GameState) => {
