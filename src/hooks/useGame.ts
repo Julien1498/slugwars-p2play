@@ -3,8 +3,7 @@ import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState, Vector2D } from '../core/types';
 import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
-import { buildStateDelta, applyStateDelta, CompactStateDelta } from '../network/netSerializer';
-import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
+import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
@@ -46,7 +45,7 @@ export function useGame(options?: {
     netMetrics.setPeerManager(peerManager);
   }, [peerManager]);
 
-  // Broadcast Full State (Lobby, Reconnects, Initial Join)
+  // Broadcast Full State (Lobby, Map Gen, Turn Init, Reconnect)
   const broadcastState = useCallback(
     (state: GameState) => {
       const activeId = myPeerId || peerManager.myPeerId;
@@ -71,7 +70,7 @@ export function useGame(options?: {
     [peerManager, myPeerId]
   );
 
-  // Broadcast Binary Delta State (Active Gameplay 20 Hz Ticks - 15-35 Bytes!)
+  // Broadcast Delta State (Active Gameplay 20 Hz Ticks - 100% synchronized)
   const broadcastDeltaState = useCallback(
     (state: GameState) => {
       const activeId = myPeerId || peerManager.myPeerId;
@@ -80,13 +79,14 @@ export function useGame(options?: {
       const delta = buildStateDelta(lastSentStateRef.current, state);
       lastSentStateRef.current = JSON.parse(JSON.stringify(state));
 
-      const binaryBuffer = encodeBinaryDelta(delta, state);
+      const payload = { isDelta: true, delta };
 
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            conn.send(binaryBuffer);
-            netMetrics.recordUpload(binaryBuffer);
+            const msg = { type: 'STATE_UPDATE', state: payload };
+            conn.send(msg);
+            netMetrics.recordUpload(msg);
           }
         }
       }
@@ -270,19 +270,8 @@ export function useGame(options?: {
       netMetrics.recordDownload(payload);
       const engine = engineRef.current;
 
-      let delta: CompactStateDelta | null = null;
-      const isBinary = payload instanceof ArrayBuffer || ArrayBuffer.isView(payload);
-      if (isBinary) {
-        try {
-          delta = decodeBinaryDelta(payload, engine.state);
-        } catch (err) {
-          console.warn('Binary decode error:', err);
-        }
-      } else if (payload.isDelta && payload.delta) {
-        delta = payload.delta;
-      }
-
-      if (delta) {
+      if (payload.isDelta && payload.delta) {
+        const delta = payload.delta;
         // Sound effects for Guest on incoming new projectiles
         if (delta.projectiles && Array.isArray(delta.projectiles)) {
           for (const p of delta.projectiles) {
