@@ -3,7 +3,8 @@ import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState, Vector2D } from '../core/types';
 import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
-import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
+import { buildStateDelta, applyStateDelta, CompactStateDelta } from '../network/netSerializer';
+import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
@@ -70,7 +71,7 @@ export function useGame(options?: {
     [peerManager, myPeerId]
   );
 
-  // Broadcast Delta State (Active Gameplay 20 Hz Ticks - 100% synchronized)
+  // Broadcast Binary Buffer Delta State (Active Gameplay 20 Hz Ticks - 100% synchronized & ultra-compact)
   const broadcastDeltaState = useCallback(
     (state: GameState) => {
       const activeId = myPeerId || peerManager.myPeerId;
@@ -79,14 +80,14 @@ export function useGame(options?: {
       const delta = buildStateDelta(lastSentStateRef.current, state);
       lastSentStateRef.current = JSON.parse(JSON.stringify(state));
 
-      const payload = { isDelta: true, delta };
+      const binaryBuffer = encodeBinaryDelta(delta);
+      const msg = { type: 'STATE_UPDATE', state: binaryBuffer };
 
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            const msg = { type: 'STATE_UPDATE', state: payload };
             conn.send(msg);
-            netMetrics.recordUpload(msg);
+            netMetrics.recordUpload(binaryBuffer);
           }
         }
       }
@@ -270,8 +271,18 @@ export function useGame(options?: {
       netMetrics.recordDownload(payload);
       const engine = engineRef.current;
 
-      if (payload.isDelta && payload.delta) {
-        const delta = payload.delta;
+      let delta: CompactStateDelta | null = null;
+      if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {
+        try {
+          delta = decodeBinaryDelta(payload);
+        } catch (err) {
+          console.warn('Binary decode error:', err);
+        }
+      } else if (payload.isDelta && payload.delta) {
+        delta = payload.delta;
+      }
+
+      if (delta) {
         // Sound effects for Guest on incoming new projectiles
         if (delta.projectiles && Array.isArray(delta.projectiles)) {
           for (const p of delta.projectiles) {
