@@ -775,10 +775,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     let animId: number;
 
     const render = () => {
+      const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      const isDay = gameState.config.dayNightCycle === 'DAY';
+      // Live-carve new explosions on guest/host instantly
+      if (curState && curState.explosions && curState.explosions.length > 0) {
+        for (const ex of curState.explosions) {
+          if (!carvedExplosionsRef.current.has(ex.id)) {
+            carvedExplosionsRef.current.add(ex.id);
+            carveOffscreenCrater(ex.x, ex.y, ex.radius);
+          }
+        }
+      }
+
+      const isDay = curState.config.dayNightCycle === 'DAY';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
@@ -985,7 +996,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // 7. Subterranean Real-Time Dynamic Light & Occlusion Engine (Fast Direct Blit in Day Mode!)
-      const hasDynamicLights = (!isDay) || (gameState.helicopters && gameState.helicopters.length > 0) || (gameState.explosions && gameState.explosions.length > 0);
+      const hasDynamicLights = (!isDay) || (curState.helicopters && curState.helicopters.length > 0) || (curState.explosions && curState.explosions.length > 0);
 
       if (!hasDynamicLights && isDay && occlusionCanvasRef.current) {
         // Fast 1-line GPU blit in Day Mode (0.01ms execution!)
@@ -1020,8 +1031,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           lCtx.globalCompositeOperation = 'destination-out';
 
           // A. Helicopter Searchlight Spotlight Punch
-          if (gameState.helicopters) {
-            for (const heli of gameState.helicopters) {
+          if (curState.helicopters) {
+            for (const heli of curState.helicopters) {
               const hDir = heli.facing === 'right' ? 1 : -1;
               const lX = heli.x + 12 * hDir;
               const lY = heli.y + 4;
@@ -1041,8 +1052,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           }
 
           // B. Active Explosions Blinding Light Burst Punch
-          if (gameState.explosions) {
-            for (const ex of gameState.explosions) {
+          if (curState.explosions) {
+            for (const ex of curState.explosions) {
               const exGrad = lCtx.createRadialGradient(ex.x, ex.y, 5, ex.x, ex.y, ex.radius * 2.5);
               exGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
               exGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -1160,8 +1171,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Draw Landmines (Worms Style Classic Mines!)
-      if (gameState.mines) {
-        for (const mine of gameState.mines) {
+      if (curState.mines) {
+        for (const mine of curState.mines) {
           // Metallic Base Disc
           ctx.fillStyle = '#4b5563';
           ctx.beginPath();
@@ -1192,10 +1203,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Draw Helicopters (Vector Military Attack Helicopter with Spinning Rotor & Cockpit Glass!)
-      if (gameState.helicopters) {
-        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      if (curState.helicopters) {
+        const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
 
-        for (const heli of gameState.helicopters) {
+        for (const heli of curState.helicopters) {
           ctx.save();
           ctx.translate(heli.x, heli.y);
           if (heli.facing === 'left') ctx.scale(-1, 1);
@@ -1232,8 +1243,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
           // 4. Pilot Slug Head in Cockpit
           if (heli.pilotSlugId) {
-            const pilot = gameState.slugs.find((s) => s.id === heli.pilotSlugId);
-            const team = pilot ? gameState.teams.find((t) => t.id === pilot.teamId) : null;
+            const pilot = curState.slugs.find((s) => s.id === heli.pilotSlugId);
+            const team = pilot ? curState.teams.find((t) => t.id === pilot.teamId) : null;
             const teamColor = team ? team.color : '#a855f7';
 
             ctx.save();
@@ -1366,9 +1377,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // Draw Slugs (Worms Style Expressive Vector Design!)
       // Placement Ghost Preview
-      if (gameState.phase === 'PLACEMENT' && isMyTurn) {
-        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-        const team = gameState.teams.find((t) => t.id === gameState.activeTeamId);
+      if (curState.phase === 'PLACEMENT' && isMyTurn) {
+        const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
+        const team = curState.teams.find((t) => t.id === curState.activeTeamId);
         const mPos = mousePosRef.current;
 
         ctx.save();
@@ -1392,10 +1403,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.fillText(`📍 Placer ${activeSlug?.name || 'Limace'}`, mPos.x, mPos.y - 28);
       }
 
-      for (const slug of gameState.slugs) {
+      for (const slug of curState.slugs) {
         if (!slug.isAlive || !slug.isPlaced) continue;
-        const team = gameState.teams.find((t) => t.id === slug.teamId);
-        const isActive = slug.id === gameState.activeSlugId;
+        const team = curState.teams.find((t) => t.id === slug.teamId);
+        const isActive = slug.id === curState.activeSlugId;
 
         // Active Slug Yellow Floating Arrow Marker (Worms Style!)
         if (isActive) {
@@ -1472,7 +1483,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
 
         // --- HELD WEAPON STANCE IN HAND WHEN AIMING ---
-        if (isActive && gameState.phase === 'AIMING') {
+        if (isActive && curState.phase === 'AIMING') {
           const weaponId = slug.selectedWeaponId;
           const aimRad = (slug.aimAngle * Math.PI) / 180;
 
@@ -1559,8 +1570,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Trajectory Line & Aim Guide & Charging Power Bar
-      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-      if (activeSlug && (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME')) {
+      const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
+      if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         if (isMyTurn) {
           const rad = (activeSlug.aimAngle * Math.PI) / 180;
           const dir = activeSlug.facing === 'right' ? 1 : -1;
@@ -1638,7 +1649,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Draw Projectiles (Custom Vector Weapons & Smoke Trails!)
-      for (const proj of gameState.projectiles) {
+      for (const proj of curState.projectiles) {
         if (!proj || !Number.isFinite(proj.x) || !Number.isFinite(proj.y)) continue;
 
         ctx.save();
@@ -1766,36 +1777,28 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.fillRect(-14, -10, 28, 20);
           ctx.strokeRect(-14, -10, 28, 20);
 
-          // Concrete Head & Snout
-          ctx.fillStyle = '#94a3b8';
-          ctx.fillRect(4, -22, 16, 14);
-          ctx.strokeRect(4, -22, 16, 14);
-
-          // Big Funny Ears
-          ctx.fillStyle = '#cbd5e1';
-          ctx.beginPath();
-          ctx.moveTo(2, -22);
-          ctx.lineTo(-4, -34);
-          ctx.lineTo(6, -22);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Goofy Donkey Eyes & Teeth Grin
-          ctx.fillStyle = '#000000';
-          ctx.beginPath();
-          ctx.arc(10, -18, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(14, -12, 5, 4);
+          // Head & Ears
+          ctx.fillRect(-18, -18, 12, 12);
+          ctx.fillRect(-16, -24, 4, 8);
+          ctx.fillRect(-10, -24, 4, 8);
 
           ctx.restore();
-        } else if (proj.weaponId === 'air_strike') {
-          // Aerodynamic Black Air Strike Bomb
-          ctx.fillStyle = '#18181b';
+        } else if (proj.weaponId === 'cluster_payload') {
+          // Sub-munition Cluster Shrapnel Pellet
+          ctx.fillStyle = '#facc15';
           ctx.beginPath();
-          ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+          ctx.arc(0, 0, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (proj.weaponId === 'air_strike') {
+          // Heavy Napalm Missile
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(-7, -4, 14, 8);
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.moveTo(7, -4);
+          ctx.lineTo(13, 0);
+          ctx.lineTo(7, 4);
+          ctx.closePath();
           ctx.fill();
           ctx.fillStyle = '#ef4444'; // Red Fins
           ctx.fillRect(-8, -4, 3, 8);
@@ -1822,8 +1825,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Draw Smoke & Fire Trail Particles
-      if (gameState.particles) {
-        for (const p of gameState.particles) {
+      if (curState.particles) {
+        for (const p of curState.particles) {
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.life);
           ctx.fillStyle = p.color;
@@ -1836,7 +1839,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
       // Draw Explosions (Fiery Shockwave Core!)
       const now = Date.now();
-      for (const ex of gameState.explosions) {
+      for (const ex of curState.explosions) {
         const age = now - (ex.createdAt || now);
         const alpha = Math.max(0, 1 - age / 350);
 
@@ -1861,8 +1864,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Floating Damage Numbers (Arcade Style bouncing -45 HP!)
-      if (gameState.floatingDamages) {
-        for (const fd of gameState.floatingDamages) {
+      if (curState.floatingDamages) {
+        for (const fd of curState.floatingDamages) {
           const age = now - fd.createdAt;
           const alpha = Math.max(0, 1 - age / 1000);
           const floatY = fd.y - (age / 1000) * 25;
@@ -1883,7 +1886,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       // DEBUG HITBOX OVERLAY RENDERING
       if (showHitboxes) {
         // Draw Slugs Hitboxes
-        for (const slug of gameState.slugs) {
+        for (const slug of curState.slugs) {
           if (!slug.isAlive) continue;
 
           // Body Bounding Circle (Radius 8)
@@ -1921,7 +1924,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         }
 
         // Draw Projectile Hitboxes
-        for (const proj of gameState.projectiles) {
+        for (const proj of curState.projectiles) {
           ctx.strokeStyle = '#f59e0b'; // Amber
           ctx.lineWidth = 2;
           ctx.setLineDash([3, 3]);

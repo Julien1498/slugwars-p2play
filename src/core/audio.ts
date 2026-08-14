@@ -1,6 +1,10 @@
 class SoundEffects {
   private ctx: AudioContext | null = null;
 
+  public init(): AudioContext | null {
+    return this.initCtx();
+  }
+
   private initCtx(): AudioContext | null {
     if (!this.ctx && typeof window !== 'undefined') {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -9,7 +13,7 @@ class SoundEffects {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
@@ -165,3 +169,16 @@ class SoundEffects {
 }
 
 export const sfx = new SoundEffects();
+
+// Auto-unlock AudioContext on first user interaction anywhere in the document
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    sfx.init();
+    window.removeEventListener('pointerdown', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+    window.removeEventListener('click', unlockAudio);
+  };
+  window.addEventListener('pointerdown', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+  window.addEventListener('click', unlockAudio, { passive: true });
+}
