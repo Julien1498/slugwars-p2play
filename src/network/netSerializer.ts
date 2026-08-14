@@ -38,7 +38,7 @@ export interface CompactStateDelta {
   activeTeamId?: string;
   activeSlugId?: string;
   turnTimer?: number;
-  retreatTimer?: number;
+  retreatTimer?: number | null;
   wind?: number;
   slugs?: CompactSlugDelta[];
   helicopters?: Partial<HelicopterVehicle>[];
@@ -46,7 +46,6 @@ export interface CompactStateDelta {
   projectiles?: Partial<ActiveProjectile>[];
   explosions?: Partial<ExplosionEvent>[];
   floatingDamages?: FloatingDamage[];
-  particles?: Partial<Particle>[];
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
 }
@@ -58,17 +57,17 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   if (!prevState || prevState.activeTeamId !== currentState.activeTeamId) delta.activeTeamId = currentState.activeTeamId;
   if (!prevState || prevState.activeSlugId !== currentState.activeSlugId) delta.activeSlugId = currentState.activeSlugId;
 
-  // Always broadcast turnTimer on every tick for smooth real-time synchronized countdown
+  // Always broadcast turnTimer on every tick for real-time countdown sync
   delta.turnTimer = quantizeFloat(currentState.turnTimer, 1);
   if (currentState.retreatTimer !== undefined) {
     delta.retreatTimer = quantizeFloat(currentState.retreatTimer, 1);
   } else if (prevState && prevState.retreatTimer !== undefined) {
-    delta.retreatTimer = null as any;
+    delta.retreatTimer = null;
   }
 
   if (!prevState || prevState.wind !== currentState.wind) delta.wind = currentState.wind;
 
-  // Slug Deltas
+  // Slug Deltas (only changed fields)
   const slugDeltas: CompactSlugDelta[] = [];
   for (const slug of currentState.slugs) {
     const prevSlug = prevState?.slugs.find((s) => s.id === slug.id);
@@ -129,27 +128,56 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
   }));
 
-  // Girders Sync
-  if (currentState.girders && currentState.girders.length > 0) {
-    delta.girders = currentState.girders;
+  // Point 1: Girders Sync - ONLY when new girders are placed
+  const curGirders = currentState.girders || [];
+  const prevGirders = prevState?.girders || [];
+  if (curGirders.length !== prevGirders.length) {
+    delta.girders = curGirders;
   }
 
-  // Supply Crates Sync
-  if (currentState.supplyCrates && currentState.supplyCrates.length > 0) {
-    delta.supplyCrates = currentState.supplyCrates.map((c) => ({
-      id: c.id,
-      x: quantizeFloat(c.x, 2),
-      y: quantizeFloat(c.y, 2),
-      vy: quantizeFloat(c.vy, 2),
-      isLanded: c.isLanded,
-      crateType: c.crateType,
-      healAmount: c.healAmount,
-    }));
-  } else if (prevState && prevState.supplyCrates && prevState.supplyCrates.length > 0) {
-    delta.supplyCrates = [];
+  // Point 4: Supply Crates Sync - ONLY while falling, or when crates count changes
+  const curCrates = currentState.supplyCrates || [];
+  const prevCrates = prevState?.supplyCrates || [];
+  const hasFallingCrate = curCrates.some((c) => !c.isLanded);
+  if (curCrates.length !== prevCrates.length || hasFallingCrate) {
+    if (curCrates.length > 0) {
+      delta.supplyCrates = curCrates.map((c) => ({
+        id: c.id,
+        x: quantizeFloat(c.x, 2),
+        y: quantizeFloat(c.y, 2),
+        vy: quantizeFloat(c.vy, 2),
+        isLanded: c.isLanded,
+        crateType: c.crateType,
+        healAmount: c.healAmount,
+      }));
+    } else {
+      delta.supplyCrates = [];
+    }
   }
 
-  // Explosions (Crater Carving & Shockwave VFX)
+  // Point 2: Mines Sync - ONLY when a mine state changes (trigger, countdown, explosion) or when count changes
+  const curMines = currentState.mines || [];
+  const prevMines = prevState?.mines || [];
+  const minesCountChanged = curMines.length !== prevMines.length;
+  const anyMineChanged = curMines.some((m) => {
+    const pm = prevMines.find((p) => p.id === m.id);
+    return !pm || pm.isTriggered !== m.isTriggered || (m.isTriggered && Math.abs((pm.fuseTimerMs || 0) - (m.fuseTimerMs || 0)) > 150);
+  });
+  if (minesCountChanged || anyMineChanged) {
+    if (curMines.length > 0) {
+      delta.mines = curMines.map((m) => ({
+        id: m.id,
+        x: m.x,
+        y: m.y,
+        isTriggered: m.isTriggered,
+        fuseTimerMs: m.fuseTimerMs,
+      }));
+    } else {
+      delta.mines = [];
+    }
+  }
+
+  // Point 5 (Kept untouched): Explosions & Floating Damages
   if (currentState.explosions.length > 0) {
     delta.explosions = currentState.explosions.map((ex) => ({
       id: ex.id,
@@ -163,37 +191,10 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.explosions = [];
   }
 
-  // Floating Damages
   if (currentState.floatingDamages && currentState.floatingDamages.length > 0) {
     delta.floatingDamages = currentState.floatingDamages;
   } else if (prevState && prevState.floatingDamages && prevState.floatingDamages.length > 0) {
     delta.floatingDamages = [];
-  }
-
-  // Particles
-  if (currentState.particles && currentState.particles.length > 0) {
-    delta.particles = currentState.particles.map((p) => ({
-      x: quantizeFloat(p.x, 1),
-      y: quantizeFloat(p.y, 1),
-      vx: quantizeFloat(p.vx, 1),
-      vy: quantizeFloat(p.vy, 1),
-      color: p.color,
-      size: p.size,
-      life: quantizeFloat(p.life, 2),
-    }));
-  } else if (prevState && prevState.particles && prevState.particles.length > 0) {
-    delta.particles = [];
-  }
-
-  // Mines
-  if (currentState.mines && currentState.mines.length > 0) {
-    delta.mines = currentState.mines.map((m) => ({
-      id: m.id,
-      x: m.x,
-      y: m.y,
-      isTriggered: m.isTriggered,
-      fuseTimerMs: m.fuseTimerMs,
-    }));
   }
 
   // Helicopters
@@ -279,10 +280,6 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 
   if (delta.floatingDamages !== undefined) {
     localState.floatingDamages = delta.floatingDamages as any;
-  }
-
-  if (delta.particles !== undefined) {
-    localState.particles = delta.particles as any;
   }
 
   if (delta.mines !== undefined) {
