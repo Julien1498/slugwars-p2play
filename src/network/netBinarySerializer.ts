@@ -191,10 +191,10 @@ export function encodeBinaryDelta(delta: CompactStateDelta, state: GameState): A
       }
       if (mask & (1 << 5)) {
         let flags = 0;
-        if (s.al !== false) flags |= 1 << 0;
-        if (s.pl !== false) flags |= 1 << 1;
-        if (s.c) flags |= 1 << 2;
-        if (s.f === 'right') flags |= 1 << 3;
+        if (s.al !== undefined) { flags |= 1 << 0; if (s.al) flags |= 1 << 1; }
+        if (s.pl !== undefined) { flags |= 1 << 2; if (s.pl) flags |= 1 << 3; }
+        if (s.c !== undefined) { flags |= 1 << 4; if (s.c) flags |= 1 << 5; }
+        if (s.f !== undefined) { flags |= 1 << 6; if (s.f === 'right') flags |= 1 << 7; }
         SHARED_VIEW.setUint8(offset++, flags);
       }
       if (s.a !== undefined) {
@@ -364,10 +364,10 @@ export function decodeBinaryDelta(buffer: ArrayBuffer | ArrayBufferView, localSt
       }
       if (mask & (1 << 5)) {
         const flags = view.getUint8(offset++);
-        sDelta.al = (flags & (1 << 0)) !== 0;
-        sDelta.pl = (flags & (1 << 1)) !== 0;
-        sDelta.c = (flags & (1 << 2)) !== 0;
-        sDelta.f = (flags & (1 << 3)) !== 0 ? 'right' : 'left';
+        if (flags & (1 << 0)) sDelta.al = (flags & (1 << 1)) !== 0;
+        if (flags & (1 << 2)) sDelta.pl = (flags & (1 << 3)) !== 0;
+        if (flags & (1 << 4)) sDelta.c = (flags & (1 << 5)) !== 0;
+        if (flags & (1 << 6)) sDelta.f = (flags & (1 << 7)) !== 0 ? 'right' : 'left';
       }
       if (mask & (1 << 6)) {
         sDelta.a = view.getUint8(offset++);

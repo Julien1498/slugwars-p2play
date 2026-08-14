@@ -221,6 +221,7 @@ export function useGame(options?: {
           case 'PLACE_SLUG':
             if (playerId === engine.state.activeTeamId && msg.payload?.point) {
               engine.placeSlug(msg.payload.point);
+              broadcastState(engine.state);
             }
             break;
           case 'RESTART_GAME':
