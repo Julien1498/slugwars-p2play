@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../../core/types';
-import { Activity, Cpu, HardDrive, Wifi, Zap, X, Shield, Monitor } from 'lucide-react';
+import {
+  Activity,
+  Cpu,
+  HardDrive,
+  Wifi,
+  Zap,
+  X,
+  Shield,
+  Monitor,
+  ArrowUpRight,
+  ArrowDownLeft,
+} from 'lucide-react';
+import { netMetrics, NetworkStats } from '../../core/networkMetrics';
 
 interface MetricsModalProps {
   isOpen: boolean;
@@ -19,6 +31,14 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
   const [frameTime, setFrameTime] = useState(16.6);
   const [memoryUsage, setMemoryUsage] = useState<{ usedMB: number; totalMB: number } | null>(null);
   const [ping, setPing] = useState(18);
+  const [netStats, setNetStats] = useState<NetworkStats>({
+    uploadKbps: 0,
+    downloadKbps: 0,
+    uploadKBs: 0,
+    downloadKBs: 0,
+    totalSentKB: 0,
+    totalReceivedKB: 0,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -31,6 +51,10 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
       const now = performance.now();
       const delta = now - lastTime;
       frameCount++;
+
+      // Update network bandwidth stats continuously
+      const currentNet = netMetrics.update();
+      setNetStats({ ...currentNet });
 
       if (delta >= 1000) {
         const currentFps = Math.round((frameCount * 1000) / delta);
@@ -103,11 +127,11 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-6 overflow-y-auto font-sans">
+        <div className="p-6 space-y-5 overflow-y-auto font-sans">
           {/* Top Metrics Cards: FPS, Frame Time, Latency */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {/* FPS */}
-            <div className={`p-4 rounded-xl border flex flex-col items-center justify-center ${fpsColor}`}>
+            <div className={`p-3.5 rounded-xl border flex flex-col items-center justify-center ${fpsColor}`}>
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-1">
                 <Zap className="w-4 h-4" />
                 <span>Images / Sec</span>
@@ -117,7 +141,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
             </div>
 
             {/* Frame Time */}
-            <div className="p-4 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
+            <div className="p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1">
                 <Cpu className="w-4 h-4" />
                 <span>Latence Rendu</span>
@@ -127,13 +151,74 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
             </div>
 
             {/* Network Latency */}
-            <div className="p-4 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
+            <div className="p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-400 mb-1">
                 <Wifi className="w-4 h-4" />
                 <span>Ping WebRTC</span>
               </div>
               <div className="text-3xl font-black font-mono tracking-tight text-emerald-400">{ping} ms</div>
               <div className="text-[11px] text-zinc-400 mt-1 font-semibold">Canal Direct P2P</div>
+            </div>
+          </div>
+
+          {/* Real-Time Bandwidth P2P Section (Upload / Download in kbps) */}
+          <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-sky-400" />
+                <span>Débit Réseau P2P (Upload / Download)</span>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-400">
+                Total: {(netStats.totalSentKB + netStats.totalReceivedKB).toFixed(1)} KB
+              </span>
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Upload Card */}
+              <div className="bg-zinc-900/80 border border-sky-500/30 p-3.5 rounded-xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sky-400">
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>Upload (Émission)</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black font-mono text-white tracking-tight">
+                      {netStats.uploadKbps}
+                    </span>
+                    <span className="text-xs font-bold text-sky-300">kbps</span>
+                    <span className="text-[11px] text-zinc-400 font-mono">
+                      ({netStats.uploadKBs} KB/s)
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right text-[11px] font-mono text-zinc-400">
+                  <div>Envoyé</div>
+                  <div className="font-bold text-zinc-200">{netStats.totalSentKB} KB</div>
+                </div>
+              </div>
+
+              {/* Download Card */}
+              <div className="bg-zinc-900/80 border border-violet-500/30 p-3.5 rounded-xl flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-400">
+                    <ArrowDownLeft className="w-4 h-4" />
+                    <span>Download (Réception)</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black font-mono text-white tracking-tight">
+                      {netStats.downloadKbps}
+                    </span>
+                    <span className="text-xs font-bold text-violet-300">kbps</span>
+                    <span className="text-[11px] text-zinc-400 font-mono">
+                      ({netStats.downloadKBs} KB/s)
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right text-[11px] font-mono text-zinc-400">
+                  <div>Reçu</div>
+                  <div className="font-bold text-zinc-200">{netStats.totalReceivedKB} KB</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -144,25 +229,25 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
               <span>Performances Matériel & Mémoire</span>
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">Mémoire JS Heap :</span>
                 <span className="font-mono font-bold text-amber-300">
                   {memoryUsage ? `${memoryUsage.usedMB} MB / ${memoryUsage.totalMB} MB` : 'API Indisponible'}
                 </span>
               </div>
 
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">Ratio Rétine (DPR) :</span>
                 <span className="font-mono font-bold text-white">{window.devicePixelRatio || 1}x</span>
               </div>
 
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">Résolution Canvas Native :</span>
                 <span className="font-mono font-bold text-cyan-300">1400 × 800 px</span>
               </div>
 
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">Taille Fenêtre Nav. :</span>
                 <span className="font-mono font-bold text-white">{window.innerWidth} × {window.innerHeight} px</span>
               </div>
@@ -211,13 +296,13 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
               <span>Canal WebRTC PeerJS & Ticks Synchronisés</span>
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">ID Salon WebRTC :</span>
                 <span className="font-mono font-bold text-violet-300">{hostPeerId || 'Local Engine'}</span>
               </div>
 
-              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-lg flex justify-between items-center">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
                 <span className="text-zinc-400">Fréquence Sync Ticks :</span>
                 <span className="font-mono font-bold text-emerald-400">20 Hz (Intervalle 50ms)</span>
               </div>
