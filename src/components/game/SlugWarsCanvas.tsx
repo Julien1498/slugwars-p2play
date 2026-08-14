@@ -517,9 +517,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       offCtx.save();
       offCtx.globalCompositeOperation = 'destination-out';
       for (const ex of gameStateRef.current.explosions) {
-        offCtx.beginPath();
-        offCtx.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
-        offCtx.fill();
+        const safeR = Math.max(0, ex.radius || 0);
+        if (safeR > 0) {
+          offCtx.beginPath();
+          offCtx.arc(ex.x, ex.y, safeR, 0, Math.PI * 2);
+          offCtx.fill();
+        }
       }
       offCtx.restore();
     }
@@ -527,16 +530,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
   // Carve crater on offscreen terrain canvas & occlusion shadow canvas when explosion happens
   const carveOffscreenCrater = useCallback((x: number, y: number, radius: number) => {
+    const safeRadius = Math.max(0, radius || 0);
+    if (safeRadius <= 0) return;
+
     // 1. Synchronize grid array for physical collision carving
-    terrain.carveExplosion(x, y, radius);
+    terrain.carveExplosion(x, y, safeRadius);
 
     // 2. Redraw offscreen terrain in Dirty Bounding Box only (96.8% faster: 0.08ms instead of 12.93ms!)
     const padding = 15;
     const dirtyBox = {
-      minX: Math.max(0, Math.floor(x - radius - padding)),
-      maxX: Math.min(terrain.data.width - 1, Math.ceil(x + radius + padding)),
-      minY: Math.max(0, Math.floor(y - radius - padding)),
-      maxY: Math.min(terrain.data.height - 1, Math.ceil(y + radius + padding)),
+      minX: Math.max(0, Math.floor(x - safeRadius - padding)),
+      maxX: Math.min(terrain.data.width - 1, Math.ceil(x + safeRadius + padding)),
+      minY: Math.max(0, Math.floor(y - safeRadius - padding)),
+      maxY: Math.min(terrain.data.height - 1, Math.ceil(y + safeRadius + padding)),
     };
     redrawOffscreenTerrain(dirtyBox);
 
@@ -547,7 +553,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         occCtx.save();
         occCtx.globalCompositeOperation = 'destination-out';
         occCtx.beginPath();
-        occCtx.arc(x, y, radius, 0, Math.PI * 2);
+        occCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
         occCtx.fill();
         occCtx.restore();
       }
@@ -1054,12 +1060,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           // B. Active Explosions Blinding Light Burst Punch
           if (curState.explosions) {
             for (const ex of curState.explosions) {
-              const exGrad = lCtx.createRadialGradient(ex.x, ex.y, 5, ex.x, ex.y, ex.radius * 2.5);
+              const safeExR = Math.max(0, (ex.radius || 0) * 2.5);
+              if (safeExR <= 0) continue;
+              const exGrad = lCtx.createRadialGradient(ex.x, ex.y, Math.min(5, safeExR * 0.1), ex.x, ex.y, safeExR);
               exGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
               exGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
               lCtx.fillStyle = exGrad;
               lCtx.beginPath();
-              lCtx.arc(ex.x, ex.y, ex.radius * 2.5, 0, Math.PI * 2);
+              lCtx.arc(ex.x, ex.y, safeExR, 0, Math.PI * 2);
               lCtx.fill();
             }
           }
@@ -1840,18 +1848,24 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
       // Draw Explosions (Fiery Shockwave Core!)
       const now = Date.now();
       for (const ex of curState.explosions) {
-        const age = now - (ex.createdAt || now);
-        const alpha = Math.max(0, 1 - age / 350);
+        const safeRadius = Math.max(0, ex.radius || 0);
+        if (safeRadius <= 0) continue;
+        const age = Math.max(0, now - (ex.createdAt || now));
+        const progress = Math.min(1, age / 350);
+        const alpha = Math.max(0, 1 - progress);
 
         // Outer Shockwave Ring
-        ctx.strokeStyle = `rgba(249, 115, 22, ${alpha})`;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(ex.x, ex.y, ex.radius * (age / 350), 0, Math.PI * 2);
-        ctx.stroke();
+        const shockRadius = Math.max(0, safeRadius * progress);
+        if (shockRadius > 0) {
+          ctx.strokeStyle = `rgba(249, 115, 22, ${alpha})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(ex.x, ex.y, shockRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
 
         // Inner Fireball Core
-        const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, ex.radius);
+        const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, safeRadius);
         exGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
         exGrad.addColorStop(0.3, `rgba(250, 204, 21, ${alpha * 0.9})`);
         exGrad.addColorStop(0.7, `rgba(239, 68, 68, ${alpha * 0.7})`);
@@ -1859,16 +1873,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
         ctx.fillStyle = exGrad;
         ctx.beginPath();
-        ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
+        ctx.arc(ex.x, ex.y, safeRadius, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // Floating Damage Numbers (Arcade Style bouncing -45 HP!)
       if (curState.floatingDamages) {
         for (const fd of curState.floatingDamages) {
-          const age = now - fd.createdAt;
-          const alpha = Math.max(0, 1 - age / 1000);
-          const floatY = fd.y - (age / 1000) * 25;
+          const age = Math.max(0, now - (fd.createdAt || now));
+          const progress = Math.min(1, age / 1000);
+          const alpha = Math.max(0, 1 - progress);
+          const floatY = fd.y - progress * 25;
 
           ctx.save();
           ctx.globalAlpha = alpha;
