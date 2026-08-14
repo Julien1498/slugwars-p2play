@@ -9,6 +9,7 @@ import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
 import { netMetrics } from '../core/networkMetrics';
+import { perfTracker } from '../core/perfTracker';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -492,7 +493,11 @@ export function useGame(options?: {
     if (!isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
 
     const interval = setInterval(() => {
+      const t0 = performance.now();
       engineRef.current.tick();
+      const dt = performance.now() - t0;
+      perfTracker.recordPhysicsTick(dt);
+
       broadcastDeltaState(engineRef.current.state);
       setGameState({ ...engineRef.current.state });
     }, 50);

@@ -3,6 +3,7 @@ export interface FrameLogEntry {
   timeOffsetMs: number;
   frameIntervalMs: number;
   renderDurationMs: number;
+  physicsDurationMs: number;
   fpsInstant: number;
   isJank: boolean;
   isCriticalJank: boolean;
@@ -28,6 +29,9 @@ export interface PerfCaptureReport {
   avgFrameIntervalMs: number;
   avgRenderDurationMs: number;
   maxRenderDurationMs: number;
+  avgPhysicsDurationMs: number;
+  maxPhysicsDurationMs: number;
+  totalPhysicsTicks: number;
   jankFrameCount: number;
   criticalJankCount: number;
   jankPercent: number;
@@ -49,10 +53,28 @@ class PerformanceTracker {
   private lastReport: PerfCaptureReport | null = null;
   private memoryStartMB: number | null = null;
 
+  // Physics Profiling
+  private lastPhysicsDurationMs = 0;
+  private physicsTickCount = 0;
+  private sumPhysicsDurationMs = 0;
+  private maxPhysicsDurationMs = 0;
+
   // Real-time live stats
   public currentFps = 60;
   public currentFrameTimeMs = 16.6;
-  public currentRenderDurationMs = 2.0;
+  public currentRenderDurationMs = 1.0;
+  public currentPhysicsDurationMs = 0.5;
+
+  public recordPhysicsTick(durationMs: number): void {
+    this.lastPhysicsDurationMs = Math.round(durationMs * 100) / 100;
+    this.currentPhysicsDurationMs = this.lastPhysicsDurationMs;
+
+    if (this.isCapturing) {
+      this.physicsTickCount++;
+      this.sumPhysicsDurationMs += durationMs;
+      this.maxPhysicsDurationMs = Math.max(this.maxPhysicsDurationMs, durationMs);
+    }
+  }
 
   // Track each frame inside requestAnimationFrame
   public markFrame(
@@ -93,6 +115,7 @@ class PerformanceTracker {
       timeOffsetMs,
       frameIntervalMs: Math.round(frameIntervalMs * 100) / 100,
       renderDurationMs: Math.round(renderDurationMs * 100) / 100,
+      physicsDurationMs: this.lastPhysicsDurationMs,
       fpsInstant,
       isJank,
       isCriticalJank,
@@ -115,6 +138,10 @@ class PerformanceTracker {
     this.capturedFrames = [];
     this.nextFrameId = 1;
     this.lastReport = null;
+
+    this.physicsTickCount = 0;
+    this.sumPhysicsDurationMs = 0;
+    this.maxPhysicsDurationMs = 0;
 
     const mem = (performance as any)?.memory;
     this.memoryStartMB = mem?.usedJSHeapSize
@@ -181,10 +208,15 @@ class PerformanceTracker {
         ? Math.round((memoryEndMB - this.memoryStartMB) * 10) / 10
         : null;
 
-    // Sort worst frames by render duration or frame interval
+    // Sort worst frames by frame interval
     const topWorstFrames = [...frames]
       .sort((a, b) => b.frameIntervalMs - a.frameIntervalMs)
       .slice(0, 15);
+
+    const avgPhysicsDurationMs =
+      this.physicsTickCount > 0
+        ? Math.round((this.sumPhysicsDurationMs / this.physicsTickCount) * 100) / 100
+        : 0;
 
     const report: PerfCaptureReport = {
       durationMs: actualDurationMs,
@@ -196,6 +228,9 @@ class PerformanceTracker {
       avgFrameIntervalMs: totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0,
       avgRenderDurationMs: totalFrames > 0 ? Math.round((sumRender / totalFrames) * 100) / 100 : 0,
       maxRenderDurationMs: Math.round(maxRender * 100) / 100,
+      avgPhysicsDurationMs,
+      maxPhysicsDurationMs: Math.round(this.maxPhysicsDurationMs * 100) / 100,
+      totalPhysicsTicks: this.physicsTickCount,
       jankFrameCount: jankCount,
       criticalJankCount,
       jankPercent: totalFrames > 0 ? Math.round((jankCount / totalFrames) * 1000) / 10 : 0,
