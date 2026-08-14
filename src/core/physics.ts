@@ -317,6 +317,10 @@ export function updateSlugPhysics(
     slug.isAlive = false;
   }
   if (!slug.isAlive || slug.isPlaced === false) return {};
+  if (slug.ropeState) {
+    slug.fallStartY = undefined;
+    return {};
+  }
 
   const result: { fallDamage?: number } = {};
 

@@ -18,14 +18,65 @@ class SoundEffects {
     return this.ctx;
   }
 
-  public play(type: 'fire' | 'explosion' | 'jump' | 'splash' | 'baah' | 'donkey' | 'victory' | 'tick' | 'melee' | 'bounce' | 'teleport'): void {
+  public play(type: 'fire' | 'explosion' | 'jump' | 'splash' | 'baah' | 'donkey' | 'victory' | 'tick' | 'melee' | 'bounce' | 'teleport' | 'rope_shoot' | 'rope_attach' | 'girder' | 'airdrop'): void {
     try {
       const ctx = this.initCtx();
       if (!ctx) return;
 
       const now = ctx.currentTime;
 
-      if (type === 'jump') {
+      if (type === 'rope_shoot') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } else if (type === 'rope_attach') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(350, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.06);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } else if (type === 'girder') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(440, now + 0.08);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'airdrop') {
+        const notes = [392.0, 523.25, 659.25];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const startTime = now + idx * 0.08;
+          gain.gain.setValueAtTime(0.35, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.2);
+        });
+      } else if (type === 'jump') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';

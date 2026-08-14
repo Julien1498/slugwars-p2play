@@ -1877,7 +1877,127 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.fill();
       }
 
-      // Floating Damage Numbers (Arcade Style bouncing -45 HP!)
+      // Draw Ninja Rope & Hook Anchors
+      for (const s of curState.slugs) {
+        if (s.isAlive && s.ropeState) {
+          const rope = s.ropeState;
+          ctx.save();
+          // Braided steel cable line
+          ctx.strokeStyle = '#e4e4e7';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(rope.hookX, rope.hookY);
+          ctx.lineTo(s.x, s.y - 8);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#71717a';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(rope.hookX, rope.hookY);
+          ctx.lineTo(s.x, s.y - 8);
+          ctx.stroke();
+
+          // Metallic Anchor Spike
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(rope.hookX, rope.hookY, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // Draw Placed Steel Girders
+      if (curState.girders) {
+        for (const g of curState.girders) {
+          ctx.save();
+          ctx.translate(g.x, g.y);
+          ctx.rotate((g.angleDeg * Math.PI) / 180);
+
+          // Steel beam body
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+
+          // Hazard stripes
+          ctx.fillStyle = '#facc15';
+          for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
+            ctx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
+          }
+
+          // Rivet dots
+          ctx.fillStyle = '#cbd5e1';
+          ctx.beginPath();
+          ctx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
+          ctx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // Draw Supply Crates (Parachute & Wooden Supply Boxes)
+      if (curState.supplyCrates) {
+        for (const crate of curState.supplyCrates) {
+          ctx.save();
+          ctx.translate(crate.x, crate.y);
+
+          if (!crate.isLanded) {
+            // Parachute Canopy
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(0, -22, 16, Math.PI, 0);
+            ctx.fill();
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // White stripes on canopy
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, -22, 8, Math.PI, 0);
+            ctx.fill();
+
+            // Suspension cords
+            ctx.strokeStyle = '#e4e4e7';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-14, -22);
+            ctx.lineTo(0, -8);
+            ctx.moveTo(14, -22);
+            ctx.lineTo(0, -8);
+            ctx.moveTo(0, -38);
+            ctx.lineTo(0, -8);
+            ctx.stroke();
+          }
+
+          // Supply Crate Box (Military olive wooden box with red cross)
+          ctx.fillStyle = '#ca8a04';
+          ctx.fillRect(-9, -9, 18, 18);
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-9, -9, 18, 18);
+
+          // Red Cross Medical Icon (+50 HP)
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(-2, -6, 4, 12);
+          ctx.fillRect(-6, -2, 12, 4);
+
+          // Crate Label
+          ctx.fillStyle = '#fef08a';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('+50 HP', 0, 16);
+
+          ctx.restore();
+        }
+      }
+
+      // Floating Damage & Healing Numbers (Arcade Style bouncing +50 HP / -45 HP!)
       if (curState.floatingDamages) {
         for (const fd of curState.floatingDamages) {
           const age = Math.max(0, now - (fd.createdAt || now));
@@ -1887,13 +2007,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
 
           ctx.save();
           ctx.globalAlpha = alpha;
-          ctx.fillStyle = '#facc15';
+          const isHeal = fd.damage < 0;
+          ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 2;
           ctx.font = 'extrabold 14px Outfit, sans-serif';
           ctx.textAlign = 'center';
-          ctx.strokeText(`-${fd.damage}`, fd.x, floatY);
-          ctx.fillText(`-${fd.damage}`, fd.x, floatY);
+          const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+          ctx.strokeText(text, fd.x, floatY);
+          ctx.fillText(text, fd.x, floatY);
           ctx.restore();
         }
       }

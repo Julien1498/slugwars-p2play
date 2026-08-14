@@ -16,7 +16,10 @@ export type WeaponId =
   | 'concrete_donkey'
   | 'super_sheep'
   | 'blowtorch'
-  | 'teleport';
+  | 'teleport'
+  | 'ninja_rope'
+  | 'girder'
+  | 'airdrop';
 
 export type WeaponCategory =
   | 'EXPLOSIVE'
@@ -33,7 +36,10 @@ export type WeaponBehavior =
   | 'HEAVY_FALL'
   | 'STEERABLE'
   | 'BLOWTORCH'
-  | 'TELEPORT';
+  | 'TELEPORT'
+  | 'NINJA_ROPE'
+  | 'GIRDER'
+  | 'AIRDROP';
 
 export interface FireContext {
   originX: number;

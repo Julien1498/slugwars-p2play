@@ -16,6 +16,33 @@ export interface SolidProp {
   variant?: number;
 }
 
+export interface RopeState {
+  hookX: number;
+  hookY: number;
+  length: number;
+  angleRad: number;
+  angularVelocity: number;
+}
+
+export interface SupplyCrate {
+  id: string;
+  x: number;
+  y: number;
+  vy: number;
+  isLanded: boolean;
+  crateType: 'health' | 'ammo';
+  healAmount: number;
+}
+
+export interface PlacedGirder {
+  id: string;
+  x: number;
+  y: number;
+  angleDeg: number;
+  length: number;
+  thickness: number;
+}
+
 export interface Slug {
   id: SlugId;
   teamId: TeamId;
@@ -40,6 +67,7 @@ export interface Slug {
   inVehicleId?: string | null;
   isBlowtorching?: boolean;
   blowtorchTimerMs?: number;
+  ropeState?: RopeState | null;
 }
 
 export interface HelicopterVehicle {
@@ -181,6 +209,8 @@ export interface GameState {
   explosions: ExplosionEvent[];
   particles: Particle[];
   floatingDamages: FloatingDamage[];
+  supplyCrates?: SupplyCrate[];
+  girders?: PlacedGirder[];
   winnerTeamId?: TeamId;
   journal: JournalEntry[];
   turnCount: number;
