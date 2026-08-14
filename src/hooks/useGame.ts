@@ -3,7 +3,8 @@ import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState, Vector2D } from '../core/types';
 import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
-import { buildStateDelta, applyStateDelta } from '../network/netSerializer';
+import { buildStateDelta, applyStateDelta, CompactStateDelta } from '../network/netSerializer';
+import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
@@ -70,7 +71,7 @@ export function useGame(options?: {
     [peerManager, myPeerId]
   );
 
-  // Broadcast Delta State (Active Gameplay Ticks)
+  // Broadcast Binary Delta State (Active Gameplay 20 Hz Ticks - 15-35 Bytes!)
   const broadcastDeltaState = useCallback(
     (state: GameState) => {
       const activeId = myPeerId || peerManager.myPeerId;
@@ -79,14 +80,13 @@ export function useGame(options?: {
       const delta = buildStateDelta(lastSentStateRef.current, state);
       lastSentStateRef.current = JSON.parse(JSON.stringify(state));
 
-      const payload = { isDelta: true, delta };
+      const binaryBuffer = encodeBinaryDelta(delta, state);
 
       if (peerManager.connections) {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
-            const msg = { type: 'STATE_UPDATE', state: payload };
-            conn.send(msg);
-            netMetrics.recordUpload(msg);
+            conn.send(binaryBuffer);
+            netMetrics.recordUpload(binaryBuffer);
           }
         }
       }
@@ -269,10 +269,22 @@ export function useGame(options?: {
       netMetrics.recordDownload(payload);
       const engine = engineRef.current;
 
-      if (payload.isDelta && payload.delta) {
+      let delta: CompactStateDelta | null = null;
+      const isBinary = payload instanceof ArrayBuffer || ArrayBuffer.isView(payload);
+      if (isBinary) {
+        try {
+          delta = decodeBinaryDelta(payload, engine.state);
+        } catch (err) {
+          console.warn('Binary decode error:', err);
+        }
+      } else if (payload.isDelta && payload.delta) {
+        delta = payload.delta;
+      }
+
+      if (delta) {
         // Sound effects for Guest on incoming new projectiles
-        if (payload.delta.projectiles && Array.isArray(payload.delta.projectiles)) {
-          for (const p of payload.delta.projectiles) {
+        if (delta.projectiles && Array.isArray(delta.projectiles)) {
+          for (const p of delta.projectiles) {
             if (p.id && !knownProjIdsRef.current.has(p.id)) {
               knownProjIdsRef.current.add(p.id);
               if (p.weaponId === 'super_sheep') {
@@ -287,8 +299,8 @@ export function useGame(options?: {
         }
 
         // Sound effects for Guest on incoming explosions
-        if (payload.delta.explosions && Array.isArray(payload.delta.explosions)) {
-          for (const ex of payload.delta.explosions) {
+        if (delta.explosions && Array.isArray(delta.explosions)) {
+          for (const ex of delta.explosions) {
             if (ex.id && !knownExplosionIdsRef.current.has(ex.id)) {
               knownExplosionIdsRef.current.add(ex.id);
               sfx.play('explosion');
@@ -297,14 +309,14 @@ export function useGame(options?: {
         }
 
         // Victory sound on Game Over
-        if (payload.delta.phase && payload.delta.phase !== prevPhaseRef.current) {
-          if (payload.delta.phase === 'GAME_OVER') {
+        if (delta.phase && delta.phase !== prevPhaseRef.current) {
+          if (delta.phase === 'GAME_OVER') {
             sfx.play('victory');
           }
-          prevPhaseRef.current = payload.delta.phase;
+          prevPhaseRef.current = delta.phase;
         }
 
-        applyStateDelta(engine.state, payload.delta);
+        applyStateDelta(engine.state, delta);
 
         // Stamp newly received girders into guest's terrain grid
         if (engine.state.girders && engine.state.girders.length > 0) {
