@@ -608,7 +608,7 @@ export class SlugWarsEngine {
         id: `crate_${Date.now()}_${Math.random()}`,
         x: targetPoint.x,
         y: -30,
-        vy: 2.0,
+        vy: 2.2,
         isLanded: false,
         crateType: 'health',
         healAmount: 50,
@@ -616,7 +616,8 @@ export class SlugWarsEngine {
 
       sfx.play('airdrop');
       this.addLog(`✈️ Largage aérien d'une Caisse de Ravitaillement en cours ! 📦`, 'weapon');
-      this.state.phase = 'PROJECTILE_ACTIVE';
+      this.state.phase = 'RETREAT';
+      this.state.retreatTimer = 4.0;
       return true;
     }
 
@@ -930,6 +931,11 @@ export class SlugWarsEngine {
       (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE')
     ) {
       this.addLog(`⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`, 'combat');
+      this.endTurn();
+      return;
+    }
+
+    if (this.state.phase === 'PROJECTILE_ACTIVE' && (!this.state.projectiles || this.state.projectiles.length === 0)) {
       this.endTurn();
       return;
     }
