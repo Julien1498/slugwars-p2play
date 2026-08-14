@@ -573,6 +573,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
   }, []);
 
   const rectRef = useRef<DOMRect | null>(null);
+  const clientParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
 
   const updateCanvasRect = useCallback(() => {
     if (canvasRef.current) {
@@ -1832,11 +1833,32 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.restore();
       }
 
-      // Draw Smoke & Fire Trail Particles
-      if (curState.particles) {
-        for (const p of curState.particles) {
+      // Spawn & Draw Client-Side Smoke & Fire Trail Particles at 60 FPS (0 Network Overhead!)
+      if (curState.projectiles && curState.projectiles.length > 0) {
+        for (const proj of curState.projectiles) {
+          if (Math.hypot(proj.vx, proj.vy) > 0.5 && clientParticlesRef.current.length < 50) {
+            clientParticlesRef.current.push({
+              x: proj.x - proj.vx * 0.8,
+              y: proj.y - proj.vy * 0.8,
+              vx: (Math.random() - 0.5) * 0.6,
+              vy: (Math.random() - 0.5) * 0.6 - 0.2,
+              color: Math.random() > 0.35 ? '#f97316' : '#71717a',
+              size: Math.random() * 3 + 2,
+              life: 1.0,
+            });
+          }
+        }
+      }
+
+      const remainingParticles: typeof clientParticlesRef.current = [];
+      for (const p of clientParticlesRef.current) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.035;
+        if (p.life > 0) {
+          remainingParticles.push(p);
           ctx.save();
-          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.globalAlpha = Math.max(0, p.life * 0.85);
           ctx.fillStyle = p.color;
           ctx.beginPath();
           ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
@@ -1844,6 +1866,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
           ctx.restore();
         }
       }
+      clientParticlesRef.current = remainingParticles;
 
       // Draw Explosions (Fiery Shockwave Core!)
       const now = Date.now();
