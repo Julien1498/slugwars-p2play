@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GameState } from '../../core/types';
 import { getWeapon } from '../../core/weapons/registry';
 import { WindIndicator } from './WindIndicator';
@@ -15,7 +15,7 @@ interface TurnHeaderProps {
   onExit?: () => void;
 }
 
-export const TurnHeader: React.FC<TurnHeaderProps> = ({
+export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   gameState,
   hostPeerId,
   isMyTurn,
@@ -27,6 +27,17 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeWeapon = activeSlug ? getWeapon(activeSlug.selectedWeaponId) : null;
+
+  const teamStats = useMemo(() => {
+    return gameState.teams.map((team) => {
+      const teamSlugs = gameState.slugs.filter((s) => s.teamId === team.id);
+      const totalHp = teamSlugs.reduce((acc, s) => acc + (s.isAlive ? s.hp : 0), 0);
+      const maxHp = gameState.config.slugsPerTeam * gameState.config.slugHp;
+      const hpPercent = Math.max(0, Math.min(1, totalHp / (maxHp || 1)));
+      const isActive = team.id === gameState.activeTeamId;
+      return { team, totalHp, hpPercent, isActive };
+    });
+  }, [gameState.teams, gameState.slugs, gameState.config.slugsPerTeam, gameState.config.slugHp, gameState.activeTeamId]);
 
   return (
     <div className="bg-zinc-900/95 backdrop-blur border-b border-zinc-800 px-4 py-2.5 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
@@ -77,37 +88,29 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1">
           <Heart className="w-3 h-3 text-red-500 fill-red-500" /> Équipes :
         </span>
-        {gameState.teams.map((team) => {
-          const teamSlugs = gameState.slugs.filter((s) => s.teamId === team.id);
-          const totalHp = teamSlugs.reduce((acc, s) => acc + (s.isAlive ? s.hp : 0), 0);
-          const maxHp = gameState.config.slugsPerTeam * gameState.config.slugHp;
-          const hpPercent = Math.max(0, Math.min(1, totalHp / (maxHp || 1)));
-          const isActive = team.id === gameState.activeTeamId;
-
-          return (
-            <div
-              key={team.id}
-              className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-bold transition ${
-                isActive
-                  ? 'bg-zinc-800 border-amber-500/80 text-white shadow-md'
-                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
-              }`}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
-              <span>{team.name}</span>
-              <span className="font-mono text-[11px] text-amber-300">{totalHp} HP</span>
-              <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
-                <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    width: `${hpPercent * 100}%`,
-                    backgroundColor: team.color,
-                  }}
-                />
-              </div>
+        {teamStats.map(({ team, totalHp, hpPercent, isActive }) => (
+          <div
+            key={team.id}
+            className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-bold transition ${
+              isActive
+                ? 'bg-zinc-800 border-amber-500/80 text-white shadow-md'
+                : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
+            }`}
+          >
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
+            <span>{team.name}</span>
+            <span className="font-mono text-[11px] text-amber-300">{totalHp} HP</span>
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+              <div
+                className="h-full transition-all duration-300"
+                style={{
+                  width: `${hpPercent * 100}%`,
+                  backgroundColor: team.color,
+                }}
+              />
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Right Controls: Wind, Weapon Button, Room Code & Exit */}
@@ -158,4 +161,4 @@ export const TurnHeader: React.FC<TurnHeaderProps> = ({
       </div>
     </div>
   );
-};
+});
