@@ -89,7 +89,7 @@ export function useGame(options?: {
         for (const conn of peerManager.connections.values()) {
           if (conn.open) {
             conn.send(msg);
-            netMetrics.recordUpload(binaryBuffer);
+            netMetrics.recordUpload(binaryBuffer, delta);
           }
         }
       }
@@ -270,7 +270,6 @@ export function useGame(options?: {
     if (isHost) return;
     peerManager.onStateReceived = (payload: any) => {
       if (!payload) return;
-      netMetrics.recordDownload(payload);
       const engine = engineRef.current;
 
       let delta: CompactStateDelta | null = null;
@@ -283,6 +282,8 @@ export function useGame(options?: {
       } else if (payload.isDelta && payload.delta) {
         delta = payload.delta;
       }
+
+      netMetrics.recordDownload(payload, delta || payload);
 
       if (delta) {
         // Sound effects for Guest on incoming new projectiles
