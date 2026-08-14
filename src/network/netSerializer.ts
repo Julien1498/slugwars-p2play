@@ -53,14 +53,30 @@ export interface CompactStateDelta {
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
   const delta: CompactStateDelta = {};
 
-  if (!prevState || prevState.phase !== currentState.phase) delta.phase = currentState.phase;
-  if (!prevState || prevState.activeTeamId !== currentState.activeTeamId) delta.activeTeamId = currentState.activeTeamId;
-  if (!prevState || prevState.activeSlugId !== currentState.activeSlugId) delta.activeSlugId = currentState.activeSlugId;
+  const isPhaseChanged = !prevState || prevState.phase !== currentState.phase;
+  const isTurnChanged = !prevState || prevState.activeTeamId !== currentState.activeTeamId || prevState.activeSlugId !== currentState.activeSlugId;
 
-  // Always broadcast turnTimer on every tick for real-time countdown sync
-  delta.turnTimer = quantizeFloat(currentState.turnTimer, 1);
+  if (isPhaseChanged) delta.phase = currentState.phase;
+  if (isTurnChanged) {
+    delta.activeTeamId = currentState.activeTeamId;
+    delta.activeSlugId = currentState.activeSlugId;
+  }
+
+  // Broadcast turnTimer only on whole second tick (1 Hz) or phase/turn change to eliminate idle network churn
+  const prevSec = prevState ? Math.floor(prevState.turnTimer) : -1;
+  const curSec = Math.floor(currentState.turnTimer);
+
+  if (isPhaseChanged || isTurnChanged || prevSec !== curSec || currentState.turnTimer <= 5) {
+    delta.turnTimer = quantizeFloat(currentState.turnTimer, 1);
+  }
+
+  // Retreat timer sync
   if (currentState.retreatTimer !== undefined) {
-    delta.retreatTimer = quantizeFloat(currentState.retreatTimer, 1);
+    const prevRetreatSec = prevState?.retreatTimer !== undefined ? Math.floor(prevState.retreatTimer) : -1;
+    const curRetreatSec = Math.floor(currentState.retreatTimer);
+    if (isPhaseChanged || prevRetreatSec !== curRetreatSec || currentState.retreatTimer <= 3) {
+      delta.retreatTimer = quantizeFloat(currentState.retreatTimer, 1);
+    }
   } else if (prevState && prevState.retreatTimer !== undefined) {
     delta.retreatTimer = null;
   }
@@ -111,22 +127,26 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
   if (slugDeltas.length > 0) delta.slugs = slugDeltas;
 
-  // Projectiles (Always synchronized every tick so Guest is 100% in sync with Host!)
-  delta.projectiles = currentState.projectiles.map((p) => ({
-    id: p.id,
-    weaponId: p.weaponId,
-    x: quantizeFloat(p.x, 2),
-    y: quantizeFloat(p.y, 2),
-    vx: quantizeFloat(p.vx, 2),
-    vy: quantizeFloat(p.vy, 2),
-    radius: p.radius,
-    fuseTimerMs: p.fuseTimerMs,
-    bounces: p.bounces,
-    windAffected: p.windAffected,
-    ownerSlugId: p.ownerSlugId,
-    targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
-    behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
-  }));
+  // Projectiles: only sync when active projectiles exist or when clearing previously flying projectiles
+  if (currentState.projectiles.length > 0) {
+    delta.projectiles = currentState.projectiles.map((p) => ({
+      id: p.id,
+      weaponId: p.weaponId,
+      x: quantizeFloat(p.x, 2),
+      y: quantizeFloat(p.y, 2),
+      vx: quantizeFloat(p.vx, 2),
+      vy: quantizeFloat(p.vy, 2),
+      radius: p.radius,
+      fuseTimerMs: p.fuseTimerMs,
+      bounces: p.bounces,
+      windAffected: p.windAffected,
+      ownerSlugId: p.ownerSlugId,
+      targetPoint: p.targetPoint ? { x: quantizeFloat(p.targetPoint.x, 2), y: quantizeFloat(p.targetPoint.y, 2) } : undefined,
+      behaviorData: p.behaviorData ? JSON.parse(JSON.stringify(p.behaviorData)) : undefined,
+    }));
+  } else if (prevState && prevState.projectiles.length > 0) {
+    delta.projectiles = [];
+  }
 
   // Point 1: Girders Sync - ONLY when new girders are placed
   const curGirders = currentState.girders || [];
@@ -299,3 +319,27 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     }
   }
 }
+
+/**
+ * Checks if a delta contains zero state modifications (true idle state).
+ * Used to avoid transmitting empty packets over WebRTC.
+ */
+export function isDeltaEmpty(delta: CompactStateDelta): boolean {
+  return (
+    delta.phase === undefined &&
+    delta.activeTeamId === undefined &&
+    delta.activeSlugId === undefined &&
+    delta.turnTimer === undefined &&
+    delta.retreatTimer === undefined &&
+    delta.wind === undefined &&
+    (!delta.slugs || delta.slugs.length === 0) &&
+    (!delta.projectiles || delta.projectiles.length === 0) &&
+    (!delta.explosions || delta.explosions.length === 0) &&
+    (!delta.floatingDamages || delta.floatingDamages.length === 0) &&
+    (!delta.girders || delta.girders.length === 0) &&
+    (!delta.supplyCrates || delta.supplyCrates.length === 0) &&
+    (!delta.mines || delta.mines.length === 0) &&
+    (!delta.helicopters || delta.helicopters.length === 0)
+  );
+}
+
