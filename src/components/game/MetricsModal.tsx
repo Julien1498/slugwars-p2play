@@ -458,8 +458,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
             {/* Results Report View */}
             {perfReport ? (
               <div className="space-y-4">
-                {/* Summary Dashboard Cards */}
-                <div className="grid grid-cols-4 gap-3">
+                {/* Summary Dashboard Cards (5 Columns) */}
+                <div className="grid grid-cols-5 gap-2.5">
                   {/* FPS Moy & Min/Max */}
                   <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
                     <div className="text-[10px] font-bold uppercase text-zinc-400">FPS Moyen / Min</div>
@@ -476,20 +476,31 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Draw Time (Temps de dessin) */}
+                  {/* Draw Time (Temps de dessin Canvas) */}
                   <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
-                    <div className="text-[10px] font-bold uppercase text-zinc-400">Temps Dessin Canvas</div>
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Dessin Canvas 2D</div>
                     <div className="text-xl font-black font-mono text-cyan-400 mt-0.5">
                       {perfReport.avgRenderDurationMs} <span className="text-xs">ms</span>
                     </div>
                     <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                      Max Dessin : {perfReport.maxRenderDurationMs} ms (Budget: 16.6ms)
+                      Max Dessin : {perfReport.maxRenderDurationMs} ms
+                    </div>
+                  </div>
+
+                  {/* Physics Calculations (Calculs Physique) */}
+                  <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Physique Moteur</div>
+                    <div className="text-xl font-black font-mono text-emerald-400 mt-0.5">
+                      {perfReport.avgPhysicsDurationMs} <span className="text-xs">ms</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                      Max: {perfReport.maxPhysicsDurationMs}ms ({perfReport.totalPhysicsTicks} ticks)
                     </div>
                   </div>
 
                   {/* Saccades & Jank */}
                   <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
-                    <div className="text-[10px] font-bold uppercase text-zinc-400">Saccades (Jank &gt;20ms)</div>
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Saccades (&gt;20ms)</div>
                     <div className="text-xl font-black font-mono text-amber-400 mt-0.5">
                       {perfReport.jankFrameCount}{' '}
                       <span className="text-xs font-normal text-zinc-400">
@@ -601,7 +612,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                           {f.fpsInstant} FPS
                         </span>
                         <span className="text-[11px] text-zinc-400">
-                          Dessin : <strong>{f.renderDurationMs}ms</strong> | Intervalle : <strong>{f.frameIntervalMs}ms</strong>
+                          Dessin : <strong>{f.renderDurationMs}ms</strong> | Phys : <strong>{f.physicsDurationMs}ms</strong> | Intervalle : <strong>{f.frameIntervalMs}ms</strong>
                         </span>
                       </div>
 
