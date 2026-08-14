@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Profiler } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Profiler } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { TurnHeader } from './TurnHeader';
@@ -75,6 +75,13 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const [showMetrics, setShowMetrics] = useState(false);
   const [activeTab, setActiveTab] = useState<'journal' | 'chat'>('journal');
   const activeMovingKeyRef = useRef<string | null>(null);
+
+  const handleOpenWeaponPicker = useCallback(() => setShowWeaponPicker(true), []);
+  const handleCloseWeaponPicker = useCallback(() => setShowWeaponPicker(false), []);
+  const handleOpenRules = useCallback(() => setShowRules(true), []);
+  const handleCloseRules = useCallback(() => setShowRules(false), []);
+  const handleOpenMetrics = useCallback(() => setShowMetrics(true), []);
+  const handleCloseMetrics = useCallback(() => setShowMetrics(false), []);
 
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
@@ -237,9 +244,9 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           gameState={gameState}
           hostPeerId={hostPeerId}
           isMyTurn={isMyTurn}
-          onOpenWeaponPicker={() => setShowWeaponPicker(true)}
-          onOpenRules={() => setShowRules(true)}
-          onOpenMetrics={() => setShowMetrics(true)}
+          onOpenWeaponPicker={handleOpenWeaponPicker}
+          onOpenRules={handleOpenRules}
+          onOpenMetrics={handleOpenMetrics}
           onExit={onExit}
         />
       </Profiler>
@@ -426,7 +433,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               sfx.play('tick');
               onSelectWeapon(wId);
             }}
-            onClose={() => setShowWeaponPicker(false)}
+            onClose={handleCloseWeaponPicker}
           />
         </Profiler>
       )}
@@ -434,7 +441,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       {/* Rules Modal */}
       {showRules && (
         <Profiler id="RulesModal" onRender={perfTracker.onReactRender}>
-          <RulesModal onClose={() => setShowRules(false)} />
+          <RulesModal onClose={handleCloseRules} />
         </Profiler>
       )}
 
@@ -443,7 +450,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         <Profiler id="MetricsModal" onRender={perfTracker.onReactRender}>
           <MetricsModal
             isOpen={showMetrics}
-            onClose={() => setShowMetrics(false)}
+            onClose={handleCloseMetrics}
             gameState={gameState}
             hostPeerId={hostPeerId}
           />

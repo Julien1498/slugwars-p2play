@@ -164,10 +164,6 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 }, (prev, next) => {
   if (prev.isMyTurn !== next.isMyTurn) return false;
   if (prev.hostPeerId !== next.hostPeerId) return false;
-  if (prev.onOpenWeaponPicker !== next.onOpenWeaponPicker) return false;
-  if (prev.onOpenRules !== next.onOpenRules) return false;
-  if (prev.onOpenMetrics !== next.onOpenMetrics) return false;
-  if (prev.onExit !== next.onExit) return false;
 
   const pState = prev.gameState;
   const nState = next.gameState;
