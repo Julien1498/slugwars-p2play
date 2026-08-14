@@ -4,6 +4,7 @@ export interface FrameLogEntry {
   frameIntervalMs: number;
   renderDurationMs: number;
   physicsDurationMs: number;
+  reactRenderDurationMs: number;
   fpsInstant: number;
   isJank: boolean;
   isCriticalJank: boolean;
@@ -19,6 +20,14 @@ export interface FrameLogEntry {
   };
 }
 
+export interface ReactComponentPerf {
+  componentId: string;
+  renderCount: number;
+  totalDurationMs: number;
+  avgDurationMs: number;
+  maxDurationMs: number;
+}
+
 export interface PerfCaptureReport {
   durationMs: number;
   totalFrames: number;
@@ -32,6 +41,10 @@ export interface PerfCaptureReport {
   avgPhysicsDurationMs: number;
   maxPhysicsDurationMs: number;
   totalPhysicsTicks: number;
+  totalReactRenders: number;
+  avgReactRenderMs: number;
+  maxReactRenderMs: number;
+  reactComponents: ReactComponentPerf[];
   jankFrameCount: number;
   criticalJankCount: number;
   jankPercent: number;
@@ -59,11 +72,19 @@ class PerformanceTracker {
   private sumPhysicsDurationMs = 0;
   private maxPhysicsDurationMs = 0;
 
+  // React Re-render Profiling
+  private currentFrameReactDurationMs = 0;
+  private totalReactRendersCount = 0;
+  private sumReactDurationMs = 0;
+  private maxReactDurationMs = 0;
+  private reactStatsMap = new Map<string, { count: number; totalMs: number; maxMs: number }>();
+
   // Real-time live stats
   public currentFps = 60;
   public currentFrameTimeMs = 16.6;
   public currentRenderDurationMs = 1.0;
   public currentPhysicsDurationMs = 0.5;
+  public currentReactDurationMs = 0.5;
 
   public recordPhysicsTick(durationMs: number): void {
     this.lastPhysicsDurationMs = Math.round(durationMs * 100) / 100;
@@ -75,6 +96,36 @@ class PerformanceTracker {
       this.maxPhysicsDurationMs = Math.max(this.maxPhysicsDurationMs, durationMs);
     }
   }
+
+  public recordReactRender(
+    componentId: string,
+    phase: 'mount' | 'update' | 'nested-update',
+    actualDuration: number
+  ): void {
+    this.currentFrameReactDurationMs += actualDuration;
+    this.currentReactDurationMs = Math.round(actualDuration * 100) / 100;
+
+    if (this.isCapturing) {
+      this.totalReactRendersCount++;
+      this.sumReactDurationMs += actualDuration;
+      this.maxReactDurationMs = Math.max(this.maxReactDurationMs, actualDuration);
+
+      const existing = this.reactStatsMap.get(componentId) || { count: 0, totalMs: 0, maxMs: 0 };
+      existing.count++;
+      existing.totalMs += actualDuration;
+      existing.maxMs = Math.max(existing.maxMs, actualDuration);
+      this.reactStatsMap.set(componentId, existing);
+    }
+  }
+
+  // React Profiler onRender standard callback
+  public onReactRender = (
+    id: string,
+    phase: 'mount' | 'update' | 'nested-update',
+    actualDuration: number
+  ): void => {
+    this.recordReactRender(id, phase, actualDuration);
+  };
 
   // Track each frame inside requestAnimationFrame
   public markFrame(
@@ -98,6 +149,9 @@ class PerformanceTracker {
     this.currentFrameTimeMs = Math.round(frameIntervalMs * 10) / 10;
     this.currentRenderDurationMs = Math.round(renderDurationMs * 100) / 100;
 
+    const reactDuration = Math.round(this.currentFrameReactDurationMs * 100) / 100;
+    this.currentFrameReactDurationMs = 0; // reset for next frame
+
     if (!this.isCapturing) return;
 
     const timeOffsetMs = Math.round(now - this.captureStartTime);
@@ -116,6 +170,7 @@ class PerformanceTracker {
       frameIntervalMs: Math.round(frameIntervalMs * 100) / 100,
       renderDurationMs: Math.round(renderDurationMs * 100) / 100,
       physicsDurationMs: this.lastPhysicsDurationMs,
+      reactRenderDurationMs: reactDuration,
       fpsInstant,
       isJank,
       isCriticalJank,
@@ -142,6 +197,12 @@ class PerformanceTracker {
     this.physicsTickCount = 0;
     this.sumPhysicsDurationMs = 0;
     this.maxPhysicsDurationMs = 0;
+
+    this.currentFrameReactDurationMs = 0;
+    this.totalReactRendersCount = 0;
+    this.sumReactDurationMs = 0;
+    this.maxReactDurationMs = 0;
+    this.reactStatsMap.clear();
 
     const mem = (performance as any)?.memory;
     this.memoryStartMB = mem?.usedJSHeapSize
@@ -218,6 +279,23 @@ class PerformanceTracker {
         ? Math.round((this.sumPhysicsDurationMs / this.physicsTickCount) * 100) / 100
         : 0;
 
+    const avgReactRenderMs =
+      this.totalReactRendersCount > 0
+        ? Math.round((this.sumReactDurationMs / this.totalReactRendersCount) * 100) / 100
+        : 0;
+
+    const reactComponents: ReactComponentPerf[] = [];
+    this.reactStatsMap.forEach((val, key) => {
+      reactComponents.push({
+        componentId: key,
+        renderCount: val.count,
+        totalDurationMs: Math.round(val.totalMs * 100) / 100,
+        avgDurationMs: Math.round((val.totalMs / val.count) * 100) / 100,
+        maxDurationMs: Math.round(val.maxMs * 100) / 100,
+      });
+    });
+    reactComponents.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
+
     const report: PerfCaptureReport = {
       durationMs: actualDurationMs,
       totalFrames,
@@ -231,6 +309,10 @@ class PerformanceTracker {
       avgPhysicsDurationMs,
       maxPhysicsDurationMs: Math.round(this.maxPhysicsDurationMs * 100) / 100,
       totalPhysicsTicks: this.physicsTickCount,
+      totalReactRenders: this.totalReactRendersCount,
+      avgReactRenderMs,
+      maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
+      reactComponents,
       jankFrameCount: jankCount,
       criticalJankCount,
       jankPercent: totalFrames > 0 ? Math.round((jankCount / totalFrames) * 1000) / 10 : 0,

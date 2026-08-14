@@ -544,7 +544,38 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                           </div>
                           <div className="text-[10px] text-zinc-400 mt-1 flex justify-between">
                             <span>Dessin : {f.renderDurationMs}ms</span>
+                            <span>React : {f.reactRenderDurationMs}ms</span>
                             <span>{f.fpsInstant} FPS</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* React Component Re-renders Diagnostic Table */}
+                {perfReport.reactComponents.length > 0 && (
+                  <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-violet-400 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Activité & Re-renders des Composants React ({perfReport.totalReactRenders} passes)</span>
+                      </h4>
+                      <span className="text-[11px] font-mono text-zinc-400">
+                        Temps Moyen Re-render : <strong className="text-zinc-200">{perfReport.avgReactRenderMs} ms</strong>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {perfReport.reactComponents.map((c) => (
+                        <div key={c.componentId} className="bg-zinc-900/70 border border-zinc-800 p-2.5 rounded-lg text-xs font-mono">
+                          <div className="font-bold text-white flex justify-between">
+                            <span>&lt;{c.componentId} /&gt;</span>
+                            <span className="text-violet-300 font-normal">{c.renderCount}x</span>
+                          </div>
+                          <div className="text-[10px] text-zinc-400 mt-1 flex justify-between">
+                            <span>Total : {c.totalDurationMs}ms</span>
+                            <span>Moy : {c.avgDurationMs}ms</span>
                           </div>
                         </div>
                       ))}
@@ -612,7 +643,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                           {f.fpsInstant} FPS
                         </span>
                         <span className="text-[11px] text-zinc-400">
-                          Dessin : <strong>{f.renderDurationMs}ms</strong> | Phys : <strong>{f.physicsDurationMs}ms</strong> | Intervalle : <strong>{f.frameIntervalMs}ms</strong>
+                          Dessin : <strong>{f.renderDurationMs}ms</strong> | Phys : <strong>{f.physicsDurationMs}ms</strong> | React : <strong>{f.reactRenderDurationMs}ms</strong> | Intervalle : <strong>{f.frameIntervalMs}ms</strong>
                         </span>
                       </div>
 
