@@ -50,6 +50,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   gameStateRef.current = gameState;
   const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
 
+  // Zero-Overhead In-Game Permanent FPS HUD Refs
+  const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
+  const fpsTextRef = useRef<HTMLSpanElement | null>(null);
+  const fpsDotRef = useRef<HTMLSpanElement | null>(null);
+  const fpsCounterFramesRef = useRef(0);
+  const lastFpsHudUpdateRef = useRef(performance.now());
+
+  // Subscribe to FPS HUD toggle without triggering any React component re-render
+  useEffect(() => {
+    const unsub = perfTracker.onFpsHudToggle((enabled) => {
+      if (fpsBadgeRef.current) {
+        fpsBadgeRef.current.style.display = enabled ? 'flex' : 'none';
+      }
+    });
+    return unsub;
+  }, []);
+
   // Optimized 32-bit fast terrain rendering with Dirty Box scan support (96.8% faster during explosions!)
   const redrawOffscreenTerrain = useCallback((dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }) => {
     const { width, height, grid } = terrain.data;
@@ -2122,6 +2139,28 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         crates: curState?.supplyCrates?.length || 0,
       });
 
+      // Zero-overhead In-Game Permanent FPS HUD Updater (0 React re-renders, direct DOM mutation)
+      if (fpsTextRef.current && perfTracker.getFpsHudEnabled()) {
+        const now = performance.now();
+        fpsCounterFramesRef.current++;
+        if (now - lastFpsHudUpdateRef.current >= 250) {
+          const fps = Math.round((fpsCounterFramesRef.current * 1000) / (now - lastFpsHudUpdateRef.current));
+          fpsCounterFramesRef.current = 0;
+          lastFpsHudUpdateRef.current = now;
+          fpsTextRef.current.textContent = `${fps} FPS`;
+          if (fpsDotRef.current) {
+            fpsDotRef.current.className = `w-2 h-2 rounded-full ${
+              fps >= 50 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : fps >= 30 ? 'bg-amber-400' : 'bg-red-400'
+            }`;
+          }
+          if (fpsBadgeRef.current) {
+            fpsBadgeRef.current.className = `absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-lg text-xs font-mono font-black shadow-lg flex items-center gap-2 select-none z-20 ${
+              fps >= 50 ? 'text-emerald-400 border-emerald-500/30' : fps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
+            }`;
+          }
+        }
+      }
+
       animId = requestAnimationFrame(render);
     };
 
@@ -2131,6 +2170,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+      {/* Zero-Overhead In-Game Permanent FPS Counter HUD */}
+      <div
+        ref={fpsBadgeRef}
+        style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
+        className="absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-lg text-xs font-mono font-black text-emerald-400 shadow-lg flex items-center gap-2 select-none z-20"
+      >
+        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+        <span ref={fpsTextRef}>60 FPS</span>
+      </div>
+
       <canvas
         ref={canvasRef}
         width={terrain.data.width}

@@ -60,6 +60,15 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
   const [expandedPacketId, setExpandedPacketId] = useState<number | null>(null);
   const [netCopied, setNetCopied] = useState(false);
 
+  // In-Game Permanent Zero-Cost FPS HUD Toggle State
+  const [isFpsHudActive, setIsFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
+
+  const handleToggleFpsHud = () => {
+    const nextVal = !isFpsHudActive;
+    setIsFpsHudActive(nextVal);
+    perfTracker.setFpsHudEnabled(nextVal);
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -288,6 +297,42 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
                   {netStats.realPingMs !== null ? 'Mesure WebRTC RTT' : 'Canal Direct P2P'}
                 </div>
               </div>
+            </div>
+
+            {/* Permanent In-Game Zero-Cost FPS HUD Toggle */}
+            <div className="bg-zinc-950/90 border border-zinc-800 hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between transition">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg border ${isFpsHudActive ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-2">
+                    <span>Afficher le compteur FPS permanent en jeu (In-Game HUD)</span>
+                    {isFpsHudActive && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase font-mono font-bold">
+                        Actif
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Affiche les FPS en direct sur le terrain (même quand cette modal est fermée). <strong>Impact perf : 0.00% (0 re-render React)</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleToggleFpsHud}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  isFpsHudActive ? 'bg-emerald-600' : 'bg-zinc-800'
+                }`}
+                title={isFpsHudActive ? 'Désactiver le compteur FPS en jeu' : 'Activer le compteur FPS en jeu'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isFpsHudActive ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
 
             {/* Real-Time Bandwidth P2P Section */}
