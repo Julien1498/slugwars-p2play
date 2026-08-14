@@ -3,7 +3,7 @@ import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState, Vector2D } from '../core/types';
 import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
-import { buildStateDelta, applyStateDelta, CompactStateDelta } from '../network/netSerializer';
+import { buildStateDelta, applyStateDelta, isDeltaEmpty, CompactStateDelta } from '../network/netSerializer';
 import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import type { PeerManagerLike } from 'p2play-core';
@@ -78,6 +78,8 @@ export function useGame(options?: {
       if (!activeId) return;
 
       const delta = buildStateDelta(lastSentStateRef.current, state);
+      if (isDeltaEmpty(delta)) return; // 100% Zero-bandwidth when idle!
+
       lastSentStateRef.current = JSON.parse(JSON.stringify(state));
 
       const binaryBuffer = encodeBinaryDelta(delta);
@@ -401,6 +403,32 @@ export function useGame(options?: {
       }
     };
   }, [isHost, peerManager]);
+
+  // Guest Local Timer Countdown (smooth 50ms countdown between 1 Hz host sync ticks)
+  useEffect(() => {
+    if (isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
+
+    const interval = setInterval(() => {
+      const state = engineRef.current.state;
+      let changed = false;
+      if (state.phase === 'AIMING' || state.phase === 'PLACEMENT' || state.phase === 'TURN_START') {
+        if (state.turnTimer > 0) {
+          state.turnTimer = Math.max(0, state.turnTimer - 0.05);
+          changed = true;
+        }
+      } else if (state.phase === 'RETREAT' && state.retreatTimer !== undefined) {
+        if (state.retreatTimer > 0) {
+          state.retreatTimer = Math.max(0, state.retreatTimer - 0.05);
+          changed = true;
+        }
+      }
+      if (changed) {
+        setGameState({ ...state });
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [isHost, gameState.phase]);
 
   // Host room creation wrapper
   const hostRoom = useCallback(
