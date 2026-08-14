@@ -57,10 +57,15 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   if (!prevState || prevState.phase !== currentState.phase) delta.phase = currentState.phase;
   if (!prevState || prevState.activeTeamId !== currentState.activeTeamId) delta.activeTeamId = currentState.activeTeamId;
   if (!prevState || prevState.activeSlugId !== currentState.activeSlugId) delta.activeSlugId = currentState.activeSlugId;
-  if (!prevState || Math.abs(prevState.turnTimer - currentState.turnTimer) > 0.1) delta.turnTimer = quantizeFloat(currentState.turnTimer, 1);
-  if (currentState.retreatTimer !== undefined && (!prevState || Math.abs((prevState.retreatTimer ?? 0) - currentState.retreatTimer) > 0.1)) {
+
+  // Always broadcast turnTimer on every tick for smooth real-time synchronized countdown
+  delta.turnTimer = quantizeFloat(currentState.turnTimer, 1);
+  if (currentState.retreatTimer !== undefined) {
     delta.retreatTimer = quantizeFloat(currentState.retreatTimer, 1);
+  } else if (prevState && prevState.retreatTimer !== undefined) {
+    delta.retreatTimer = null as any;
   }
+
   if (!prevState || prevState.wind !== currentState.wind) delta.wind = currentState.wind;
 
   // Slug Deltas
@@ -207,11 +212,18 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 }
 
 export function applyStateDelta(localState: GameState, delta: CompactStateDelta): void {
-  if (delta.phase) localState.phase = delta.phase as any;
+  if (delta.phase) {
+    localState.phase = delta.phase as any;
+    if (delta.phase !== 'RETREAT') {
+      localState.retreatTimer = undefined;
+    }
+  }
   if (delta.activeTeamId) localState.activeTeamId = delta.activeTeamId;
   if (delta.activeSlugId) localState.activeSlugId = delta.activeSlugId;
   if (delta.turnTimer !== undefined) localState.turnTimer = delta.turnTimer;
-  if (delta.retreatTimer !== undefined) localState.retreatTimer = delta.retreatTimer;
+  if (delta.retreatTimer !== undefined) {
+    localState.retreatTimer = delta.retreatTimer === null ? undefined : delta.retreatTimer;
+  }
   if (delta.wind !== undefined) localState.wind = delta.wind;
 
   if (delta.slugs) {
