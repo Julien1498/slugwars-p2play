@@ -1,0 +1,242 @@
+export interface FrameLogEntry {
+  frameId: number;
+  timeOffsetMs: number;
+  frameIntervalMs: number;
+  renderDurationMs: number;
+  fpsInstant: number;
+  isJank: boolean;
+  isCriticalJank: boolean;
+  memoryMB: number | null;
+  entities: {
+    slugs: number;
+    livingSlugs: number;
+    projectiles: number;
+    explosions: number;
+    particles: number;
+    mines: number;
+    crates: number;
+  };
+}
+
+export interface PerfCaptureReport {
+  durationMs: number;
+  totalFrames: number;
+  avgFps: number;
+  minFps: number;
+  maxFps: number;
+  p1LowFps: number;
+  avgFrameIntervalMs: number;
+  avgRenderDurationMs: number;
+  maxRenderDurationMs: number;
+  jankFrameCount: number;
+  criticalJankCount: number;
+  jankPercent: number;
+  memoryStartMB: number | null;
+  memoryEndMB: number | null;
+  memoryDeltaMB: number | null;
+  frames: FrameLogEntry[];
+  topWorstFrames: FrameLogEntry[];
+}
+
+class PerformanceTracker {
+  private isCapturing = false;
+  private captureStartTime = 0;
+  private capturePlannedMs = 5000;
+  private capturedFrames: FrameLogEntry[] = [];
+  private nextFrameId = 1;
+  private lastRafTime = 0;
+  private captureListeners: ((report: PerfCaptureReport | null, remainingSeconds: number) => void)[] = [];
+  private lastReport: PerfCaptureReport | null = null;
+  private memoryStartMB: number | null = null;
+
+  // Real-time live stats
+  public currentFps = 60;
+  public currentFrameTimeMs = 16.6;
+  public currentRenderDurationMs = 2.0;
+
+  // Track each frame inside requestAnimationFrame
+  public markFrame(
+    renderDurationMs: number,
+    entities: {
+      slugs: number;
+      livingSlugs: number;
+      projectiles: number;
+      explosions: number;
+      particles: number;
+      mines: number;
+      crates: number;
+    }
+  ): void {
+    const now = performance.now();
+    const frameIntervalMs = this.lastRafTime > 0 ? now - this.lastRafTime : 16.6;
+    this.lastRafTime = now;
+
+    const fpsInstant = frameIntervalMs > 0 ? Math.min(240, Math.round(1000 / frameIntervalMs)) : 60;
+    this.currentFps = fpsInstant;
+    this.currentFrameTimeMs = Math.round(frameIntervalMs * 10) / 10;
+    this.currentRenderDurationMs = Math.round(renderDurationMs * 100) / 100;
+
+    if (!this.isCapturing) return;
+
+    const timeOffsetMs = Math.round(now - this.captureStartTime);
+    const isJank = frameIntervalMs > 20.0;
+    const isCriticalJank = frameIntervalMs > 33.3;
+
+    let memoryMB: number | null = null;
+    const mem = (performance as any)?.memory;
+    if (mem?.usedJSHeapSize) {
+      memoryMB = Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
+    }
+
+    const frameEntry: FrameLogEntry = {
+      frameId: this.nextFrameId++,
+      timeOffsetMs,
+      frameIntervalMs: Math.round(frameIntervalMs * 100) / 100,
+      renderDurationMs: Math.round(renderDurationMs * 100) / 100,
+      fpsInstant,
+      isJank,
+      isCriticalJank,
+      memoryMB,
+      entities: { ...entities },
+    };
+
+    this.capturedFrames.push(frameEntry);
+
+    if (timeOffsetMs >= this.capturePlannedMs) {
+      this.finishCapture();
+    }
+  }
+
+  public startCapture(durationSeconds: number = 5): void {
+    if (this.isCapturing) return;
+    this.isCapturing = true;
+    this.capturePlannedMs = durationSeconds * 1000;
+    this.captureStartTime = performance.now();
+    this.capturedFrames = [];
+    this.nextFrameId = 1;
+    this.lastReport = null;
+
+    const mem = (performance as any)?.memory;
+    this.memoryStartMB = mem?.usedJSHeapSize
+      ? Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10
+      : null;
+
+    let remaining = durationSeconds;
+    this.notifyProgress(remaining);
+
+    const timer = setInterval(() => {
+      remaining--;
+      if (remaining <= 0 || !this.isCapturing) {
+        clearInterval(timer);
+        if (this.isCapturing) {
+          this.finishCapture();
+        }
+      } else {
+        this.notifyProgress(remaining);
+      }
+    }, 1000);
+  }
+
+  private finishCapture(): void {
+    if (!this.isCapturing) return;
+    this.isCapturing = false;
+    const actualDurationMs = Math.round(performance.now() - this.captureStartTime);
+
+    const frames = [...this.capturedFrames];
+    const totalFrames = frames.length;
+
+    let sumFps = 0;
+    let minFps = 999;
+    let maxFps = 0;
+    let sumInterval = 0;
+    let sumRender = 0;
+    let maxRender = 0;
+    let jankCount = 0;
+    let criticalJankCount = 0;
+
+    const fpsList: number[] = [];
+
+    for (const f of frames) {
+      sumFps += f.fpsInstant;
+      minFps = Math.min(minFps, f.fpsInstant);
+      maxFps = Math.max(maxFps, f.fpsInstant);
+      sumInterval += f.frameIntervalMs;
+      sumRender += f.renderDurationMs;
+      maxRender = Math.max(maxRender, f.renderDurationMs);
+      if (f.isJank) jankCount++;
+      if (f.isCriticalJank) criticalJankCount++;
+      fpsList.push(f.fpsInstant);
+    }
+
+    fpsList.sort((a, b) => a - b);
+    const p1Index = Math.max(0, Math.floor(fpsList.length * 0.01));
+    const p1LowFps = fpsList.length > 0 ? fpsList[p1Index] : 0;
+
+    const mem = (performance as any)?.memory;
+    const memoryEndMB = mem?.usedJSHeapSize
+      ? Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10
+      : null;
+    const memoryDeltaMB =
+      this.memoryStartMB !== null && memoryEndMB !== null
+        ? Math.round((memoryEndMB - this.memoryStartMB) * 10) / 10
+        : null;
+
+    // Sort worst frames by render duration or frame interval
+    const topWorstFrames = [...frames]
+      .sort((a, b) => b.frameIntervalMs - a.frameIntervalMs)
+      .slice(0, 15);
+
+    const report: PerfCaptureReport = {
+      durationMs: actualDurationMs,
+      totalFrames,
+      avgFps: totalFrames > 0 ? Math.round((sumFps / totalFrames) * 10) / 10 : 0,
+      minFps: minFps === 999 ? 0 : minFps,
+      maxFps,
+      p1LowFps,
+      avgFrameIntervalMs: totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0,
+      avgRenderDurationMs: totalFrames > 0 ? Math.round((sumRender / totalFrames) * 100) / 100 : 0,
+      maxRenderDurationMs: Math.round(maxRender * 100) / 100,
+      jankFrameCount: jankCount,
+      criticalJankCount,
+      jankPercent: totalFrames > 0 ? Math.round((jankCount / totalFrames) * 1000) / 10 : 0,
+      memoryStartMB: this.memoryStartMB,
+      memoryEndMB,
+      memoryDeltaMB,
+      frames,
+      topWorstFrames,
+    };
+
+    this.lastReport = report;
+    for (const listener of this.captureListeners) {
+      listener(report, 0);
+    }
+  }
+
+  private notifyProgress(secondsRemaining: number): void {
+    for (const listener of this.captureListeners) {
+      listener(null, secondsRemaining);
+    }
+  }
+
+  public onCaptureUpdate(
+    cb: (report: PerfCaptureReport | null, progressSecondsRemaining: number) => void
+  ): () => void {
+    this.captureListeners.push(cb);
+    if (this.lastReport) {
+      cb(this.lastReport, 0);
+    }
+    return () => {
+      this.captureListeners = this.captureListeners.filter((l) => l !== cb);
+    };
+  }
+
+  public getLastReport(): PerfCaptureReport | null {
+    return this.lastReport;
+  }
+
+  public isRecording(): boolean {
+    return this.isCapturing;
+  }
+}
+
+export const perfTracker = new PerformanceTracker();

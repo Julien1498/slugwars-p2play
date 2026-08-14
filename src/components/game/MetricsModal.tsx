@@ -18,8 +18,13 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  AlertTriangle,
+  Flame,
+  Layers,
+  BarChart2,
 } from 'lucide-react';
 import { netMetrics, NetworkStats, TrafficCaptureReport, PacketLogEntry } from '../../core/networkMetrics';
+import { perfTracker, PerfCaptureReport, FrameLogEntry } from '../../core/perfTracker';
 
 interface MetricsModalProps {
   isOpen: boolean;
@@ -34,19 +39,26 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
   gameState,
   hostPeerId,
 }) => {
-  const [activeTab, setActiveTab] = useState<'realtime' | 'inspector'>('realtime');
+  const [activeTab, setActiveTab] = useState<'realtime' | 'perf_capture' | 'net_capture'>('realtime');
   const [fps, setFps] = useState(60);
   const [frameTime, setFrameTime] = useState(16.6);
   const [memoryUsage, setMemoryUsage] = useState<{ usedMB: number; totalMB: number } | null>(null);
   const [simPing, setSimPing] = useState(18);
   const [netStats, setNetStats] = useState<NetworkStats>(netMetrics.getStats());
 
-  // Traffic Inspector state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingCountdown, setRecordingCountdown] = useState(0);
+  // Performance Profiler State
+  const [isPerfRecording, setIsPerfRecording] = useState(false);
+  const [perfCountdown, setPerfCountdown] = useState(0);
+  const [perfReport, setPerfReport] = useState<PerfCaptureReport | null>(perfTracker.getLastReport());
+  const [perfCopied, setPerfCopied] = useState(false);
+  const [onlyJankFilter, setOnlyJankFilter] = useState(false);
+
+  // Network Traffic Inspector State
+  const [isNetRecording, setIsNetRecording] = useState(false);
+  const [netCountdown, setNetCountdown] = useState(0);
   const [captureReport, setCaptureReport] = useState<TrafficCaptureReport | null>(netMetrics.getLastCaptureReport());
   const [expandedPacketId, setExpandedPacketId] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [netCopied, setNetCopied] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -90,16 +102,16 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
     return () => cancelAnimationFrame(animId);
   }, [isOpen]);
 
-  // Subscribe to capture updates
+  // Subscribe to Network Capture updates
   useEffect(() => {
     if (!isOpen) return;
     const unsub = netMetrics.onCaptureUpdate((report, progressRemaining) => {
       if (progressRemaining > 0) {
-        setIsRecording(true);
-        setRecordingCountdown(progressRemaining);
+        setIsNetRecording(true);
+        setNetCountdown(progressRemaining);
       } else {
-        setIsRecording(false);
-        setRecordingCountdown(0);
+        setIsNetRecording(false);
+        setNetCountdown(0);
         if (report) {
           setCaptureReport(report);
         }
@@ -108,19 +120,50 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
     return unsub;
   }, [isOpen]);
 
-  const handleStartCapture = () => {
-    setIsRecording(true);
-    setRecordingCountdown(5);
+  // Subscribe to Performance Profiler updates
+  useEffect(() => {
+    if (!isOpen) return;
+    const unsub = perfTracker.onCaptureUpdate((report, progressRemaining) => {
+      if (progressRemaining > 0) {
+        setIsPerfRecording(true);
+        setPerfCountdown(progressRemaining);
+      } else {
+        setIsPerfRecording(false);
+        setPerfCountdown(0);
+        if (report) {
+          setPerfReport(report);
+        }
+      }
+    });
+    return unsub;
+  }, [isOpen]);
+
+  const handleStartNetCapture = () => {
+    setIsNetRecording(true);
+    setNetCountdown(5);
     setCaptureReport(null);
     netMetrics.startCapture(5);
   };
 
-  const handleCopyReport = () => {
+  const handleStartPerfCapture = () => {
+    setIsPerfRecording(true);
+    setPerfCountdown(5);
+    setPerfReport(null);
+    perfTracker.startCapture(5);
+  };
+
+  const handleCopyNetReport = () => {
     if (!captureReport) return;
-    const text = JSON.stringify(captureReport, null, 2);
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(JSON.stringify(captureReport, null, 2));
+    setNetCopied(true);
+    setTimeout(() => setNetCopied(false), 2000);
+  };
+
+  const handleCopyPerfReport = () => {
+    if (!perfReport) return;
+    navigator.clipboard.writeText(JSON.stringify(perfReport, null, 2));
+    setPerfCopied(true);
+    setTimeout(() => setPerfCopied(false), 2000);
   };
 
   if (!isOpen) return null;
@@ -139,10 +182,16 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
   const livingSlugs = gameState.slugs.filter((s) => s.isAlive).length;
   const displayPing = netStats.realPingMs !== null ? netStats.realPingMs : simPing;
 
+  const filteredPerfFrames = perfReport
+    ? onlyJankFilter
+      ? perfReport.frames.filter((f) => f.isJank)
+      : perfReport.frames
+    : [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header Bar with Tabs */}
+      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Header Bar with 3 Tabs */}
         <div className="px-6 py-3.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-emerald-400 shadow-inner">
@@ -150,35 +199,49 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-                <span>Métriques & Diagnostic Réseau P2P</span>
+                <span>Centre de Diagnostic & Performances</span>
               </h2>
-              <p className="text-xs text-zinc-400">Performances Matériel, Canvas 60 FPS & Débogage Trafic</p>
+              <p className="text-xs text-zinc-400">Analyse Temps Réel, Profiling Rendu/FPS & Inspecteur Réseau</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Tab selector */}
-            <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
+            <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-xl gap-1">
               <button
                 onClick={() => setActiveTab('realtime')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
                   activeTab === 'realtime'
                     ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                📊 Temps Réel
+                <BarChart2 className="w-3.5 h-3.5" />
+                <span>Temps Réel</span>
               </button>
+
               <button
-                onClick={() => setActiveTab('inspector')}
+                onClick={() => setActiveTab('perf_capture')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  activeTab === 'inspector'
+                  activeTab === 'perf_capture'
+                    ? 'bg-amber-950/80 text-amber-300 shadow-sm border border-amber-500/50'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Capture Rendu 5s</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('net_capture')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                  activeTab === 'net_capture'
                     ? 'bg-emerald-950/80 text-emerald-300 shadow-sm border border-emerald-500/50'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 <Radio className="w-3.5 h-3.5" />
-                <span>Capture 5s</span>
+                <span>Capture Réseau 5s</span>
               </button>
             </div>
 
@@ -359,15 +422,219 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
           </div>
         )}
 
-        {/* Tab 2: 5-Second Traffic Inspector */}
-        {activeTab === 'inspector' && (
+        {/* Tab 2: 5-Second Hardware & Render Performance Profiler */}
+        {activeTab === 'perf_capture' && (
+          <div className="p-6 space-y-5 overflow-y-auto font-sans flex-1">
+            {/* Recording Control Bar */}
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  <span>Profiling Matériel & Rendu Canvas (5 Secondes)</span>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Capture chaque image rendue : FPS réels, saccades (Jank), temps de dessin Canvas 2D et consommation mémoire.
+                </p>
+              </div>
+
+              <div>
+                {isPerfRecording ? (
+                  <div className="flex items-center gap-3 bg-amber-950/80 border border-amber-500/60 px-4 py-2 rounded-xl text-amber-300 text-xs font-bold animate-pulse">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                    <span>Profiling en cours ({perfCountdown}s restantes)...</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleStartPerfCapture}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-xl shadow-lg transition"
+                  >
+                    <Zap className="w-4 h-4" />
+                    <span>⚡ Lancer le Profiling 5s</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Results Report View */}
+            {perfReport ? (
+              <div className="space-y-4">
+                {/* Summary Dashboard Cards */}
+                <div className="grid grid-cols-4 gap-3">
+                  {/* FPS Moy & Min/Max */}
+                  <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">FPS Moyen / Min</div>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-xl font-black font-mono text-emerald-400">
+                        {perfReport.avgFps}
+                      </span>
+                      <span className="text-xs text-zinc-400 font-mono">
+                        (Min: <strong className="text-amber-400">{perfReport.minFps}</strong>)
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                      1% Low : <strong className="text-amber-300">{perfReport.p1LowFps} FPS</strong>
+                    </div>
+                  </div>
+
+                  {/* Draw Time (Temps de dessin) */}
+                  <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Temps Dessin Canvas</div>
+                    <div className="text-xl font-black font-mono text-cyan-400 mt-0.5">
+                      {perfReport.avgRenderDurationMs} <span className="text-xs">ms</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                      Max Dessin : {perfReport.maxRenderDurationMs} ms (Budget: 16.6ms)
+                    </div>
+                  </div>
+
+                  {/* Saccades & Jank */}
+                  <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Saccades (Jank &gt;20ms)</div>
+                    <div className="text-xl font-black font-mono text-amber-400 mt-0.5">
+                      {perfReport.jankFrameCount}{' '}
+                      <span className="text-xs font-normal text-zinc-400">
+                        ({perfReport.jankPercent}%)
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                      Critiques (&gt;33ms) : <strong className="text-red-400">{perfReport.criticalJankCount}</strong>
+                    </div>
+                  </div>
+
+                  {/* JS Heap Memory */}
+                  <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
+                    <div className="text-[10px] font-bold uppercase text-zinc-400">Mémoire JS Heap</div>
+                    <div className="text-xl font-black font-mono text-violet-400 mt-0.5">
+                      {perfReport.memoryEndMB !== null ? `${perfReport.memoryEndMB} MB` : 'N/A'}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                      {perfReport.memoryDeltaMB !== null
+                        ? `Variation: ${perfReport.memoryDeltaMB >= 0 ? '+' : ''}${perfReport.memoryDeltaMB} MB`
+                        : 'Navigateur bridé'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top 10 Worst Frames Alert Section */}
+                {perfReport.topWorstFrames.length > 0 && perfReport.topWorstFrames[0].frameIntervalMs > 20 && (
+                  <div className="bg-zinc-950 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Top des Images les plus lentes (Pics de Latence)</span>
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs font-mono">
+                      {perfReport.topWorstFrames.slice(0, 6).map((f) => (
+                        <div key={f.frameId} className="bg-zinc-900/80 border border-zinc-800 p-2 rounded-lg">
+                          <div className="flex justify-between text-zinc-300">
+                            <span>Image #{f.frameId} (+{(f.timeOffsetMs / 1000).toFixed(2)}s)</span>
+                            <span className={f.frameIntervalMs > 33.3 ? 'text-red-400 font-bold' : 'text-amber-400 font-bold'}>
+                              {f.frameIntervalMs} ms
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-zinc-400 mt-1 flex justify-between">
+                            <span>Dessin : {f.renderDurationMs}ms</span>
+                            <span>{f.fpsInstant} FPS</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Frames Timeline Header & Copy Action */}
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Toutes les Images Rendues ({filteredPerfFrames.length} / {perfReport.totalFrames})</span>
+                    </h4>
+
+                    {perfReport.jankFrameCount > 0 && (
+                      <label className="flex items-center gap-1.5 text-xs text-amber-300 cursor-pointer bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                        <input
+                          type="checkbox"
+                          checked={onlyJankFilter}
+                          onChange={(e) => setOnlyJankFilter(e.target.checked)}
+                          className="rounded text-amber-500"
+                        />
+                        <span>Saccades uniquement ({perfReport.jankFrameCount})</span>
+                      </label>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleCopyPerfReport}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-lg border border-zinc-700 transition"
+                  >
+                    {perfCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{perfCopied ? 'Copié !' : 'Copier le rapport JSON'}</span>
+                  </button>
+                </div>
+
+                {/* Frames Detailed Timeline */}
+                <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                  {filteredPerfFrames.map((f) => (
+                    <div
+                      key={f.frameId}
+                      className={`p-2 rounded-lg border flex items-center justify-between text-xs font-mono transition ${
+                        f.isCriticalJank
+                          ? 'bg-red-950/50 border-red-500/50 text-red-200'
+                          : f.isJank
+                          ? 'bg-amber-950/40 border-amber-500/40 text-amber-200'
+                          : 'bg-zinc-950 border-zinc-800/80 text-zinc-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-zinc-400 text-[11px] w-12">
+                          +{(f.timeOffsetMs / 1000).toFixed(2)}s
+                        </span>
+                        <span className="font-bold text-white">Frame #{f.frameId}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            f.fpsInstant >= 55
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/30'
+                              : f.fpsInstant >= 30
+                              ? 'bg-amber-950 text-amber-300 border border-amber-500/30'
+                              : 'bg-red-950 text-red-300 border border-red-500/30'
+                          }`}
+                        >
+                          {f.fpsInstant} FPS
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          Dessin : <strong>{f.renderDurationMs}ms</strong> | Intervalle : <strong>{f.frameIntervalMs}ms</strong>
+                        </span>
+                      </div>
+
+                      <div className="text-[10px] text-zinc-400">
+                        🐌 {f.entities.livingSlugs} | 🚀 {f.entities.projectiles} | 💥 {f.entities.explosions} | ✨ {f.entities.particles}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              !isPerfRecording && (
+                <div className="bg-zinc-950 border border-dashed border-zinc-800 rounded-xl p-8 text-center text-zinc-400 text-xs space-y-2">
+                  <div className="text-2xl">⚡</div>
+                  <div className="font-bold text-zinc-200 text-sm">Prêt pour le diagnostic matériel & rendu</div>
+                  <p className="max-w-md mx-auto">
+                    Cliquez sur le bouton ci-dessus pour enregistrer 5 secondes de jeu et identifier chaque chute de FPS, saccade ou pic de calcul Canvas.
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: 5-Second Network Traffic Inspector */}
+        {activeTab === 'net_capture' && (
           <div className="p-6 space-y-5 overflow-y-auto font-sans flex-1">
             {/* Recording Control Bar */}
             <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                   <Radio className="w-4 h-4 text-emerald-400" />
-                  <span>Enregistrement du Trafic Réseau (5 Secondes)</span>
+                  <span>Enregistrement du Trafic Réseau P2P (5 Secondes)</span>
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
                   Capture et décortique 100% des paquets échangés entre les joueurs en temps réel.
@@ -375,18 +642,18 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
               </div>
 
               <div>
-                {isRecording ? (
+                {isNetRecording ? (
                   <div className="flex items-center gap-3 bg-red-950/80 border border-red-500/60 px-4 py-2 rounded-xl text-red-300 text-xs font-bold animate-pulse">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                    <span>Capture en cours ({recordingCountdown}s restantes)...</span>
+                    <span>Capture en cours ({netCountdown}s restantes)...</span>
                   </div>
                 ) : (
                   <button
-                    onClick={handleStartCapture}
+                    onClick={handleStartNetCapture}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg transition"
                   >
                     <Radio className="w-4 h-4" />
-                    <span>🔴 Lancer la Capture 5s</span>
+                    <span>🔴 Lancer la Capture Réseau 5s</span>
                   </button>
                 )}
               </div>
@@ -449,11 +716,11 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                     <span>Journal Chronologique des Paquets ({captureReport.packets.length})</span>
                   </h4>
                   <button
-                    onClick={handleCopyReport}
+                    onClick={handleCopyNetReport}
                     className="flex items-center gap-1.5 px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-lg border border-zinc-700 transition"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? 'Copié !' : 'Copier le rapport JSON'}</span>
+                    {netCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{netCopied ? 'Copié !' : 'Copier le rapport JSON'}</span>
                   </button>
                 </div>
 
@@ -517,7 +784,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = ({
                 </div>
               </div>
             ) : (
-              !isRecording && (
+              !isNetRecording && (
                 <div className="bg-zinc-950 border border-dashed border-zinc-800 rounded-xl p-8 text-center text-zinc-400 text-xs space-y-2">
                   <div className="text-2xl">📡</div>
                   <div className="font-bold text-zinc-200 text-sm">Prêt pour l'analyse de trafic</div>

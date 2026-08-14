@@ -4,6 +4,7 @@ import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
 import { SeededRandom } from '../../core/terrainGenerator';
 import { sfx } from '../../core/audio';
+import { perfTracker } from '../../core/perfTracker';
 
 export type TargetPointPayload = Vector2D & { aimAngle?: number; aimPower?: number; facing?: 'left' | 'right' };
 
@@ -782,6 +783,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
     let animId: number;
 
     const render = () => {
+      const renderStart = performance.now();
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
@@ -2108,6 +2110,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = ({
         ctx.stroke();
         ctx.setLineDash([]);
       }
+
+      const renderDuration = performance.now() - renderStart;
+      perfTracker.markFrame(renderDuration, {
+        slugs: curState?.slugs?.length || 0,
+        livingSlugs: curState?.slugs?.filter((s) => s.isAlive).length || 0,
+        projectiles: curState?.projectiles?.length || 0,
+        explosions: curState?.explosions?.length || 0,
+        particles: curState?.particles?.length || 0,
+        mines: curState?.mines?.length || 0,
+        crates: curState?.supplyCrates?.length || 0,
+      });
 
       animId = requestAnimationFrame(render);
     };
