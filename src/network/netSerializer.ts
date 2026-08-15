@@ -15,7 +15,8 @@ export interface CompactRopeDelta {
 }
 
 export interface CompactSlugDelta {
-  i: string; // id
+  i?: string; // id (optional fallback)
+  idx?: number; // 0-based slug index (1 byte instead of 43-character UUID string!)
   x?: number;
   y?: number;
   vx?: number;
@@ -83,12 +84,18 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
   if (!prevState || prevState.wind !== currentState.wind) delta.wind = currentState.wind;
 
-  // Slug Deltas (only changed fields)
+  // Slug Deltas (only changed fields + ultra-compact 1-byte integer index)
   const slugDeltas: CompactSlugDelta[] = [];
-  for (const slug of currentState.slugs) {
+  for (let sIdx = 0; sIdx < currentState.slugs.length; sIdx++) {
+    const slug = currentState.slugs[sIdx];
     const prevSlug = prevState?.slugs.find((s) => s.id === slug.id);
-    const sDelta: CompactSlugDelta = { i: slug.id };
+    const sDelta: CompactSlugDelta = { idx: sIdx };
     let hasChange = false;
+
+    if (!prevSlug) {
+      sDelta.i = slug.id; // Include string UUID only on initial spawn
+      hasChange = true;
+    }
 
     if (!prevSlug || Math.abs(prevSlug.x - slug.x) > 0.05) { sDelta.x = quantizeFloat(slug.x, 2); hasChange = true; }
     if (!prevSlug || Math.abs(prevSlug.y - slug.y) > 0.05) { sDelta.y = quantizeFloat(slug.y, 2); hasChange = true; }
@@ -197,7 +204,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     }
   }
 
-  // Point 5 (Kept untouched): Explosions & Floating Damages
+  // Point 5: Explosions & Floating Damages
   if (currentState.explosions.length > 0) {
     delta.explosions = currentState.explosions.map((ex) => ({
       id: ex.id,
@@ -217,7 +224,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.floatingDamages = [];
   }
 
-  // Helicopters: only sync when count changes or when any helicopter moves / changes pilot / changes HP
+  // Helicopters: strictly sync only changed fields (don't resend static hp, facing, pilotId every tick)
   const curHelis = currentState.helicopters || [];
   const prevHelis = prevState?.helicopters || [];
   const heliCountChanged = curHelis.length !== prevHelis.length;
@@ -235,14 +242,16 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
 
   if (heliCountChanged || changedHelis.length > 0) {
-    delta.helicopters = changedHelis.map((h) => ({
-      id: h.id,
-      x: quantizeFloat(h.x, 2),
-      y: quantizeFloat(h.y, 2),
-      hp: h.hp,
-      facing: h.facing,
-      pilotSlugId: h.pilotSlugId,
-    }));
+    delta.helicopters = changedHelis.map((h) => {
+      const prevH = prevHelis.find((p) => p.id === h.id);
+      const hDelta: Partial<HelicopterVehicle> = { id: h.id };
+      if (!prevH || Math.abs(prevH.x - h.x) > 0.1) hDelta.x = quantizeFloat(h.x, 2);
+      if (!prevH || Math.abs(prevH.y - h.y) > 0.1) hDelta.y = quantizeFloat(h.y, 2);
+      if (!prevH || prevH.hp !== h.hp) hDelta.hp = h.hp;
+      if (!prevH || prevH.facing !== h.facing) hDelta.facing = h.facing;
+      if (!prevH || prevH.pilotSlugId !== h.pilotSlugId) hDelta.pilotSlugId = h.pilotSlugId;
+      return hDelta;
+    });
   } else if (prevState && prevState.helicopters && prevState.helicopters.length > 0 && curHelis.length === 0) {
     delta.helicopters = [];
   }
@@ -267,7 +276,9 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 
   if (delta.slugs) {
     for (const dSlug of delta.slugs) {
-      const slug = localState.slugs.find((s) => s.id === dSlug.i);
+      const slug = dSlug.idx !== undefined 
+        ? localState.slugs[dSlug.idx] 
+        : localState.slugs.find((s) => s.id === dSlug.i);
       if (slug) {
         if (dSlug.x !== undefined) slug.x = dSlug.x;
         if (dSlug.y !== undefined) slug.y = dSlug.y;
