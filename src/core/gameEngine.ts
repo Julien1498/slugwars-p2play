@@ -12,7 +12,7 @@ export class SlugWarsEngine {
 
   constructor(initialConfig?: Partial<GameConfig>) {
     const config: GameConfig = {
-      weaponSetId: 'WMD_CRAZY',
+      weaponSetId: 'CLASSIC',
       slugHp: 100,
       slugsPerTeam: 3,
       turnDuration: 45,
