@@ -711,7 +711,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-center items-center p-3 md:p-4 relative overflow-x-hidden selection:bg-violet-500 selection:text-white">
+    <div className="h-screen max-h-screen w-full bg-zinc-950 text-zinc-100 flex flex-col justify-center items-center p-3 md:p-4 relative overflow-hidden selection:bg-violet-500 selection:text-white">
       {/* Background Fixed HD Vector War Room Canvas */}
       <canvas ref={backdropCanvasRef} className="fixed inset-0 pointer-events-none w-full h-full z-0" />
 
@@ -720,7 +720,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
       <div className="fixed bottom-10 right-1/4 w-80 h-80 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-5xl w-full space-y-3.5 my-auto py-2">
+      <div className="relative z-10 max-w-5xl w-full space-y-3 my-auto">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between gap-3 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-4 py-2.5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
