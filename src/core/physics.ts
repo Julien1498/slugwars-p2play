@@ -76,8 +76,29 @@ export function updateHelicopterPhysics(
     }
   }
 
-  if (heli.x < 35) { heli.x = 35; heli.vx = 0; }
-  if (heli.x > terrain.data.width - 35) { heli.x = terrain.data.width - 35; heli.vx = 0; }
+  // Strict map bounds clamping: helicopter can NEVER fly outside map limits (left, right, or top ceiling)
+  if (heli.x < 35) {
+    heli.x = 35;
+    heli.vx = Math.max(0, heli.vx);
+  }
+  if (heli.x > terrain.data.width - 35) {
+    heli.x = terrain.data.width - 35;
+    heli.vx = Math.min(0, heli.vx);
+  }
+
+  // Ceiling boundary: helicopter cannot fly above top of the map
+  if (heli.y < 25) {
+    heli.y = 25;
+    heli.vy = Math.max(0, heli.vy);
+  }
+
+  // Synchronize pilot slug position with clamped helicopter
+  if (heli.pilotSlugId && pilotSlug) {
+    pilotSlug.x = heli.x;
+    pilotSlug.y = heli.y;
+    pilotSlug.vx = heli.vx;
+    pilotSlug.vy = heli.vy;
+  }
 
   if (heli.y >= terrain.data.waterLevel - 10) {
     return { crashed: true };
