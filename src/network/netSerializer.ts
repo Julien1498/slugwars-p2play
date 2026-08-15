@@ -34,13 +34,23 @@ export interface CompactSlugDelta {
   rs?: CompactRopeDelta | null; // ropeState
 }
 
+export interface CompactTeamDelta {
+  id: string;
+  kills?: number;
+  deaths?: number;
+  damageDealt?: number;
+  damageTaken?: number;
+}
+
 export interface CompactStateDelta {
   phase?: string;
+  winnerTeamId?: string | null;
   activeTeamId?: string;
   activeSlugId?: string;
   turnTimer?: number;
   retreatTimer?: number | null;
   wind?: number;
+  teams?: CompactTeamDelta[];
   slugs?: CompactSlugDelta[];
   helicopters?: Partial<HelicopterVehicle>[];
   mines?: Partial<Landmine>[];
@@ -81,7 +91,31 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.retreatTimer = null;
   }
 
-  if (!prevState || prevState.wind !== currentState.wind) delta.wind = currentState.wind;
+  if (currentState.winnerTeamId !== undefined && (!prevState || prevState.winnerTeamId !== currentState.winnerTeamId)) {
+    delta.winnerTeamId = currentState.winnerTeamId;
+  }
+
+  // Team stats delta (sync kills, deaths, damageDealt, damageTaken)
+  const teamDeltas: CompactTeamDelta[] = [];
+  for (const team of currentState.teams) {
+    const prevTeam = prevState?.teams.find((t) => t.id === team.id);
+    const hasStatsChanged = !prevTeam ||
+      prevTeam.stats?.kills !== team.stats?.kills ||
+      prevTeam.stats?.deaths !== team.stats?.deaths ||
+      prevTeam.stats?.damageDealt !== team.stats?.damageDealt ||
+      prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
+
+    if (hasStatsChanged && team.stats) {
+      teamDeltas.push({
+        id: team.id,
+        kills: team.stats.kills,
+        deaths: team.stats.deaths,
+        damageDealt: team.stats.damageDealt,
+        damageTaken: team.stats.damageTaken,
+      });
+    }
+  }
+  if (teamDeltas.length > 0) delta.teams = teamDeltas;
 
   // Slug Deltas (only changed fields + ultra-compact 1-byte integer index)
   const slugDeltas: CompactSlugDelta[] = [];
@@ -257,6 +291,9 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
       localState.retreatTimer = undefined;
     }
   }
+  if (delta.winnerTeamId !== undefined) {
+    localState.winnerTeamId = delta.winnerTeamId === null ? undefined : delta.winnerTeamId;
+  }
   if (delta.activeTeamId) localState.activeTeamId = delta.activeTeamId;
   if (delta.activeSlugId) localState.activeSlugId = delta.activeSlugId;
   if (delta.turnTimer !== undefined) localState.turnTimer = delta.turnTimer;
@@ -264,6 +301,19 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     localState.retreatTimer = delta.retreatTimer === null ? undefined : delta.retreatTimer;
   }
   if (delta.wind !== undefined) localState.wind = delta.wind;
+
+  if (delta.teams) {
+    for (const dTeam of delta.teams) {
+      const team = localState.teams.find((t) => t.id === dTeam.id);
+      if (team) {
+        if (!team.stats) team.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+        if (dTeam.kills !== undefined) team.stats.kills = dTeam.kills;
+        if (dTeam.deaths !== undefined) team.stats.deaths = dTeam.deaths;
+        if (dTeam.damageDealt !== undefined) team.stats.damageDealt = dTeam.damageDealt;
+        if (dTeam.damageTaken !== undefined) team.stats.damageTaken = dTeam.damageTaken;
+      }
+    }
+  }
 
   if (delta.slugs) {
     for (const dSlug of delta.slugs) {
