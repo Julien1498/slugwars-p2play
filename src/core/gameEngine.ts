@@ -4,13 +4,11 @@ import { getWeapon } from './weapons/registry';
 import { generateProceduralTerrain } from './terrainGenerator';
 import { DestructibleTerrain } from './terrain';
 import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded, updateHelicopterPhysics } from './physics';
-import { sfx, SoundEffectType } from './audio';
+import { sfx } from './audio';
 
 export class SlugWarsEngine {
   public state: GameState;
   public terrain!: DestructibleTerrain;
-  public pendingSfx: SoundEffectType[] = [];
-  private sfxUnsub: (() => void) | null = null;
 
   constructor(initialConfig?: Partial<GameConfig>) {
     const config: GameConfig = {
@@ -45,24 +43,7 @@ export class SlugWarsEngine {
       turnCount: 0,
     };
 
-    this.sfxUnsub = sfx.onPlay((type) => {
-      this.pendingSfx.push(type);
-    });
-
     this.initTerrain();
-  }
-
-  public drainPendingSfx(): SoundEffectType[] {
-    const s = this.pendingSfx;
-    this.pendingSfx = [];
-    return s;
-  }
-
-  public destroy(): void {
-    if (this.sfxUnsub) {
-      this.sfxUnsub();
-      this.sfxUnsub = null;
-    }
   }
 
   public initTerrain(): void {

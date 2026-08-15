@@ -1002,6 +1002,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           const prevHp = prevSlugHpsRef.current.get(slug.id);
           if (prevHp !== undefined && prevHp !== slug.hp && slug.isAlive) {
             triggerClientFloatingDamage(slug.x, slug.y, prevHp - slug.hp);
+            if (prevHp > slug.hp) {
+              sfx.play('ouch');
+            }
           }
           prevSlugHpsRef.current.set(slug.id, slug.hp);
         }

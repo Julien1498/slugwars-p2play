@@ -16,31 +16,11 @@ export type SoundEffectType =
   | 'airdrop'
   | 'ouch';
 
-type SfxListener = (type: SoundEffectType) => void;
-
 class SoundEffects {
   private ctx: AudioContext | null = null;
-  private listeners: SfxListener[] = [];
 
   public init(): AudioContext | null {
     return this.initCtx();
-  }
-
-  public onPlay(listener: SfxListener): () => void {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
-    };
-  }
-
-  private notify(type: SoundEffectType): void {
-    for (const listener of this.listeners) {
-      try {
-        listener(type);
-      } catch (err) {
-        console.error('SFX listener error:', err);
-      }
-    }
   }
 
   private initCtx(): AudioContext | null {
@@ -56,10 +36,7 @@ class SoundEffects {
     return this.ctx;
   }
 
-  public play(type: SoundEffectType, emitEvent = true): void {
-    if (emitEvent) {
-      this.notify(type);
-    }
+  public play(type: SoundEffectType): void {
     try {
       const ctx = this.initCtx();
       if (!ctx) return;
