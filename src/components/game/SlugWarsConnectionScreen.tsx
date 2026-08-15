@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { P2PlayLobby } from 'p2play-core';
-import { Sparkles, Swords, Zap, ShieldAlert, Rocket } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Swords, Zap, Rocket, LogIn, PlusCircle, AlertCircle } from 'lucide-react';
 
 interface SlugWarsConnectionScreenProps {
   status: string;
@@ -9,6 +8,8 @@ interface SlugWarsConnectionScreenProps {
   onHost: (username: string, avatar: string) => void;
   onJoin: (username: string, avatar: string, roomCode: string) => void;
 }
+
+const AVATARS = ['🐌', '🪖', '🏴‍☠️', '🤠', '🥷', '🤖', '🧙', '👑', '🐑'];
 
 export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> = ({
   status,
@@ -19,7 +20,14 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Animated dynamic SlugWars backdrop canvas
+  const [username, setUsername] = useState(() => {
+    return 'Limace_' + Math.floor(100 + Math.random() * 900);
+  });
+  const [selectedAvatar, setSelectedAvatar] = useState('🐌');
+  const [roomCode, setRoomCode] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Dynamic SlugWars backdrop canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -37,7 +45,6 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     };
     window.addEventListener('resize', handleResize);
 
-    // Dynamic background entities
     const clouds = Array.from({ length: 7 }, () => ({
       x: Math.random() * width,
       y: 40 + Math.random() * (height * 0.35),
@@ -74,7 +81,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       t += 0.03;
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Dusk / Night Sky Gradient
+      // 1. Dusk Sky
       const sky = ctx.createLinearGradient(0, 0, 0, height);
       sky.addColorStop(0, '#09090b');
       sky.addColorStop(0.4, '#1e1035');
@@ -104,8 +111,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
         ctx.fill();
       }
 
-      // 4. Distant Silhouetted Hills (Organic Worms style)
-      // Back Hill
+      // 4. Silhouetted Hills
       ctx.fillStyle = 'rgba(24, 24, 32, 0.9)';
       ctx.beginPath();
       ctx.moveTo(0, height);
@@ -117,7 +123,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       ctx.closePath();
       ctx.fill();
 
-      // Front Left Hill with Bazooka Slug
+      // Front Left Hill
       ctx.fillStyle = '#18181b';
       ctx.beginPath();
       ctx.moveTo(0, height);
@@ -129,7 +135,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       ctx.closePath();
       ctx.fill();
 
-      // Front Right Hill with Holy Grenade Slug
+      // Front Right Hill
       ctx.beginPath();
       ctx.moveTo(width * 0.55, height);
       for (let x = width * 0.55; x <= width; x += 20) {
@@ -140,14 +146,13 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       ctx.closePath();
       ctx.fill();
 
-      // 5. Animated Flying Super Sheep 🐑💨
+      // 5. Flying Super Sheep 🐑💨
       sheep.x += sheep.speed;
       if (sheep.x > width + 100) sheep.x = -80;
       sheep.bobOffset = Math.sin(t * 3) * 12;
 
       ctx.save();
       ctx.translate(sheep.x, sheep.y + sheep.bobOffset);
-      // Red Cape Trail
       ctx.fillStyle = '#ef4444';
       ctx.beginPath();
       ctx.moveTo(-16, -2);
@@ -155,52 +160,36 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       ctx.lineTo(-28 + Math.sin(t * 8) * 4, 6 + Math.sin(t * 6) * 4);
       ctx.closePath();
       ctx.fill();
-
-      // Sheep Emoji / Icon
       ctx.font = '28px sans-serif';
       ctx.fillText('🐑', -10, 8);
-      // Wind speed lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-36, 0);
-      ctx.lineTo(-50, 0);
-      ctx.moveTo(-32, -8);
-      ctx.lineTo(-44, -8);
-      ctx.stroke();
       ctx.restore();
 
-      // 6. Animated Hovering Helicopter Slug 🚁
+      // 6. Hovering Helicopter Slug 🚁
       heli.hoverOffset = Math.sin(t * 2) * 8;
       heli.propAngle += 0.45;
 
       ctx.save();
       ctx.translate(heli.x, heli.y + heli.hoverOffset);
-      // Spinning Rotor Propeller
       ctx.strokeStyle = 'rgba(168, 85, 247, 0.7)';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.ellipse(0, -16, 24 * Math.cos(heli.propAngle), 3, 0, 0, Math.PI * 2);
       ctx.stroke();
-
       ctx.font = '32px sans-serif';
       ctx.fillText('🚁', -16, 8);
       ctx.font = '16px sans-serif';
       ctx.fillText('🐌', -10, 4);
       ctx.restore();
 
-      // 7. Background Slugs with Props
-      // Left Slug (Bazooka Aiming)
+      // 7. Left Slug (Bazooka Aiming)
       const leftSlugX = width * 0.12;
       const leftSlugY = height - 90 + Math.sin(leftSlugX * 0.006) * 45;
       ctx.save();
       ctx.translate(leftSlugX, leftSlugY);
       ctx.font = '38px sans-serif';
       ctx.fillText('🐌', -18, -2);
-      // Military Helmet on Slug
       ctx.font = '20px sans-serif';
       ctx.fillText('🪖', -2, -18);
-      // Bazooka Barrel
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 6;
       ctx.lineCap = 'round';
@@ -209,7 +198,6 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       const bazAngle = -0.6 + Math.sin(t * 1.5) * 0.15;
       ctx.lineTo(8 + Math.cos(bazAngle) * 32, -8 + Math.sin(bazAngle) * 32);
       ctx.stroke();
-      // Laser sight dot
       ctx.fillStyle = '#ef4444';
       ctx.beginPath();
       ctx.arc(8 + Math.cos(bazAngle) * 48, -8 + Math.sin(bazAngle) * 48, 3, 0, Math.PI * 2);
@@ -221,16 +209,13 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       const rightSlugY = height - 100 + Math.cos((rightSlugX - width * 0.55) * 0.005) * 50;
       ctx.save();
       ctx.translate(rightSlugX, rightSlugY);
-      ctx.scale(-1, 1); // Face left towards the center!
+      ctx.scale(-1, 1);
       ctx.font = '38px sans-serif';
       ctx.fillText('🐌', -18, -2);
-      // Pirate Hat / Bandana
       ctx.font = '18px sans-serif';
       ctx.fillText('🏴‍☠️', -4, -18);
-      // Dynamite
       ctx.font = '22px sans-serif';
       ctx.fillText('🧨', 12, -4);
-      // Fuse spark
       if (Math.sin(t * 12) > 0) {
         ctx.fillStyle = '#facc15';
         ctx.beginPath();
@@ -250,12 +235,37 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     };
   }, []);
 
-  // If connecting state is active, render a playful themed loader
+  const handleHostClick = () => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setValidationError('Veuillez entrer un pseudo');
+      return;
+    }
+    setValidationError(null);
+    onHost(trimmed, selectedAvatar);
+  };
+
+  const handleJoinClick = () => {
+    const trimmedUser = username.trim();
+    const trimmedCode = roomCode.trim().toUpperCase();
+    if (!trimmedUser) {
+      setValidationError('Veuillez entrer un pseudo');
+      return;
+    }
+    if (!trimmedCode) {
+      setValidationError('Veuillez entrer un code de salon');
+      return;
+    }
+    setValidationError(null);
+    onJoin(trimmedUser, selectedAvatar, trimmedCode);
+  };
+
+  // Connecting screen
   if (isConnecting) {
     return (
       <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4 overflow-hidden">
         <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none w-full h-full" />
-        <div className="relative z-10 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/50 p-8 rounded-3xl text-center space-y-4 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="relative z-10 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/50 p-8 rounded-2xl text-center space-y-4 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
           <div className="relative inline-block">
             <div className="text-6xl animate-bounce">🐌</div>
             <div className="absolute -top-1 -right-2 text-2xl animate-spin" style={{ animationDuration: '3s' }}>
@@ -264,9 +274,9 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
           </div>
           <div className="space-y-1.5">
             <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-300 to-amber-300">
-              Connexion au Salon P2P...
+              Connexion en cours...
             </h2>
-            <p className="text-xs text-zinc-400">Échange des signaux WebRTC sans intermédiaire</p>
+            <p className="text-xs text-zinc-400">Établissement du tunnel WebRTC P2P direct</p>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden border border-zinc-700">
             <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 h-full w-2/3 animate-pulse rounded-full" />
@@ -278,68 +288,131 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
 
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4 overflow-x-hidden selection:bg-violet-500 selection:text-white">
-      {/* Dynamic Animated Slug Backdrop Canvas */}
+      {/* Background Animated Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none w-full h-full" />
 
-      {/* Decorative Glow Orbs */}
+      {/* Ambient Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-1/4 w-72 h-72 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Main Foreground Container */}
-      <div className="relative z-10 max-w-2xl w-full space-y-6 my-auto py-8">
-        
-        {/* Brand & Hero Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-violet-950/80 border border-violet-500/50 rounded-full text-xs font-bold text-violet-300 shadow-md backdrop-blur">
+      {/* Main Content */}
+      <div className="relative z-10 max-w-lg w-full space-y-6 my-auto py-6">
+        {/* Header */}
+        <div className="text-center space-y-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-950/80 border border-violet-500/40 rounded-full text-xs font-bold text-violet-300 shadow-md backdrop-blur">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
-            <span>Artillerie Tactique 100% P2P & Terrains Destructibles</span>
+            <span>Artillerie Tactique Multijoueur & Terrains Destructibles</span>
           </div>
 
           <div className="flex items-center justify-center gap-3">
-            <span className="text-5xl md:text-6xl drop-shadow-[0_0_25px_rgba(168,85,247,0.6)]">🐌</span>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-violet-100 to-violet-400 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+            <span className="text-4xl md:text-5xl drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]">🐌</span>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-violet-100 to-violet-400 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
               SLUG WARS
             </h1>
-            <span className="text-5xl md:text-6xl drop-shadow-[0_0_25px_rgba(239,68,68,0.6)]">💣</span>
+            <span className="text-4xl md:text-5xl drop-shadow-[0_0_20px_rgba(239,68,68,0.6)]">💣</span>
           </div>
 
-          <p className="text-sm md:text-base text-zinc-300 max-w-md mx-auto font-medium">
-            Formez vos escouades, armez vos bazookas et détruisez le terrain ennemi en multijoueur direct !
+          <p className="text-xs md:text-sm text-zinc-400 max-w-sm mx-auto font-medium">
+            Formez vos escouades, armez vos bazookas et détruisez le terrain adverse !
           </p>
+        </div>
 
-          {/* Feature Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-            <span className="px-2.5 py-1 bg-zinc-900/80 border border-zinc-800 rounded-lg text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5 shadow-sm">
-              <Zap className="w-3 h-3 text-amber-400" /> WebRTC Zéro Latence
+        {/* Unified Clean Glass Card */}
+        <div className="bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 rounded-2xl p-6 shadow-2xl space-y-5">
+          {/* Error Banner */}
+          {(error || validationError) && (
+            <div className="p-3 bg-red-950/80 border border-red-800 rounded-xl text-red-300 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
+              <span>{validationError || error}</span>
+            </div>
+          )}
+
+          {/* Pseudo Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Votre Pseudo</label>
+            <input
+              type="text"
+              maxLength={18}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ex: SuperSlug"
+              className="w-full bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-zinc-500 focus:outline-none transition"
+            />
+          </div>
+
+          {/* Avatar Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Choisir un Avatar</label>
+            <div className="flex items-center justify-between gap-1 p-2 bg-zinc-950/80 border border-zinc-800 rounded-xl overflow-x-auto">
+              {AVATARS.map((av) => (
+                <button
+                  key={av}
+                  type="button"
+                  onClick={() => setSelectedAvatar(av)}
+                  className={`w-9 h-9 flex items-center justify-center text-lg rounded-lg transition ${
+                    selectedAvatar === av
+                      ? 'bg-violet-600 border border-violet-300 scale-110 shadow-md shadow-violet-950'
+                      : 'hover:bg-zinc-800/80 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  {av}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Host Button */}
+          <button
+            type="button"
+            onClick={handleHostClick}
+            className="w-full py-3 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-black text-sm rounded-xl transition shadow-lg shadow-violet-900/40 flex items-center justify-center gap-2"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Créer un salon</span>
+          </button>
+
+          {/* Divider */}
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-zinc-800 w-full" />
+            <span className="bg-zinc-900 px-3 text-[11px] font-bold text-zinc-500 uppercase tracking-widest absolute">
+              OU
             </span>
-            <span className="px-2.5 py-1 bg-zinc-900/80 border border-zinc-800 rounded-lg text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5 shadow-sm">
-              <Rocket className="w-3 h-3 text-violet-400" /> 18+ Armes & Véhicules
-            </span>
-            <span className="px-2.5 py-1 bg-zinc-900/80 border border-zinc-800 rounded-lg text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5 shadow-sm">
-              <Swords className="w-3 h-3 text-emerald-400" /> 2 à 6 Équipes
-            </span>
+          </div>
+
+          {/* Join Form */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Rejoindre un salon</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                placeholder="Code du salon..."
+                className="flex-1 bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3.5 py-2.5 text-sm font-mono font-bold text-white placeholder-zinc-500 focus:outline-none transition uppercase tracking-wider"
+              />
+              <button
+                type="button"
+                onClick={handleJoinClick}
+                className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700 hover:border-zinc-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+              >
+                <LogIn className="w-4 h-4 text-violet-400" />
+                <span>Rejoindre</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* P2Play Connection / Room Creation Glassmorphic Card */}
-        <div className="bg-zinc-900/85 backdrop-blur-xl border border-violet-500/40 rounded-3xl p-6 shadow-2xl shadow-violet-950/40">
-          <P2PlayLobby
-            theme="violet"
-            status={status}
-            error={error}
-            showVoiceToggle={false}
-            compactHostSection
-            joinLayout="side-by-side"
-            onHost={onHost}
-            onJoin={onJoin}
-          />
-        </div>
-
-        {/* Footer info */}
-        <div className="text-center text-xs text-zinc-500 font-medium flex items-center justify-center gap-4">
-          <span>Inspiré des classiques Worms™ & Liero</span>
-          <span>•</span>
-          <span>P2Play Core Engine</span>
+        {/* Feature Badges */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/80 rounded-lg text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-amber-400" /> WebRTC Direct
+          </span>
+          <span className="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/80 rounded-lg text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5">
+            <Rocket className="w-3 h-3 text-violet-400" /> 18+ Armes & Véhicules
+          </span>
+          <span className="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/80 rounded-lg text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5">
+            <Swords className="w-3 h-3 text-emerald-400" /> 2 à 6 Équipes
+          </span>
         </div>
       </div>
     </div>
