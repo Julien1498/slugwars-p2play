@@ -2,9 +2,11 @@ import { TerrainData } from './terrainGenerator';
 
 export class DestructibleTerrain {
   public data: TerrainData;
+  public revision: number = 0;
 
   constructor(data: TerrainData) {
     this.data = data;
+    this.revision = 0;
   }
 
   public isSolid(x: number, y: number): boolean {
@@ -17,6 +19,7 @@ export class DestructibleTerrain {
   }
 
   public carveExplosion(cx: number, cy: number, radius: number): number {
+    this.revision++;
     let carvedPixels = 0;
     const icx = Math.floor(cx);
     const icy = Math.floor(cy);

@@ -105,6 +105,16 @@ export class SlugWarsEngine {
     return teamSlugs[nextIndex].id;
   }
 
+  public carveCrater(x: number, y: number, radius: number): void {
+    if (!this.state.craters) this.state.craters = [];
+    const rX = Math.round(x);
+    const rY = Math.round(y);
+    const rR = Math.round(radius);
+    const id = `c_${rX}_${rY}_${rR}_${this.state.craters.length}`;
+    this.state.craters.push({ id, x: rX, y: rY, radius: rR });
+    this.terrain.carveExplosion(x, y, radius);
+  }
+
   public startGame(): boolean {
     if (this.state.teams.length === 0) return false;
     if (this.state.config.mapSeed === undefined || this.state.config.mapSeed === null) {
@@ -129,6 +139,7 @@ export class SlugWarsEngine {
     this.state.floatingDamages = [];
     this.state.supplyCrates = [];
     this.state.girders = [];
+    this.state.craters = [];
     this.state.journal = [];
 
     let slugIndex = 1;
@@ -457,7 +468,7 @@ export class SlugWarsEngine {
     this.state.projectiles.splice(sheepIdx, 1);
 
     const weapon = getWeapon('super_sheep');
-    this.terrain.carveExplosion(sheep.x, sheep.y, weapon.radius);
+    this.carveCrater(sheep.x, sheep.y, weapon.radius);
     this.state.explosions.push({
       id: `ex_${Date.now()}_${Math.random()}`,
       x: sheep.x,
@@ -897,7 +908,7 @@ export class SlugWarsEngine {
         const flameY = activeSlug.y - 8 + dirY * 18;
 
         // 1. Carve destructible terrain tunnel
-        this.terrain.carveExplosion(flameX, flameY, 18);
+        this.carveCrater(flameX, flameY, 18);
         this.state.explosions.push({
           id: `ex_bt_${Date.now()}_${Math.random()}`,
           x: flameX,
@@ -1063,7 +1074,7 @@ export class SlugWarsEngine {
           const weapon = getWeapon(proj.weaponId);
 
           const now = Date.now();
-          this.terrain.carveExplosion(pt.x, pt.y, weapon.radius);
+          this.carveCrater(pt.x, pt.y, weapon.radius);
           this.state.explosions.push({
             id: `ex_${now}_${Math.random()}`,
             x: pt.x,
@@ -1171,7 +1182,7 @@ export class SlugWarsEngine {
           const now = Date.now();
           const radius = 65;
           const damage = 45;
-          this.terrain.carveExplosion(mine.x, mine.y, radius);
+          this.carveCrater(mine.x, mine.y, radius);
           this.state.explosions.push({
             id: `ex_mine_${now}_${Math.random()}`,
             x: mine.x,

@@ -25,7 +25,7 @@ const KNOWN_KEYS = [
   // State keys
   'phase', 'winnerTeamId', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'wind',
   'teams', 'slugs', 'helicopters', 'mines', 'projectiles', 'explosions',
-  'supplyCrates', 'girders',
+  'supplyCrates', 'girders', 'craters',
   // Team / stats keys
   'kills', 'deaths', 'damageDealt', 'damageTaken',
   // Slug keys

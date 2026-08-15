@@ -45,6 +45,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const occlusionCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const distMapRef = useRef<Float32Array | null>(null);
   const lastSeedRef = useRef<number | null>(null);
+  const lastTerrainRevisionRef = useRef<number>(-1);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsCanvasRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
@@ -985,8 +986,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   // Render Loop
   useEffect(() => {
-    if (lastSeedRef.current !== terrain.data.seed || gameState.phase === 'PLACEMENT' || gameState.phase === 'LOBBY') {
+    if (lastSeedRef.current !== terrain.data.seed || gameState.phase === 'PLACEMENT' || gameState.phase === 'LOBBY' || lastTerrainRevisionRef.current !== terrain.revision) {
       lastSeedRef.current = terrain.data.seed;
+      lastTerrainRevisionRef.current = terrain.revision;
       carvedExplosionsRef.current.clear();
       knownGirderIdsCanvasRef.current.clear();
       lockedTargetRef.current = null;
@@ -1013,6 +1015,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
+
+      // Automatic terrain revision reconciliation (Instantly redraws offscreen canvas if craters happened while tab was hidden!)
+      if (lastTerrainRevisionRef.current !== terrain.revision) {
+        lastTerrainRevisionRef.current = terrain.revision;
+        redrawOffscreenTerrain();
+      }
 
       // Live-carve and animate new explosions on guest/host instantly
       if (curState && curState.explosions && curState.explosions.length > 0) {

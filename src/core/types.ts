@@ -213,6 +213,13 @@ export interface FloatingDamage {
   createdAt: number;
 }
 
+export interface CraterRecord {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   config: GameConfig;
@@ -232,6 +239,7 @@ export interface GameState {
   floatingDamages: FloatingDamage[];
   supplyCrates?: SupplyCrate[];
   girders?: PlacedGirder[];
+  craters?: CraterRecord[];
   winnerTeamId?: TeamId;
   journal: JournalEntry[];
   turnCount: number;
