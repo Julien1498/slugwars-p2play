@@ -233,6 +233,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     const { solidProps } = terrain.data;
     if (solidProps) {
       for (const sprop of solidProps) {
+        if (sprop.destroyed) continue;
+
+        // Verify foundation: if ground pixel is destroyed, mark as destroyed and skip
+        const groundIdx = Math.floor(sprop.y) * width + Math.floor(sprop.x);
+        if (groundIdx >= 0 && groundIdx < grid.length && grid[groundIdx] === 0) {
+          sprop.destroyed = true;
+          continue;
+        }
+
         offCtx.save();
         offCtx.translate(sprop.x, sprop.y);
 
@@ -551,18 +560,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     const safeRadius = Math.max(0, radius || 0);
     if (safeRadius <= 0) return;
 
-    // 1. Synchronize grid array for physical collision carving
+    // 1. Synchronize grid array & mark overlapping solidProps destroyed
     terrain.carveExplosion(x, y, safeRadius);
 
-    // 2. Redraw offscreen terrain in Dirty Bounding Box only (96.8% faster: 0.08ms instead of 12.93ms!)
-    const padding = 15;
-    const dirtyBox = {
-      minX: Math.max(0, Math.floor(x - safeRadius - padding)),
-      maxX: Math.min(terrain.data.width - 1, Math.ceil(x + safeRadius + padding)),
-      minY: Math.max(0, Math.floor(y - safeRadius - padding)),
-      maxY: Math.min(terrain.data.height - 1, Math.ceil(y + safeRadius + padding)),
-    };
-    redrawOffscreenTerrain(dirtyBox);
+    // 2. Cut crater directly out of offscreen terrain canvas (erases terrain pixels and prop drawings)
+    if (offscreenCanvasRef.current) {
+      const offCtx = offscreenCanvasRef.current.getContext('2d');
+      if (offCtx) {
+        offCtx.save();
+        offCtx.globalCompositeOperation = 'destination-out';
+        offCtx.beginPath();
+        offCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
+        offCtx.fill();
+        offCtx.restore();
+      }
+    }
 
     // 3. Cut crater out of subterranean shadow occlusion canvas
     if (occlusionCanvasRef.current) {
@@ -576,7 +588,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         occCtx.restore();
       }
     }
-  }, [terrain, redrawOffscreenTerrain]);
+  }, [terrain]);
 
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const zoomRef = useRef<number>(1.0);

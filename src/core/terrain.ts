@@ -43,6 +43,19 @@ export class DestructibleTerrain {
         }
       }
     }
+
+    // Destroy overlapping solid decor props
+    if (this.data.solidProps) {
+      for (const sprop of this.data.solidProps) {
+        if (sprop.destroyed) continue;
+        const propRadius = Math.max(sprop.width, sprop.height) * 0.6;
+        const dist = Math.hypot(cx - sprop.x, cy - sprop.y);
+        if (dist <= radius + propRadius) {
+          sprop.destroyed = true;
+        }
+      }
+    }
+
     return carvedPixels;
   }
 

@@ -14,6 +14,7 @@ export interface SolidProp {
   width: number;
   height: number;
   variant?: number;
+  destroyed?: boolean;
 }
 
 export interface RopeState {

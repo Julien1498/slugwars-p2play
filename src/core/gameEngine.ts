@@ -705,45 +705,28 @@ export class SlugWarsEngine {
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
-      // Active Ninja Rope Swinging & Climbing with Wall Collision, Ground Stop & Rebound
+      // Active Ninja Rope Swinging & Climbing (Smooth Pendulum with Slug Body Collision & 0 Teleport)
       if (activeSlug.ropeState) {
         const rope = activeSlug.ropeState;
-        const g = 24;
-        let alpha = -(g / rope.length) * Math.sin(rope.angleRad);
+        const g = 20;
+        let alpha = -(g / Math.max(25, rope.length)) * Math.sin(rope.angleRad);
 
         // Swing pump with movement keys (A/D or Left/Right)
         if (activeSlug.movingDir === 'left') {
-          alpha -= 0.12;
+          alpha -= 0.15;
         } else if (activeSlug.movingDir === 'right') {
-          alpha += 0.12;
+          alpha += 0.15;
         }
 
-        // Raycast ahead along rope angle to determine max possible length before hitting ground/wall
-        const maxCheckLen = 500;
-        const targetRayX = rope.hookX + Math.sin(rope.angleRad) * maxCheckLen;
-        const targetRayY = rope.hookY + Math.cos(rope.angleRad) * maxCheckLen;
-        const groundRay = this.terrain.raycastSolid(rope.hookX, rope.hookY, targetRayX, targetRayY);
-        
-        let maxAllowedLength = 450;
-        if (groundRay.hit) {
-          const hitDist = Math.hypot(groundRay.x - rope.hookX, groundRay.y - rope.hookY);
-          maxAllowedLength = Math.max(20, hitDist - 8);
-        }
-
-        // Climb up (shorten) / Descend down (lengthen, strictly clamped to ground surface!)
+        // Climb up (W / Z / ArrowUp) or Descend down (S / ArrowDown)
         if (activeSlug.steeringDir === 'left') {
-          rope.length = Math.max(25, rope.length - 3.5);
+          rope.length = Math.max(25, rope.length - 4);
         } else if (activeSlug.steeringDir === 'right') {
-          rope.length = Math.min(maxAllowedLength, rope.length + 3.5);
-        }
-
-        // Clamp rope length so it can NEVER push slug underground
-        if (rope.length > maxAllowedLength) {
-          rope.length = maxAllowedLength;
+          rope.length = Math.min(550, rope.length + 4);
         }
 
         const prevAngle = rope.angleRad;
-        rope.angularVelocity = (rope.angularVelocity + alpha) * 0.992;
+        rope.angularVelocity = (rope.angularVelocity + alpha) * 0.993;
         rope.angleRad += rope.angularVelocity;
 
         let newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
@@ -751,39 +734,30 @@ export class SlugWarsEngine {
 
         // Check if slug body collides with solid terrain (wall/ceiling/ground)
         const isBodySolid =
-          this.terrain.isSolid(newX, newY) ||
-          this.terrain.isSolid(newX - 6, newY - 4) ||
-          this.terrain.isSolid(newX + 6, newY - 4) ||
-          this.terrain.isSolid(newX, newY - 10) ||
+          this.terrain.isSolid(newX, newY - 6) ||
+          this.terrain.isSolid(newX - 6, newY - 6) ||
+          this.terrain.isSolid(newX + 6, newY - 6) ||
+          this.terrain.isSolid(newX, newY - 14) ||
           this.terrain.isSolid(newX, newY + 2);
 
         if (isBodySolid) {
           // Bounce off wall with elastic loss
+          const wasFast = Math.abs(rope.angularVelocity) > 0.04;
           rope.angularVelocity = -rope.angularVelocity * 0.45;
           rope.angleRad = prevAngle + rope.angularVelocity;
-          
-          // Re-clamp length to hit distance if penetrating
-          const colRay = this.terrain.raycastSolid(rope.hookX, rope.hookY, newX, newY);
-          if (colRay.hit) {
-            const hitDist = Math.hypot(colRay.x - rope.hookX, colRay.y - rope.hookY);
-            rope.length = Math.max(20, Math.min(rope.length, hitDist - 8));
-          }
 
           newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
           newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
-          sfx.play('bounce');
-        }
 
-        // Check if rope line crosses terrain corner/ledge
-        const ray = this.terrain.raycastSolid(rope.hookX, rope.hookY, newX, newY);
-        if (ray.hit) {
-          const hitDist = Math.hypot(ray.x - rope.hookX, ray.y - rope.hookY);
-          if (hitDist < rope.length - 6) {
-            rope.angularVelocity = -rope.angularVelocity * 0.5;
-            rope.angleRad = prevAngle;
-            rope.length = Math.max(20, Math.min(rope.length, hitDist - 6));
+          // If still solid after rebound (e.g. descending into ground), retract rope slightly
+          if (this.terrain.isSolid(newX, newY) || this.terrain.isSolid(newX, newY + 2)) {
+            rope.length = Math.max(25, rope.length - 4);
             newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
             newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          }
+
+          if (wasFast) {
+            sfx.play('bounce');
           }
         }
 
