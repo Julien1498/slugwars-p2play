@@ -20,6 +20,7 @@ export type SlugWarsActionType =
   | 'ENTER_VEHICLE'
   | 'EXIT_VEHICLE'
   | 'STEER_VEHICLE'
+  | 'REQUEST_FULL_STATE'
   | 'RESTART_GAME';
 
 export interface SlugWarsNetworkPayload {
