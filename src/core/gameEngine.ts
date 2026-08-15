@@ -103,7 +103,9 @@ export class SlugWarsEngine {
 
   public startGame(): boolean {
     if (this.state.teams.length === 0) return false;
-    this.state.config.mapSeed = Math.floor(Math.random() * 1000000);
+    if (this.state.config.mapSeed === undefined || this.state.config.mapSeed === null) {
+      this.state.config.mapSeed = Math.floor(Math.random() * 1000000);
+    }
     this.initTerrain();
     this.state.slugs = [];
     this.teamLastSlugIndex = {};
