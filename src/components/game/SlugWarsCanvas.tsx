@@ -62,6 +62,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
   const hasMovedCameraRef = useRef<boolean>(false);
   const clientParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
+  const clientExplosionsRef = useRef<{ id: string; x: number; y: number; radius: number; startTime: number; duration: number }[]>([]);
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -634,6 +635,34 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, [terrain]);
 
+  // Trigger high-framerate client-side visual explosion animation & fiery sparks (60+ FPS locally on both Host & Guest)
+  const triggerClientExplosion = useCallback((x: number, y: number, radius: number) => {
+    const safeRadius = Math.max(10, radius || 30);
+    clientExplosionsRef.current.push({
+      id: `cex_${Date.now()}_${Math.random()}`,
+      x,
+      y,
+      radius: safeRadius,
+      startTime: performance.now(),
+      duration: 450,
+    });
+
+    // Spawn 24 fiery explosion spark & smoke debris particles
+    for (let i = 0; i < 24; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (Math.random() * 0.7 + 0.3) * (safeRadius / 7);
+      clientParticlesRef.current.push({
+        x: x + Math.cos(angle) * (safeRadius * 0.15),
+        y: y + Math.sin(angle) * (safeRadius * 0.15),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.2,
+        color: Math.random() > 0.6 ? '#fef08a' : Math.random() > 0.3 ? '#f97316' : '#ef4444',
+        size: Math.random() * 4 + 2,
+        life: 1.0,
+      });
+    }
+  }, []);
+
   // Global mouseup to release camera dragging even if cursor leaves canvas/window
   useEffect(() => {
     const onGlobalMouseUp = () => {
@@ -925,6 +954,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       if (!carvedExplosionsRef.current.has(ex.id)) {
         carvedExplosionsRef.current.add(ex.id);
         carveOffscreenCrater(ex.x, ex.y, ex.radius);
+        triggerClientExplosion(ex.x, ex.y, ex.radius);
       }
     }
 
@@ -941,12 +971,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      // Live-carve new explosions on guest/host instantly
+      // Live-carve and animate new explosions on guest/host instantly
       if (curState && curState.explosions && curState.explosions.length > 0) {
         for (const ex of curState.explosions) {
           if (!carvedExplosionsRef.current.has(ex.id)) {
             carvedExplosionsRef.current.add(ex.id);
             carveOffscreenCrater(ex.x, ex.y, ex.radius);
+            triggerClientExplosion(ex.x, ex.y, ex.radius);
           }
         }
       }
@@ -2053,37 +2084,43 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       clientParticlesRef.current = remainingParticles;
 
-      // Draw Explosions (Fiery Shockwave Core!)
-      const now = Date.now();
-      for (const ex of curState.explosions) {
-        const safeRadius = Math.max(0, ex.radius || 0);
-        if (safeRadius <= 0) continue;
-        const age = Math.max(0, now - (ex.createdAt || now));
-        const progress = Math.min(1, age / 350);
+      // Render Client-Side Fiery Explosions with Smooth Expanding Shockwave Core at 60+ FPS locally
+      const nowAnim = performance.now();
+      const remainingExplosions: typeof clientExplosionsRef.current = [];
+      for (const ex of clientExplosionsRef.current) {
+        const elapsed = nowAnim - ex.startTime;
+        const progress = Math.min(1, elapsed / ex.duration);
         const alpha = Math.max(0, 1 - progress);
+        const safeRadius = ex.radius;
 
-        // Outer Shockwave Ring
-        const shockRadius = Math.max(0, safeRadius * progress);
+        // Outer Shockwave Ring (expands rapidly)
+        const shockRadius = safeRadius * (0.3 + progress * 0.9);
         if (shockRadius > 0) {
-          ctx.strokeStyle = `rgba(249, 115, 22, ${alpha})`;
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = `rgba(249, 115, 22, ${alpha * 0.9})`;
+          ctx.lineWidth = Math.max(1, 3.5 * (1 - progress));
           ctx.beginPath();
           ctx.arc(ex.x, ex.y, shockRadius, 0, Math.PI * 2);
           ctx.stroke();
         }
 
-        // Inner Fireball Core
-        const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, safeRadius);
+        // Inner Fireball Core with smooth expansion & fade
+        const fireballRadius = safeRadius * (0.35 + progress * 0.65);
+        const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, fireballRadius);
         exGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-        exGrad.addColorStop(0.3, `rgba(250, 204, 21, ${alpha * 0.9})`);
-        exGrad.addColorStop(0.7, `rgba(239, 68, 68, ${alpha * 0.7})`);
+        exGrad.addColorStop(0.25, `rgba(250, 204, 21, ${alpha * 0.9})`);
+        exGrad.addColorStop(0.65, `rgba(239, 68, 68, ${alpha * 0.7})`);
         exGrad.addColorStop(1, `rgba(127, 29, 29, 0)`);
 
         ctx.fillStyle = exGrad;
         ctx.beginPath();
-        ctx.arc(ex.x, ex.y, safeRadius, 0, Math.PI * 2);
+        ctx.arc(ex.x, ex.y, fireballRadius, 0, Math.PI * 2);
         ctx.fill();
+
+        if (progress < 1) {
+          remainingExplosions.push(ex);
+        }
       }
+      clientExplosionsRef.current = remainingExplosions;
 
       // Draw Ninja Rope & Hook Anchors
       for (const s of curState.slugs) {
@@ -2176,6 +2213,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       // Floating Damage & Healing Numbers (Arcade Style bouncing +50 HP / -45 HP!)
       if (curState.floatingDamages) {
+        const now = Date.now();
         for (const fd of curState.floatingDamages) {
           const age = Math.max(0, now - (fd.createdAt || now));
           const progress = Math.min(1, age / 1000);
