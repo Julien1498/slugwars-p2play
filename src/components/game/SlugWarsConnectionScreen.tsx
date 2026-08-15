@@ -326,26 +326,26 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
           ctx.fill();
         }
 
-        // 4. Distant Bottom Hills
+        // 4. Distant Bottom Hills (Extended margins to eliminate any right-side slit/seam)
         ctx.fillStyle = 'rgba(20, 20, 28, 0.95)';
         ctx.beginPath();
-        ctx.moveTo(0, height);
-        for (let x = 0; x <= width; x += 30) {
+        ctx.moveTo(-20, height + 20);
+        for (let x = -20; x <= width + 40; x += 20) {
           const hillY = height - 120 + Math.sin(x * 0.003 + 1.2) * 45;
           ctx.lineTo(x, hillY);
         }
-        ctx.lineTo(width, height);
+        ctx.lineTo(width + 20, height + 20);
         ctx.closePath();
         ctx.fill();
 
-        // Grass Edge Accents on bottom hills
+        // Grass Edge Accents on bottom hills (Green Dotted Grass Blades)
         ctx.strokeStyle = '#22c55e';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        for (let x = 0; x <= width; x += 16) {
+        for (let x = -10; x <= width + 20; x += 14) {
           const y = height - 120 + Math.sin(x * 0.003 + 1.2) * 45;
           ctx.moveTo(x, y);
-          ctx.lineTo(x + 2, y - 4);
+          ctx.lineTo(x + 2, y - 4.5);
         }
         ctx.stroke();
 

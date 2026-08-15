@@ -499,29 +499,40 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
           ctx.fill();
         }
 
-        // 4. Distant Mountain Silhouette Ridges across entire width
+        // 4. Distant Mountain Silhouette Ridges across entire width (Extended bounds to eliminate right-side slit/seam)
         ctx.fillStyle = 'rgba(15, 12, 28, 0.9)';
         ctx.beginPath();
-        ctx.moveTo(0, height);
-        for (let x = 0; x <= width; x += 35) {
+        ctx.moveTo(-20, height + 20);
+        for (let x = -20; x <= width + 40; x += 25) {
           const my = height * 0.7 + Math.sin(x * 0.003 + 0.5) * 55;
           ctx.lineTo(x, my);
         }
-        ctx.lineTo(width, height);
+        ctx.lineTo(width + 20, height + 20);
         ctx.closePath();
         ctx.fill();
 
         // Foreground Fortified Bunker Hills
         ctx.fillStyle = '#0f0f17';
         ctx.beginPath();
-        ctx.moveTo(0, height);
-        for (let x = 0; x <= width; x += 30) {
+        ctx.moveTo(-20, height + 20);
+        for (let x = -20; x <= width + 40; x += 20) {
           const by = height * 0.85 + Math.sin(x * 0.004 + 2.1) * 35;
           ctx.lineTo(x, by);
         }
-        ctx.lineTo(width, height);
+        ctx.lineTo(width + 20, height + 20);
         ctx.closePath();
         ctx.fill();
+
+        // Green Dotted Grass Blade Dashes on foreground hills (Matching connection screen aesthetic!)
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let x = -10; x <= width + 20; x += 14) {
+          const by = height * 0.85 + Math.sin(x * 0.004 + 2.1) * 35;
+          ctx.moveTo(x, by);
+          ctx.lineTo(x + 2, by - 4.5);
+        }
+        ctx.stroke();
 
         // 5. LEFT FLANKING FORTIFIED BASTION & SENTRY SLUG (Prominently visible flanking the cards)
         const leftBastionX = Math.max(90, Math.min(width * 0.12, 220));
