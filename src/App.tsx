@@ -64,19 +64,17 @@ export const App: React.FC<AppProps> = ({
   // Pre-Game Configuration Lobby
   if (gameState.phase === 'LOBBY') {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4">
-        <SlugWarsLobby
-          isHost={isHost}
-          myPeerId={myPeerId}
-          hostPeerId={hostPeerId}
-          config={gameState.config}
-          teams={gameState.teams}
-          isEmbedded={isEmbedded}
-          onExit={onExit}
-          onChangeConfig={(config) => sendAction('CHANGE_CONFIG', { config })}
-          onStartGame={() => sendAction('START_GAME')}
-        />
-      </div>
+      <SlugWarsLobby
+        isHost={isHost}
+        myPeerId={myPeerId}
+        hostPeerId={hostPeerId}
+        config={gameState.config}
+        teams={gameState.teams}
+        isEmbedded={isEmbedded}
+        onExit={onExit}
+        onChangeConfig={(config) => sendAction('CHANGE_CONFIG', { config })}
+        onStartGame={() => sendAction('START_GAME')}
+      />
     );
   }
 
