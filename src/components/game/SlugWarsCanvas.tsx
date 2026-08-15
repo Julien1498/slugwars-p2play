@@ -45,6 +45,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const distMapRef = useRef<Float32Array | null>(null);
   const lastSeedRef = useRef<number | null>(null);
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
+  const knownGirderIdsCanvasRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -628,16 +629,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     zoomRef.current = zoomLevel;
   }, [zoomLevel]);
 
-  // Redraw offscreen terrain canvas whenever a new steel girder is placed
-  const prevGirderCountRef = useRef(0);
-  useEffect(() => {
-    const count = gameState.girders?.length || 0;
-    if (count !== prevGirderCountRef.current) {
-      prevGirderCountRef.current = count;
-      redrawOffscreenTerrain();
-    }
-  }, [gameState.girders, redrawOffscreenTerrain]);
-
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     setZoomLevel((z) => Math.max(0.5, Math.min(1.5, Math.round((z + delta) * 10) / 10)));
@@ -834,6 +825,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     if (lastSeedRef.current !== terrain.data.seed || gameState.phase === 'PLACEMENT' || gameState.phase === 'LOBBY') {
       lastSeedRef.current = terrain.data.seed;
       carvedExplosionsRef.current.clear();
+      knownGirderIdsCanvasRef.current.clear();
       lockedTargetRef.current = null;
       redrawOffscreenTerrain();
     }
@@ -865,6 +857,20 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             carvedExplosionsRef.current.add(ex.id);
             carveOffscreenCrater(ex.x, ex.y, ex.radius);
           }
+        }
+      }
+
+      // Live-paint newly placed girders onto offscreen canvas on host & guest instantly
+      if (curState && curState.girders && curState.girders.length > 0) {
+        let hasNewGirder = false;
+        for (const g of curState.girders) {
+          if (!knownGirderIdsCanvasRef.current.has(g.id)) {
+            knownGirderIdsCanvasRef.current.add(g.id);
+            hasNewGirder = true;
+          }
+        }
+        if (hasNewGirder) {
+          redrawOffscreenTerrain();
         }
       }
 
