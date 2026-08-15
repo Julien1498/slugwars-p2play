@@ -264,6 +264,8 @@ export function useGame(options?: {
   const knownProjIdsRef = useRef<Set<string>>(new Set());
   const knownExplosionIdsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsRef = useRef<Set<string>>(new Set());
+  const knownCrateIdsRef = useRef<Set<string>>(new Set());
+  const knownMineTriggerIdsRef = useRef<Set<string>>(new Set());
   const prevPhaseRef = useRef<string>('LOBBY');
 
   // Set guest state / delta receiver callback with sound effects and terrain carving
@@ -287,7 +289,7 @@ export function useGame(options?: {
       netMetrics.recordDownload(payload, delta || payload);
 
       if (delta) {
-        // Sound effects for Guest on incoming new projectiles
+        // Sound effects for Guest on incoming new projectiles or bounces
         if (delta.projectiles && Array.isArray(delta.projectiles)) {
           for (const p of delta.projectiles) {
             if (p.id && !knownProjIdsRef.current.has(p.id)) {
@@ -299,6 +301,11 @@ export function useGame(options?: {
               } else if (p.weaponId !== 'teleport') {
                 sfx.play('fire');
               }
+            } else if (p.id && p.bounces) {
+              const existing = engine.state.projectiles.find((ep) => ep.id === p.id);
+              if (existing && p.vx !== undefined && Math.sign(p.vx) !== Math.sign(existing.vx) && Math.abs(p.vx - existing.vx) > 1.5) {
+                sfx.play('bounce');
+              }
             }
           }
         }
@@ -309,6 +316,48 @@ export function useGame(options?: {
             if (ex.id && !knownExplosionIdsRef.current.has(ex.id)) {
               knownExplosionIdsRef.current.add(ex.id);
               sfx.play('explosion');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Supply Crates dropped
+        if (delta.supplyCrates && Array.isArray(delta.supplyCrates)) {
+          for (const c of delta.supplyCrates) {
+            if (c.id && !knownCrateIdsRef.current.has(c.id)) {
+              knownCrateIdsRef.current.add(c.id);
+              sfx.play('airdrop');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Mines triggered
+        if (delta.mines && Array.isArray(delta.mines)) {
+          for (const m of delta.mines) {
+            if (m.id && m.isTriggered && !knownMineTriggerIdsRef.current.has(m.id)) {
+              knownMineTriggerIdsRef.current.add(m.id);
+              sfx.play('tick');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Slugs (Jump, Teleport, Rope, Splash)
+        if (delta.slugs && Array.isArray(delta.slugs)) {
+          const waterLevel = engine.terrain.data.waterLevel;
+          for (const dSlug of delta.slugs) {
+            const slug = dSlug.idx !== undefined ? engine.state.slugs[dSlug.idx] : engine.state.slugs.find((s) => s.id === dSlug.i);
+            if (slug) {
+              if (dSlug.rs && !slug.ropeState) {
+                sfx.play('rope_shoot');
+              }
+              if (dSlug.vy !== undefined && dSlug.vy < -3 && Math.abs(slug.vy) < 0.5 && !slug.inVehicleId) {
+                sfx.play('jump');
+              }
+              if (dSlug.x !== undefined && Math.hypot(dSlug.x - slug.x, (dSlug.y || slug.y) - slug.y) > 120) {
+                sfx.play('teleport');
+              }
+              if (dSlug.y !== undefined && dSlug.y >= waterLevel && slug.y < waterLevel) {
+                sfx.play('splash');
+              }
             }
           }
         }
