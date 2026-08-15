@@ -688,6 +688,32 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     return () => window.removeEventListener('mouseup', onGlobalMouseUp);
   }, []);
 
+  // Clamp camera pan offset to ensure the map always remains anchored on screen (never an empty black void!)
+  const clampPan = useCallback(
+    (pan: Vector2D, zoom: number): Vector2D => {
+      const container = containerRef.current;
+      if (!container) return pan;
+      const cRect = container.getBoundingClientRect();
+      const W = terrain.data.width;
+      const H = terrain.data.height;
+      const fitScale = Math.min(cRect.width / W, cRect.height / H);
+      const scaledW = W * fitScale * zoom;
+      const scaledH = H * fitScale * zoom;
+
+      // Ensure the terrain always stays anchored on screen and cannot drift into black void
+      const padX = Math.min(cRect.width * 0.2, 180);
+      const padY = Math.min(cRect.height * 0.2, 140);
+      const maxPanX = Math.max(scaledW * 0.15, (scaledW - cRect.width) / 2 + padX);
+      const maxPanY = Math.max(scaledH * 0.15, (scaledH - cRect.height) / 2 + padY);
+
+      return {
+        x: Math.max(-maxPanX, Math.min(maxPanX, pan.x)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, pan.y)),
+      };
+    },
+    [terrain]
+  );
+
   // Center camera on a specific world point (e.g. active slug or center of terrain)
   const centerCamera = useCallback(
     (targetX?: number, targetY?: number, customZoom?: number) => {
@@ -712,13 +738,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       const newPanX = -(tx - W / 2) * fitScale * zoom;
       const newPanY = -(ty - H / 2) * fitScale * zoom;
+      const clamped = clampPan({ x: newPanX, y: newPanY }, zoom);
 
       zoomRef.current = zoom;
-      panRef.current = { x: newPanX, y: newPanY };
+      panRef.current = clamped;
       setZoomLevel(zoom);
-      setPanOffset({ x: newPanX, y: newPanY });
+      setPanOffset(clamped);
     },
-    [terrain]
+    [terrain, clampPan]
   );
 
   // Exact 1:1 Screen-to-World Mouse Coordinate conversion (0 drift at ANY zoom or pan position!)
@@ -779,13 +806,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       const newPanX = (screenX - centerX) - (screenX - centerX - oldPan.x) * ratio;
       const newPanY = (screenY - centerY) - (screenY - centerY - oldPan.y) * ratio;
+      const clamped = clampPan({ x: newPanX, y: newPanY }, newZoom);
 
       zoomRef.current = newZoom;
-      panRef.current = { x: newPanX, y: newPanY };
+      panRef.current = clamped;
       setZoomLevel(newZoom);
-      setPanOffset({ x: newPanX, y: newPanY });
+      setPanOffset(clamped);
     },
-    []
+    [clampPan]
   );
 
   // Keyboard shortcut: Press C to reset zoom to 100% and center camera
@@ -813,12 +841,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         if (Math.hypot(dx, dy) > 4) {
           hasMovedCameraRef.current = true;
         }
-        const newPan = {
+        const rawPan = {
           x: dragStartPanRef.current.x + dx,
           y: dragStartPanRef.current.y + dy,
         };
-        panRef.current = newPan;
-        setPanOffset(newPan);
+        const clampedPan = clampPan(rawPan, zoomRef.current);
+        panRef.current = clampedPan;
+        setPanOffset(clampedPan);
         return;
       }
 
@@ -2417,8 +2446,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           onClick={(e) => {
             e.stopPropagation();
             const newZ = Math.max(0.5, Math.round((zoomLevel - 0.2) * 10) / 10);
+            const clamped = clampPan(panRef.current, newZ);
             zoomRef.current = newZ;
+            panRef.current = clamped;
             setZoomLevel(newZ);
+            setPanOffset(clamped);
           }}
           className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
           title="Dézoomer (- / Molette Bas)"
@@ -2442,8 +2474,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           onClick={(e) => {
             e.stopPropagation();
             const newZ = Math.min(2.5, Math.round((zoomLevel + 0.2) * 10) / 10);
+            const clamped = clampPan(panRef.current, newZ);
             zoomRef.current = newZ;
+            panRef.current = clamped;
             setZoomLevel(newZ);
+            setPanOffset(clamped);
           }}
           className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
           title="Zoomer (+ / Molette Haut)"
