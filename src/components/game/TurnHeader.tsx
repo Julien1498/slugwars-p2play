@@ -46,16 +46,16 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 
   return (
     <>
-      <div className="bg-zinc-900/95 backdrop-blur border-b border-zinc-800 px-4 py-2.5 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
+      <div className="bg-zinc-900/95 backdrop-blur border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between gap-2.5 shadow-md shrink-0">
         {/* Top Left: Active Slug & Turn Status */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2">
             <div
-              className="w-4 h-4 rounded-full border border-white/40 shadow"
+              className="w-3.5 h-3.5 rounded-full border border-white/40 shadow shrink-0"
               style={{ backgroundColor: activeTeam?.color || '#a855f7' }}
             />
             <div>
-              <div className="font-black text-sm text-zinc-100 flex items-center gap-2">
+              <div className="font-black text-sm text-zinc-100 flex items-center gap-2 leading-none">
                 <span>{activeSlug?.name || 'Tour de jeu'}</span>
                 {isMyTurn && (
                   <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-500/60 text-emerald-300 text-[10px] font-black uppercase rounded-full animate-pulse shadow-sm">
@@ -63,50 +63,54 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                   </span>
                 )}
               </div>
-              <div className="text-[11px] font-semibold text-zinc-400">Équipe {activeTeam?.name}</div>
+              <div className="text-[10px] font-semibold text-zinc-400 leading-none mt-0.5">Équipe {activeTeam?.name}</div>
             </div>
           </div>
 
           {/* Turn Timer Clock or RETREAT / TURN_START Phase Badge */}
           {gameState.phase === 'RETREAT' ? (
-            <div className="flex items-center gap-1.5 bg-red-950 border border-red-500/80 px-3 py-1 rounded-xl text-sm font-black text-red-400 shadow-inner animate-pulse">
-              <Clock className="w-4 h-4 text-red-400 animate-spin" style={{ animationDuration: '1s' }} />
-              <span className="font-mono text-base uppercase">🏃 FUITE : {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
+            <div className="flex items-center gap-1.5 bg-red-950 border border-red-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-red-400 shadow-inner animate-pulse">
+              <Clock className="w-3.5 h-3.5 text-red-400 animate-spin" style={{ animationDuration: '1s' }} />
+              <span className="font-mono text-sm uppercase">🏃 FUITE : {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
             </div>
           ) : gameState.phase === 'TURN_START' ? (
-            <div className="flex items-center gap-1.5 bg-purple-950 border border-purple-500/80 px-3 py-1 rounded-xl text-xs font-black text-purple-300 shadow-inner animate-bounce">
+            <div className="flex items-center gap-1.5 bg-purple-950 border border-purple-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-purple-300 shadow-inner animate-bounce">
               <span>📣 DÉBUT DU TOUR !</span>
             </div>
+          ) : gameState.phase === 'PLACEMENT' ? (
+            <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-300 shadow-inner animate-pulse">
+              <span>📍 PLACEMENT LIMACE</span>
+            </div>
           ) : gameState.phase === 'CASUALTIES' ? (
-            <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-3 py-1 rounded-xl text-xs font-black text-amber-300 shadow-inner">
-              <span>💀 BILAN DES DÉGÂTS</span>
+            <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-300 shadow-inner">
+              <span>💀 BILAN DÉGÂTS</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 bg-zinc-950 border border-amber-500/40 px-3 py-1 rounded-xl text-sm font-black text-amber-400 shadow-inner">
-              <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
-              <span className="font-mono text-base">{Math.max(0, Math.ceil(gameState.turnTimer))}s</span>
+            <div className="flex items-center gap-1.5 bg-zinc-950 border border-amber-500/40 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-400 shadow-inner">
+              <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+              <span className="font-mono text-sm">{Math.max(0, Math.ceil(gameState.turnTimer))}s</span>
             </div>
           )}
         </div>
 
         {/* Tactical Artillery Team Total HP Leaderboard */}
-        <div className="flex items-center gap-3 overflow-x-auto max-w-full py-1 px-2 bg-zinc-950/80 border border-zinc-800 rounded-xl">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1">
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full py-0.5 px-2 bg-zinc-950/80 border border-zinc-800 rounded-lg shrink min-w-0">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1 shrink-0">
             <Heart className="w-3 h-3 text-red-500 fill-red-500" /> Équipes :
           </span>
           {teamStats.map(({ team, totalHp, hpPercent, isActive }) => (
             <div
               key={team.id}
-              className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-bold transition shrink-0 ${
                 isActive
-                  ? 'bg-zinc-800 border-amber-500/80 text-white shadow-md'
+                  ? 'bg-zinc-800 border-amber-500/80 text-white shadow-sm'
                   : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
               }`}
             >
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
-              <span>{team.name}</span>
+              <span className="truncate max-w-[100px]">{team.name}</span>
               <span className="font-mono text-[11px] text-amber-300">{totalHp} HP</span>
-              <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+              <div className="w-10 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
                 <div
                   className="h-full transition-all duration-300"
                   style={{
@@ -120,14 +124,14 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
         </div>
 
         {/* Right Controls: Wind, Weapon Button, Room Code & Exit */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 shrink-0">
           <WindIndicator wind={gameState.wind} />
 
           {activeWeapon && (
             <button
               onClick={onOpenWeaponPicker}
               disabled={!isMyTurn}
-              className={`px-3 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition ${
+              className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition ${
                 isMyTurn
                   ? 'bg-violet-950/90 border-violet-500 hover:bg-violet-900 text-violet-200 shadow-md shadow-violet-950'
                   : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 opacity-60'
@@ -144,15 +148,15 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
             <button
               onClick={onOpenMetrics}
               title="Métriques de performances & réseau P2P"
-              className="px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/50 rounded-lg text-xs font-bold text-emerald-300 transition flex items-center gap-1 shadow-sm"
+              className="px-2 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/50 rounded-lg text-xs font-bold text-emerald-300 transition flex items-center gap-1 shadow-sm"
             >
-              <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <Activity className="w-3 h-3 text-emerald-400 animate-pulse" />
               <span>Perfs</span>
             </button>
           )}
           <button
             onClick={onOpenRules}
-            className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-300 transition"
+            className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-300 transition"
           >
             📖
           </button>
@@ -160,7 +164,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
             <button
               onClick={() => setShowConfirmLobby(true)}
               title="Retourner au Salon (Lobby) pour tous les joueurs"
-              className="px-2.5 py-1 bg-amber-950/90 hover:bg-amber-900 border border-amber-500/70 rounded-lg text-xs font-bold text-amber-200 transition flex items-center gap-1 shadow-sm"
+              className="px-2 py-1 bg-amber-950/90 hover:bg-amber-900 border border-amber-500/70 rounded-lg text-xs font-bold text-amber-200 transition flex items-center gap-1 shadow-sm"
             >
               <span>🏠 Salon</span>
             </button>
@@ -168,7 +172,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           {onExit && (
             <button
               onClick={onExit}
-              className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-lg text-xs font-semibold text-red-300 transition"
+              className="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-lg text-xs font-semibold text-red-300 transition"
             >
               Quitter
             </button>
