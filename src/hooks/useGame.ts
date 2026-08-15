@@ -7,6 +7,7 @@ import { buildStateDelta, applyStateDelta, isDeltaEmpty, CompactStateDelta } fro
 import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import { syncRoomUrlToAddressBar, clearRoomUrlFromAddressBar, type PeerManagerLike } from 'p2play-core';
+import { createWorkerInterval } from '../core/workerTimer';
 import { sfx } from '../core/audio';
 import { netMetrics } from '../core/networkMetrics';
 import { perfTracker } from '../core/perfTracker';
@@ -238,6 +239,18 @@ export function useGame(options?: {
               broadcastState(engine.state);
             }
             break;
+          case 'REQUEST_FULL_STATE': {
+            const conn = peerManager.connections?.get(playerId);
+            const sanitized = sanitizeGameState(engine.state);
+            if (conn && conn.open) {
+              const resMsg = { type: 'STATE_UPDATE', state: sanitized };
+              conn.send(resMsg);
+              netMetrics.recordUpload(resMsg);
+            } else {
+              broadcastState(engine.state);
+            }
+            break;
+          }
         }
         syncState();
       }
@@ -462,11 +475,11 @@ export function useGame(options?: {
     };
   }, [isHost, peerManager]);
 
-  // Guest Local Timer Countdown (smooth 50ms countdown between 1 Hz host sync ticks)
+  // Guest Local Timer Countdown (smooth 50ms countdown between 1 Hz host sync ticks, unthrottled in background)
   useEffect(() => {
     if (isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
 
-    const interval = setInterval(() => {
+    const stopWorker = createWorkerInterval(() => {
       const state = engineRef.current.state;
       let changed = false;
       if (state.phase === 'AIMING' || state.phase === 'PLACEMENT' || state.phase === 'TURN_START') {
@@ -485,7 +498,7 @@ export function useGame(options?: {
       }
     }, 50);
 
-    return () => clearInterval(interval);
+    return () => stopWorker();
   }, [isHost, gameState.phase]);
 
   // Host room creation wrapper
@@ -546,11 +559,11 @@ export function useGame(options?: {
     }
   }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastState]);
 
-  // Physics Loop (50ms interval) with 20 Hz delta broadcasting during gameplay
+  // Host Physics Loop (Web Worker 50ms / 20 Hz delta broadcasting during gameplay - unthrottled in background tabs!)
   useEffect(() => {
     if (!isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
 
-    const interval = setInterval(() => {
+    const stopWorker = createWorkerInterval(() => {
       const t0 = performance.now();
       engineRef.current.tick();
       const dt = performance.now() - t0;
@@ -559,8 +572,32 @@ export function useGame(options?: {
       broadcastDeltaState(engineRef.current.state);
       setGameState({ ...engineRef.current.state });
     }, 50);
-    return () => clearInterval(interval);
+
+    return () => stopWorker();
   }, [isHost, gameState.phase, broadcastDeltaState]);
+
+  // Tab-Switch / Focus Recovery: Instantly re-synchronize full state when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && engineRef.current.state.phase !== 'LOBBY') {
+        if (isHost) {
+          // Host returns to focus: broadcast full authoritative state snapshot to all peers
+          broadcastState(engineRef.current.state);
+        } else {
+          // Guest returns to focus: request immediate full state snapshot from host
+          peerManager.sendToHost('ACTION', { actionName: 'REQUEST_FULL_STATE' });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isHost, broadcastState, peerManager]);
 
   // Action Sender
   const sendAction = useCallback(
