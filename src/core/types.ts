@@ -35,6 +35,16 @@ export interface SupplyCrate {
   healAmount: number;
 }
 
+export interface DecorItem {
+  id: string;
+  type: 'hanging_leaf' | 'butterfly';
+  x: number;
+  y: number;
+  scale?: number;
+  variant?: number;
+  destroyed?: boolean;
+}
+
 export interface PlacedGirder {
   id: string;
   x: number;
@@ -42,6 +52,7 @@ export interface PlacedGirder {
   angleDeg: number;
   length: number;
   thickness: number;
+  destroyed?: boolean;
 }
 
 export interface Slug {

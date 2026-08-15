@@ -16,6 +16,7 @@ const TAG_FLOAT64 = 0x06;
 const TAG_STRING = 0x07;
 const TAG_ARRAY = 0x08;
 const TAG_OBJECT = 0x09;
+const TAG_UNDEFINED = 0x0a;
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -38,9 +39,14 @@ function ensureCapacity(neededBytes: number) {
 }
 
 function writeValue(val: any): void {
-  if (val === null || val === undefined) {
+  if (val === null) {
     ensureCapacity(1);
     sharedView.setUint8(offset++, TAG_NULL);
+    return;
+  }
+  if (val === undefined) {
+    ensureCapacity(1);
+    sharedView.setUint8(offset++, TAG_UNDEFINED);
     return;
   }
 
@@ -133,6 +139,8 @@ function readValue(view: DataView, u8: Uint8Array, ptr: { offset: number }): any
   const tag = view.getUint8(ptr.offset++);
   switch (tag) {
     case TAG_NULL:
+      return null;
+    case TAG_UNDEFINED:
       return undefined;
     case TAG_FALSE:
       return false;

@@ -539,7 +539,38 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
     }
 
-    // Clip all active explosion craters out of terrain canvas so solid props stay carved pixel-by-pixel
+    // Draw Placed Steel Girders directly onto offscreen terrain canvas (destructible pixel-by-pixel!)
+    if (gameStateRef.current && gameStateRef.current.girders && gameStateRef.current.girders.length > 0) {
+      for (const g of gameStateRef.current.girders) {
+        offCtx.save();
+        offCtx.translate(g.x, g.y);
+        offCtx.rotate((g.angleDeg * Math.PI) / 180);
+
+        // Steel beam body
+        offCtx.fillStyle = '#475569';
+        offCtx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+        offCtx.strokeStyle = '#94a3b8';
+        offCtx.lineWidth = 1.5;
+        offCtx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+
+        // Hazard stripes
+        offCtx.fillStyle = '#facc15';
+        for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
+          offCtx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
+        }
+
+        // Rivet dots
+        offCtx.fillStyle = '#cbd5e1';
+        offCtx.beginPath();
+        offCtx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
+        offCtx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
+        offCtx.fill();
+
+        offCtx.restore();
+      }
+    }
+
+    // Clip all active explosion craters out of terrain canvas so solid props & girders stay carved pixel-by-pixel
     if (gameStateRef.current && gameStateRef.current.explosions && gameStateRef.current.explosions.length > 0) {
       offCtx.save();
       offCtx.globalCompositeOperation = 'destination-out';
@@ -596,6 +627,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   useEffect(() => {
     zoomRef.current = zoomLevel;
   }, [zoomLevel]);
+
+  // Redraw offscreen terrain canvas whenever a new steel girder is placed
+  const prevGirderCountRef = useRef(0);
+  useEffect(() => {
+    const count = gameState.girders?.length || 0;
+    if (count !== prevGirderCountRef.current) {
+      prevGirderCountRef.current = count;
+      redrawOffscreenTerrain();
+    }
+  }, [gameState.girders, redrawOffscreenTerrain]);
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -1135,6 +1176,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       // Draw Visual Decor Items (Hanging Leaf Roots & Floating Butterflies)
       if (decorItems) {
         for (const item of decorItems) {
+          if (item.destroyed) continue;
+
+          if (item.type === 'hanging_leaf') {
+            // Verify ceiling anchor is still solid (disappears if ceiling is destroyed!)
+            const topSolid =
+              terrain.isSolid(item.x, item.y - 1) ||
+              terrain.isSolid(item.x, item.y - 2) ||
+              terrain.isSolid(item.x - 2, item.y - 1) ||
+              terrain.isSolid(item.x + 2, item.y - 1);
+
+            if (!topSolid) {
+              item.destroyed = true;
+              continue;
+            }
+          }
+
           ctx.save();
           ctx.translate(item.x, item.y);
 
@@ -1959,37 +2016,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 1.5;
           ctx.stroke();
-          ctx.restore();
-        }
-      }
-
-      // Draw Placed Steel Girders
-      if (curState.girders) {
-        for (const g of curState.girders) {
-          ctx.save();
-          ctx.translate(g.x, g.y);
-          ctx.rotate((g.angleDeg * Math.PI) / 180);
-
-          // Steel beam body
-          ctx.fillStyle = '#475569';
-          ctx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-          ctx.strokeStyle = '#94a3b8';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-
-          // Hazard stripes
-          ctx.fillStyle = '#facc15';
-          for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
-            ctx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
-          }
-
-          // Rivet dots
-          ctx.fillStyle = '#cbd5e1';
-          ctx.beginPath();
-          ctx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
-          ctx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-
           ctx.restore();
         }
       }

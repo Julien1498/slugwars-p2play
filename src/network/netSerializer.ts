@@ -285,7 +285,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.tp !== undefined) slug.currentTargetPoint = dSlug.tp;
 
         // Apply Ninja Rope State
-        if (dSlug.rs === null) {
+        if (dSlug.rs === null || ('rs' in dSlug && !dSlug.rs)) {
           slug.ropeState = null;
         } else if (dSlug.rs) {
           slug.ropeState = {
