@@ -931,8 +931,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       const dx = mouseX - activeSlug.x;
       const dy = mouseY - activeSlug.y;
-      let angle = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
-      angle = Math.max(5, Math.min(85, angle));
+      let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+      angle = Math.max(-85, Math.min(85, angle));
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
       onUpdateAim?.(angle, activeSlug.aimPower, facing);
 
@@ -971,8 +971,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       } else {
         const dx = clickX - activeSlug.x;
         const dy = clickY - activeSlug.y;
-        let angle = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
-        angle = Math.max(5, Math.min(85, angle));
+        let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+        angle = Math.max(-85, Math.min(85, angle));
         const facing = dx >= 0 ? 'right' : 'left';
 
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
