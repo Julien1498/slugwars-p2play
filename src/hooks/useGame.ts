@@ -281,6 +281,7 @@ export function useGame(options?: {
   const knownProjIdsRef = useRef<Set<string>>(new Set());
   const knownExplosionIdsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsRef = useRef<Set<string>>(new Set());
+  const knownCraterIdsRef = useRef<Set<string>>(new Set());
   const knownCrateIdsRef = useRef<Set<string>>(new Set());
   const knownMineTriggerIdsRef = useRef<Set<string>>(new Set());
   const prevPhaseRef = useRef<string>('LOBBY');
@@ -421,6 +422,16 @@ export function useGame(options?: {
           }
         }
 
+        // Stamp newly received persistent craters into guest's terrain grid
+        if (engine.state.craters && engine.state.craters.length > 0) {
+          for (const c of engine.state.craters) {
+            if (!knownCraterIdsRef.current.has(c.id)) {
+              knownCraterIdsRef.current.add(c.id);
+              engine.terrain.carveExplosion(c.x, c.y, c.radius);
+            }
+          }
+        }
+
         if (engine.state.explosions && engine.state.explosions.length > 0) {
           for (const ex of engine.state.explosions) {
             engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
@@ -437,6 +448,7 @@ export function useGame(options?: {
           prevMapKeyRef.current = mapKey;
           engine.initTerrain();
           knownGirderIdsRef.current.clear();
+          knownCraterIdsRef.current.clear();
         }
 
         if (newState.girders && newState.girders.length > 0) {
@@ -460,6 +472,15 @@ export function useGame(options?: {
                   }
                 }
               }
+            }
+          }
+        }
+
+        if (newState.craters && newState.craters.length > 0) {
+          for (const c of newState.craters) {
+            if (!knownCraterIdsRef.current.has(c.id)) {
+              knownCraterIdsRef.current.add(c.id);
+              engine.terrain.carveExplosion(c.x, c.y, c.radius);
             }
           }
         }

@@ -1,4 +1,4 @@
-import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, Particle, PlacedGirder, SupplyCrate } from '../core/types';
+import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, Particle, PlacedGirder, SupplyCrate, CraterRecord } from '../core/types';
 
 export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
   if (val === undefined || val === null || isNaN(val)) return 0;
@@ -58,6 +58,7 @@ export interface CompactStateDelta {
   explosions?: Partial<ExplosionEvent>[];
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
+  craters?: CraterRecord[];
 }
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
@@ -253,6 +254,13 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.explosions = [];
   }
 
+  // Persistent Craters Sync - ONLY when new craters are carved into the terrain
+  const curCraters = currentState.craters || [];
+  const prevCraters = prevState?.craters || [];
+  if (curCraters.length !== prevCraters.length) {
+    delta.craters = curCraters;
+  }
+
   // Helicopters: strictly sync only changed fields (don't resend static hp, facing, pilotId every tick)
   const curHelis = currentState.helicopters || [];
   const prevHelis = prevState?.helicopters || [];
@@ -364,6 +372,10 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     localState.girders = delta.girders;
   }
 
+  if (delta.craters !== undefined) {
+    localState.craters = delta.craters;
+  }
+
   if (delta.supplyCrates !== undefined) {
     localState.supplyCrates = delta.supplyCrates as any;
   }
@@ -408,6 +420,7 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     (!delta.projectiles || delta.projectiles.length === 0) &&
     (!delta.explosions || delta.explosions.length === 0) &&
     (!delta.girders || delta.girders.length === 0) &&
+    (!delta.craters || delta.craters.length === 0) &&
     (!delta.supplyCrates || delta.supplyCrates.length === 0) &&
     (!delta.mines || delta.mines.length === 0) &&
     (!delta.helicopters || delta.helicopters.length === 0)
