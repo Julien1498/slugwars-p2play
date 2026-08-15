@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { extractRoomCodeFromUrl, subscribeRoomUrlChanges, clearRoomUrlFromAddressBar } from 'p2play-core';
+import { loadProfile, saveProfile } from '../../core/profile';
 import { Sparkles, Swords, Zap, Rocket, LogIn, PlusCircle, AlertCircle } from 'lucide-react';
 
 interface SlugWarsConnectionScreenProps {
@@ -23,10 +24,13 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const initialCode = extractRoomCodeFromUrl() || '';
+  const savedProfile = loadProfile();
   const [username, setUsername] = useState(() => {
-    return 'Limace_' + Math.floor(100 + Math.random() * 900);
+    return savedProfile?.username || ('Limace_' + Math.floor(100 + Math.random() * 900));
   });
-  const [selectedAvatar, setSelectedAvatar] = useState('🐌');
+  const [selectedAvatar, setSelectedAvatar] = useState(() => {
+    return savedProfile?.avatar || '🐌';
+  });
   const [invitationCode, setInvitationCode] = useState<string>(initialCode);
   const [roomCode, setRoomCode] = useState<string>(initialCode);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -673,6 +677,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       setValidationError('Veuillez entrer un pseudo');
       return;
     }
+    saveProfile({ username: trimmed, avatar: selectedAvatar });
     setValidationError(null);
     onHost(trimmed, selectedAvatar);
   };
@@ -688,6 +693,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       setValidationError('Veuillez entrer un code de salon');
       return;
     }
+    saveProfile({ username: trimmedUser, avatar: selectedAvatar });
     setValidationError(null);
     onJoin(trimmedUser, selectedAvatar, trimmedCode);
   };

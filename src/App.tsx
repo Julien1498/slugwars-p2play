@@ -4,6 +4,7 @@ import { SlugWarsLobby } from './components/game/SlugWarsLobby';
 import { SlugWarsBoard } from './components/game/SlugWarsBoard';
 import { SlugWarsConnectionScreen } from './components/game/SlugWarsConnectionScreen';
 import type { PeerManagerLike } from 'p2play-core';
+import { loadProfile } from './core/profile';
 
 export interface AppProps {
   isEmbedded?: boolean;
@@ -17,9 +18,13 @@ export const App: React.FC<AppProps> = ({
   isEmbedded,
   externalPeerManager,
   onExit,
-  playerName,
-  playerAvatar,
+  playerName: propName,
+  playerAvatar: propAvatar,
 }) => {
+  const savedProfile = loadProfile();
+  const playerName = propName || savedProfile?.username;
+  const playerAvatar = propAvatar || savedProfile?.avatar;
+
   const {
     peerManager,
     gameState,
