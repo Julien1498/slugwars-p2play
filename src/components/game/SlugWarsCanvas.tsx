@@ -865,7 +865,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const dx = pos.x - activeSlug.x;
       const dy = pos.y - activeSlug.y;
       let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
-      angle = Math.max(5, Math.min(85, angle));
+      angle = Math.max(-85, Math.min(85, angle));
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
 
       if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
@@ -1851,7 +1851,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fillText(`${slug.hp}`, slug.x, tagY + 9.5);
       }
 
-      // Advanced Tactical Artillery Crosshair, Ballistic Trajectory Arc & Charging Gauge Bar
+      // Clean Tactical Artillery Crosshair & Charging Gauge Bar
       const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         const weapon = getWeapon(activeSlug.selectedWeaponId);
@@ -1861,48 +1861,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const originY = activeSlug.y - 10;
 
         if (isMyTurn && !weapon.requiresTarget && weapon.id !== 'girder') {
-          // 1. Ballistic Trajectory Arc Simulation (Dotted Physics Guide)
-          if (
-            weapon.behavior === 'BALLISTIC' ||
-            weapon.behavior === 'BOUNCING_TIMER' ||
-            weapon.id === 'bazooka' ||
-            weapon.id === 'grenade' ||
-            weapon.id === 'banana_bomb' ||
-            weapon.id === 'holy_grenade'
-          ) {
-            const basePower = activeSlug.isChargingPower ? activeSlug.aimPower : Math.max(30, activeSlug.aimPower);
-            const v0 = (basePower / 100) * 15.5;
-            let simX = originX;
-            let simY = originY;
-            let simVx = Math.cos(rad) * v0 * dir;
-            let simVy = -Math.sin(rad) * v0;
-
-            const maxSteps = 16;
-            for (let step = 1; step <= maxSteps; step++) {
-              simX += simVx * 1.6;
-              simY += simVy * 1.6;
-              simVy += 0.35 * 1.6; // Gravity
-              if (curState.config.windEnabled && typeof curState.wind === 'number') {
-                simVx += (curState.wind / 100) * 0.04 * 1.6;
-              }
-
-              if (simX < 0 || simX >= terrain.data.width || simY >= terrain.data.waterLevel) break;
-              if (terrain.isSolid(Math.floor(simX), Math.floor(simY))) break;
-
-              const progress = step / maxSteps;
-              const alpha = Math.max(0.12, 0.85 - progress * 0.7);
-              const dotSize = Math.max(1.5, 3.2 - progress * 1.5);
-
-              ctx.save();
-              ctx.fillStyle = activeSlug.isChargingPower ? `rgba(239, 68, 68, ${alpha})` : `rgba(250, 204, 21, ${alpha})`;
-              ctx.beginPath();
-              ctx.arc(simX, simY, dotSize, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.restore();
-            }
-          }
-
-          // 2. Classic Tactical Artillery Animated Aiming Reticle (Crosshair)
+          // Classic Tactical Artillery Animated Aiming Reticle (Crosshair)
           const reticleDist = 58;
           const retX = originX + Math.cos(rad) * reticleDist * dir;
           const retY = originY - Math.sin(rad) * reticleDist;

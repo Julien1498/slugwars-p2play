@@ -198,7 +198,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
               sfx.play('tick');
             } else {
-              const newAngle = Math.max(5, activeSlug.aimAngle - 5);
+              const newAngle = Math.max(-85, activeSlug.aimAngle - 5);
               onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
             }
           }
