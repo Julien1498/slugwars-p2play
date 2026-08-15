@@ -37,6 +37,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   onReleaseCharge,
   onUpdateAim,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -50,6 +51,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
   const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
+
+  // Smooth Camera Pan & Cursor-Centered Zoom State
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const zoomRef = useRef<number>(1.0);
+  const [panOffset, setPanOffset] = useState<Vector2D>({ x: 0, y: 0 });
+  const panRef = useRef<Vector2D>({ x: 0, y: 0 });
+  const isDraggingCameraRef = useRef<boolean>(false);
+  const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
+  const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
+  const hasMovedCameraRef = useRef<boolean>(false);
+  const clientParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -622,90 +634,151 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, [terrain]);
 
-  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
-  const zoomRef = useRef<number>(1.0);
-
+  // Global mouseup to release camera dragging even if cursor leaves canvas/window
   useEffect(() => {
-    zoomRef.current = zoomLevel;
-  }, [zoomLevel]);
-
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoomLevel((z) => Math.max(0.5, Math.min(1.5, Math.round((z + delta) * 10) / 10)));
-  }, []);
-
-  const rectRef = useRef<DOMRect | null>(null);
-  const clientParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
-
-  const updateCanvasRect = useCallback(() => {
-    if (canvasRef.current) {
-      rectRef.current = canvasRef.current.getBoundingClientRect();
-    }
-  }, []);
-
-  useEffect(() => {
-    updateCanvasRect();
-    window.addEventListener('resize', updateCanvasRect);
-    window.addEventListener('scroll', updateCanvasRect, true);
-    return () => {
-      window.removeEventListener('resize', updateCanvasRect);
-      window.removeEventListener('scroll', updateCanvasRect, true);
+    const onGlobalMouseUp = () => {
+      if (isDraggingCameraRef.current) {
+        isDraggingCameraRef.current = false;
+      }
     };
-  }, [updateCanvasRect]);
+    window.addEventListener('mouseup', onGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', onGlobalMouseUp);
+  }, []);
 
-  // Calculate exact mouse position inside the rendered canvas area
-  const getCanvasMousePos = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>): Vector2D => {
-      const canvas = canvasRef.current;
-      if (!canvas) return { x: 0, y: 0 };
-      if (!rectRef.current) {
-        rectRef.current = canvas.getBoundingClientRect();
-      }
-      const rect = rectRef.current;
+  // Center camera on a specific world point (e.g. active slug or center of terrain)
+  const centerCamera = useCallback(
+    (targetX?: number, targetY?: number, customZoom?: number) => {
+      const container = containerRef.current;
+      const zoom = customZoom ?? zoomRef.current;
+      const W = terrain.data.width;
+      const H = terrain.data.height;
 
-      const canvasWidth = terrain.data.width;
-      const canvasHeight = terrain.data.height;
-
-      const canvasAspect = canvasWidth / canvasHeight;
-      const rectAspect = rect.width / rect.height;
-
-      let drawWidth = rect.width;
-      let drawHeight = rect.height;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (rectAspect > canvasAspect) {
-        drawWidth = rect.height * canvasAspect;
-        offsetX = (rect.width - drawWidth) / 2;
-      } else {
-        drawHeight = rect.width / canvasAspect;
-        offsetY = (rect.height - drawHeight) / 2;
+      if (!container) {
+        zoomRef.current = zoom;
+        panRef.current = { x: 0, y: 0 };
+        setZoomLevel(zoom);
+        setPanOffset({ x: 0, y: 0 });
+        return;
       }
 
-      const clientX = e.clientX - rect.left - offsetX;
-      const clientY = e.clientY - rect.top - offsetY;
+      const cRect = container.getBoundingClientRect();
+      const fitScale = Math.min(cRect.width / W, cRect.height / H);
 
-      let mouseX = Math.max(0, Math.min(canvasWidth, (clientX / drawWidth) * canvasWidth));
-      let mouseY = Math.max(0, Math.min(canvasHeight, (clientY / drawHeight) * canvasHeight));
+      const tx = targetX ?? W / 2;
+      const ty = targetY ?? H / 2;
 
-      const currentZoom = zoomRef.current;
-      if (currentZoom !== 1.0) {
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
-        mouseX = centerX + (mouseX - centerX) / currentZoom;
-        mouseY = centerY + (mouseY - centerY) / currentZoom;
-      }
+      const newPanX = -(tx - W / 2) * fitScale * zoom;
+      const newPanY = -(ty - H / 2) * fitScale * zoom;
 
-      return { x: Math.round(mouseX), y: Math.round(mouseY) };
+      zoomRef.current = zoom;
+      panRef.current = { x: newPanX, y: newPanY };
+      setZoomLevel(zoom);
+      setPanOffset({ x: newPanX, y: newPanY });
     },
     [terrain]
   );
 
+  // Exact 1:1 Screen-to-World Mouse Coordinate conversion (0 drift at ANY zoom or pan position!)
+  const getCanvasMousePos = useCallback(
+    (e: React.MouseEvent | MouseEvent): Vector2D => {
+      const container = containerRef.current;
+      if (!container) return { x: 700, y: 350 };
+      const cRect = container.getBoundingClientRect();
+
+      const W = terrain.data.width;
+      const H = terrain.data.height;
+      const fitScale = Math.min(cRect.width / W, cRect.height / H);
+      const zoom = zoomRef.current;
+      const pan = panRef.current;
+
+      const screenX = e.clientX - cRect.left;
+      const screenY = e.clientY - cRect.top;
+
+      const centerX = cRect.width / 2;
+      const centerY = cRect.height / 2;
+
+      const dx = screenX - (centerX + pan.x);
+      const dy = screenY - (centerY + pan.y);
+
+      const totalScale = fitScale * zoom;
+
+      const worldX = W / 2 + dx / totalScale;
+      const worldY = H / 2 + dy / totalScale;
+
+      return {
+        x: Math.max(0, Math.min(W, Math.round(worldX))),
+        y: Math.max(0, Math.min(H, Math.round(worldY))),
+      };
+    },
+    [terrain]
+  );
+
+  // Cursor-Centered Mouse Wheel Zoom
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const container = containerRef.current;
+      if (!container) return;
+      const cRect = container.getBoundingClientRect();
+
+      const oldZoom = zoomRef.current;
+      const delta = e.deltaY > 0 ? -0.15 : 0.15;
+      const newZoom = Math.max(0.5, Math.min(2.5, Math.round((oldZoom + delta) * 100) / 100));
+      if (newZoom === oldZoom) return;
+
+      const screenX = e.clientX - cRect.left;
+      const screenY = e.clientY - cRect.top;
+      const centerX = cRect.width / 2;
+      const centerY = cRect.height / 2;
+
+      const oldPan = panRef.current;
+      const ratio = newZoom / oldZoom;
+
+      const newPanX = (screenX - centerX) - (screenX - centerX - oldPan.x) * ratio;
+      const newPanY = (screenY - centerY) - (screenY - centerY - oldPan.y) * ratio;
+
+      zoomRef.current = newZoom;
+      panRef.current = { x: newPanX, y: newPanY };
+      setZoomLevel(newZoom);
+      setPanOffset({ x: newPanX, y: newPanY });
+    },
+    []
+  );
+
+  // Keyboard shortcut: Press C to center on active slug
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'c' || e.key === 'C') {
+        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+        if (activeSlug) {
+          centerCamera(activeSlug.x, activeSlug.y, 1.25);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.slugs, gameState.activeSlugId, centerCamera]);
+
   const lastAimTimeRef = useRef<number>(0);
 
-  // Throttled Real-time Mouse Aiming Handler (30 FPS max to prevent React re-render lag)
+  // Throttled Real-time Mouse Aiming & Camera Drag Handler
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (isDraggingCameraRef.current) {
+        const dx = e.clientX - dragStartMouseRef.current.x;
+        const dy = e.clientY - dragStartMouseRef.current.y;
+        if (Math.hypot(dx, dy) > 4) {
+          hasMovedCameraRef.current = true;
+        }
+        const newPan = {
+          x: dragStartPanRef.current.x + dx,
+          y: dragStartPanRef.current.y + dy,
+        };
+        panRef.current = newPan;
+        setPanOffset(newPan);
+        return;
+      }
+
       const pos = getCanvasMousePos(e);
       mousePosRef.current = pos;
 
@@ -733,10 +806,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   const lockedTargetRef = useRef<Vector2D | null>(null);
 
-  // Right-Click Target Locking Handler (Clic Droit = Poser la Cible!)
+  // Right-Click Context Menu / Target Locking Handler
   const handleContextMenu = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
       e.preventDefault();
+      if (hasMovedCameraRef.current) {
+        // Camera drag finished, don't trigger target locking
+        return;
+      }
+
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
 
       const pos = getCanvasMousePos(e);
@@ -752,11 +830,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     [isMyTurn, gameState, getCanvasMousePos]
   );
 
-  // Mouse Charging / Placement Handlers
+  // Mouse Down: Left-Click for game actions / Middle or Right Click for camera dragging
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (e.button === 1 || e.button === 2) {
+        isDraggingCameraRef.current = true;
+        dragStartMouseRef.current = { x: e.clientX, y: e.clientY };
+        dragStartPanRef.current = { ...panRef.current };
+        hasMovedCameraRef.current = false;
+        return;
+      }
+
       if (!isMyTurn) return;
-      if (e.button !== 0) return; // Left Click Only for charging/aiming!
+      if (e.button !== 0) return; // Left Click Only for game actions!
 
       const { x: mouseX, y: mouseY } = getCanvasMousePos(e);
 
@@ -789,7 +875,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   );
 
   const handleMouseUp = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (isDraggingCameraRef.current) {
+        isDraggingCameraRef.current = false;
+        if (e.button === 1 || e.button === 2) return;
+      }
+
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
       if (e.button !== 0) return; // Left Click Only!
 
@@ -2213,7 +2304,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   }, [terrain, isMyTurn, showHitboxes, redrawOffscreenTerrain, carveOffscreenCrater]);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+    <div
+      ref={containerRef}
+      onWheel={handleWheel}
+      onContextMenu={handleContextMenu}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl select-none"
+    >
       {/* Zero-Overhead In-Game Permanent FPS Counter HUD */}
       <div
         ref={fpsBadgeRef}
@@ -2224,43 +2323,69 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         <span ref={fpsTextRef}>60 FPS</span>
       </div>
 
+      {/* Floating Camera Panning & Move Hint */}
+      <div className="absolute top-3 left-3 pointer-events-none px-2.5 py-1 bg-zinc-950/75 backdrop-blur border border-zinc-800/80 rounded-lg text-[11px] font-medium text-zinc-400 shadow-lg flex items-center gap-2 select-none z-20">
+        <span>🖱️ <b className="text-zinc-200">Clic-Droit / Molette maintenu</b> pour déplacer la caméra</span>
+        <span className="text-zinc-600">|</span>
+        <span>🔍 <b className="text-zinc-200">Molette</b> Zoom</span>
+        <span className="text-zinc-600">|</span>
+        <span>🎯 <b className="text-emerald-400">[C]</b> Centrer</span>
+      </div>
+
       <canvas
         ref={canvasRef}
         width={terrain.data.width}
         height={terrain.data.height}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onContextMenu={handleContextMenu}
-        onWheel={handleWheel}
         style={{
-          transform: `scale(${zoomLevel})`,
+          transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoomLevel})`,
           transformOrigin: 'center center',
-          transition: 'transform 0.15s ease-out',
         }}
-        className="w-full h-full object-contain cursor-crosshair block shadow-2xl"
+        className="w-full h-full object-contain cursor-crosshair block shadow-2xl pointer-events-none"
       />
 
-      {/* Tactical Artillery Style Floating Camera Zoom Controls */}
-      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10">
+      {/* Tactical Artillery Style Floating Camera Zoom & Pan Controls */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10 text-xs">
         <button
-          onClick={() => setZoomLevel((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))}
+          onClick={() => {
+            const newZ = Math.max(0.5, Math.round((zoomLevel - 0.2) * 10) / 10);
+            zoomRef.current = newZ;
+            setZoomLevel(newZ);
+          }}
           className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
-          title="Dézoomer (Molette Bas / PageDown)"
+          title="Dézoomer (- / Molette Bas)"
         >
           -
         </button>
         <button
-          onClick={() => setZoomLevel(1.0)}
+          onClick={() => {
+            zoomRef.current = 1.0;
+            panRef.current = { x: 0, y: 0 };
+            setZoomLevel(1.0);
+            setPanOffset({ x: 0, y: 0 });
+          }}
           className="px-2 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-mono text-xs font-bold rounded-lg border border-zinc-600/50 transition"
-          title="Réinitialiser le zoom (100% / Home)"
+          title="Réinitialiser le zoom (100% / Vue Totale)"
         >
           {Math.round(zoomLevel * 100)}%
         </button>
         <button
-          onClick={() => setZoomLevel((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))}
+          onClick={() => {
+            const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+            centerCamera(activeSlug?.x, activeSlug?.y, 1.25);
+          }}
+          className="px-2.5 h-7 flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-emerald-400 font-bold rounded-lg border border-zinc-600/50 transition text-xs"
+          title="Centrer la caméra sur le ver actif (Touche C)"
+        >
+          🎯 Centrer [C]
+        </button>
+        <button
+          onClick={() => {
+            const newZ = Math.min(2.5, Math.round((zoomLevel + 0.2) * 10) / 10);
+            zoomRef.current = newZ;
+            setZoomLevel(newZ);
+          }}
           className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
-          title="Zoomer (Molette Haut / PageUp)"
+          title="Zoomer (+ / Molette Haut)"
         >
           +
         </button>
