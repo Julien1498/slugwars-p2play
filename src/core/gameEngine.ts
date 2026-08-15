@@ -269,7 +269,9 @@ export class SlugWarsEngine {
       heli.vx = 4.5;
       heli.facing = 'right';
     } else if (dir === 'up') {
-      heli.vy = -4.8;
+      if (heli.y > 30) {
+        heli.vy = -4.8;
+      }
     } else if (dir === 'down') {
       heli.vy = 3.5;
     }
