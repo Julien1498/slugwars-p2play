@@ -701,7 +701,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   }, []);
 
   return (
-    <div className="h-screen max-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between p-2 md:p-3 relative overflow-hidden selection:bg-violet-500 selection:text-white">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-center items-center p-3 md:p-4 relative overflow-x-hidden selection:bg-violet-500 selection:text-white">
       {/* Background Fixed HD Vector War Room Canvas */}
       <canvas ref={backdropCanvasRef} className="fixed inset-0 pointer-events-none w-full h-full z-0" />
 
@@ -709,270 +709,274 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
       <div className="fixed top-10 left-1/4 w-80 h-80 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-10 right-1/4 w-80 h-80 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Header Bar (Ultra Compact) */}
-      <div className="relative z-10 max-w-5xl w-full mx-auto flex items-center justify-between gap-2 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-3 py-1.5 rounded-xl shadow-xl flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <span className="text-xl drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">🐌</span>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base md:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-violet-100 to-violet-400">
-              SLUG WARS
-            </h1>
-            <span className="px-1.5 py-0.2 bg-violet-950/80 border border-violet-500/50 text-violet-300 text-[8px] font-extrabold uppercase rounded-full">
-              QG Tactique
-            </span>
+      {/* Main Container */}
+      <div className="relative z-10 max-w-5xl w-full space-y-3.5 my-auto py-2">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between gap-3 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-4 py-2.5 rounded-2xl shadow-xl">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]">🐌</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-violet-100 to-violet-400">
+                  SLUG WARS
+                </h1>
+                <span className="px-2 py-0.5 bg-violet-950/80 border border-violet-500/50 text-violet-300 text-[10px] font-extrabold uppercase rounded-full tracking-wider">
+                  QG Tactique
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 font-medium">Salon de préparation & d'armement</p>
+            </div>
+          </div>
+
+          {/* Room Code Badge & Optional Hub Exit Button */}
+          <div className="flex items-center gap-2.5">
+            <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
+            {isEmbedded && onExit && (
+              <button
+                onClick={onExit}
+                className="px-3 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-xl text-xs font-bold text-red-300 transition"
+              >
+                Quitter
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Room Code Badge & Optional Hub Exit Button */}
-        <div className="flex items-center gap-2">
-          <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
-          {isEmbedded && onExit && (
-            <button
-              onClick={onExit}
-              className="px-2.5 py-0.5 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-lg text-[10px] font-bold text-red-300 transition"
-            >
-              Quitter
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Main 2-Column Battle Preparation Container (Strictly Fits in Single Viewport Height) */}
-      <div className="relative z-10 max-w-5xl w-full mx-auto flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 my-1.5">
-        
-        {/* Left Column: Map Radar, Weapons & Modifiers (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col justify-between bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-2.5 rounded-xl shadow-xl overflow-hidden space-y-1.5">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-1">
-            <h2 className="text-[11px] font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-violet-400" /> Zone d'Opérations & Radar
-            </h2>
-            <span className="text-[9px] font-mono text-zinc-400 bg-zinc-950/80 px-1.5 py-0.2 rounded border border-zinc-800">
-              {currentSizeCfg.width}×{currentSizeCfg.height} px
-            </span>
-          </div>
-
-          {/* Map Preview */}
-          <div className="space-y-1.5">
-            <MapThumbnailPreview theme={config.mapTheme} size={config.mapSize || 'NORMAL'} seed={config.mapSeed} />
-
-            {/* Theme Chips (Ultra compact) */}
-            <div className="grid grid-cols-2 gap-1">
-              {MAP_THEMES.map((theme) => (
-                <button
-                  key={theme.id}
-                  disabled={!isHost}
-                  onClick={() => onChangeConfig({ mapTheme: theme.id })}
-                  className={`py-1 px-2 rounded-lg border text-left transition flex items-center gap-1.5 ${
-                    config.mapTheme === theme.id
-                      ? 'bg-violet-950/90 border-violet-500 text-white shadow-sm'
-                      : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                  }`}
-                >
-                  <span className="text-sm">{theme.icon}</span>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold truncate leading-none">{theme.label}</div>
-                    <div className="text-[8px] text-zinc-500 truncate leading-none mt-0.5">{theme.desc}</div>
-                  </div>
-                </button>
-              ))}
+        {/* 2-Column Battle Preparation Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+          
+          {/* Left Column: Map Radar, Weapons & Modifiers (7 Cols) */}
+          <div className="lg:col-span-7 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-violet-400" /> Zone d'Opérations & Radar
+              </h2>
+              <span className="text-[10px] font-mono text-zinc-400 bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800">
+                {currentSizeCfg.width}×{currentSizeCfg.height} px
+              </span>
             </div>
 
-            {/* Dimensions & Seed Bar */}
-            <div className="flex items-center gap-1.5">
-              <div className="flex-1 grid grid-cols-3 gap-1">
-                {(Object.entries(MAP_SIZE_CONFIGS) as [MapSize, typeof MAP_SIZE_CONFIGS[MapSize]][]).map(([sizeKey, sizeVal]) => (
+            {/* Map Preview */}
+            <div className="space-y-2">
+              <MapThumbnailPreview theme={config.mapTheme} size={config.mapSize || 'NORMAL'} seed={config.mapSeed} />
+
+              {/* Theme Chips */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {MAP_THEMES.map((theme) => (
                   <button
-                    key={sizeKey}
+                    key={theme.id}
                     disabled={!isHost}
-                    onClick={() => onChangeConfig({ mapSize: sizeKey })}
-                    className={`py-0.5 px-1 rounded-lg border text-center transition ${
-                      (config.mapSize || 'NORMAL') === sizeKey
-                        ? 'bg-violet-950/90 border-violet-500 text-violet-200 shadow-sm'
+                    onClick={() => onChangeConfig({ mapTheme: theme.id })}
+                    className={`p-2 rounded-xl border text-left transition flex items-center gap-2 ${
+                      config.mapTheme === theme.id
+                        ? 'bg-violet-950/90 border-violet-500 text-white shadow-md shadow-violet-950/40'
                         : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                     }`}
                   >
-                    <div className="text-[9px] font-bold">{sizeVal.icon} {sizeVal.label}</div>
+                    <span className="text-lg">{theme.icon}</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold truncate leading-tight">{theme.label}</div>
+                      <div className="text-[10px] text-zinc-500 truncate leading-tight mt-0.5">{theme.desc}</div>
+                    </div>
                   </button>
                 ))}
               </div>
 
-              {isHost && (
-                <button
-                  onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1000000) })}
-                  className="py-0.5 px-2 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.99] border border-zinc-700 rounded-lg text-[9px] font-bold text-zinc-200 flex items-center gap-1 transition whitespace-nowrap"
-                  title="Générer une nouvelle seed"
-                >
-                  <Dices className="w-3 h-3 text-violet-400" />
-                  <span>Seed #{config.mapSeed}</span>
-                </button>
-              )}
+              {/* Dimensions & Seed Bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 grid grid-cols-3 gap-1.5">
+                  {(Object.entries(MAP_SIZE_CONFIGS) as [MapSize, typeof MAP_SIZE_CONFIGS[MapSize]][]).map(([sizeKey, sizeVal]) => (
+                    <button
+                      key={sizeKey}
+                      disabled={!isHost}
+                      onClick={() => onChangeConfig({ mapSize: sizeKey })}
+                      className={`py-1.5 px-2 rounded-xl border text-center transition ${
+                        (config.mapSize || 'NORMAL') === sizeKey
+                          ? 'bg-violet-950/90 border-violet-500 text-violet-200 shadow-sm'
+                          : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold">{sizeVal.icon} {sizeVal.label}</div>
+                    </button>
+                  ))}
+                </div>
+
+                {isHost && (
+                  <button
+                    onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1000000) })}
+                    className="py-1.5 px-3 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.99] border border-zinc-700 rounded-xl text-[11px] font-bold text-zinc-200 flex items-center gap-1.5 transition whitespace-nowrap"
+                    title="Générer une nouvelle seed"
+                  >
+                    <Dices className="w-3.5 h-3.5 text-violet-400" />
+                    <span>Seed #{config.mapSeed}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* W.M.D Arsenal Selector */}
+            <div className="space-y-1.5 pt-2 border-t border-zinc-800">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Rocket className="w-3 h-3 text-violet-400" /> Arsenal W.M.D
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {Object.values(WEAPON_SETS).map((wSet) => (
+                  <button
+                    key={wSet.id}
+                    disabled={!isHost}
+                    onClick={() => onChangeConfig({ weaponSetId: wSet.id })}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      config.weaponSetId === wSet.id
+                        ? 'bg-violet-950/90 border-violet-500 text-white shadow-sm'
+                        : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                    }`}
+                  >
+                    <div className="font-bold text-[11px] truncate">{wSet.name}</div>
+                    <div className="text-[9px] text-zinc-400 line-clamp-1 leading-snug mt-0.5">{wSet.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Match Parameters & Rules Chips */}
+            <div className="space-y-1.5 pt-2 border-t border-zinc-800">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Swords className="w-3 h-3 text-violet-400" /> Règles d'Engagement
+              </label>
+              
+              <div className="grid grid-cols-4 gap-1.5">
+                {/* Slugs per Team */}
+                {isHost ? (
+                  <button
+                    onClick={() => {
+                      const counts = [1, 2, 3, 4, 6, 8];
+                      const next = counts[(counts.indexOf(config.slugsPerTeam ?? 3) + 1) % counts.length];
+                      onChangeConfig({ slugsPerTeam: next });
+                    }}
+                    className="p-2 bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 hover:border-violet-500/50 rounded-xl text-left transition"
+                  >
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Limaces</div>
+                    <div className="text-xs font-black text-violet-300">🐌 {config.slugsPerTeam}</div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Limaces</div>
+                    <div className="text-xs font-black text-violet-300">🐌 {config.slugsPerTeam}</div>
+                  </div>
+                )}
+
+                {/* HP per Slug */}
+                {isHost ? (
+                  <button
+                    onClick={() => {
+                      const hps = [50, 100, 150, 200];
+                      const next = hps[(hps.indexOf(config.slugHp ?? 100) + 1) % hps.length];
+                      onChangeConfig({ slugHp: next });
+                    }}
+                    className="p-2 bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 hover:border-emerald-500/50 rounded-xl text-left transition"
+                  >
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Points de Vie</div>
+                    <div className="text-xs font-black text-emerald-400">❤️ {config.slugHp} HP</div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Points de Vie</div>
+                    <div className="text-xs font-black text-emerald-400">❤️ {config.slugHp} HP</div>
+                  </div>
+                )}
+
+                {/* Wind Toggle */}
+                {isHost ? (
+                  <button
+                    onClick={() => onChangeConfig({ windEnabled: !config.windEnabled })}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      config.windEnabled
+                        ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-200'
+                        : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
+                    }`}
+                  >
+                    <div className="text-[9px] font-bold uppercase">Vent Météo</div>
+                    <div className="text-xs font-black">{config.windEnabled ? '💨 Actif' : '❌ Sans'}</div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Vent Météo</div>
+                    <div className="text-xs font-black text-emerald-400">{config.windEnabled ? '💨 Actif' : '❌ Sans'}</div>
+                  </div>
+                )}
+
+                {/* Vehicle Toggle */}
+                {isHost ? (
+                  <button
+                    onClick={() => onChangeConfig({ vehiclesEnabled: !config.vehiclesEnabled })}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      config.vehiclesEnabled
+                        ? 'bg-violet-950/70 border-violet-500/60 text-violet-200'
+                        : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
+                    }`}
+                  >
+                    <div className="text-[9px] font-bold uppercase">Véhicules</div>
+                    <div className="text-xs font-black">{config.vehiclesEnabled ? '🚁 Hélico' : '❌ Sans'}</div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Véhicules</div>
+                    <div className="text-xs font-black text-violet-300">{config.vehiclesEnabled ? '🚁 Hélico' : '❌ Sans'}</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* W.M.D Arsenal Selector */}
-          <div className="space-y-0.5 pt-1 border-t border-zinc-800">
-            <label className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-              <Rocket className="w-2.5 h-2.5 text-violet-400" /> Arsenal W.M.D
-            </label>
-            <div className="grid grid-cols-3 gap-1">
-              {Object.values(WEAPON_SETS).map((wSet) => (
-                <button
-                  key={wSet.id}
-                  disabled={!isHost}
-                  onClick={() => onChangeConfig({ weaponSetId: wSet.id })}
-                  className={`py-1 px-1.5 rounded-lg border text-left transition ${
-                    config.weaponSetId === wSet.id
-                      ? 'bg-violet-950/90 border-violet-500 text-white shadow-sm'
-                      : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                  }`}
-                >
-                  <div className="font-bold text-[9px] truncate">{wSet.name}</div>
-                  <div className="text-[8px] text-zinc-400 line-clamp-1 leading-none mt-0.5">{wSet.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Match Parameters & Rules Chips (Compact 1-row) */}
-          <div className="space-y-0.5 pt-1 border-t border-zinc-800">
-            <label className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-              <Swords className="w-2.5 h-2.5 text-violet-400" /> Règles d'Engagement
-            </label>
-            
-            <div className="grid grid-cols-4 gap-1">
-              {/* Slugs per Team */}
-              {isHost ? (
-                <button
-                  onClick={() => {
-                    const counts = [1, 2, 3, 4, 6, 8];
-                    const next = counts[(counts.indexOf(config.slugsPerTeam ?? 3) + 1) % counts.length];
-                    onChangeConfig({ slugsPerTeam: next });
-                  }}
-                  className="py-1 px-1.5 bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 hover:border-violet-500/50 rounded-lg text-left transition"
-                >
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">Limaces</div>
-                  <div className="text-[10px] font-black text-violet-300">🐌 {config.slugsPerTeam}</div>
-                </button>
-              ) : (
-                <div className="py-1 px-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-left">
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">Limaces</div>
-                  <div className="text-[10px] font-black text-violet-300">🐌 {config.slugsPerTeam}</div>
-                </div>
-              )}
-
-              {/* HP per Slug */}
-              {isHost ? (
-                <button
-                  onClick={() => {
-                    const hps = [50, 100, 150, 200];
-                    const next = hps[(hps.indexOf(config.slugHp ?? 100) + 1) % hps.length];
-                    onChangeConfig({ slugHp: next });
-                  }}
-                  className="py-1 px-1.5 bg-zinc-950/60 hover:bg-zinc-800 border border-zinc-800 hover:border-emerald-500/50 rounded-lg text-left transition"
-                >
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">PV Limace</div>
-                  <div className="text-[10px] font-black text-emerald-400">❤️ {config.slugHp} HP</div>
-                </button>
-              ) : (
-                <div className="py-1 px-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-left">
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">PV Limace</div>
-                  <div className="text-[10px] font-black text-emerald-400">❤️ {config.slugHp} HP</div>
-                </div>
-              )}
-
-              {/* Wind Toggle */}
-              {isHost ? (
-                <button
-                  onClick={() => onChangeConfig({ windEnabled: !config.windEnabled })}
-                  className={`py-1 px-1.5 rounded-lg border text-left transition ${
-                    config.windEnabled
-                      ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-200'
-                      : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
-                  }`}
-                >
-                  <div className="text-[8px] font-bold uppercase">Vent</div>
-                  <div className="text-[10px] font-black">{config.windEnabled ? '💨 Actif' : '❌ Sans'}</div>
-                </button>
-              ) : (
-                <div className="py-1 px-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-left">
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">Vent</div>
-                  <div className="text-[10px] font-black text-emerald-400">{config.windEnabled ? '💨 Actif' : '❌ Sans'}</div>
-                </div>
-              )}
-
-              {/* Vehicle Toggle */}
-              {isHost ? (
-                <button
-                  onClick={() => onChangeConfig({ vehiclesEnabled: !config.vehiclesEnabled })}
-                  className={`py-1 px-1.5 rounded-lg border text-left transition ${
-                    config.vehiclesEnabled
-                      ? 'bg-violet-950/70 border-violet-500/60 text-violet-200'
-                      : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
-                  }`}
-                >
-                  <div className="text-[8px] font-bold uppercase">Véhicule</div>
-                  <div className="text-[10px] font-black">{config.vehiclesEnabled ? '🚁 Hélico' : '❌ Sans'}</div>
-                </button>
-              ) : (
-                <div className="py-1 px-1.5 bg-zinc-950/60 border border-zinc-800 rounded-lg text-left">
-                  <div className="text-[8px] text-zinc-400 font-bold uppercase">Véhicule</div>
-                  <div className="text-[10px] font-black text-violet-300">{config.vehiclesEnabled ? '🚁 Hélico' : '❌ Sans'}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Squads List & Battle Launch (5 Cols) */}
-        <div className="lg:col-span-5 flex flex-col justify-between bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-2.5 rounded-xl shadow-xl overflow-hidden space-y-2">
-          <div className="flex-1 min-h-0 flex flex-col space-y-1.5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-1">
-              <h2 className="text-[11px] font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1">
-                <Users className="w-3 h-3 text-violet-400" /> Escouades ({teams.length}/6)
+          {/* Right Column: Squads List & Battle Launch (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+              <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-violet-400" /> Escouades Engagées ({teams.length}/6)
               </h2>
-              <span className="text-[8px] font-bold px-1.5 py-0.2 bg-emerald-950 border border-emerald-500/50 text-emerald-300 rounded-full">
+              <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-950 border border-emerald-500/50 text-emerald-300 rounded-full">
                 Prêts au combat
               </span>
             </div>
 
-            {/* Squad Dossier Cards List (max-h restricted with internal scrolling) */}
-            <div className="space-y-1 overflow-y-auto pr-1 flex-1 max-h-[220px]">
+            {/* Squad Dossier Cards List */}
+            <div className="space-y-2 flex-1">
               {teams.map((t, idx) => (
                 <div
                   key={t.id}
-                  className="p-1.5 bg-zinc-950/80 border border-zinc-800 hover:border-violet-500/40 rounded-lg flex items-center justify-between transition shadow-sm"
+                  className="p-2.5 bg-zinc-950/80 border border-zinc-800 hover:border-violet-500/40 rounded-xl flex items-center justify-between transition shadow-sm"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative flex-shrink-0">
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-base shadow-inner border border-white/20"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-inner border border-white/20"
                         style={{ backgroundColor: `${t.color}33` }}
                       >
                         {t.avatar}
                       </div>
                       <div
-                        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-zinc-950 shadow"
+                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-950 shadow"
                         style={{ backgroundColor: t.color }}
                       />
                     </div>
 
                     <div className="min-w-0">
-                      <div className="font-bold text-[11px] text-zinc-100 flex items-center gap-1 truncate">
+                      <div className="font-bold text-xs text-zinc-100 flex items-center gap-1.5 truncate">
                         <span className="truncate">{t.name}</span>
                         {t.isHost && (
-                          <span className="px-1 py-0.2 bg-violet-950 text-violet-300 border border-violet-600/50 text-[7px] rounded font-black uppercase flex-shrink-0">
-                            Hôte
+                          <span className="px-1.5 py-0.2 bg-violet-950 text-violet-300 border border-violet-600/50 text-[8px] rounded font-black uppercase flex-shrink-0">
+                            Commandant
                           </span>
                         )}
                       </div>
-                      <div className="text-[9px] text-zinc-400">
+                      <div className="text-[10px] text-zinc-400 mt-0.5">
                         Équipe #{idx + 1} • <span className="text-violet-300 font-semibold">{config.slugsPerTeam} limaces ({config.slugHp} HP)</span>
                       </div>
                     </div>
                   </div>
 
                   <div
-                    className="w-2 h-5 rounded-full border border-white/20 shadow-sm flex-shrink-0"
+                    className="w-2.5 h-6 rounded-full border border-white/20 shadow-sm flex-shrink-0"
                     style={{ backgroundColor: t.color }}
                   />
                 </div>
@@ -980,43 +984,38 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
 
               {/* Waiting Slot Placeholder */}
               {teams.length < 6 && (
-                <div className="p-1.5 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-lg text-center text-[9px] text-zinc-500 flex items-center justify-center gap-1">
+                <div className="p-3 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-xl text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-700 animate-ping" />
                   <span>En attente d'autres joueurs...</span>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Launch Game Action Bar */}
-          <div className="pt-1.5 border-t border-zinc-800 space-y-1 flex-shrink-0">
-            {isHost ? (
-              <button
-                onClick={onStartGame}
-                disabled={teams.length === 0}
-                className="w-full py-2.5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-500 hover:via-fuchsia-500 hover:to-violet-500 text-white font-black text-xs md:text-sm rounded-xl shadow-xl shadow-violet-950/60 flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 animate-pulse hover:animate-none"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>LANCER L'ASSAUT 🚀</span>
-              </button>
-            ) : (
-              <div className="p-2.5 bg-zinc-950/80 border border-violet-500/30 rounded-xl text-center text-xs text-zinc-300 flex items-center justify-center gap-2 shadow-inner">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-violet-400" />
-                <span className="font-semibold text-[11px]">En attente du lancement par le Commandant...</span>
+            {/* Launch Game Action Bar */}
+            <div className="pt-2 border-t border-zinc-800 space-y-1.5 mt-auto">
+              {isHost ? (
+                <button
+                  onClick={onStartGame}
+                  disabled={teams.length === 0}
+                  className="w-full py-3 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-500 hover:via-fuchsia-500 hover:to-violet-500 text-white font-black text-sm md:text-base rounded-xl shadow-xl shadow-violet-950/60 flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 animate-pulse hover:animate-none"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>LANCER L'ASSAUT 🚀</span>
+                </button>
+              ) : (
+                <div className="p-3 bg-zinc-950/80 border border-violet-500/30 rounded-xl text-center text-xs text-zinc-300 flex items-center justify-center gap-2 shadow-inner">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-violet-400" />
+                  <span className="font-semibold text-xs">En attente du lancement par le Commandant...</span>
+                </div>
+              )}
+              
+              <div className="text-center text-[10px] text-zinc-500 font-medium">
+                Terrain destructible • Tour par tour • P2P
               </div>
-            )}
-            
-            <div className="text-center text-[8px] text-zinc-500 font-medium">
-              Terrain destructible • Tour par tour • P2P
             </div>
           </div>
+
         </div>
-
-      </div>
-
-      {/* Bottom Subtle Status Bar */}
-      <div className="relative z-10 text-center text-[9px] text-zinc-500 font-medium flex-shrink-0">
-        Slug Wars P2Play • Synchronisation instantanée WebRTC
       </div>
     </div>
   );
