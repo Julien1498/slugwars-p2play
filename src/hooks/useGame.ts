@@ -6,7 +6,7 @@ import { SlugWarsNetworkMessage, sanitizeGameState } from '../network/protocol';
 import { buildStateDelta, applyStateDelta, isDeltaEmpty, CompactStateDelta } from '../network/netSerializer';
 import { encodeBinaryDelta, decodeBinaryDelta } from '../network/netBinarySerializer';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
-import type { PeerManagerLike } from 'p2play-core';
+import { syncRoomUrlToAddressBar, clearRoomUrlFromAddressBar, type PeerManagerLike } from 'p2play-core';
 import { sfx } from '../core/audio';
 import { netMetrics } from '../core/networkMetrics';
 import { perfTracker } from '../core/perfTracker';
@@ -492,6 +492,7 @@ export function useGame(options?: {
   const hostRoom = useCallback(
     async (name: string, avatar: string) => {
       const roomId = await hostGame(undefined, { username: name, avatar });
+      syncRoomUrlToAddressBar(roomId);
       const engine = new SlugWarsEngine();
       engineRef.current = engine;
       engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true);
@@ -505,6 +506,7 @@ export function useGame(options?: {
   const joinRoom = useCallback(
     async (name: string, avatar: string, roomId: string) => {
       const { peerId } = await joinGame(roomId, { username: name, avatar });
+      syncRoomUrlToAddressBar(roomId);
       const sendJoin = () => {
         peerManager.sendToHost('ACTION', {
           actionName: 'JOIN_GAME',

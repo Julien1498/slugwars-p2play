@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { extractRoomCodeFromUrl, subscribeRoomUrlChanges, clearRoomUrlFromAddressBar } from 'p2play-core';
 import { Sparkles, Swords, Zap, Rocket, LogIn, PlusCircle, AlertCircle } from 'lucide-react';
 
 interface SlugWarsConnectionScreenProps {
@@ -12,28 +13,6 @@ interface SlugWarsConnectionScreenProps {
 // Solid standard cross-platform emojis that render reliably on all OS/browsers
 const AVATARS = ['🐌', '🤠', '🤖', '🧙', '👑', '🐑', '🎯', '💣', '🚀'];
 
-const getInitialRoomCode = (): string => {
-  if (typeof window === 'undefined') return '';
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const fromQuery = params.get('room') || params.get('join') || params.get('code') || params.get('r');
-    if (fromQuery) return fromQuery.trim().toUpperCase();
-
-    const hash = window.location.hash.replace(/^#/, '').trim();
-    if (hash.startsWith('room=') || hash.startsWith('join=')) {
-      const hashParams = new URLSearchParams(hash);
-      const fromHash = hashParams.get('room') || hashParams.get('join');
-      if (fromHash) return fromHash.trim().toUpperCase();
-    }
-    if (hash && hash.length >= 4 && !hash.includes('/') && !hash.includes('=')) {
-      return hash.toUpperCase();
-    }
-  } catch {
-    // Ignore URL parse errors
-  }
-  return '';
-};
-
 export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> = ({
   status,
   error,
@@ -43,7 +22,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const initialCode = getInitialRoomCode();
+  const initialCode = extractRoomCodeFromUrl() || '';
   const [username, setUsername] = useState(() => {
     return 'Limace_' + Math.floor(100 + Math.random() * 900);
   });
@@ -51,6 +30,16 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   const [invitationCode, setInvitationCode] = useState<string>(initialCode);
   const [roomCode, setRoomCode] = useState<string>(initialCode);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Subscribe to external address bar changes (e.g. user pasting link or clicking invite)
+  useEffect(() => {
+    return subscribeRoomUrlChanges((code) => {
+      if (code) {
+        setInvitationCode(code);
+        setRoomCode(code);
+      }
+    });
+  }, []);
 
   // Dynamic High-Quality Vector Canvas Backdrop
   useEffect(() => {
@@ -785,6 +774,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
                 onClick={() => {
                   setInvitationCode('');
                   setRoomCode('');
+                  clearRoomUrlFromAddressBar();
                 }}
                 className="text-[11px] text-zinc-400 hover:text-zinc-200 underline"
               >
