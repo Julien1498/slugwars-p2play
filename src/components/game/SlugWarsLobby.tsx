@@ -2,8 +2,8 @@ import React, { useRef, useEffect } from 'react';
 import { GameConfig, Team, MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../core/types';
 import { generateProceduralTerrain } from '../../core/terrainGenerator';
 import { WEAPON_SETS } from '../../core/weapons/weaponSets';
-import { RoomCodeBadge, CopyRoomLinkButton } from 'p2play-core';
-import { Dices, Play, RefreshCw, Shield, Sparkles, Swords, Wind, Sun, Moon, Rocket, Users, Heart, Layers } from 'lucide-react';
+import { RoomCodeBadge } from 'p2play-core';
+import { Dices, Play, RefreshCw, Shield, Sparkles, Swords, Wind, Sun, Moon, Rocket, Users, Heart, Layers, Radar } from 'lucide-react';
 
 interface SlugWarsLobbyProps {
   isHost: boolean;
@@ -24,6 +24,46 @@ const MAP_THEMES: { id: MapTheme; label: string; icon: string; desc: string }[] 
   { id: 'FLOATING_CHAOS', label: 'Archipel Cosmique', icon: '🌌', desc: 'Îlots suspendus dans le vide' },
 ];
 
+// --- SAFE CANVAS DRAWING UTILITIES ---
+const drawRoundRect = (
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number = 4
+) => {
+  const radius = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  c.beginPath();
+  c.moveTo(x + radius, y);
+  c.lineTo(x + w - radius, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + radius);
+  c.lineTo(x + w, y + h - radius);
+  c.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  c.lineTo(x + radius, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - radius);
+  c.lineTo(x, y + radius);
+  c.quadraticCurveTo(x, y, x + radius, y);
+  c.closePath();
+};
+
+const drawSafeEllipse = (
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  rx: number,
+  ry: number,
+  rot: number = 0,
+  startAngle: number = 0,
+  endAngle: number = Math.PI * 2
+) => {
+  const safeRx = Math.max(0.1, Math.abs(rx));
+  const safeRy = Math.max(0.1, Math.abs(ry));
+  c.beginPath();
+  c.ellipse(x, y, safeRx, safeRy, rot, startAngle, endAngle);
+};
+
+// --- MINI RADAR TERRAIN PREVIEW ---
 const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: number }> = ({ theme, size, seed }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeCfg = MAP_SIZE_CONFIGS[size || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
@@ -159,13 +199,329 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   onChangeConfig,
   onStartGame,
 }) => {
+  const backdropCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const currentSizeCfg = MAP_SIZE_CONFIGS[config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
+
+  // --- DYNAMIC TACTICAL WAR ROOM BACKDROP CANVAS ---
+  useEffect(() => {
+    const canvas = backdropCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Stars & Particles
+    const stars = Array.from({ length: 50 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * (height * 0.7),
+      size: Math.random() * 2 + 0.6,
+      blinkRate: 0.02 + Math.random() * 0.04,
+      alpha: Math.random(),
+    }));
+
+    // Artillery Mortar Flares & Sparks
+    interface Flare {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      color: string;
+      trail: { x: number; y: number; alpha: number }[];
+    }
+    const flares: Flare[] = [];
+
+    // Searchlight Beam angle
+    let t = 0;
+
+    // Helper: Draw Little Sentry Slug
+    const drawMiniSentrySlug = (
+      c: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      scale: number,
+      hat: 'HELMET' | 'BINOCULARS' | 'ANTENNA'
+    ) => {
+      c.save();
+      c.translate(x, y);
+      c.scale(scale, scale);
+
+      // Body Drop Shadow
+      c.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      drawSafeEllipse(c, 0, 14, 18, 5);
+      c.fill();
+
+      // Slug Body
+      const bodyGrad = c.createRadialGradient(-3, -3, 2, 0, 4, 18);
+      bodyGrad.addColorStop(0, '#fbcfe8');
+      bodyGrad.addColorStop(0.5, '#ec4899');
+      bodyGrad.addColorStop(1, '#831843');
+      c.fillStyle = bodyGrad;
+      c.strokeStyle = '#18181b';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(-16, 12);
+      c.quadraticCurveTo(-18, 2, -10, -6);
+      c.quadraticCurveTo(-2, -16, 10, -10);
+      c.quadraticCurveTo(18, 2, 16, 12);
+      c.quadraticCurveTo(0, 16, -16, 12);
+      c.closePath();
+      c.fill();
+      c.stroke();
+
+      // Eyes
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      c.arc(2, -12, 5, 0, Math.PI * 2);
+      c.arc(10, -10, 4.5, 0, Math.PI * 2);
+      c.fill();
+      c.stroke();
+      // Pupils looking around
+      const pupilX = Math.sin(t * 2) * 1.5;
+      c.fillStyle = '#09090b';
+      c.beginPath();
+      c.arc(3 + pupilX, -12, 2, 0, Math.PI * 2);
+      c.arc(11 + pupilX, -10, 1.8, 0, Math.PI * 2);
+      c.fill();
+
+      if (hat === 'HELMET') {
+        // Military Camo Helmet
+        c.fillStyle = '#3f6212';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 2;
+        c.beginPath();
+        drawSafeEllipse(c, 5, -16, 13, 7, 0.1, Math.PI, 0);
+        c.fill();
+        c.stroke();
+      } else if (hat === 'BINOCULARS') {
+        // Night Vision Goggles
+        c.fillStyle = '#10b981';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 2;
+        drawRoundRect(c, -1, -15, 8, 7, 2);
+        c.fill();
+        c.stroke();
+        drawRoundRect(c, 7, -13, 8, 7, 2);
+        c.fill();
+        c.stroke();
+        // Green Glow Lenses
+        c.fillStyle = 'rgba(52, 211, 153, 0.8)';
+        c.beginPath();
+        c.arc(3, -11.5, 2, 0, Math.PI * 2);
+        c.arc(11, -9.5, 2, 0, Math.PI * 2);
+        c.fill();
+      } else if (hat === 'ANTENNA') {
+        // Radio Backpack & Antenna
+        c.strokeStyle = '#a1a1aa';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-10, 4);
+        c.lineTo(-18, -20);
+        c.stroke();
+        // Red Blinking Beacon
+        c.fillStyle = Math.sin(t * 6) > 0 ? '#ef4444' : '#7f1d1d';
+        c.beginPath();
+        c.arc(-18, -20, 3, 0, Math.PI * 2);
+        c.fill();
+      }
+
+      c.restore();
+    };
+
+    const renderBackdrop = () => {
+      animId = requestAnimationFrame(renderBackdrop);
+      t += 0.025;
+
+      try {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Nocturnal Sci-Fi War Room Sky Gradient
+        const sky = ctx.createLinearGradient(0, 0, 0, height);
+        sky.addColorStop(0, '#06060c');
+        sky.addColorStop(0.4, '#130924');
+        sky.addColorStop(0.75, '#240e46');
+        sky.addColorStop(1, '#09090f');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, width, height);
+
+        // 2. Stars
+        for (const star of stars) {
+          star.alpha = 0.3 + 0.7 * Math.abs(Math.sin(t * star.blinkRate * 10));
+          ctx.fillStyle = `rgba(192, 132, 252, ${star.alpha})`;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 3. Searchlight Scanning Beams from Distant Watchtowers
+        const leftTowerX = width * 0.12;
+        const towerY = height * 0.78;
+        const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.8) * 0.55;
+
+        ctx.save();
+        ctx.translate(leftTowerX, towerY);
+        ctx.rotate(sweepAngle);
+
+        const beamGrad = ctx.createRadialGradient(0, 0, 10, 0, -height * 0.8, height * 0.6);
+        beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
+        beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.18)');
+        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-75, -height * 0.85);
+        ctx.lineTo(75, -height * 0.85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Right Searchlight Beam
+        const rightTowerX = width * 0.88;
+        const rightSweepAngle = Math.PI * 0.35 + Math.sin(t * 0.7 + 1.5) * 0.55;
+
+        ctx.save();
+        ctx.translate(rightTowerX, towerY);
+        ctx.rotate(rightSweepAngle);
+
+        const rightBeamGrad = ctx.createRadialGradient(0, 0, 10, 0, -height * 0.8, height * 0.6);
+        rightBeamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+        rightBeamGrad.addColorStop(0.3, 'rgba(125, 211, 252, 0.15)');
+        rightBeamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+        ctx.fillStyle = rightBeamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-70, -height * 0.8);
+        ctx.lineTo(70, -height * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // 4. Distant Mountain Silhouette Ridges
+        ctx.fillStyle = 'rgba(15, 12, 28, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let x = 0; x <= width; x += 40) {
+          const my = height - 160 + Math.sin(x * 0.002 + 0.5) * 60;
+          ctx.lineTo(x, my);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Foreground Fortified Bunker Hill
+        ctx.fillStyle = '#0f0f17';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let x = 0; x <= width; x += 30) {
+          const by = height - 90 + Math.sin(x * 0.003 + 2.1) * 35;
+          ctx.lineTo(x, by);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Green Grass Edge Tracing on Bunker
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 18) {
+          const by = height - 90 + Math.sin(x * 0.003 + 2.1) * 35;
+          ctx.moveTo(x, by);
+          ctx.lineTo(x + 2, by - 4);
+        }
+        ctx.stroke();
+
+        // 5. Tactical Mini Recon Slugs on Ridge Flanks
+        const leftSlugX = Math.max(60, width * 0.08);
+        const leftSlugY = height - 95;
+        drawMiniSentrySlug(ctx, leftSlugX, leftSlugY, 1.1, 'BINOCULARS');
+
+        const rightSlugX = Math.max(width - 90, width * 0.92);
+        const rightSlugY = height - 85;
+        drawMiniSentrySlug(ctx, rightSlugX, rightSlugY, 1.1, 'ANTENNA');
+
+        // Center-left Helmet Sentry
+        if (width > 900) {
+          const midSlugX = width * 0.22;
+          const midSlugY = height - 70;
+          drawMiniSentrySlug(ctx, midSlugX, midSlugY, 0.9, 'HELMET');
+        }
+
+        // 6. Occasional Artillery Tracer Flares
+        if (Math.random() < 0.015 && flares.length < 3) {
+          flares.push({
+            x: Math.random() < 0.5 ? -20 : width + 20,
+            y: height * 0.5 + Math.random() * (height * 0.2),
+            vx: (Math.random() * 4 + 3) * (Math.random() < 0.5 ? 1 : -1),
+            vy: -(Math.random() * 5 + 4),
+            life: 1,
+            color: Math.random() < 0.5 ? '#f59e0b' : '#ec4899',
+            trail: [],
+          });
+        }
+
+        for (let i = flares.length - 1; i >= 0; i--) {
+          const f = flares[i];
+          f.trail.push({ x: f.x, y: f.y, alpha: 0.8 });
+          if (f.trail.length > 12) f.trail.shift();
+
+          f.x += f.vx;
+          f.y += f.vy;
+          f.vy += 0.12; // Gravity
+          f.life -= 0.014;
+
+          // Render Trail
+          for (let j = 0; j < f.trail.length; j++) {
+            const tr = f.trail[j];
+            ctx.fillStyle = `${f.color}${Math.floor((j / f.trail.length) * 180).toString(16).padStart(2, '0')}`;
+            ctx.beginPath();
+            ctx.arc(tr.x, tr.y, (j / f.trail.length) * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Flare Head
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (f.life <= 0 || f.y > height) {
+            flares.splice(i, 1);
+          }
+        }
+      } catch (err) {
+        console.error('Lobby backdrop render error:', err);
+      }
+    };
+
+    renderBackdrop();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-start p-4 md:p-6 relative overflow-x-hidden selection:bg-violet-500 selection:text-white">
+      {/* Background Animated Tactical War Room Canvas */}
+      <canvas ref={backdropCanvasRef} className="absolute inset-0 pointer-events-none w-full h-full" />
+
       {/* Ambient Lighting Orbs */}
-      <div className="absolute top-10 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-10 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl w-full space-y-6">
         {/* Tactical Header Bar */}
@@ -188,10 +544,9 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             </div>
           </div>
 
-          {/* Room Code, Copy & Exit Buttons */}
+          {/* Room Code Badge (includes built-in copy link) & Exit Button */}
           <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
             <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
-            <CopyRoomLinkButton code={hostPeerId || myPeerId} id="slugwars-lobby-copy" />
             {isEmbedded && onExit && (
               <button
                 onClick={onExit}
