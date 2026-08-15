@@ -131,6 +131,14 @@ export type GamePhase =
 
 export type MapTheme = 'ISLAND' | 'CAVERN' | 'FORTRESS' | 'FLOATING_CHAOS';
 
+export type MapSize = 'SMALL' | 'NORMAL' | 'LARGE';
+
+export const MAP_SIZE_CONFIGS: Record<MapSize, { width: number; height: number; label: string; desc: string; icon: string }> = {
+  SMALL: { width: 1000, height: 600, label: 'Petite', desc: '1000×600 px - Combats rapides & intenses', icon: '⚡' },
+  NORMAL: { width: 1400, height: 800, label: 'Normale', desc: '1400×800 px - Équilibrée et tactique', icon: '⚖️' },
+  LARGE: { width: 2000, height: 1000, label: 'Grande', desc: '2000×1000 px - Épique avec vastes reliefs', icon: '🗺️' },
+};
+
 export type DayNightCycle = 'DAY' | 'NIGHT';
 
 export interface GameConfig {
@@ -142,6 +150,7 @@ export interface GameConfig {
   vehiclesEnabled: boolean;
   dayNightCycle?: DayNightCycle;
   mapTheme: MapTheme;
+  mapSize?: MapSize;
   mapSeed: number;
 }
 
