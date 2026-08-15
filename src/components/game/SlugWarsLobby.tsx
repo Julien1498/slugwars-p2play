@@ -68,6 +68,11 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeCfg = MAP_SIZE_CONFIGS[size || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
 
+  // Real Terrain Aspect Ratio
+  const targetRatio = (sizeCfg.width || 1400) / (sizeCfg.height || 800);
+  const canvasWidth = 480;
+  const canvasHeight = Math.round(canvasWidth / targetRatio);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -161,24 +166,29 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
       ctx.lineTo(gx, previewH);
       ctx.stroke();
     }
-    for (let gy = 20; gy < previewH; gy += 20) {
+    for (let gy = 25; gy < previewH; gy += 25) {
       ctx.beginPath();
       ctx.moveTo(0, gy);
       ctx.lineTo(previewW, gy);
       ctx.stroke();
     }
-  }, [theme, sizeCfg.width, sizeCfg.height, seed]);
+  }, [theme, sizeCfg.width, sizeCfg.height, seed, canvasWidth, canvasHeight]);
 
   return (
-    <div className="relative rounded-lg overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group">
-      <canvas ref={canvasRef} width={420} height={75} className="w-full h-[75px] block" />
+    <div className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group">
+      <canvas
+        ref={canvasRef}
+        width={canvasWidth}
+        height={canvasHeight}
+        className="w-full h-[140px] block object-contain bg-zinc-950"
+      />
       
-      <div className="absolute top-1 left-1.5 px-1.5 py-0.2 bg-black/85 backdrop-blur-md rounded border border-white/15 text-[8px] font-mono text-zinc-200 shadow flex items-center gap-1">
+      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-white/15 text-[9px] font-mono text-zinc-200 shadow flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         <span>SEED #{seed}</span>
       </div>
 
-      <div className="absolute bottom-1 right-1.5 px-1.5 py-0.2 bg-black/85 backdrop-blur-md rounded border border-violet-500/40 text-[8px] font-bold text-violet-300 shadow flex items-center gap-1">
+      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-violet-500/40 text-[9px] font-bold text-violet-300 shadow flex items-center gap-1.5">
         <span>{sizeCfg.icon}</span>
         <span>{sizeCfg.label} ({sizeCfg.width}×{sizeCfg.height})</span>
       </div>
