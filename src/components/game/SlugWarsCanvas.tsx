@@ -63,6 +63,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const hasMovedCameraRef = useRef<boolean>(false);
   const clientParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
   const clientExplosionsRef = useRef<{ id: string; x: number; y: number; radius: number; startTime: number; duration: number }[]>([]);
+  const clientFloatingDamagesRef = useRef<{ id: string; x: number; y: number; damage: number; startTime: number; duration: number }[]>([]);
+  const prevSlugHpsRef = useRef<Map<string, number>>(new Map());
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -663,6 +665,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, []);
 
+  // Trigger arcade-style floating damage/heal numbers (+50 HP / -45 HP) locally at 60 FPS
+  const triggerClientFloatingDamage = useCallback((x: number, y: number, damage: number) => {
+    clientFloatingDamagesRef.current.push({
+      id: `cfd_${Date.now()}_${Math.random()}`,
+      x,
+      y: y - 18,
+      damage,
+      startTime: performance.now(),
+      duration: 1000,
+    });
+  }, []);
+
   // Global mouseup to release camera dragging even if cursor leaves canvas/window
   useEffect(() => {
     const onGlobalMouseUp = () => {
@@ -979,6 +993,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             carveOffscreenCrater(ex.x, ex.y, ex.radius);
             triggerClientExplosion(ex.x, ex.y, ex.radius);
           }
+        }
+      }
+
+      // Detect slug HP changes to trigger arcade floating damage/heal popups locally
+      if (curState && curState.slugs && curState.slugs.length > 0) {
+        for (const slug of curState.slugs) {
+          const prevHp = prevSlugHpsRef.current.get(slug.id);
+          if (prevHp !== undefined && prevHp !== slug.hp && slug.isAlive) {
+            triggerClientFloatingDamage(slug.x, slug.y, prevHp - slug.hp);
+          }
+          prevSlugHpsRef.current.set(slug.id, slug.hp);
         }
       }
 
@@ -2212,28 +2237,32 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       // Floating Damage & Healing Numbers (Arcade Style bouncing +50 HP / -45 HP!)
-      if (curState.floatingDamages) {
-        const now = Date.now();
-        for (const fd of curState.floatingDamages) {
-          const age = Math.max(0, now - (fd.createdAt || now));
-          const progress = Math.min(1, age / 1000);
-          const alpha = Math.max(0, 1 - progress);
-          const floatY = fd.y - progress * 25;
+      const nowFd = performance.now();
+      const remainingFloatingDamages: typeof clientFloatingDamagesRef.current = [];
+      for (const fd of clientFloatingDamagesRef.current) {
+        const elapsed = nowFd - fd.startTime;
+        const progress = Math.min(1, elapsed / fd.duration);
+        const alpha = Math.max(0, 1 - progress);
+        const floatY = fd.y - progress * 30;
 
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          const isHeal = fd.damage < 0;
-          ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
-          ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 2;
-          ctx.font = 'extrabold 14px Outfit, sans-serif';
-          ctx.textAlign = 'center';
-          const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
-          ctx.strokeText(text, fd.x, floatY);
-          ctx.fillText(text, fd.x, floatY);
-          ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const isHeal = fd.damage < 0;
+        ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2.5;
+        ctx.font = 'extrabold 14px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+        ctx.strokeText(text, fd.x, floatY);
+        ctx.fillText(text, fd.x, floatY);
+        ctx.restore();
+
+        if (progress < 1) {
+          remainingFloatingDamages.push(fd);
         }
       }
+      clientFloatingDamagesRef.current = remainingFloatingDamages;
 
       // DEBUG HITBOX OVERLAY RENDERING
       if (showHitboxes) {

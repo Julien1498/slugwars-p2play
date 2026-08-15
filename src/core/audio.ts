@@ -1,8 +1,46 @@
+export type SoundEffectType =
+  | 'fire'
+  | 'explosion'
+  | 'jump'
+  | 'splash'
+  | 'baah'
+  | 'donkey'
+  | 'victory'
+  | 'tick'
+  | 'melee'
+  | 'bounce'
+  | 'teleport'
+  | 'rope_shoot'
+  | 'rope_attach'
+  | 'girder'
+  | 'airdrop'
+  | 'ouch';
+
+type SfxListener = (type: SoundEffectType) => void;
+
 class SoundEffects {
   private ctx: AudioContext | null = null;
+  private listeners: SfxListener[] = [];
 
   public init(): AudioContext | null {
     return this.initCtx();
+  }
+
+  public onPlay(listener: SfxListener): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  private notify(type: SoundEffectType): void {
+    for (const listener of this.listeners) {
+      try {
+        listener(type);
+      } catch (err) {
+        console.error('SFX listener error:', err);
+      }
+    }
   }
 
   private initCtx(): AudioContext | null {
@@ -18,7 +56,10 @@ class SoundEffects {
     return this.ctx;
   }
 
-  public play(type: 'fire' | 'explosion' | 'jump' | 'splash' | 'baah' | 'donkey' | 'victory' | 'tick' | 'melee' | 'bounce' | 'teleport' | 'rope_shoot' | 'rope_attach' | 'girder' | 'airdrop'): void {
+  public play(type: SoundEffectType, emitEvent = true): void {
+    if (emitEvent) {
+      this.notify(type);
+    }
     try {
       const ctx = this.initCtx();
       if (!ctx) return;
@@ -212,6 +253,18 @@ class SoundEffects {
           osc.start(startTime);
           osc.stop(startTime + 0.3);
         });
+      } else if (type === 'ouch') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
       }
     } catch {
       // AudioContext fallback
