@@ -12,6 +12,28 @@ interface SlugWarsConnectionScreenProps {
 // Solid standard cross-platform emojis that render reliably on all OS/browsers
 const AVATARS = ['🐌', '🤠', '🤖', '🧙', '👑', '🐑', '🎯', '💣', '🚀'];
 
+const getInitialRoomCode = (): string => {
+  if (typeof window === 'undefined') return '';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get('room') || params.get('join') || params.get('code') || params.get('r');
+    if (fromQuery) return fromQuery.trim().toUpperCase();
+
+    const hash = window.location.hash.replace(/^#/, '').trim();
+    if (hash.startsWith('room=') || hash.startsWith('join=')) {
+      const hashParams = new URLSearchParams(hash);
+      const fromHash = hashParams.get('room') || hashParams.get('join');
+      if (fromHash) return fromHash.trim().toUpperCase();
+    }
+    if (hash && hash.length >= 4 && !hash.includes('/') && !hash.includes('=')) {
+      return hash.toUpperCase();
+    }
+  } catch {
+    // Ignore URL parse errors
+  }
+  return '';
+};
+
 export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> = ({
   status,
   error,
@@ -21,11 +43,13 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  const initialCode = getInitialRoomCode();
   const [username, setUsername] = useState(() => {
     return 'Limace_' + Math.floor(100 + Math.random() * 900);
   });
   const [selectedAvatar, setSelectedAvatar] = useState('🐌');
-  const [roomCode, setRoomCode] = useState('');
+  const [invitationCode, setInvitationCode] = useState<string>(initialCode);
+  const [roomCode, setRoomCode] = useState<string>(initialCode);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Dynamic High-Quality Vector Canvas Backdrop
@@ -746,6 +770,29 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
             </div>
           )}
 
+          {/* Invitation Banner if Room Code was in URL */}
+          {invitationCode && (
+            <div className="p-3 bg-violet-950/90 border border-violet-500/60 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 shadow-inner">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">💌</span>
+                <div>
+                  <div className="text-zinc-400 text-[11px]">Invitation reçue pour la partie :</div>
+                  <div className="font-mono font-bold text-amber-300 text-sm">#{invitationCode}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setInvitationCode('');
+                  setRoomCode('');
+                }}
+                className="text-[11px] text-zinc-400 hover:text-zinc-200 underline"
+              >
+                Changer
+              </button>
+            </div>
+          )}
+
           {/* Pseudo Input */}
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Votre Pseudo</label>
@@ -780,45 +827,72 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
             </div>
           </div>
 
-          {/* Host Button */}
-          <button
-            type="button"
-            onClick={handleHostClick}
-            className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-black text-sm rounded-xl transition shadow-lg shadow-violet-900/40 flex items-center justify-center gap-2"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Créer un salon</span>
-          </button>
-
-          {/* Divider */}
-          <div className="relative flex items-center justify-center py-1">
-            <div className="border-t border-zinc-800 w-full" />
-            <span className="bg-zinc-900 px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest absolute">
-              OU
-            </span>
-          </div>
-
-          {/* Join Form */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Rejoindre un salon</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="Code du salon..."
-                className="flex-1 bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-white placeholder-zinc-500 focus:outline-none transition uppercase tracking-wider"
-              />
+          {/* If invited via link: Primary Join Button First */}
+          {invitationCode ? (
+            <div className="space-y-3 pt-1">
               <button
                 type="button"
                 onClick={handleJoinClick}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700 hover:border-zinc-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-black text-sm rounded-xl transition shadow-lg shadow-violet-900/40 flex items-center justify-center gap-2 animate-pulse"
               >
-                <LogIn className="w-4 h-4 text-violet-400" />
-                <span>Rejoindre</span>
+                <LogIn className="w-4 h-4" />
+                <span>Rejoindre la partie ({invitationCode})</span>
               </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleHostClick}
+                  className="text-xs font-semibold text-zinc-400 hover:text-violet-300 transition flex items-center justify-center gap-1.5 mx-auto py-1"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Ou créer une nouvelle partie</span>
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Standard Mode: Host Button */}
+              <button
+                type="button"
+                onClick={handleHostClick}
+                className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-black text-sm rounded-xl transition shadow-lg shadow-violet-900/40 flex items-center justify-center gap-2"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Créer un salon</span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative flex items-center justify-center py-1">
+                <div className="border-t border-zinc-800 w-full" />
+                <span className="bg-zinc-900 px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest absolute">
+                  OU
+                </span>
+              </div>
+
+              {/* Join Form */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Rejoindre un salon</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="Code du salon..."
+                    className="flex-1 bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-white placeholder-zinc-500 focus:outline-none transition uppercase tracking-wider"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleJoinClick}
+                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700 hover:border-zinc-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                  >
+                    <LogIn className="w-4 h-4 text-violet-400" />
+                    <span>Rejoindre</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Feature Badges */}
