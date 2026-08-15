@@ -23,9 +23,11 @@ const TAG_KEY_INDEX = 0x0c;
 // High-speed static dictionary for common delta keys (1 byte instead of 5-15 bytes per key)
 const KNOWN_KEYS = [
   // State keys
-  'phase', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'wind',
-  'slugs', 'helicopters', 'mines', 'projectiles', 'explosions',
+  'phase', 'winnerTeamId', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'wind',
+  'teams', 'slugs', 'helicopters', 'mines', 'projectiles', 'explosions',
   'supplyCrates', 'girders',
+  // Team / stats keys
+  'kills', 'deaths', 'damageDealt', 'damageTaken',
   // Slug keys
   'i', 'idx', 'x', 'y', 'vx', 'vy', 'hp', 'f', 'a', 'p', 'c', 'w', 'al', 'pl', 'v', 'tp', 'rs',
   // Rope keys

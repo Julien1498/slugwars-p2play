@@ -108,10 +108,11 @@ export class SlugWarsEngine {
     this.state.slugs = [];
     this.teamLastSlugIndex = {};
 
-    // 1. Reset Inventory Ammo for all Teams!
+    // 1. Reset Inventory Ammo & Stats for all Teams!
     const weaponSet = getWeaponSet(this.state.config.weaponSetId);
     for (const team of this.state.teams) {
       team.inventory = { ...weaponSet.inventory };
+      team.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
       this.teamLastSlugIndex[team.id] = -1;
     }
 
@@ -460,7 +461,7 @@ export class SlugWarsEngine {
       createdAt: Date.now(),
     });
 
-    applyExplosionToSlugs(sheep.x, sheep.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain);
+    applyExplosionToSlugs(sheep.x, sheep.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain, this.state.teams, sheep.ownerSlugId);
     this.state.phase = 'RESOLVING';
     this.state.phaseTimer = 0.8;
     return true;
@@ -652,12 +653,28 @@ export class SlugWarsEngine {
       );
       if (targetSlug) {
         const dir = activeSlug.facing === 'right' ? 1 : -1;
+        const victimHpBefore = targetSlug.hp;
+        const actualDamage = Math.min(victimHpBefore, weapon.damage);
         targetSlug.hp = Math.max(0, targetSlug.hp - weapon.damage);
         if (targetSlug.hp === 0) {
           targetSlug.isAlive = false;
         }
         targetSlug.vx = dir * 18;
         targetSlug.vy = -10;
+
+        const victimTeam = this.state.teams.find((t) => t.id === targetSlug.teamId);
+        if (victimTeam) {
+          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+          victimTeam.stats.damageTaken += actualDamage;
+          if (targetSlug.hp === 0 && victimHpBefore > 0) victimTeam.stats.deaths++;
+        }
+
+        if (activeTeam && activeTeam.id !== targetSlug.teamId) {
+          if (!activeTeam.stats) activeTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+          activeTeam.stats.damageDealt += actualDamage;
+          if (targetSlug.hp === 0 && victimHpBefore > 0) activeTeam.stats.kills++;
+        }
+
         this.addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
       }
       sfx.play('melee');
@@ -903,9 +920,24 @@ export class SlugWarsEngine {
         // 4. Damage & push enemy slugs touched by torch beam
         for (const other of this.state.slugs) {
           if (other.id !== activeSlug.id && other.isAlive && Math.hypot(other.x - flameX, other.y - flameY) < 22) {
+            const victimHpBefore = other.hp;
+            const actualDamage = Math.min(victimHpBefore, 2);
             other.hp = Math.max(0, other.hp - 2);
             other.vx = dirX * 4;
             other.vy = dirY * 4 - 1;
+
+            const victimTeam = this.state.teams.find((t) => t.id === other.teamId);
+            if (victimTeam) {
+              if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+              victimTeam.stats.damageTaken += actualDamage;
+              if (other.hp === 0 && victimHpBefore > 0) victimTeam.stats.deaths++;
+            }
+            const attackerTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
+            if (attackerTeam && attackerTeam.id !== other.teamId) {
+              if (!attackerTeam.stats) attackerTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+              attackerTeam.stats.damageDealt += actualDamage;
+              if (other.hp === 0 && victimHpBefore > 0) attackerTeam.stats.kills++;
+            }
           }
         }
 
@@ -940,6 +972,7 @@ export class SlugWarsEngine {
             pilot.hp = Math.max(0, pilot.hp - 35);
             pilot.vy = -8;
           }
+          applyExplosionToSlugs(heli.x, heli.y, 55, 45, this.state.slugs, this.terrain, this.state.teams, heli.pilotSlugId || undefined);
           this.addLog(`💥 L'hélicoptère s'est crashé et a explosé !`, 'combat');
           heli.hp = 0;
         }
@@ -948,6 +981,19 @@ export class SlugWarsEngine {
     }
 
     for (const slug of this.state.slugs) {
+      // Check Drowning
+      if (slug.y >= this.terrain.data.waterLevel) {
+        if (slug.isAlive) {
+          const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
+          if (victimTeam) {
+            if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+            victimTeam.stats.deaths++;
+          }
+        }
+        slug.hp = 0;
+        slug.isAlive = false;
+      }
+
       const phys = updateSlugPhysics(slug, this.terrain, this.state.slugs);
       if (phys.fallDamage) {
         this.addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');
@@ -959,6 +1005,13 @@ export class SlugWarsEngine {
           damage: phys.fallDamage,
           createdAt: Date.now(),
         });
+
+        const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
+        if (victimTeam) {
+          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+          victimTeam.stats.damageTaken += phys.fallDamage;
+          if (slug.hp === 0) victimTeam.stats.deaths++;
+        }
       }
     }
 
@@ -1015,7 +1068,7 @@ export class SlugWarsEngine {
           });
 
           sfx.play('explosion');
-          const expRes = applyExplosionToSlugs(pt.x, pt.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain);
+          const expRes = applyExplosionToSlugs(pt.x, pt.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain, this.state.teams, proj.ownerSlugId);
           for (const dm of expRes.damageEvents) {
             this.state.floatingDamages.push({
               id: `fd_${now}_${Math.random()}`,
@@ -1121,7 +1174,7 @@ export class SlugWarsEngine {
             createdAt: now,
           });
           sfx.play('explosion');
-          const mineExpRes = applyExplosionToSlugs(mine.x, mine.y, radius, damage, this.state.slugs, this.terrain);
+          const mineExpRes = applyExplosionToSlugs(mine.x, mine.y, radius, damage, this.state.slugs, this.terrain, this.state.teams);
           for (const dm of mineExpRes.damageEvents) {
             this.state.floatingDamages.push({
               id: `fd_${now}_${Math.random()}`,
