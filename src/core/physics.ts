@@ -18,42 +18,80 @@ export function updateHelicopterPhysics(
     heli.isFlying = false;
   }
 
+  const W = terrain.data.width;
+
   // If piloted by active slug
   if (heli.pilotSlugId && pilotSlug) {
     heli.vx *= 0.92;
     heli.vy *= 0.92;
 
-    heli.x += heli.vx;
-    heli.y += heli.vy;
+    // 1. Horizontal Movement & Solid Rock Wall Collision
+    if (Math.abs(heli.vx) > 0.05) {
+      const targetX = heli.x + heli.vx;
+      const sideCheckX = Math.floor(targetX + Math.sign(heli.vx) * 16);
 
-    pilotSlug.x = heli.x;
-    pilotSlug.y = heli.y;
-    pilotSlug.vx = heli.vx;
-    pilotSlug.vy = heli.vy;
+      const hitWall =
+        terrain.isSolid(sideCheckX, Math.floor(heli.y - 8)) ||
+        terrain.isSolid(sideCheckX, Math.floor(heli.y)) ||
+        terrain.isSolid(sideCheckX, Math.floor(heli.y + 8));
 
-    const bottomY = Math.floor(heli.y + 13);
-    const centerX = Math.floor(heli.x);
-    if (bottomY >= 0 && bottomY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
-      if (terrain.data.grid[bottomY * terrain.data.width + centerX] === 1) {
-        if (Math.abs(heli.vy) > 12) {
-          return { crashed: true };
+      if (hitWall) {
+        heli.vx = 0;
+      } else {
+        heli.x = targetX;
+      }
+    }
+
+    // 2. Vertical Movement & Solid Ground / Ceiling Collision
+    if (Math.abs(heli.vy) > 0.05) {
+      const targetY = heli.y + heli.vy;
+
+      if (heli.vy > 0) {
+        // Flying downwards - check skids collision
+        const skidY = Math.floor(targetY + 13);
+        const hitGround =
+          terrain.isSolid(Math.floor(heli.x - 12), skidY) ||
+          terrain.isSolid(Math.floor(heli.x), skidY) ||
+          terrain.isSolid(Math.floor(heli.x + 12), skidY);
+
+        if (hitGround) {
+          if (heli.vy > 10) {
+            return { crashed: true };
+          }
+          // Snap skids to rest flat on top of solid ground
+          let groundY = skidY;
+          while (groundY > 0 && terrain.isSolid(Math.floor(heli.x), groundY)) {
+            groundY--;
+          }
+          heli.y = groundY - 12;
+          heli.vy = 0;
+          heli.vx *= 0.75;
+        } else {
+          heli.y = targetY;
         }
-        heli.y = bottomY - 13;
-        heli.vy = 0;
-        heli.vx *= 0.75;
+      } else {
+        // Flying upwards - check top rotor / ceiling collision
+        const rotorY = Math.floor(targetY - 12);
+        const hitCeiling =
+          terrain.isSolid(Math.floor(heli.x - 12), rotorY) ||
+          terrain.isSolid(Math.floor(heli.x), rotorY) ||
+          terrain.isSolid(Math.floor(heli.x + 12), rotorY);
+
+        if (hitCeiling) {
+          heli.vy = 0;
+        } else {
+          heli.y = targetY;
+        }
       }
     }
   } else {
-    // Unpiloted helicopter: rest completely motionless if resting on solid ground
-    const centerX = Math.floor(heli.x);
-    const feetY = Math.floor(heli.y + 13);
+    // Unpiloted helicopter: rest on solid ground or apply gravity
+    const skidY = Math.floor(heli.y + 13);
     const isSolidBelow =
-      feetY >= 0 &&
-      feetY < terrain.data.height &&
-      centerX >= 0 &&
-      centerX < terrain.data.width &&
-      (terrain.data.grid[feetY * terrain.data.width + centerX] === 1 ||
-       terrain.data.grid[(feetY + 1) * terrain.data.width + centerX] === 1);
+      terrain.isSolid(Math.floor(heli.x - 10), skidY) ||
+      terrain.isSolid(Math.floor(heli.x), skidY) ||
+      terrain.isSolid(Math.floor(heli.x + 10), skidY) ||
+      terrain.isSolid(Math.floor(heli.x), skidY + 1);
 
     if (isSolidBelow) {
       heli.vx = 0;
@@ -61,19 +99,43 @@ export function updateHelicopterPhysics(
     } else {
       heli.vy = Math.min(10, heli.vy + 0.35);
       heli.vx *= 0.92;
-      heli.x += heli.vx;
-      heli.y += heli.vy;
 
-      // Check ground landing
-      const newFeetY = Math.floor(heli.y + 13);
-      if (newFeetY >= 0 && newFeetY < terrain.data.height && centerX >= 0 && centerX < terrain.data.width) {
-        if (terrain.data.grid[newFeetY * terrain.data.width + centerX] === 1) {
-          heli.y = newFeetY - 13;
-          heli.vy = 0;
+      // Horizontal drift
+      if (Math.abs(heli.vx) > 0.05) {
+        const sideCheckX = Math.floor(heli.x + heli.vx + Math.sign(heli.vx) * 14);
+        if (!terrain.isSolid(sideCheckX, Math.floor(heli.y))) {
+          heli.x += heli.vx;
+        } else {
           heli.vx = 0;
         }
       }
+
+      // Vertical fall
+      const newSkidY = Math.floor(heli.y + heli.vy + 13);
+      const hitLanding =
+        terrain.isSolid(Math.floor(heli.x - 10), newSkidY) ||
+        terrain.isSolid(Math.floor(heli.x), newSkidY) ||
+        terrain.isSolid(Math.floor(heli.x + 10), newSkidY);
+
+      if (hitLanding) {
+        let groundY = newSkidY;
+        while (groundY > 0 && terrain.isSolid(Math.floor(heli.x), groundY)) {
+          groundY--;
+        }
+        heli.y = groundY - 12;
+        heli.vy = 0;
+        heli.vx = 0;
+      } else {
+        heli.y += heli.vy;
+      }
     }
+  }
+
+  // De-penetration safety: if helicopter body center is inside rock, push upward into open air
+  let stuckCount = 0;
+  while (stuckCount < 20 && terrain.isSolid(Math.floor(heli.x), Math.floor(heli.y))) {
+    heli.y -= 2;
+    stuckCount++;
   }
 
   // Strict map bounds clamping: helicopter can NEVER fly outside map limits (left, right, or top ceiling)
@@ -81,8 +143,8 @@ export function updateHelicopterPhysics(
     heli.x = 35;
     heli.vx = Math.max(0, heli.vx);
   }
-  if (heli.x > terrain.data.width - 35) {
-    heli.x = terrain.data.width - 35;
+  if (heli.x > W - 35) {
+    heli.x = W - 35;
     heli.vx = Math.min(0, heli.vx);
   }
 
