@@ -3,7 +3,7 @@ import { GameConfig, Team, MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../cor
 import { generateProceduralTerrain } from '../../core/terrainGenerator';
 import { WEAPON_SETS } from '../../core/weapons/weaponSets';
 import { RoomCodeBadge } from 'p2play-core';
-import { Dices, Play, RefreshCw, Shield, Sparkles, Swords, Wind, Sun, Moon, Rocket, Users, Heart, Layers, Radar } from 'lucide-react';
+import { Dices, Play, RefreshCw, Sparkles, Swords, Rocket, Users, Layers, Shield } from 'lucide-react';
 
 interface SlugWarsLobbyProps {
   isHost: boolean;
@@ -77,11 +77,10 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
     const previewW = canvas.width;
     const previewH = canvas.height;
 
-    // Generate miniature terrain using selected dimensions
     const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
     const { grid, width, height, waterLevel } = terrain;
 
-    // 1. Draw Thematic Sky Background
+    // 1. Sky
     const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
     if (theme === 'ISLAND') {
       skyGrad.addColorStop(0, '#38bdf8');
@@ -104,7 +103,7 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, previewW, previewH);
 
-    // 2. Downsampled Terrain Surface & Underground Drawing
+    // 2. Terrain Surface & Rock
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
@@ -142,7 +141,7 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
 
     ctx.putImageData(imgData, 0, 0);
 
-    // 3. Water Surface at Bottom
+    // 3. Water
     const waterCanvasY = (waterLevel / height) * previewH;
     ctx.fillStyle = 'rgba(14, 165, 233, 0.75)';
     ctx.fillRect(0, waterCanvasY, previewW, previewH - waterCanvasY);
@@ -174,7 +173,6 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
     <div className="relative rounded-2xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group">
       <canvas ref={canvasRef} width={420} height={150} className="w-full h-[150px] block" />
       
-      {/* Tactical HUD Markers */}
       <div className="absolute top-2 left-2 px-2.5 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/15 text-[10px] font-mono text-zinc-200 shadow flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         <span>SEED #{seed}</span>
@@ -202,7 +200,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   const backdropCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const currentSizeCfg = MAP_SIZE_CONFIGS[config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
 
-  // --- DYNAMIC TACTICAL WAR ROOM BACKDROP CANVAS ---
+  // --- DYNAMIC TACTICAL WAR ROOM & FORTIFIED OUTPOST BACKDROP CANVAS ---
   useEffect(() => {
     const canvas = backdropCanvasRef.current;
     if (!canvas) return;
@@ -221,15 +219,24 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
     window.addEventListener('resize', handleResize);
 
     // Stars & Particles
-    const stars = Array.from({ length: 50 }, () => ({
+    const stars = Array.from({ length: 55 }, () => ({
       x: Math.random() * width,
-      y: Math.random() * (height * 0.7),
+      y: Math.random() * (height * 0.65),
       size: Math.random() * 2 + 0.6,
       blinkRate: 0.02 + Math.random() * 0.04,
       alpha: Math.random(),
     }));
 
-    // Artillery Mortar Flares & Sparks
+    // Floating Nebula Clouds
+    const nebulaClouds = Array.from({ length: 5 }, () => ({
+      x: Math.random() * width,
+      y: 40 + Math.random() * (height * 0.4),
+      speed: 0.1 + Math.random() * 0.2,
+      size: 60 + Math.random() * 70,
+      opacity: 0.12 + Math.random() * 0.15,
+    }));
+
+    // Mortar Flares
     interface Flare {
       x: number;
       y: number;
@@ -241,99 +248,220 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
     }
     const flares: Flare[] = [];
 
-    // Searchlight Beam angle
     let t = 0;
 
-    // Helper: Draw Little Sentry Slug
-    const drawMiniSentrySlug = (
+    // --- HELPER: DRAW DETAILED VECTOR SLUG ---
+    const drawTacticalSlug = (
       c: CanvasRenderingContext2D,
-      x: number,
-      y: number,
       scale: number,
-      hat: 'HELMET' | 'BINOCULARS' | 'ANTENNA'
+      gear: 'NIGHT_VISION' | 'RADIO_COMM' | 'COMMANDER',
+      facingRight: boolean = true
     ) => {
       c.save();
-      c.translate(x, y);
-      c.scale(scale, scale);
+      c.scale(facingRight ? scale : -scale, scale);
 
-      // Body Drop Shadow
-      c.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      drawSafeEllipse(c, 0, 14, 18, 5);
+      // Body drop shadow
+      c.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      drawSafeEllipse(c, 0, 16, 22, 6);
       c.fill();
 
-      // Slug Body
-      const bodyGrad = c.createRadialGradient(-3, -3, 2, 0, 4, 18);
+      // Main Slug Body
+      const bodyGrad = c.createRadialGradient(-3, -3, 3, 0, 5, 24);
       bodyGrad.addColorStop(0, '#fbcfe8');
-      bodyGrad.addColorStop(0.5, '#ec4899');
+      bodyGrad.addColorStop(0.45, '#ec4899');
       bodyGrad.addColorStop(1, '#831843');
+
       c.fillStyle = bodyGrad;
       c.strokeStyle = '#18181b';
-      c.lineWidth = 2;
+      c.lineWidth = 2.4;
       c.beginPath();
-      c.moveTo(-16, 12);
-      c.quadraticCurveTo(-18, 2, -10, -6);
-      c.quadraticCurveTo(-2, -16, 10, -10);
-      c.quadraticCurveTo(18, 2, 16, 12);
-      c.quadraticCurveTo(0, 16, -16, 12);
+      c.moveTo(-20, 14);
+      c.quadraticCurveTo(-24, 2, -12, -8);
+      c.quadraticCurveTo(-2, -20, 14, -12);
+      c.quadraticCurveTo(24, 2, 20, 14);
+      c.quadraticCurveTo(0, 19, -20, 14);
       c.closePath();
       c.fill();
       c.stroke();
 
+      // Eyestalks
+      c.strokeStyle = '#ec4899';
+      c.lineWidth = 3.5;
+      c.beginPath();
+      c.moveTo(2, -8);
+      c.lineTo(3, -15);
+      c.moveTo(11, -6);
+      c.lineTo(13, -13);
+      c.stroke();
+
       // Eyes
       c.fillStyle = '#ffffff';
+      c.strokeStyle = '#18181b';
+      c.lineWidth = 2;
       c.beginPath();
-      c.arc(2, -12, 5, 0, Math.PI * 2);
-      c.arc(10, -10, 4.5, 0, Math.PI * 2);
+      c.arc(3, -15, 7, 0, Math.PI * 2);
+      c.arc(13, -13, 6, 0, Math.PI * 2);
       c.fill();
       c.stroke();
+
       // Pupils looking around
-      const pupilX = Math.sin(t * 2) * 1.5;
+      const pupilShift = Math.sin(t * 1.8) * 1.8;
       c.fillStyle = '#09090b';
       c.beginPath();
-      c.arc(3 + pupilX, -12, 2, 0, Math.PI * 2);
-      c.arc(11 + pupilX, -10, 1.8, 0, Math.PI * 2);
+      c.arc(4 + pupilShift, -15, 2.8, 0, Math.PI * 2);
+      c.arc(14 + pupilShift, -13, 2.4, 0, Math.PI * 2);
       c.fill();
 
-      if (hat === 'HELMET') {
-        // Military Camo Helmet
-        c.fillStyle = '#3f6212';
+      // Light Glints
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      c.arc(3 + pupilShift, -16.5, 1.2, 0, Math.PI * 2);
+      c.arc(13 + pupilShift, -14.5, 1, 0, Math.PI * 2);
+      c.fill();
+
+      if (gear === 'NIGHT_VISION') {
+        // High-tech Dual Night Vision Goggles
+        c.fillStyle = '#1e293b';
         c.strokeStyle = '#18181b';
         c.lineWidth = 2;
-        c.beginPath();
-        drawSafeEllipse(c, 5, -16, 13, 7, 0.1, Math.PI, 0);
+        drawRoundRect(c, -3, -19, 11, 9, 3);
         c.fill();
         c.stroke();
-      } else if (hat === 'BINOCULARS') {
-        // Night Vision Goggles
+        drawRoundRect(c, 8, -17, 10, 8, 3);
+        c.fill();
+        c.stroke();
+
+        // Luminous Neon Emerald Laser Lenses
         c.fillStyle = '#10b981';
-        c.strokeStyle = '#18181b';
-        c.lineWidth = 2;
-        drawRoundRect(c, -1, -15, 8, 7, 2);
-        c.fill();
-        c.stroke();
-        drawRoundRect(c, 7, -13, 8, 7, 2);
-        c.fill();
-        c.stroke();
-        // Green Glow Lenses
-        c.fillStyle = 'rgba(52, 211, 153, 0.8)';
         c.beginPath();
-        c.arc(3, -11.5, 2, 0, Math.PI * 2);
-        c.arc(11, -9.5, 2, 0, Math.PI * 2);
+        c.arc(2.5, -14.5, 3, 0, Math.PI * 2);
+        c.arc(13, -13, 2.6, 0, Math.PI * 2);
         c.fill();
-      } else if (hat === 'ANTENNA') {
-        // Radio Backpack & Antenna
-        c.strokeStyle = '#a1a1aa';
+        // Glowing laser dots
+        c.fillStyle = '#6ee7b7';
+        c.beginPath();
+        c.arc(2.5, -14.5, 1.2, 0, Math.PI * 2);
+        c.arc(13, -13, 1, 0, Math.PI * 2);
+        c.fill();
+      } else if (gear === 'RADIO_COMM') {
+        // Radio Headset & Long Tactical Antenna
+        c.strokeStyle = '#38bdf8';
+        c.lineWidth = 2.4;
+        c.beginPath();
+        c.arc(8, -14, 12, -Math.PI * 0.7, -Math.PI * 0.1);
+        c.stroke();
+
+        // Antenna Mast
+        c.strokeStyle = '#e4e4e7';
         c.lineWidth = 2;
         c.beginPath();
         c.moveTo(-10, 4);
-        c.lineTo(-18, -20);
+        c.lineTo(-24, -28);
         c.stroke();
-        // Red Blinking Beacon
-        c.fillStyle = Math.sin(t * 6) > 0 ? '#ef4444' : '#7f1d1d';
+
+        // Blinking Red Transmitter Beacon
+        c.fillStyle = Math.sin(t * 7) > 0 ? '#ef4444' : '#991b1b';
         c.beginPath();
-        c.arc(-18, -20, 3, 0, Math.PI * 2);
+        c.arc(-24, -28, 3.8, 0, Math.PI * 2);
+        c.fill();
+        if (Math.sin(t * 7) > 0) {
+          c.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(-24, -28, 8, 0, Math.PI * 2);
+          c.stroke();
+        }
+      } else if (gear === 'COMMANDER') {
+        // Military Commander Beret with Gold Crest
+        c.fillStyle = '#1e1b4b';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.ellipse(8, -20, 16, 7, 0.25, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        // Gold Crest
+        c.fillStyle = '#fbbf24';
+        c.beginPath();
+        c.arc(5, -20, 3, 0, Math.PI * 2);
         c.fill();
       }
+
+      c.restore();
+    };
+
+    // --- HELPER: DRAW FORTIFIED BASTION / OUTPOST LEDGE ---
+    const drawFortifiedBastion = (
+      c: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      title: string,
+      accentColor: string
+    ) => {
+      c.save();
+      c.translate(x, y);
+
+      // Heavy Concrete Bunker Base
+      c.fillStyle = '#1e1e24';
+      c.strokeStyle = '#09090b';
+      c.lineWidth = 3;
+      c.beginPath();
+      c.moveTo(-w / 2, 0);
+      c.lineTo(-w / 2 - 12, h);
+      c.lineTo(w / 2 + 12, h);
+      c.lineTo(w / 2, 0);
+      c.closePath();
+      c.fill();
+      c.stroke();
+
+      // Steel Riveted Plates Detail
+      c.strokeStyle = '#3f3f46';
+      c.lineWidth = 1.8;
+      c.beginPath();
+      c.moveTo(-w / 2 + 15, 12);
+      c.lineTo(w / 2 - 15, 12);
+      c.moveTo(-w / 2 + 10, h - 15);
+      c.lineTo(w / 2 - 10, h - 15);
+      c.stroke();
+
+      // Glowing Slit Observation Window
+      c.fillStyle = accentColor;
+      c.shadowColor = accentColor;
+      c.shadowBlur = 8;
+      drawRoundRect(c, -w * 0.25, 18, w * 0.5, 6, 2);
+      c.fill();
+      c.shadowBlur = 0;
+
+      // Platform Top Deck (Grass / Metal Grid)
+      c.fillStyle = '#15803d';
+      drawRoundRect(c, -w / 2 - 6, -6, w + 12, 12, 5);
+      c.fill();
+      c.fillStyle = '#22c55e';
+      drawRoundRect(c, -w / 2 - 4, -6, w + 8, 6, 3);
+      c.fill();
+
+      // Safety Railing with Warning Stripes
+      c.strokeStyle = '#eab308';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(-w / 2 + 8, -6);
+      c.lineTo(-w / 2 + 8, -18);
+      c.moveTo(w / 2 - 8, -6);
+      c.lineTo(w / 2 - 8, -18);
+      c.moveTo(-w / 2 + 4, -16);
+      c.lineTo(w / 2 - 4, -16);
+      c.stroke();
+
+      // Tactical Station Label Badge
+      c.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      drawRoundRect(c, -38, h - 10, 76, 15, 4);
+      c.fill();
+      c.fillStyle = '#a1a1aa';
+      c.font = 'bold 9px monospace';
+      c.textAlign = 'center';
+      c.fillText(title, 0, h + 1);
 
       c.restore();
     };
@@ -348,8 +476,8 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
         // 1. Nocturnal Sci-Fi War Room Sky Gradient
         const sky = ctx.createLinearGradient(0, 0, 0, height);
         sky.addColorStop(0, '#06060c');
-        sky.addColorStop(0.4, '#130924');
-        sky.addColorStop(0.75, '#240e46');
+        sky.addColorStop(0.35, '#120924');
+        sky.addColorStop(0.7, '#240e46');
         sky.addColorStop(1, '#09090f');
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, width, height);
@@ -363,107 +491,181 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
           ctx.fill();
         }
 
-        // 3. Searchlight Scanning Beams from Distant Watchtowers
-        const leftTowerX = width * 0.12;
-        const towerY = height * 0.78;
-        const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.8) * 0.55;
+        // 3. Floating Nebula Clouds
+        for (const cloud of nebulaClouds) {
+          cloud.x += cloud.speed;
+          if (cloud.x > width + 150) cloud.x = -150;
+          ctx.fillStyle = `rgba(168, 85, 247, ${cloud.opacity})`;
+          ctx.beginPath();
+          ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+          ctx.arc(cloud.x + cloud.size * 0.5, cloud.y - cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2);
+          ctx.arc(cloud.x + cloud.size * 0.9, cloud.y, cloud.size * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-        ctx.save();
-        ctx.translate(leftTowerX, towerY);
-        ctx.rotate(sweepAngle);
-
-        const beamGrad = ctx.createRadialGradient(0, 0, 10, 0, -height * 0.8, height * 0.6);
-        beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
-        beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.18)');
-        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
-
-        ctx.fillStyle = beamGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-75, -height * 0.85);
-        ctx.lineTo(75, -height * 0.85);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        // Right Searchlight Beam
-        const rightTowerX = width * 0.88;
-        const rightSweepAngle = Math.PI * 0.35 + Math.sin(t * 0.7 + 1.5) * 0.55;
-
-        ctx.save();
-        ctx.translate(rightTowerX, towerY);
-        ctx.rotate(rightSweepAngle);
-
-        const rightBeamGrad = ctx.createRadialGradient(0, 0, 10, 0, -height * 0.8, height * 0.6);
-        rightBeamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
-        rightBeamGrad.addColorStop(0.3, 'rgba(125, 211, 252, 0.15)');
-        rightBeamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-
-        ctx.fillStyle = rightBeamGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-70, -height * 0.8);
-        ctx.lineTo(70, -height * 0.8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        // 4. Distant Mountain Silhouette Ridges
+        // 4. Distant Mountain Silhouette Ridges across entire width
         ctx.fillStyle = 'rgba(15, 12, 28, 0.9)';
         ctx.beginPath();
         ctx.moveTo(0, height);
-        for (let x = 0; x <= width; x += 40) {
-          const my = height - 160 + Math.sin(x * 0.002 + 0.5) * 60;
+        for (let x = 0; x <= width; x += 35) {
+          const my = height * 0.7 + Math.sin(x * 0.003 + 0.5) * 55;
           ctx.lineTo(x, my);
         }
         ctx.lineTo(width, height);
         ctx.closePath();
         ctx.fill();
 
-        // Foreground Fortified Bunker Hill
+        // Foreground Fortified Bunker Hills
         ctx.fillStyle = '#0f0f17';
         ctx.beginPath();
         ctx.moveTo(0, height);
         for (let x = 0; x <= width; x += 30) {
-          const by = height - 90 + Math.sin(x * 0.003 + 2.1) * 35;
+          const by = height * 0.85 + Math.sin(x * 0.004 + 2.1) * 35;
           ctx.lineTo(x, by);
         }
         ctx.lineTo(width, height);
         ctx.closePath();
         ctx.fill();
 
-        // Green Grass Edge Tracing on Bunker
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 2.5;
+        // 5. LEFT FLANKING FORTIFIED BASTION & SENTRY SLUG (Guaranteed Visible at mid-height)
+        const leftBastionX = Math.max(100, Math.min(width * 0.14, 250));
+        const leftBastionY = Math.max(280, height * 0.52);
+
+        // Fortified Bunker Structure
+        drawFortifiedBastion(ctx, leftBastionX, leftBastionY + 20, 150, 95, 'POSTE OBSERV.', '#10b981');
+
+        // Sentry Slug with Night Vision on the Bunker
+        ctx.save();
+        ctx.translate(leftBastionX - 15, leftBastionY);
+        drawTacticalSlug(ctx, 1.25, 'NIGHT_VISION', true);
+        ctx.restore();
+
+        // Searchlight Mounted on Left Watchtower
+        const searchlightX = leftBastionX + 35;
+        const searchlightY = leftBastionY - 14;
+        const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.9) * 0.55;
+
+        // Searchlight Housing
+        ctx.save();
+        ctx.translate(searchlightX, searchlightY);
+        ctx.fillStyle = '#3f3f46';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        for (let x = 0; x <= width; x += 18) {
-          const by = height - 90 + Math.sin(x * 0.003 + 2.1) * 35;
-          ctx.moveTo(x, by);
-          ctx.lineTo(x + 2, by - 4);
-        }
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
         ctx.stroke();
 
-        // 5. Tactical Mini Recon Slugs on Ridge Flanks
-        const leftSlugX = Math.max(60, width * 0.08);
-        const leftSlugY = height - 95;
-        drawMiniSentrySlug(ctx, leftSlugX, leftSlugY, 1.1, 'BINOCULARS');
+        // Volumetric Beam
+        ctx.rotate(sweepAngle);
+        const beamGrad = ctx.createRadialGradient(0, 0, 5, 0, -height * 0.85, height * 0.65);
+        beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
+        beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.22)');
+        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-80, -height * 0.85);
+        ctx.lineTo(80, -height * 0.85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
 
-        const rightSlugX = Math.max(width - 90, width * 0.92);
-        const rightSlugY = height - 85;
-        drawMiniSentrySlug(ctx, rightSlugX, rightSlugY, 1.1, 'ANTENNA');
+        // 6. RIGHT FLANKING COMMUNICATIONS OUTPOST & RADIO OPERATOR SLUG
+        const rightBastionX = Math.max(width - 250, width * 0.86);
+        const rightBastionY = Math.max(280, height * 0.52);
 
-        // Center-left Helmet Sentry
-        if (width > 900) {
-          const midSlugX = width * 0.22;
-          const midSlugY = height - 70;
-          drawMiniSentrySlug(ctx, midSlugX, midSlugY, 0.9, 'HELMET');
-        }
+        // Fortified Bunker Structure
+        drawFortifiedBastion(ctx, rightBastionX, rightBastionY + 20, 150, 95, 'TRANSMISSIONS', '#38bdf8');
 
-        // 6. Occasional Artillery Tracer Flares
-        if (Math.random() < 0.015 && flares.length < 3) {
+        // Radio Operator Slug
+        ctx.save();
+        ctx.translate(rightBastionX + 15, rightBastionY);
+        drawTacticalSlug(ctx, 1.25, 'RADIO_COMM', false);
+        ctx.restore();
+
+        // Spinning Tactical Radar Dish on Right Outpost
+        const radarX = rightBastionX - 35;
+        const radarY = rightBastionY - 14;
+        const radarAngle = t * 3;
+
+        ctx.save();
+        ctx.translate(radarX, radarY);
+        // Radar Tripod
+        ctx.strokeStyle = '#71717a';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(-6, 12);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(6, 12);
+        ctx.stroke();
+        // Rotating Dish Ellipse
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
+        drawSafeEllipse(ctx, 0, -4, 14 * Math.abs(Math.cos(radarAngle)), 14);
+        ctx.fill();
+        ctx.stroke();
+        // Center Spike
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, -4, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 7. TOP SKY: TACTICAL RECON SURVEILLANCE DRONE 🛸
+        const droneX = Math.max(120, Math.min(width * 0.2, 320)) + Math.sin(t * 1.2) * 20;
+        const droneY = Math.max(90, height * 0.16) + Math.cos(t * 1.5) * 12;
+
+        ctx.save();
+        ctx.translate(droneX, droneY);
+        // Drone Center Body
+        ctx.fillStyle = '#27272a';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
+        drawRoundRect(ctx, -14, -8, 28, 16, 5);
+        ctx.fill();
+        ctx.stroke();
+        // Flashing Cyan Camera Eye
+        ctx.fillStyle = '#06b6d4';
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // 4 Drone Rotor Arms & Spinning Blades
+        const rotorSpin = t * 25;
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        // Left Rotor
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.lineTo(-26, -4);
+        ctx.stroke();
+        drawSafeEllipse(ctx, -26, -4, 12 * Math.abs(Math.cos(rotorSpin)), 2.5);
+        ctx.stroke();
+        // Right Rotor
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.lineTo(26, -4);
+        ctx.stroke();
+        drawSafeEllipse(ctx, 26, -4, 12 * Math.abs(Math.cos(rotorSpin)), 2.5);
+        ctx.stroke();
+
+        // Scanning Vertical Laser Beam towards ground
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, 8);
+        ctx.lineTo(Math.sin(t * 3) * 30, 180);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        // 8. Artillery Tracer Flares
+        if (Math.random() < 0.018 && flares.length < 3) {
           flares.push({
             x: Math.random() < 0.5 ? -20 : width + 20,
-            y: height * 0.5 + Math.random() * (height * 0.2),
+            y: height * 0.4 + Math.random() * (height * 0.2),
             vx: (Math.random() * 4 + 3) * (Math.random() < 0.5 ? 1 : -1),
             vy: -(Math.random() * 5 + 4),
             life: 1,
@@ -479,10 +681,9 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
 
           f.x += f.vx;
           f.y += f.vy;
-          f.vy += 0.12; // Gravity
+          f.vy += 0.12;
           f.life -= 0.014;
 
-          // Render Trail
           for (let j = 0; j < f.trail.length; j++) {
             const tr = f.trail[j];
             ctx.fillStyle = `${f.color}${Math.floor((j / f.trail.length) * 180).toString(16).padStart(2, '0')}`;
@@ -491,7 +692,6 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             ctx.fill();
           }
 
-          // Flare Head
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
@@ -516,12 +716,12 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-start p-4 md:p-6 relative overflow-x-hidden selection:bg-violet-500 selection:text-white">
-      {/* Background Animated Tactical War Room Canvas */}
-      <canvas ref={backdropCanvasRef} className="absolute inset-0 pointer-events-none w-full h-full" />
+      {/* Background Fixed HD Vector Tactical War Room Canvas */}
+      <canvas ref={backdropCanvasRef} className="fixed inset-0 pointer-events-none w-full h-full z-0" />
 
       {/* Ambient Lighting Orbs */}
-      <div className="absolute top-10 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed top-10 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-10 right-1/4 w-96 h-96 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl w-full space-y-6">
         {/* Tactical Header Bar */}
