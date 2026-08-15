@@ -745,19 +745,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     []
   );
 
-  // Keyboard shortcut: Press C to center on active slug
+  // Keyboard shortcut: Press C to reset zoom to 100% and center camera
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'c' || e.key === 'C') {
-        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-        if (activeSlug) {
-          centerCamera(activeSlug.x, activeSlug.y, 1.25);
-        }
+        zoomRef.current = 1.0;
+        panRef.current = { x: 0, y: 0 };
+        setZoomLevel(1.0);
+        setPanOffset({ x: 0, y: 0 });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState.slugs, gameState.activeSlugId, centerCamera]);
+  }, []);
 
   const lastAimTimeRef = useRef<number>(0);
 
@@ -2323,15 +2323,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         <span ref={fpsTextRef}>60 FPS</span>
       </div>
 
-      {/* Floating Camera Panning & Move Hint */}
-      <div className="absolute top-3 left-3 pointer-events-none px-2.5 py-1 bg-zinc-950/75 backdrop-blur border border-zinc-800/80 rounded-lg text-[11px] font-medium text-zinc-400 shadow-lg flex items-center gap-2 select-none z-20">
-        <span>🖱️ <b className="text-zinc-200">Clic-Droit / Molette maintenu</b> pour déplacer la caméra</span>
-        <span className="text-zinc-600">|</span>
-        <span>🔍 <b className="text-zinc-200">Molette</b> Zoom</span>
-        <span className="text-zinc-600">|</span>
-        <span>🎯 <b className="text-emerald-400">[C]</b> Centrer</span>
-      </div>
-
       <canvas
         ref={canvasRef}
         width={terrain.data.width}
@@ -2344,9 +2335,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       />
 
       {/* Tactical Artillery Style Floating Camera Zoom & Pan Controls */}
-      <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10 text-xs">
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10 text-xs"
+      >
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             const newZ = Math.max(0.5, Math.round((zoomLevel - 0.2) * 10) / 10);
             zoomRef.current = newZ;
             setZoomLevel(newZ);
@@ -2357,29 +2356,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           -
         </button>
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             zoomRef.current = 1.0;
             panRef.current = { x: 0, y: 0 };
             setZoomLevel(1.0);
             setPanOffset({ x: 0, y: 0 });
           }}
-          className="px-2 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-mono text-xs font-bold rounded-lg border border-zinc-600/50 transition"
-          title="Réinitialiser le zoom (100% / Vue Totale)"
+          className="px-2.5 h-7 flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-bold rounded-lg border border-zinc-600/50 transition text-xs font-mono"
+          title="Recentrer la vue & Zoom 100% (Touche C)"
         >
-          {Math.round(zoomLevel * 100)}%
+          🎯 100% [C]
         </button>
         <button
-          onClick={() => {
-            const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-            centerCamera(activeSlug?.x, activeSlug?.y, 1.25);
-          }}
-          className="px-2.5 h-7 flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-emerald-400 font-bold rounded-lg border border-zinc-600/50 transition text-xs"
-          title="Centrer la caméra sur le ver actif (Touche C)"
-        >
-          🎯 Centrer [C]
-        </button>
-        <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             const newZ = Math.min(2.5, Math.round((zoomLevel + 0.2) * 10) / 10);
             zoomRef.current = newZ;
             setZoomLevel(newZ);
