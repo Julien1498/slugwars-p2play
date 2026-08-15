@@ -317,6 +317,21 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
                   <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-sky-300">▲ / ▼</span>
                   <span className="text-zinc-300">Angle</span>
                 </div>
+
+                <div className="flex items-center gap-1.5 font-semibold border-l border-zinc-800 pl-3">
+                  <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">Clic-Droit</span>
+                  <span className="text-zinc-300">Caméra</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">Molette</span>
+                  <span className="text-zinc-300">Zoom</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">C</span>
+                  <span className="text-zinc-300">Recentrer</span>
+                </div>
               </>
             )}
           </div>
