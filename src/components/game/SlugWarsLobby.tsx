@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { GameConfig, Team, MapTheme } from '../../core/types';
+import { generateProceduralTerrain } from '../../core/terrainGenerator';
 import { WEAPON_SETS } from '../../core/weapons/weaponSets';
 import { RoomCodeBadge, CopyRoomLinkButton } from 'p2play-core';
 import { Dices, Play, RefreshCw, Shield, Sparkles } from 'lucide-react';
@@ -22,6 +23,108 @@ const MAP_THEMES: { id: MapTheme; label: string; icon: string }[] = [
   { id: 'FORTRESS', label: 'Deux Forteresses', icon: '🏰' },
   { id: 'FLOATING_CHAOS', label: 'Archipel Flottant', icon: '🌌' },
 ];
+
+const MapThumbnailPreview: React.FC<{ theme: MapTheme; seed: number }> = ({ theme, seed }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const previewW = canvas.width;
+    const previewH = canvas.height;
+
+    // Generate miniature terrain
+    const terrain = generateProceduralTerrain(seed, theme, 1400, 800);
+    const { grid, width, height, waterLevel } = terrain;
+
+    // 1. Draw Thematic Sky Background
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
+    if (theme === 'ISLAND') {
+      skyGrad.addColorStop(0, '#38bdf8');
+      skyGrad.addColorStop(0.7, '#93c5fd');
+      skyGrad.addColorStop(1, '#60a5fa');
+    } else if (theme === 'CAVERN') {
+      skyGrad.addColorStop(0, '#0f172a');
+      skyGrad.addColorStop(0.6, '#1e1b4b');
+      skyGrad.addColorStop(1, '#312e81');
+    } else if (theme === 'FORTRESS') {
+      skyGrad.addColorStop(0, '#ea580c');
+      skyGrad.addColorStop(0.5, '#9a3412');
+      skyGrad.addColorStop(1, '#431407');
+    } else {
+      skyGrad.addColorStop(0, '#09090b');
+      skyGrad.addColorStop(0.5, '#2e1065');
+      skyGrad.addColorStop(1, '#581c87');
+    }
+
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, previewW, previewH);
+
+    // 2. Downsampled Terrain Surface & Underground Drawing
+    const imgData = ctx.createImageData(previewW, previewH);
+    const data = imgData.data;
+
+    const grassR = theme === 'ISLAND' ? 34 : theme === 'CAVERN' ? 71 : theme === 'FORTRESS' ? 132 : 168;
+    const grassG = theme === 'ISLAND' ? 197 : theme === 'CAVERN' ? 85 : theme === 'FORTRESS' ? 204 : 85;
+    const grassB = theme === 'ISLAND' ? 94 : theme === 'CAVERN' ? 105 : theme === 'FORTRESS' ? 22 : 247;
+
+    const rockR = theme === 'ISLAND' ? 120 : theme === 'CAVERN' ? 30 : theme === 'FORTRESS' ? 82 : 46;
+    const rockG = theme === 'ISLAND' ? 53 : theme === 'CAVERN' ? 27 : theme === 'FORTRESS' ? 82 : 16;
+    const rockB = theme === 'ISLAND' ? 15 : theme === 'CAVERN' ? 75 : theme === 'FORTRESS' ? 91 : 101;
+
+    for (let py = 0; py < previewH; py++) {
+      const srcY = Math.floor((py / previewH) * height);
+      for (let px = 0; px < previewW; px++) {
+        const srcX = Math.floor((px / previewW) * width);
+        const isSolid = grid[srcY * width + srcX] === 1;
+
+        if (isSolid) {
+          const idx = (py * previewW + px) * 4;
+          const isAboveSolid = srcY > 0 && grid[(srcY - 1) * width + srcX] === 1;
+          if (!isAboveSolid) {
+            data[idx] = grassR;
+            data[idx + 1] = grassG;
+            data[idx + 2] = grassB;
+            data[idx + 3] = 255;
+          } else {
+            data[idx] = rockR;
+            data[idx + 1] = rockG;
+            data[idx + 2] = rockB;
+            data[idx + 3] = 255;
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    // 3. Water Surface at Bottom
+    const waterCanvasY = (waterLevel / height) * previewH;
+    ctx.fillStyle = 'rgba(14, 165, 233, 0.7)';
+    ctx.fillRect(0, waterCanvasY, previewW, previewH - waterCanvasY);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, waterCanvasY);
+    ctx.lineTo(previewW, waterCanvasY);
+    ctx.stroke();
+  }, [theme, seed]);
+
+  return (
+    <div className="relative rounded-xl overflow-hidden border border-zinc-700 bg-zinc-950 shadow-inner">
+      <canvas ref={canvasRef} width={380} height={140} className="w-full h-[140px] block" />
+      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded border border-white/20 text-[10px] font-mono text-zinc-200 shadow">
+        Seed: #{seed}
+      </div>
+      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded border border-white/20 text-[10px] font-bold text-violet-300 shadow flex items-center gap-1">
+        <span>🗺️ Aperçu de la carte</span>
+      </div>
+    </div>
+  );
+};
 
 export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   isHost,
@@ -63,9 +166,16 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             <Sparkles className="w-5 h-5 text-violet-400" /> Configuration de Partie
           </h2>
 
-          {/* Map Theme & Seed */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase text-zinc-400">Thème de la Carte Procédurale</label>
+          {/* Map Theme & Real-time Live Thumbnail Preview */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase text-zinc-400">Thème de la Carte & Aperçu</label>
+              <span className="text-[11px] font-mono text-zinc-500">1400x700 px</span>
+            </div>
+
+            {/* Interactive Real-Time Map Preview */}
+            <MapThumbnailPreview theme={config.mapTheme} seed={config.mapSeed} />
+
             <div className="grid grid-cols-2 gap-2">
               {MAP_THEMES.map((theme) => (
                 <button
@@ -86,7 +196,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             {isHost && (
               <button
                 onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1000000) })}
-                className="w-full mt-2 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-200 flex items-center justify-center gap-2 transition"
+                className="w-full mt-1 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-200 flex items-center justify-center gap-2 transition"
               >
                 <Dices className="w-4 h-4 text-violet-400" /> Régénérer la carte (Seed: #{config.mapSeed})
               </button>
