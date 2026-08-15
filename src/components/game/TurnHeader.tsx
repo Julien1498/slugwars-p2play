@@ -9,9 +9,11 @@ interface TurnHeaderProps {
   gameState: GameState;
   hostPeerId: string;
   isMyTurn: boolean;
+  isHost?: boolean;
   onOpenWeaponPicker: () => void;
   onOpenRules: () => void;
   onOpenMetrics?: () => void;
+  onRestartGame?: () => void;
   onExit?: () => void;
 }
 
@@ -19,9 +21,11 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   gameState,
   hostPeerId,
   isMyTurn,
+  isHost,
   onOpenWeaponPicker,
   onOpenRules,
   onOpenMetrics,
+  onRestartGame,
   onExit,
 }) => {
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
@@ -150,6 +154,15 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
         >
           📖
         </button>
+        {isHost && onRestartGame && (
+          <button
+            onClick={onRestartGame}
+            title="Retourner au Salon (Lobby) pour tous les joueurs"
+            className="px-2.5 py-1 bg-amber-950/90 hover:bg-amber-900 border border-amber-500/70 rounded-lg text-xs font-bold text-amber-200 transition flex items-center gap-1 shadow-sm"
+          >
+            <span>🏠 Salon</span>
+          </button>
+        )}
         {onExit && (
           <button
             onClick={onExit}
@@ -163,7 +176,9 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   );
 }, (prev, next) => {
   if (prev.isMyTurn !== next.isMyTurn) return false;
+  if (prev.isHost !== next.isHost) return false;
   if (prev.hostPeerId !== next.hostPeerId) return false;
+  if (prev.onRestartGame !== next.onRestartGame) return false;
 
   const pState = prev.gameState;
   const nState = next.gameState;

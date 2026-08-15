@@ -244,9 +244,11 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           gameState={gameState}
           hostPeerId={hostPeerId}
           isMyTurn={isMyTurn}
+          isHost={isHost}
           onOpenWeaponPicker={handleOpenWeaponPicker}
           onOpenRules={handleOpenRules}
           onOpenMetrics={handleOpenMetrics}
+          onRestartGame={onRestartGame}
           onExit={onExit}
         />
       </Profiler>
