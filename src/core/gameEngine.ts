@@ -461,7 +461,8 @@ export class SlugWarsEngine {
     });
 
     applyExplosionToSlugs(sheep.x, sheep.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain);
-    this.endTurn();
+    this.state.phase = 'RESOLVING';
+    this.state.phaseTimer = 0.8;
     return true;
   }
 
@@ -516,65 +517,83 @@ export class SlugWarsEngine {
       activeSlug.vy = 0;
       sfx.play('teleport');
       this.addLog(`${activeSlug.name} s'est téléporté !`, 'weapon');
-      this.endTurn();
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.5;
       return true;
     }
 
-    if (weapon.behavior === 'BLOWTORCH') {
-      const currentFuel = activeTeam ? activeTeam.inventory['blowtorch'] ?? 0 : 0;
-      if (currentFuel <= 0) {
-        this.addLog(`Le réservoir du Chalumeau est vide ! ⛽`, 'info');
-        return false;
-      }
+    if (weapon.id === 'blowtorch') {
       activeSlug.isBlowtorching = true;
-      this.state.phase = 'AIMING';
+      activeSlug.aimPower = 5;
       sfx.play('fire');
-      this.addLog(`${activeSlug.name} utilise le Chalumeau ! (Carburant: ${Math.round(currentFuel)}%) 🔥`, 'weapon');
+      this.addLog(`${activeSlug.name} allume son Chalumeau ! 🔥 (Maintenez pour creuser)`, 'weapon');
       return true;
     }
 
-    if (weapon.behavior === 'NINJA_ROPE') {
-      const originX = activeSlug.x;
-      const originY = activeSlug.y - 10;
+    if (weapon.id === 'ninja_rope') {
       const angleRad = (activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle) * (Math.PI / 180);
-      const targetX = originX + Math.cos(angleRad) * 450;
-      const targetY = originY + Math.sin(angleRad) * 450;
+      const dirX = Math.cos(angleRad);
+      const dirY = Math.sin(angleRad);
 
-      const hit = this.terrain.raycastSolid(originX, originY, targetX, targetY);
-      if (hit.hit) {
-        const dx = activeSlug.x - hit.x;
-        const dy = activeSlug.y - hit.y;
-        const length = Math.max(30, Math.hypot(dx, dy));
-        const angle = Math.atan2(dx, dy);
+      const maxRange = 550;
+      const startX = activeSlug.x;
+      const startY = activeSlug.y - 12;
+
+      let hitSolid = false;
+      let hookX = startX;
+      let hookY = startY;
+
+      for (let dist = 10; dist <= maxRange; dist += 3) {
+        const testX = startX + dirX * dist;
+        const testY = startY + dirY * dist;
+
+        if (testX < 0 || testX >= this.terrain.data.width || testY < 0) {
+          break;
+        }
+
+        if (this.terrain.isSolid(testX, testY)) {
+          hitSolid = true;
+          hookX = testX;
+          hookY = testY;
+          break;
+        }
+      }
+
+      if (hitSolid) {
+        const ropeLength = Math.hypot(startX - hookX, startY - hookY);
+        const initialAngle = Math.atan2(startX - hookX, startY - hookY);
+
         activeSlug.ropeState = {
-          hookX: hit.x,
-          hookY: hit.y,
-          length,
-          angleRad: angle,
-          angularVelocity: 0,
+          hookX,
+          hookY,
+          length: Math.max(25, ropeLength),
+          angleRad: initialAngle,
+          angularVelocity: activeSlug.facing === 'right' ? 0.04 : -0.04,
         };
+
         sfx.play('rope_attach');
-        this.addLog(`${activeSlug.name} s'accroche avec la Corde Ninja ! 🪢`, 'weapon');
+        this.addLog(`${activeSlug.name} a accroché son Grappin Ninja ! 🪢`, 'weapon');
       } else {
         sfx.play('rope_shoot');
-        this.addLog(`${activeSlug.name} a manqué son tir de grappin !`, 'info');
+        this.addLog(`Le grappin n'a rien accroché !`, 'info');
       }
       return true;
     }
 
-    if (weapon.behavior === 'GIRDER' && targetPoint) {
-      const gx = Math.round(targetPoint.x);
-      const gy = Math.round(targetPoint.y);
+    if (weapon.id === 'girder' && targetPoint) {
+      const length = 110;
+      const thickness = 14;
       const angleDeg = activeSlug.aimAngle || 0;
-      const length = 80;
-      const thickness = 12;
-
-      // Stamp solid girder pixels into terrain grid
       const rad = (angleDeg * Math.PI) / 180;
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
+
       const halfL = length / 2;
       const halfT = thickness / 2;
+
+      const gx = targetPoint.x;
+      const gy = targetPoint.y;
+
       const w = this.terrain.data.width;
       const h = this.terrain.data.height;
 
@@ -603,7 +622,8 @@ export class SlugWarsEngine {
 
       sfx.play('girder');
       this.addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
-      this.endTurn();
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.5;
       return true;
     }
 
@@ -641,7 +661,8 @@ export class SlugWarsEngine {
         this.addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
       }
       sfx.play('melee');
-      this.endTurn();
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.8;
       return true;
     }
 
@@ -697,16 +718,36 @@ export class SlugWarsEngine {
           if (this.state.projectiles.length > 0) {
             this.state.phase = 'PROJECTILE_ACTIVE';
           } else {
-            this.endTurn();
+            this.state.phase = 'RESOLVING';
+            this.state.phaseTimer = 0.6;
           }
         }
       }
     }
 
-    // If active slug dies (e.g. drowns or dies from explosion), end turn immediately!
+    // 3. RESOLVING Phase (Wait until all physics, explosions, damage, and falling slugs have 100% calmed down)
+    if (this.state.phase === 'RESOLVING') {
+      if (this.isWorldAtRest()) {
+        if (this.state.phaseTimer === undefined) {
+          this.state.phaseTimer = 0.4;
+        } else {
+          this.state.phaseTimer -= 0.05;
+          if (this.state.phaseTimer <= 0) {
+            this.state.phaseTimer = undefined;
+            this.endTurn();
+            return;
+          }
+        }
+      } else {
+        // Still active movement, bouncing, or explosions: keep settling timer refreshed
+        this.state.phaseTimer = 0.4;
+      }
+    }
+
+    // If active slug dies (e.g. drowns or dies from explosion), transition to resolution
     if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')) {
-      this.endTurn();
-      return;
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.6;
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
@@ -921,20 +962,22 @@ export class SlugWarsEngine {
       }
     }
 
-    // End turn immediately if active slug takes ANY damage during its turn!
+    // End turn immediately only if active player hurts THEMSELVES during their own active aiming turn!
     if (
       activeSlug &&
       activeSlug.isAlive &&
       activeSlug.hp < activeSlugHpBefore &&
-      (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE')
+      this.state.phase === 'AIMING'
     ) {
       this.addLog(`⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`, 'combat');
-      this.endTurn();
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.8;
       return;
     }
 
     if (this.state.phase === 'PROJECTILE_ACTIVE' && (!this.state.projectiles || this.state.projectiles.length === 0)) {
-      this.endTurn();
+      this.state.phase = 'RESOLVING';
+      this.state.phaseTimer = 0.6;
       return;
     }
 
@@ -1026,7 +1069,8 @@ export class SlugWarsEngine {
       this.state.projectiles = remaining;
 
       if (this.state.projectiles.length === 0 && this.state.phase === 'PROJECTILE_ACTIVE') {
-        this.endTurn();
+        this.state.phase = 'RESOLVING';
+        this.state.phaseTimer = 0.6;
       }
     }
 
@@ -1088,14 +1132,15 @@ export class SlugWarsEngine {
             });
           }
 
-          // If the active slug took damage from a mine explosion, immediately end their turn!
+          // If the active slug took damage during its active turn, transition to resolving!
           const activeSlugTookDamage = mineExpRes.damageEvents.some(
             (dm) => dm.slugId === this.state.activeSlugId
           );
-          if (activeSlugTookDamage && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE')) {
+          if (activeSlugTookDamage && this.state.phase === 'AIMING') {
             const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
             this.addLog(`💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`, 'combat');
-            this.endTurn();
+            this.state.phase = 'RESOLVING';
+            this.state.phaseTimer = 0.8;
           }
         } else {
           remainingMines.push(mine);
@@ -1248,6 +1293,31 @@ export class SlugWarsEngine {
       this.state.phase = 'GAME_OVER';
       this.addLog(`Égalité parfaite ! Toutes les limaces sont éliminées.`, 'info');
     }
+  }
+
+  public isWorldAtRest(): boolean {
+    // 1. Any active flying projectiles?
+    if (this.state.projectiles && this.state.projectiles.length > 0) return false;
+
+    // 2. Any triggered mines counting down?
+    if (
+      this.state.mines &&
+      this.state.mines.some((m) => m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0)
+    ) {
+      return false;
+    }
+
+    // 3. Any unlanded supply crates falling?
+    if (this.state.supplyCrates && this.state.supplyCrates.some((c) => !c.isLanded)) return false;
+
+    // 4. Any slugs flying / bouncing / falling in the air?
+    for (const slug of this.state.slugs) {
+      if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
+      if (Math.abs(slug.vx) > 0.25 || Math.abs(slug.vy) > 0.25) return false;
+      if (!isSlugGrounded(slug, this.terrain, this.state.slugs)) return false;
+    }
+
+    return true;
   }
 
   public addLog(msgText: string, type: JournalEntry['type'] = 'info'): void {
