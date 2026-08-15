@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle } from './types';
+import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle, MAP_SIZE_CONFIGS } from './types';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
 import { generateProceduralTerrain } from './terrainGenerator';
@@ -20,6 +20,7 @@ export class SlugWarsEngine {
       vehiclesEnabled: true,
       dayNightCycle: 'DAY',
       mapTheme: 'ISLAND',
+      mapSize: 'NORMAL',
       mapSeed: Math.floor(Math.random() * 1000000),
       ...initialConfig,
     };
@@ -47,9 +48,12 @@ export class SlugWarsEngine {
   }
 
   public initTerrain(): void {
+    const sizeCfg = MAP_SIZE_CONFIGS[this.state.config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
     const data = generateProceduralTerrain(
       this.state.config.mapSeed,
-      this.state.config.mapTheme
+      this.state.config.mapTheme,
+      sizeCfg.width,
+      sizeCfg.height
     );
     this.terrain = new DestructibleTerrain(data);
   }
@@ -60,7 +64,7 @@ export class SlugWarsEngine {
     if (partial.mapTheme !== undefined && partial.mapSeed === undefined) {
       this.state.config.mapSeed = Math.floor(Math.random() * 1000000);
     }
-    if (partial.mapSeed !== undefined || partial.mapTheme !== undefined) {
+    if (partial.mapSeed !== undefined || partial.mapTheme !== undefined || partial.mapSize !== undefined) {
       this.initTerrain();
     }
     return true;

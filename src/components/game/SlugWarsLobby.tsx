@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { GameConfig, Team, MapTheme } from '../../core/types';
+import { GameConfig, Team, MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../core/types';
 import { generateProceduralTerrain } from '../../core/terrainGenerator';
 import { WEAPON_SETS } from '../../core/weapons/weaponSets';
 import { RoomCodeBadge, CopyRoomLinkButton } from 'p2play-core';
@@ -24,8 +24,9 @@ const MAP_THEMES: { id: MapTheme; label: string; icon: string }[] = [
   { id: 'FLOATING_CHAOS', label: 'Archipel Flottant', icon: '🌌' },
 ];
 
-const MapThumbnailPreview: React.FC<{ theme: MapTheme; seed: number }> = ({ theme, seed }) => {
+const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: number }> = ({ theme, size, seed }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sizeCfg = MAP_SIZE_CONFIGS[size || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,8 +37,8 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; seed: number }> = ({ them
     const previewW = canvas.width;
     const previewH = canvas.height;
 
-    // Generate miniature terrain
-    const terrain = generateProceduralTerrain(seed, theme, 1400, 800);
+    // Generate miniature terrain using selected dimensions
+    const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
     const { grid, width, height, waterLevel } = terrain;
 
     // 1. Draw Thematic Sky Background
@@ -111,7 +112,7 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; seed: number }> = ({ them
     ctx.moveTo(0, waterCanvasY);
     ctx.lineTo(previewW, waterCanvasY);
     ctx.stroke();
-  }, [theme, seed]);
+  }, [theme, sizeCfg.width, sizeCfg.height, seed]);
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-zinc-700 bg-zinc-950 shadow-inner">
@@ -120,7 +121,7 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; seed: number }> = ({ them
         Seed: #{seed}
       </div>
       <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded border border-white/20 text-[10px] font-bold text-violet-300 shadow flex items-center gap-1">
-        <span>🗺️ Aperçu de la carte</span>
+        <span>🗺️ {sizeCfg.label} ({sizeCfg.width}×{sizeCfg.height})</span>
       </div>
     </div>
   );
@@ -137,6 +138,8 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   onChangeConfig,
   onStartGame,
 }) => {
+  const currentSizeCfg = MAP_SIZE_CONFIGS[config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
@@ -166,16 +169,17 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             <Sparkles className="w-5 h-5 text-violet-400" /> Configuration de Partie
           </h2>
 
-          {/* Map Theme & Real-time Live Thumbnail Preview */}
-          <div className="space-y-2.5">
+          {/* Map Theme, Size & Real-time Live Thumbnail Preview */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold uppercase text-zinc-400">Thème de la Carte & Aperçu</label>
-              <span className="text-[11px] font-mono text-zinc-500">1400x700 px</span>
+              <label className="text-xs font-semibold uppercase text-zinc-400">Thème & Dimensions de la Carte</label>
+              <span className="text-[11px] font-mono text-zinc-500">{currentSizeCfg.width}×{currentSizeCfg.height} px</span>
             </div>
 
             {/* Interactive Real-Time Map Preview */}
-            <MapThumbnailPreview theme={config.mapTheme} seed={config.mapSeed} />
+            <MapThumbnailPreview theme={config.mapTheme} size={config.mapSize || 'NORMAL'} seed={config.mapSeed} />
 
+            {/* Map Theme Buttons */}
             <div className="grid grid-cols-2 gap-2">
               {MAP_THEMES.map((theme) => (
                 <button
@@ -193,6 +197,32 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Map Size Buttons: Petite / Normale / Grande */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase text-zinc-400">Taille du Champ de Bataille</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(Object.entries(MAP_SIZE_CONFIGS) as [MapSize, typeof MAP_SIZE_CONFIGS[MapSize]][]).map(([sizeKey, sizeVal]) => (
+                  <button
+                    key={sizeKey}
+                    disabled={!isHost}
+                    onClick={() => onChangeConfig({ mapSize: sizeKey })}
+                    className={`p-2 rounded-lg border text-left transition flex flex-col gap-0.5 ${
+                      (config.mapSize || 'NORMAL') === sizeKey
+                        ? 'bg-violet-950/80 border-violet-500 text-violet-200 shadow-sm'
+                        : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 text-xs font-bold">
+                      <span>{sizeVal.icon}</span>
+                      <span>{sizeVal.label}</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-400">{sizeVal.width}×{sizeVal.height}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {isHost && (
               <button
                 onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1000000) })}
