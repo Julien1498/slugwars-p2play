@@ -36,6 +36,7 @@ export interface DecorItem {
   y: number;
   scale?: number;
   variant?: number;
+  destroyed?: boolean;
 }
 
 export interface SolidProp {

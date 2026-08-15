@@ -705,9 +705,28 @@ export class SlugWarsEngine {
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
-      // Active Ninja Rope Swinging & Climbing (Smooth Pendulum with Slug Body Collision & 0 Teleport)
+      // Active Ninja Rope Swinging & Climbing (Smooth Pendulum with Slug Body Collision & Support Check)
       if (activeSlug.ropeState) {
         const rope = activeSlug.ropeState;
+
+        // Check if rope anchor point is still anchored in solid terrain
+        const isHookSolid =
+          this.terrain.isSolid(rope.hookX, rope.hookY) ||
+          this.terrain.isSolid(rope.hookX - 2, rope.hookY) ||
+          this.terrain.isSolid(rope.hookX + 2, rope.hookY) ||
+          this.terrain.isSolid(rope.hookX, rope.hookY - 2) ||
+          this.terrain.isSolid(rope.hookX, rope.hookY + 2);
+
+        if (!isHookSolid) {
+          // Anchor support was destroyed by explosion or crater! Detach rope and slug falls
+          activeSlug.vx = Math.cos(rope.angleRad) * rope.length * rope.angularVelocity;
+          activeSlug.vy = -Math.sin(rope.angleRad) * rope.length * rope.angularVelocity;
+          activeSlug.ropeState = null;
+          this.addLog("Le support du grappin a cédé ! 💥", 'weapon');
+          sfx.play('bounce');
+          return;
+        }
+
         const g = 20;
         let alpha = -(g / Math.max(25, rope.length)) * Math.sin(rope.angleRad);
 

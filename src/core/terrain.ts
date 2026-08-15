@@ -56,6 +56,19 @@ export class DestructibleTerrain {
       }
     }
 
+    // Destroy overlapping ceiling hanging leaves / vines
+    if (this.data.decorItems) {
+      for (const item of this.data.decorItems) {
+        if (item.destroyed) continue;
+        if (item.type === 'hanging_leaf') {
+          const dist = Math.hypot(cx - item.x, cy - item.y);
+          if (dist <= radius + 20) {
+            item.destroyed = true;
+          }
+        }
+      }
+    }
+
     return carvedPixels;
   }
 
