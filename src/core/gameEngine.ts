@@ -587,14 +587,17 @@ export class SlugWarsEngine {
       }
 
       if (!this.state.girders) this.state.girders = [];
-      this.state.girders.push({
-        id: `girder_${Date.now()}_${Math.random()}`,
-        x: gx,
-        y: gy,
-        angleDeg,
-        length,
-        thickness,
-      });
+      this.state.girders = [
+        ...this.state.girders,
+        {
+          id: `girder_${Date.now()}_${Math.random()}`,
+          x: gx,
+          y: gy,
+          angleDeg,
+          length,
+          thickness,
+        }
+      ];
 
       sfx.play('girder');
       this.addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
