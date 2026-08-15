@@ -1851,37 +1851,228 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fillText(`${slug.hp}`, slug.x, tagY + 9.5);
       }
 
-      // Trajectory Line & Aim Guide & Charging Power Bar
+      // Advanced Worms Crosshair, Ballistic Trajectory Arc & Charging Gauge Bar
       const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
-        if (isMyTurn) {
-          const rad = (activeSlug.aimAngle * Math.PI) / 180;
-          const dir = activeSlug.facing === 'right' ? 1 : -1;
-          const aimLength = (activeSlug.aimPower / 100) * 60;
-          const targetX = activeSlug.x + Math.cos(rad) * aimLength * dir;
-          const targetY = activeSlug.y - Math.sin(rad) * aimLength;
+        const weapon = getWeapon(activeSlug.selectedWeaponId);
+        const rad = (activeSlug.aimAngle * Math.PI) / 180;
+        const dir = activeSlug.facing === 'right' ? 1 : -1;
+        const originX = activeSlug.x + dir * 10;
+        const originY = activeSlug.y - 10;
 
-          ctx.strokeStyle = activeSlug.isChargingPower ? '#ef4444' : '#facc15';
-          ctx.lineWidth = activeSlug.isChargingPower ? 3 : 2;
-          ctx.setLineDash([4, 4]);
+        if (isMyTurn && !weapon.requiresTarget && weapon.id !== 'girder') {
+          // 1. Ballistic Trajectory Arc Simulation (Dotted Physics Guide)
+          if (
+            weapon.behavior === 'BALLISTIC' ||
+            weapon.behavior === 'BOUNCING_TIMER' ||
+            weapon.id === 'bazooka' ||
+            weapon.id === 'grenade' ||
+            weapon.id === 'banana_bomb' ||
+            weapon.id === 'holy_grenade'
+          ) {
+            const basePower = activeSlug.isChargingPower ? activeSlug.aimPower : Math.max(30, activeSlug.aimPower);
+            const v0 = (basePower / 100) * 15.5;
+            let simX = originX;
+            let simY = originY;
+            let simVx = Math.cos(rad) * v0 * dir;
+            let simVy = -Math.sin(rad) * v0;
+
+            const maxSteps = 16;
+            for (let step = 1; step <= maxSteps; step++) {
+              simX += simVx * 1.6;
+              simY += simVy * 1.6;
+              simVy += 0.35 * 1.6; // Gravity
+              if (curState.config.windEnabled && typeof curState.wind === 'number') {
+                simVx += (curState.wind / 100) * 0.04 * 1.6;
+              }
+
+              if (simX < 0 || simX >= terrain.data.width || simY >= terrain.data.waterLevel) break;
+              if (terrain.isSolid(Math.floor(simX), Math.floor(simY))) break;
+
+              const progress = step / maxSteps;
+              const alpha = Math.max(0.12, 0.85 - progress * 0.7);
+              const dotSize = Math.max(1.5, 3.2 - progress * 1.5);
+
+              ctx.save();
+              ctx.fillStyle = activeSlug.isChargingPower ? `rgba(239, 68, 68, ${alpha})` : `rgba(250, 204, 21, ${alpha})`;
+              ctx.beginPath();
+              ctx.arc(simX, simY, dotSize, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+
+          // 2. Classic Worms Animated Aiming Reticle (Crosshair)
+          const reticleDist = 58;
+          const retX = originX + Math.cos(rad) * reticleDist * dir;
+          const retY = originY - Math.sin(rad) * reticleDist;
+
+          ctx.save();
+          ctx.translate(retX, retY);
+
+          // Subtle connecting laser trace from barrel to crosshair
+          ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.45)' : 'rgba(250, 204, 21, 0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([3, 3]);
           ctx.beginPath();
-          ctx.moveTo(activeSlug.x, activeSlug.y - 8);
-          ctx.lineTo(targetX, targetY);
+          ctx.moveTo(-(retX - originX), -(retY - originY));
+          ctx.lineTo(0, 0);
           ctx.stroke();
           ctx.setLineDash([]);
+
+          // Outer Pulsing Glow Circle
+          const pulse = Math.sin(animTime * 6) * 1.5;
+          const outerR = 14 + pulse;
+          ctx.strokeStyle = activeSlug.isChargingPower ? '#ef4444' : '#facc15';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // 4 Cardinal Precision Ticks (Crosshair +)
+          const tickLen = 6;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          // Top
+          ctx.moveTo(0, -outerR - 2);
+          ctx.lineTo(0, -outerR - 2 - tickLen);
+          // Bottom
+          ctx.moveTo(0, outerR + 2);
+          ctx.lineTo(0, outerR + 2 + tickLen);
+          // Left
+          ctx.moveTo(-outerR - 2, 0);
+          ctx.lineTo(-outerR - 2 - tickLen, 0);
+          // Right
+          ctx.moveTo(outerR + 2, 0);
+          ctx.lineTo(outerR + 2 + tickLen, 0);
+          ctx.stroke();
+
+          // Rotating Inner Segmented Ring
+          ctx.save();
+          ctx.rotate(animTime * 2);
+          ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.8)' : 'rgba(254, 240, 138, 0.8)';
+          ctx.lineWidth = 1.5;
+          for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            ctx.arc(0, 0, 7.5, (i * Math.PI) / 2 + 0.25, ((i + 1) * Math.PI) / 2 - 0.25);
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          // Center Glowing Bullseye Dot
+          ctx.fillStyle = activeSlug.isChargingPower ? '#ef4444' : '#fde047';
+          ctx.beginPath();
+          ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Angle Readout Floating Glass Badge
+          const badgeX = dir === 1 ? 18 : -18;
+          const badgeY = -16;
+          const badgeText = `${Math.round(activeSlug.aimAngle)}°`;
+
+          ctx.font = 'bold 9.5px monospace';
+          const textW = ctx.measureText(badgeText).width;
+          const padW = textW + 10;
+          const padH = 14;
+
+          ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
+          ctx.strokeStyle = activeSlug.isChargingPower ? '#ef4444' : '#eab308';
+          ctx.lineWidth = 1;
+          ctx.fillRect(badgeX - padW / 2, badgeY - padH / 2, padW, padH);
+          ctx.strokeRect(badgeX - padW / 2, badgeY - padH / 2, padW, padH);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(badgeText, badgeX, badgeY);
+
+          ctx.restore();
         }
 
-        // Render Power Charging Bar Gauge & Percentage Text (Visible when actively charging!)
+        // 3. Ninja Rope Aim Guide & Anchor Preview
+        if (isMyTurn && weapon.id === 'ninja_rope') {
+          const maxDist = 550;
+          let hitX = originX + Math.cos(rad) * maxDist * dir;
+          let hitY = originY - Math.sin(rad) * maxDist;
+          let hasSolid = false;
+
+          for (let d = 10; d <= maxDist; d += 4) {
+            const tx = originX + Math.cos(rad) * d * dir;
+            const ty = originY - Math.sin(rad) * d;
+            if (tx < 0 || tx >= terrain.data.width || ty < 0) break;
+            if (terrain.isSolid(Math.floor(tx), Math.floor(ty))) {
+              hitX = tx;
+              hitY = ty;
+              hasSolid = true;
+              break;
+            }
+          }
+
+          ctx.save();
+          ctx.strokeStyle = hasSolid ? '#38bdf8' : '#71717a';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(originX, originY);
+          ctx.lineTo(hitX, hitY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          if (hasSolid) {
+            ctx.strokeStyle = '#38bdf8';
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+            ctx.beginPath();
+            ctx.arc(hitX, hitY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        // 4. Girder Hologram Blueprint Preview
+        if (isMyTurn && weapon.id === 'girder') {
+          const targetPt = lockedTargetRef.current || mousePosRef.current;
+          const length = 110;
+          const thickness = 14;
+          const angleDeg = activeSlug.aimAngle || 0;
+          const gRad = (angleDeg * Math.PI) / 180;
+
+          ctx.save();
+          ctx.translate(targetPt.x, targetPt.y);
+          ctx.rotate(gRad);
+
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 2]);
+          ctx.fillRect(-length / 2, -thickness / 2, length, thickness);
+          ctx.strokeRect(-length / 2, -thickness / 2, length, thickness);
+          ctx.setLineDash([]);
+
+          // Center Placement Pivot Cross
+          ctx.strokeStyle = '#facc15';
+          ctx.beginPath();
+          ctx.moveTo(-6, 0);
+          ctx.lineTo(6, 0);
+          ctx.moveTo(0, -6);
+          ctx.lineTo(0, 6);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // 5. Power Charging Bar Gauge & Glowing Percentage Readout
         if (activeSlug.isChargingPower) {
-          const barW = 40;
-          const barH = 6;
+          const barW = 44;
+          const barH = 7;
           const barX = activeSlug.x - barW / 2;
-          const barY = activeSlug.y - 34;
+          const barY = activeSlug.y - 36;
 
+          ctx.save();
           ctx.fillStyle = '#09090b';
-          ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+          ctx.fillRect(barX - 1.5, barY - 1.5, barW + 3, barH + 3);
 
-          const pct = Math.min(1, activeSlug.aimPower / 100);
+          const pct = Math.min(1, Math.max(0.05, activeSlug.aimPower / 100));
           const pGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
           pGrad.addColorStop(0, '#22c55e');
           pGrad.addColorStop(0.5, '#eab308');
@@ -1893,39 +2084,89 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.lineWidth = 1;
           ctx.strokeRect(barX, barY, barW, barH);
 
-          // Percentage Text
+          // Numeric Percentage Badge
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 9px monospace';
+          ctx.font = 'bold 9.5px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(`${Math.round(activeSlug.aimPower)}%`, activeSlug.x, barY - 3);
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(`⚡ ${Math.round(activeSlug.aimPower)}%`, activeSlug.x, barY - 3);
+          ctx.restore();
         }
 
-        // Homing Target Crosshair Reticle (for weapons requiring a target!)
-        const weapon = getWeapon(activeSlug.selectedWeaponId);
+        // 6. Tactical Target Reticle (for weapons requiring a target!)
         if (weapon.requiresTarget) {
           const targetPt = lockedTargetRef.current || mousePosRef.current;
+          const isLocked = !!lockedTargetRef.current;
 
           ctx.save();
-          ctx.strokeStyle = lockedTargetRef.current ? '#ef4444' : '#3b82f6';
+          ctx.translate(targetPt.x, targetPt.y);
+
+          const retColor = isLocked ? '#ef4444' : '#38bdf8';
+
+          // Pulsing Outer Radar Ping Ring
+          const pingR = 18 + ((animTime * 18) % 16);
+          const pingAlpha = Math.max(0, 1 - (pingR - 18) / 16);
+          ctx.strokeStyle = isLocked ? `rgba(239, 68, 68, ${pingAlpha})` : `rgba(56, 189, 248, ${pingAlpha})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, pingR, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Main Reticle Ring
+          ctx.strokeStyle = retColor;
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(targetPt.x, targetPt.y, 14, 0, Math.PI * 2);
+          ctx.arc(0, 0, 16, 0, Math.PI * 2);
           ctx.stroke();
 
+          // 4 Tactical Corner Brackets
+          const bSize = 22;
+          const bLen = 6;
+          ctx.lineWidth = 2.2;
+          // Top-Left
           ctx.beginPath();
-          ctx.moveTo(targetPt.x - 20, targetPt.y);
-          ctx.lineTo(targetPt.x + 20, targetPt.y);
-          ctx.moveTo(targetPt.x, targetPt.y - 20);
-          ctx.lineTo(targetPt.x, targetPt.y + 20);
+          ctx.moveTo(-bSize, -bSize + bLen);
+          ctx.lineTo(-bSize, -bSize);
+          ctx.lineTo(-bSize + bLen, -bSize);
+          // Top-Right
+          ctx.moveTo(bSize - bLen, -bSize);
+          ctx.lineTo(bSize, -bSize);
+          ctx.lineTo(bSize, -bSize + bLen);
+          // Bottom-Left
+          ctx.moveTo(-bSize, bSize - bLen);
+          ctx.lineTo(-bSize, bSize);
+          ctx.lineTo(-bSize + bLen, bSize);
+          // Bottom-Right
+          ctx.moveTo(bSize - bLen, bSize);
+          ctx.lineTo(bSize, bSize);
+          ctx.lineTo(bSize, bSize - bLen);
           ctx.stroke();
 
-          ctx.fillStyle = lockedTargetRef.current ? '#ef4444' : '#60a5fa';
+          // Center Crosshairs
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(-10, 0);
+          ctx.lineTo(10, 0);
+          ctx.moveTo(0, -10);
+          ctx.lineTo(0, 10);
+          ctx.stroke();
+
+          // Center precision dot
+          ctx.fillStyle = retColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Tactical HUD Status Label
+          ctx.fillStyle = isLocked ? '#ef4444' : '#38bdf8';
           ctx.font = 'bold 10px Outfit, sans-serif';
           ctx.textAlign = 'center';
-          const label = lockedTargetRef.current
-            ? '🎯 Cible verrouillée ! (Clic gauche pour tirer)'
-            : '🎯 Clic Droit = Placer Cible | Clic Gauche = Tirer';
-          ctx.fillText(label, targetPt.x, targetPt.y - 22);
+          ctx.textBaseline = 'bottom';
+          const label = isLocked
+            ? '🎯 CIBLE VERROUILLÉE (CLIC GAUCHE = TIRER)'
+            : '🎯 POSITIONNER CIBLE (CLIC DROIT / GAUCHE)';
+          ctx.fillText(label, 0, -bSize - 5);
+
           ctx.restore();
         }
       }
