@@ -17,6 +17,31 @@ const TAG_STRING = 0x07;
 const TAG_ARRAY = 0x08;
 const TAG_OBJECT = 0x09;
 const TAG_UNDEFINED = 0x0a;
+const TAG_FLOAT32 = 0x0b;
+const TAG_KEY_INDEX = 0x0c;
+
+// High-speed static dictionary for common delta keys (1 byte instead of 5-15 bytes per key)
+const KNOWN_KEYS = [
+  // State keys
+  'phase', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'wind',
+  'slugs', 'helicopters', 'mines', 'projectiles', 'explosions', 'floatingDamages',
+  'supplyCrates', 'girders',
+  // Slug keys
+  'i', 'idx', 'x', 'y', 'vx', 'vy', 'hp', 'f', 'a', 'p', 'c', 'w', 'al', 'pl', 'v', 'tp', 'rs',
+  // Rope keys
+  'hx', 'hy', 'l',
+  // Vehicle keys
+  'id', 'facing', 'pilotSlugId',
+  // Projectile keys
+  'weaponId', 'radius', 'fuseTimerMs', 'bounces', 'windAffected', 'ownerSlugId', 'targetPoint', 'behaviorData',
+  // Explosion / Damage / Crate keys
+  'damage', 'createdAt', 'isLanded', 'crateType', 'healAmount', 'isTriggered', 'text', 'color',
+];
+
+const KEY_TO_INDEX: Record<string, number> = {};
+for (let i = 0; i < KNOWN_KEYS.length; i++) {
+  KEY_TO_INDEX[KNOWN_KEYS[i]] = i;
+}
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -81,10 +106,11 @@ function writeValue(val: any): void {
         return;
       }
     }
-    ensureCapacity(9);
-    sharedView.setUint8(offset++, TAG_FLOAT64);
-    sharedView.setFloat64(offset, val, true);
-    offset += 8;
+    // High-precision compact Float32 for game coordinates & velocities (5 bytes vs 9 bytes)
+    ensureCapacity(5);
+    sharedView.setUint8(offset++, TAG_FLOAT32);
+    sharedView.setFloat32(offset, val, true);
+    offset += 4;
     return;
   }
 
@@ -118,12 +144,22 @@ function writeValue(val: any): void {
     offset += 2;
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      const keyBytes = encoder.encode(key);
-      ensureCapacity(3 + keyBytes.length);
-      sharedView.setUint16(offset, keyBytes.length, true);
-      offset += 2;
-      sharedU8.set(keyBytes, offset);
-      offset += keyBytes.length;
+      const keyIdx = KEY_TO_INDEX[key];
+      if (keyIdx !== undefined) {
+        // Fast dictionary key (1 byte index)
+        ensureCapacity(2);
+        sharedView.setUint8(offset++, TAG_KEY_INDEX);
+        sharedView.setUint8(offset++, keyIdx);
+      } else {
+        // Fallback string key
+        const keyBytes = encoder.encode(key);
+        ensureCapacity(4 + keyBytes.length);
+        sharedView.setUint8(offset++, TAG_STRING);
+        sharedView.setUint16(offset, keyBytes.length, true);
+        offset += 2;
+        sharedU8.set(keyBytes, offset);
+        offset += keyBytes.length;
+      }
 
       writeValue(val[key]);
     }
@@ -158,6 +194,11 @@ function readValue(view: DataView, u8: Uint8Array, ptr: { offset: number }): any
       ptr.offset += 4;
       return val;
     }
+    case TAG_FLOAT32: {
+      const val = Math.round(view.getFloat32(ptr.offset, true) * 1000) / 1000;
+      ptr.offset += 4;
+      return val;
+    }
     case TAG_FLOAT64: {
       const val = view.getFloat64(ptr.offset, true);
       ptr.offset += 8;
@@ -184,11 +225,25 @@ function readValue(view: DataView, u8: Uint8Array, ptr: { offset: number }): any
       ptr.offset += 2;
       const obj: Record<string, any> = {};
       for (let i = 0; i < count; i++) {
-        const keyLen = view.getUint16(ptr.offset, true);
-        ptr.offset += 2;
-        const keyBytes = u8.subarray(ptr.offset, ptr.offset + keyLen);
-        ptr.offset += keyLen;
-        const key = decoder.decode(keyBytes);
+        let key: string;
+        const keyTag = view.getUint8(ptr.offset++);
+        if (keyTag === TAG_KEY_INDEX) {
+          const keyIdx = view.getUint8(ptr.offset++);
+          key = KNOWN_KEYS[keyIdx] || `_k${keyIdx}`;
+        } else if (keyTag === TAG_STRING) {
+          const keyLen = view.getUint16(ptr.offset, true);
+          ptr.offset += 2;
+          const keyBytes = u8.subarray(ptr.offset, ptr.offset + keyLen);
+          ptr.offset += keyLen;
+          key = decoder.decode(keyBytes);
+        } else {
+          // Legacy format compatibility
+          const keyLen = view.getUint16(ptr.offset - 1, true);
+          ptr.offset += 1;
+          const keyBytes = u8.subarray(ptr.offset, ptr.offset + keyLen);
+          ptr.offset += keyLen;
+          key = decoder.decode(keyBytes);
+        }
         obj[key] = readValue(view, u8, ptr);
       }
       return obj;
