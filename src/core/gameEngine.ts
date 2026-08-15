@@ -302,6 +302,7 @@ export class SlugWarsEngine {
       this.state.activeTeamId = this.state.teams[0].id;
       this.state.activeSlugId = this.getNextSlugForTeam(this.state.activeTeamId) || this.state.slugs[0].id;
       this.state.turnTimer = this.state.config.turnDuration;
+      this.randomizeWind();
       this.addLog('Toutes les limaces sont en place ! Le combat commence !', 'info');
       sfx.play('victory');
       return true;

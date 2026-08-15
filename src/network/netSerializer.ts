@@ -117,6 +117,10 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
   if (teamDeltas.length > 0) delta.teams = teamDeltas;
 
+  if (!prevState || prevState.wind !== currentState.wind) {
+    delta.wind = currentState.wind;
+  }
+
   // Slug Deltas (only changed fields + ultra-compact 1-byte integer index)
   const slugDeltas: CompactSlugDelta[] = [];
   for (let sIdx = 0; sIdx < currentState.slugs.length; sIdx++) {
@@ -393,11 +397,13 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 export function isDeltaEmpty(delta: CompactStateDelta): boolean {
   return (
     delta.phase === undefined &&
+    delta.winnerTeamId === undefined &&
     delta.activeTeamId === undefined &&
     delta.activeSlugId === undefined &&
     delta.turnTimer === undefined &&
     delta.retreatTimer === undefined &&
     delta.wind === undefined &&
+    (!delta.teams || delta.teams.length === 0) &&
     (!delta.slugs || delta.slugs.length === 0) &&
     (!delta.projectiles || delta.projectiles.length === 0) &&
     (!delta.explosions || delta.explosions.length === 0) &&
