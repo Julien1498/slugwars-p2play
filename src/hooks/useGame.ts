@@ -34,13 +34,18 @@ export function useGame(options?: {
     joinGame,
   } = p2p;
 
-  const engineRef = useRef<SlugWarsEngine>(new SlugWarsEngine());
+  const engineRef = useRef<SlugWarsEngine>(null!);
+  if (!engineRef.current) {
+    engineRef.current = new SlugWarsEngine();
+  }
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const prevMapKeyRef = useRef<string | null>(null);
   const lastSentStateRef = useRef<GameState | null>(null);
 
   const syncState = useCallback(() => {
-    setGameState({ ...engineRef.current.state });
+    if (engineRef.current) {
+      setGameState({ ...engineRef.current.state });
+    }
   }, []);
 
   useEffect(() => {
@@ -78,8 +83,7 @@ export function useGame(options?: {
       const activeId = myPeerId || peerManager.myPeerId;
       if (!activeId) return;
 
-      const pendingSfx = engineRef.current.drainPendingSfx();
-      const delta = buildStateDelta(lastSentStateRef.current, state, pendingSfx);
+      const delta = buildStateDelta(lastSentStateRef.current, state);
       if (isDeltaEmpty(delta)) return; // 100% Zero-bandwidth when idle!
 
       lastSentStateRef.current = JSON.parse(JSON.stringify(state));
@@ -261,15 +265,20 @@ export function useGame(options?: {
     return () => presence.dispose();
   }, [isHost, peerManager, handleHostAction, broadcastState]);
 
+  const knownProjIdsRef = useRef<Set<string>>(new Set());
+  const knownExplosionIdsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsRef = useRef<Set<string>>(new Set());
+  const knownCrateIdsRef = useRef<Set<string>>(new Set());
+  const knownMineTriggerIdsRef = useRef<Set<string>>(new Set());
   const prevPhaseRef = useRef<string>('LOBBY');
 
-  // Set guest state / delta receiver callback with sound effects and terrain carving
+  // Set guest state / delta receiver callback with local sound effects and terrain carving
   useEffect(() => {
     if (isHost) return;
     peerManager.onStateReceived = (payload: any) => {
       if (!payload) return;
       const engine = engineRef.current;
+      if (!engine) return;
 
       let delta: CompactStateDelta | null = null;
       if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {
@@ -285,7 +294,91 @@ export function useGame(options?: {
       netMetrics.recordDownload(payload, delta || payload);
 
       if (delta) {
-        // Apply state delta + 100% synchronized SFX playback
+        // Sound effects for Guest on incoming new projectiles or bounces
+        if (delta.projectiles && Array.isArray(delta.projectiles)) {
+          for (const p of delta.projectiles) {
+            if (p.id && !knownProjIdsRef.current.has(p.id)) {
+              knownProjIdsRef.current.add(p.id);
+              if (p.weaponId === 'super_sheep') {
+                sfx.play('baah');
+              } else if (p.weaponId === 'baseball_bat') {
+                sfx.play('melee');
+              } else if (p.weaponId !== 'teleport') {
+                sfx.play('fire');
+              }
+            } else if (p.id && p.bounces) {
+              const existing = engine.state.projectiles.find((ep) => ep.id === p.id);
+              if (existing && p.vx !== undefined && Math.sign(p.vx) !== Math.sign(existing.vx) && Math.abs(p.vx - existing.vx) > 1.5) {
+                sfx.play('bounce');
+              }
+            }
+          }
+        }
+
+        // Sound effects for Guest on incoming explosions
+        if (delta.explosions && Array.isArray(delta.explosions)) {
+          for (const ex of delta.explosions) {
+            if (ex.id && !knownExplosionIdsRef.current.has(ex.id)) {
+              knownExplosionIdsRef.current.add(ex.id);
+              sfx.play('explosion');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Supply Crates dropped
+        if (delta.supplyCrates && Array.isArray(delta.supplyCrates)) {
+          for (const c of delta.supplyCrates) {
+            if (c.id && !knownCrateIdsRef.current.has(c.id)) {
+              knownCrateIdsRef.current.add(c.id);
+              sfx.play('airdrop');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Mines triggered
+        if (delta.mines && Array.isArray(delta.mines)) {
+          for (const m of delta.mines) {
+            if (m.id && m.isTriggered && !knownMineTriggerIdsRef.current.has(m.id)) {
+              knownMineTriggerIdsRef.current.add(m.id);
+              sfx.play('tick');
+            }
+          }
+        }
+
+        // Sound effects for Guest on Slugs (Placement, Jump, Teleport, Rope, Splash)
+        if (delta.slugs && Array.isArray(delta.slugs)) {
+          const waterLevel = engine.terrain.data.waterLevel;
+          for (const dSlug of delta.slugs) {
+            const slug = dSlug.idx !== undefined ? engine.state.slugs[dSlug.idx] : engine.state.slugs.find((s) => s.id === dSlug.i);
+            if (slug) {
+              if (dSlug.pl && !slug.isPlaced) {
+                sfx.play('jump');
+              }
+              if (dSlug.rs && !slug.ropeState) {
+                sfx.play('rope_shoot');
+              }
+              if (dSlug.vy !== undefined && dSlug.vy < -3 && Math.abs(slug.vy) < 0.5 && !slug.inVehicleId) {
+                sfx.play('jump');
+              }
+              if (dSlug.x !== undefined && Math.hypot(dSlug.x - slug.x, (dSlug.y || slug.y) - slug.y) > 120) {
+                sfx.play('teleport');
+              }
+              if (dSlug.y !== undefined && dSlug.y >= waterLevel && slug.y < waterLevel) {
+                sfx.play('splash');
+              }
+            }
+          }
+        }
+
+        // Victory sound on Game Over
+        if (delta.phase && delta.phase !== prevPhaseRef.current) {
+          if (delta.phase === 'GAME_OVER') {
+            sfx.play('victory');
+          }
+          prevPhaseRef.current = delta.phase;
+        }
+
+        // Apply state delta
         applyStateDelta(engine.state, delta);
 
         // Stamp newly received girders into guest's terrain grid
@@ -310,6 +403,7 @@ export function useGame(options?: {
                   }
                 }
               }
+              sfx.play('girder');
             }
           }
         }

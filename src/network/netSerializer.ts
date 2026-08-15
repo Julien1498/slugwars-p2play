@@ -1,5 +1,4 @@
 import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, Particle, PlacedGirder, SupplyCrate } from '../core/types';
-import { sfx, SoundEffectType } from '../core/audio';
 
 export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
   if (val === undefined || val === null || isNaN(val)) return 0;
@@ -42,7 +41,6 @@ export interface CompactStateDelta {
   turnTimer?: number;
   retreatTimer?: number | null;
   wind?: number;
-  sfx?: SoundEffectType[];
   slugs?: CompactSlugDelta[];
   helicopters?: Partial<HelicopterVehicle>[];
   mines?: Partial<Landmine>[];
@@ -52,12 +50,8 @@ export interface CompactStateDelta {
   girders?: PlacedGirder[];
 }
 
-export function buildStateDelta(prevState: GameState | null, currentState: GameState, pendingSfx?: SoundEffectType[]): CompactStateDelta {
+export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
   const delta: CompactStateDelta = {};
-
-  if (pendingSfx && pendingSfx.length > 0) {
-    delta.sfx = pendingSfx;
-  }
 
   const isPhaseChanged = !prevState || prevState.phase !== currentState.phase;
   const isTurnChanged = !prevState || prevState.activeTeamId !== currentState.activeTeamId || prevState.activeSlugId !== currentState.activeSlugId;
@@ -257,13 +251,6 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 }
 
 export function applyStateDelta(localState: GameState, delta: CompactStateDelta): void {
-  // 100% Centralized Sound Effect Stream Synchronization
-  if (delta.sfx && Array.isArray(delta.sfx)) {
-    for (const s of delta.sfx) {
-      sfx.play(s, false);
-    }
-  }
-
   if (delta.phase) {
     localState.phase = delta.phase as any;
     if (delta.phase !== 'RETREAT') {
@@ -361,7 +348,6 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     delta.turnTimer === undefined &&
     delta.retreatTimer === undefined &&
     delta.wind === undefined &&
-    (!delta.sfx || delta.sfx.length === 0) &&
     (!delta.slugs || delta.slugs.length === 0) &&
     (!delta.projectiles || delta.projectiles.length === 0) &&
     (!delta.explosions || delta.explosions.length === 0) &&
