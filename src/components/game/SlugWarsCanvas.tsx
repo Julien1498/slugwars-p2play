@@ -2366,7 +2366,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           className="px-2.5 h-7 flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-bold rounded-lg border border-zinc-600/50 transition text-xs font-mono"
           title="Recentrer la vue & Zoom 100% (Touche C)"
         >
-          🎯 100% [C]
+          🎯 {Math.round(zoomLevel * 100)}% [C]
         </button>
         <button
           onClick={(e) => {
