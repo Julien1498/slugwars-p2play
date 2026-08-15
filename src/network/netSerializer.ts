@@ -1,4 +1,5 @@
-import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, FloatingDamage, Particle, PlacedGirder, SupplyCrate } from '../core/types';
+import { GameState, Slug, Landmine, HelicopterVehicle, ActiveProjectile, ExplosionEvent, Particle, PlacedGirder, SupplyCrate } from '../core/types';
+import { sfx, SoundEffectType } from '../core/audio';
 
 export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
   if (val === undefined || val === null || isNaN(val)) return 0;
@@ -41,18 +42,22 @@ export interface CompactStateDelta {
   turnTimer?: number;
   retreatTimer?: number | null;
   wind?: number;
+  sfx?: SoundEffectType[];
   slugs?: CompactSlugDelta[];
   helicopters?: Partial<HelicopterVehicle>[];
   mines?: Partial<Landmine>[];
   projectiles?: Partial<ActiveProjectile>[];
   explosions?: Partial<ExplosionEvent>[];
-  floatingDamages?: FloatingDamage[];
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
 }
 
-export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
+export function buildStateDelta(prevState: GameState | null, currentState: GameState, pendingSfx?: SoundEffectType[]): CompactStateDelta {
   const delta: CompactStateDelta = {};
+
+  if (pendingSfx && pendingSfx.length > 0) {
+    delta.sfx = pendingSfx;
+  }
 
   const isPhaseChanged = !prevState || prevState.phase !== currentState.phase;
   const isTurnChanged = !prevState || prevState.activeTeamId !== currentState.activeTeamId || prevState.activeSlugId !== currentState.activeSlugId;
@@ -204,24 +209,16 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     }
   }
 
-  // Point 5: Explosions & Floating Damages
+  // Point 5: Explosions Sync (compact - animations & debris are 100% client-side)
   if (currentState.explosions.length > 0) {
     delta.explosions = currentState.explosions.map((ex) => ({
       id: ex.id,
       x: quantizeFloat(ex.x, 2),
       y: quantizeFloat(ex.y, 2),
       radius: ex.radius,
-      damage: ex.damage,
-      createdAt: ex.createdAt,
     }));
   } else if (prevState && prevState.explosions.length > 0) {
     delta.explosions = [];
-  }
-
-  if (currentState.floatingDamages && currentState.floatingDamages.length > 0) {
-    delta.floatingDamages = currentState.floatingDamages;
-  } else if (prevState && prevState.floatingDamages && prevState.floatingDamages.length > 0) {
-    delta.floatingDamages = [];
   }
 
   // Helicopters: strictly sync only changed fields (don't resend static hp, facing, pilotId every tick)
@@ -260,6 +257,13 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 }
 
 export function applyStateDelta(localState: GameState, delta: CompactStateDelta): void {
+  // 100% Centralized Sound Effect Stream Synchronization
+  if (delta.sfx && Array.isArray(delta.sfx)) {
+    for (const s of delta.sfx) {
+      sfx.play(s, false);
+    }
+  }
+
   if (delta.phase) {
     localState.phase = delta.phase as any;
     if (delta.phase !== 'RETREAT') {
@@ -327,10 +331,6 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     localState.explosions = delta.explosions as any;
   }
 
-  if (delta.floatingDamages !== undefined) {
-    localState.floatingDamages = delta.floatingDamages as any;
-  }
-
   if (delta.mines !== undefined) {
     localState.mines = delta.mines as any;
   }
@@ -361,10 +361,10 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     delta.turnTimer === undefined &&
     delta.retreatTimer === undefined &&
     delta.wind === undefined &&
+    (!delta.sfx || delta.sfx.length === 0) &&
     (!delta.slugs || delta.slugs.length === 0) &&
     (!delta.projectiles || delta.projectiles.length === 0) &&
     (!delta.explosions || delta.explosions.length === 0) &&
-    (!delta.floatingDamages || delta.floatingDamages.length === 0) &&
     (!delta.girders || delta.girders.length === 0) &&
     (!delta.supplyCrates || delta.supplyCrates.length === 0) &&
     (!delta.mines || delta.mines.length === 0) &&
