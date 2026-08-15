@@ -340,12 +340,15 @@ export function useGame(options?: {
           }
         }
 
-        // Sound effects for Guest on Slugs (Jump, Teleport, Rope, Splash)
+        // Sound effects for Guest on Slugs (Placement, Jump, Teleport, Rope, Splash)
         if (delta.slugs && Array.isArray(delta.slugs)) {
           const waterLevel = engine.terrain.data.waterLevel;
           for (const dSlug of delta.slugs) {
             const slug = dSlug.idx !== undefined ? engine.state.slugs[dSlug.idx] : engine.state.slugs.find((s) => s.id === dSlug.i);
             if (slug) {
+              if (dSlug.pl && !slug.isPlaced) {
+                sfx.play('jump');
+              }
               if (dSlug.rs && !slug.ropeState) {
                 sfx.play('rope_shoot');
               }
