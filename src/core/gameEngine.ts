@@ -909,47 +909,91 @@ export class SlugWarsEngine {
           alpha += 0.15;
         }
 
+        const prevAngle = rope.angleRad;
+        const prevLength = rope.length;
+
         // Climb up (W / Z / ArrowUp) or Descend down (S / ArrowDown)
+        let targetLength = rope.length;
         if (activeSlug.steeringDir === 'left') {
-          rope.length = Math.max(25, rope.length - 4);
+          targetLength = Math.max(25, rope.length - 4);
         } else if (activeSlug.steeringDir === 'right') {
-          rope.length = Math.min(250, rope.length + 4);
+          targetLength = Math.min(250, rope.length + 4);
         }
 
-        const prevAngle = rope.angleRad;
         rope.angularVelocity = (rope.angularVelocity + alpha) * 0.993;
-        rope.angleRad += rope.angularVelocity;
+        const targetAngle = prevAngle + rope.angularVelocity;
 
-        let newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
-        let newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+        // Continuous Collision Detection (CCD):
+        // Micro-step along the circular pendulum arc to detect wall/obstacle collision before clipping!
+        const angleDiff = targetAngle - prevAngle;
+        const lengthDiff = targetLength - prevLength;
+        const arcDist = Math.abs(angleDiff) * targetLength;
+        const totalDist = arcDist + Math.abs(lengthDiff);
+        const subSteps = Math.max(1, Math.min(16, Math.ceil(totalDist / 2.0)));
 
-        // Check if slug body collides with solid terrain (wall/ceiling/ground)
-        const isBodySolid =
-          this.terrain.isSolid(newX, newY - 6) ||
-          this.terrain.isSolid(newX - 6, newY - 6) ||
-          this.terrain.isSolid(newX + 6, newY - 6) ||
-          this.terrain.isSolid(newX, newY - 14) ||
-          this.terrain.isSolid(newX, newY + 2);
+        let finalAngle = prevAngle;
+        let finalLength = prevLength;
+        let finalX = rope.hookX + Math.sin(prevAngle) * prevLength;
+        let finalY = rope.hookY + Math.cos(prevAngle) * prevLength;
+        let hitWall = false;
 
-        if (isBodySolid) {
-          // Bounce off wall with elastic loss
-          const wasFast = Math.abs(rope.angularVelocity) > 0.04;
-          rope.angularVelocity = -rope.angularVelocity * 0.45;
-          rope.angleRad = prevAngle + rope.angularVelocity;
+        for (let s = 1; s <= subSteps; s++) {
+          const t = s / subSteps;
+          const stepAngle = prevAngle + angleDiff * t;
+          const stepLength = prevLength + lengthDiff * t;
 
-          newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
-          newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          const stepX = rope.hookX + Math.sin(stepAngle) * stepLength;
+          const stepY = rope.hookY + Math.cos(stepAngle) * stepLength;
 
-          // If still solid after rebound (e.g. descending into ground), retract rope slightly
-          if (this.terrain.isSolid(newX, newY) || this.terrain.isSolid(newX, newY + 2)) {
-            rope.length = Math.max(25, rope.length - 4);
-            newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
-            newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          // Check solid collision around slug body bounding points (feet, head, torso)
+          const isBodySolid =
+            this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY - 6)) ||
+            this.terrain.isSolid(Math.floor(stepX - 6), Math.floor(stepY - 6)) ||
+            this.terrain.isSolid(Math.floor(stepX + 6), Math.floor(stepY - 6)) ||
+            this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY - 14)) ||
+            this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY + 2));
+
+          if (isBodySolid) {
+            hitWall = true;
+            // Stop at last safe open-air position before collision!
+            break;
           }
+
+          finalAngle = stepAngle;
+          finalLength = stepLength;
+          finalX = stepX;
+          finalY = stepY;
+        }
+
+        if (hitWall) {
+          const wasFast = Math.abs(rope.angularVelocity) > 0.04;
+          // Rebound with elastic coefficient
+          rope.angularVelocity = -rope.angularVelocity * 0.45;
+          rope.angleRad = finalAngle;
+          rope.length = finalLength;
 
           if (wasFast) {
             sfx.play('bounce');
           }
+        } else {
+          rope.angleRad = finalAngle;
+          rope.length = finalLength;
+        }
+
+        let newX = finalX;
+        let newY = finalY;
+
+        // De-penetration safety: if slug body is still overlapping rock, push toward hook
+        let ropeDePen = 0;
+        while (
+          ropeDePen < 10 &&
+          (this.terrain.isSolid(Math.floor(newX), Math.floor(newY - 6)) ||
+            this.terrain.isSolid(Math.floor(newX), Math.floor(newY + 2)))
+        ) {
+          rope.length = Math.max(25, rope.length - 2);
+          newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
+          newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
+          ropeDePen++;
         }
 
         if (newY >= this.terrain.data.waterLevel) {

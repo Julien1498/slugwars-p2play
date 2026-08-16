@@ -462,108 +462,133 @@ export function updateSlugPhysics(
   // Apply Horizontal Friction
   slug.vx *= FRICTION;
 
-  // Vertical Movement & Solid Collision (Terrain + Other Slugs!)
-  if (slug.vy > 0) {
-    // Falling Downwards
-    let landedOnSlug = false;
-    for (const other of slugs) {
-      if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
-      const dx = Math.abs(slug.x - other.x);
-      // If landing on top of another slug's head
-      if (dx < 14 && slug.y <= other.y - 14 && slug.y + slug.vy >= other.y - 16) {
-        slug.y = other.y - 16;
-        slug.vy = 0;
-        landedOnSlug = true;
-        break;
-      }
-    }
+  // Continuous Collision Detection (CCD): Sub-step physics when moving at speed to prevent tunneling through walls & terrain!
+  const totalSpeed = Math.hypot(slug.vx, slug.vy);
+  const maxStepSize = 2.0; // Maximum 2 pixels per sub-step
+  const subSteps = Math.max(1, Math.min(16, Math.ceil(totalSpeed / maxStepSize)));
 
-    if (!landedOnSlug) {
-      const feetY = Math.floor(slug.y + slug.vy + 1);
-      if (
-        terrain.isSolid(Math.floor(slug.x), feetY) ||
-        terrain.isSolid(Math.floor(slug.x - 4), feetY) ||
-        terrain.isSolid(Math.floor(slug.x + 4), feetY)
-      ) {
-        slug.vy = 0;
-        // Snap down ONLY if solid ground is within 6px (gentle slopes), NOT steep cliffs!
-        let snapY = Math.floor(slug.y);
-        let foundGround = false;
-        for (let dy = 0; dy <= 6; dy++) {
-          if (
-            terrain.isSolid(Math.floor(slug.x), snapY + dy + 1) ||
-            terrain.isSolid(Math.floor(slug.x - 4), snapY + dy + 1) ||
-            terrain.isSolid(Math.floor(slug.x + 4), snapY + dy + 1)
-          ) {
-            slug.y = snapY + dy;
-            foundGround = true;
+  const stepVx = slug.vx / subSteps;
+  const stepVy = slug.vy / subSteps;
+
+  for (let s = 0; s < subSteps; s++) {
+    // 1. Vertical Sub-step
+    if (Math.abs(stepVy) > 0.001) {
+      if (stepVy > 0) {
+        // Falling Downwards
+        let landedOnSlug = false;
+        for (const other of slugs) {
+          if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
+          const dx = Math.abs(slug.x - other.x);
+          if (dx < 14 && slug.y <= other.y - 14 && slug.y + stepVy >= other.y - 16) {
+            slug.y = other.y - 16;
+            slug.vy = 0;
+            landedOnSlug = true;
             break;
           }
         }
-        if (!foundGround) {
-          slug.y += slug.vy;
+
+        if (!landedOnSlug) {
+          const feetY = Math.floor(slug.y + stepVy + 1);
+          if (
+            terrain.isSolid(Math.floor(slug.x), feetY) ||
+            terrain.isSolid(Math.floor(slug.x - 4), feetY) ||
+            terrain.isSolid(Math.floor(slug.x + 4), feetY)
+          ) {
+            slug.vy = 0;
+            // Snap down to ground surface
+            let snapY = Math.floor(slug.y);
+            for (let dy = 0; dy <= 6; dy++) {
+              if (
+                terrain.isSolid(Math.floor(slug.x), snapY + dy + 1) ||
+                terrain.isSolid(Math.floor(slug.x - 4), snapY + dy + 1) ||
+                terrain.isSolid(Math.floor(slug.x + 4), snapY + dy + 1)
+              ) {
+                slug.y = snapY + dy;
+                break;
+              }
+            }
+            // Stop further vertical sub-steps in this tick
+            break;
+          } else {
+            slug.y += stepVy;
+          }
+        } else {
+          break;
         }
       } else {
-        slug.y += slug.vy;
-      }
-    }
-  } else if (slug.vy < 0) {
-    // Jumping Upwards
-    let hitSlugCeiling = false;
-    for (const other of slugs) {
-      if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
-      const dx = Math.abs(slug.x - other.x);
-      if (dx < 14 && slug.y >= other.y && slug.y + slug.vy <= other.y + 4) {
-        slug.vy = 0;
-        hitSlugCeiling = true;
-        break;
-      }
-    }
+        // Jumping / Knockback Rising Upwards
+        let hitSlugCeiling = false;
+        for (const other of slugs) {
+          if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
+          const dx = Math.abs(slug.x - other.x);
+          if (dx < 14 && slug.y >= other.y && slug.y + stepVy <= other.y + 4) {
+            slug.vy = 0;
+            hitSlugCeiling = true;
+            break;
+          }
+        }
 
-    if (!hitSlugCeiling) {
-      const headY = Math.floor(slug.y + slug.vy - 16);
-      if (terrain.isSolid(Math.floor(slug.x), headY)) {
-        slug.vy = 0;
-      } else {
-        slug.y += slug.vy;
-      }
-    }
-  }
-
-  // Horizontal Movement with Slug-to-Slug Solid Blocking & Terrain Slope Handling
-  if (Math.abs(slug.vx) > 0.05) {
-    const targetX = slug.x + slug.vx;
-
-    // Check collision with other living placed slugs
-    let hitOtherSlug = false;
-    for (const other of slugs) {
-      if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
-      const dx = targetX - other.x;
-      const dy = (slug.y - 8) - (other.y - 8);
-      if (Math.hypot(dx, dy) < 14) {
-        hitOtherSlug = true;
-        break;
+        if (!hitSlugCeiling) {
+          const headY = Math.floor(slug.y + stepVy - 16);
+          if (terrain.isSolid(Math.floor(slug.x), headY)) {
+            slug.vy = 0;
+            break;
+          } else {
+            slug.y += stepVy;
+          }
+        } else {
+          break;
+        }
       }
     }
 
-    if (hitOtherSlug) {
-      slug.vx = 0;
-    } else {
-      let steppedUp = false;
-      for (let step = 0; step <= 5; step++) {
-        const checkY = Math.floor(slug.y - step);
-        if (!terrain.isSolid(Math.floor(targetX), checkY) && !terrain.isSolid(Math.floor(targetX), checkY - 8)) {
-          slug.x = targetX;
-          slug.y = checkY;
-          steppedUp = true;
+    // 2. Horizontal Sub-step
+    if (Math.abs(stepVx) > 0.001) {
+      const targetX = slug.x + stepVx;
+
+      let hitOtherSlug = false;
+      for (const other of slugs) {
+        if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
+        const dx = targetX - other.x;
+        const dy = (slug.y - 8) - (other.y - 8);
+        if (Math.hypot(dx, dy) < 14) {
+          hitOtherSlug = true;
           break;
         }
       }
 
-      if (!steppedUp) {
+      if (hitOtherSlug) {
         slug.vx = 0;
+        break;
+      } else {
+        let steppedUp = false;
+        for (let step = 0; step <= 5; step++) {
+          const checkY = Math.floor(slug.y - step);
+          if (!terrain.isSolid(Math.floor(targetX), checkY) && !terrain.isSolid(Math.floor(targetX), checkY - 8)) {
+            slug.x = targetX;
+            slug.y = checkY;
+            steppedUp = true;
+            break;
+          }
+        }
+
+        if (!steppedUp) {
+          slug.vx = 0;
+          break;
+        }
       }
     }
+  }
+
+  // De-penetration Safety: If slug ever gets stuck inside solid rock (e.g. from explosion debris), push upward to nearest air
+  let dePen = 0;
+  while (
+    dePen < 12 &&
+    terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 4)) &&
+    terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 12))
+  ) {
+    slug.y -= 1;
+    dePen++;
   }
 
   // Check Drowning
