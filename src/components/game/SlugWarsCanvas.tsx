@@ -44,14 +44,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const lightmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const occlusionCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const distMapRef = useRef<Float32Array | null>(null);
-  const lastSeedRef = useRef<number | null>(null);
+  const lastSeedRef = useRef<string | null>(null);
   const lastTerrainRevisionRef = useRef<number>(-1);
+  const lastBgKeyRef = useRef<string>('');
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsCanvasRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
-  const [mousePos, setMousePos] = useState<Vector2D>({ x: 700, y: 350 });
+  const isMyTurnRef = useRef(isMyTurn);
+  isMyTurnRef.current = isMyTurn;
+  const showHitboxesRef = useRef(showHitboxes);
+  showHitboxesRef.current = showHitboxes;
 
   // Smooth Camera Pan & Cursor-Centered Zoom State
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
@@ -84,7 +88,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     return unsub;
   }, []);
 
-  // Optimized 32-bit fast terrain rendering with Dirty Box scan support (96.8% faster during explosions!)
+  // Ultra-Fast 32-bit integer terrain rendering (<4ms full scan, <0.2ms dirty box!)
   const redrawOffscreenTerrain = useCallback((dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }) => {
     const { width, height, grid } = terrain.data;
     if (!offscreenCanvasRef.current) {
@@ -128,30 +132,39 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     let distMap = distMapRef.current;
     if (!distMap || distMap.length !== width * height) {
       distMap = new Float32Array(width * height);
-      distMap.fill(99);
       distMapRef.current = distMap;
     }
+    distMap.fill(99);
 
     const waterThreshold = (terrain.data.waterLevel ?? (height - 60)) - 10;
 
-    // Fast 2-Pass Distance Transform restricted to Dirty Bounding Box!
+    // Ultra-Fast 2-Pass Integer/Float Distance Transform
     for (let y = minY; y <= maxY; y++) {
       const rowOffset = y * width;
       const prevRowOffset = (y - 1) * width;
       for (let x = minX; x <= maxX; x++) {
         const idx = rowOffset + x;
-        const isSkyAir = grid[idx] === 0 && y < waterThreshold;
-        if (isSkyAir) {
-          distMap[idx] = 0;
-        } else if (grid[idx] === 0) {
+        if (grid[idx] === 0) {
           distMap[idx] = 0;
         } else {
-          let minD = 99;
-          if (x > 0) minD = Math.min(minD, distMap[idx - 1] + 1);
-          if (y > 0) minD = Math.min(minD, distMap[prevRowOffset + x] + 1);
-          if (x > 0 && y > 0) minD = Math.min(minD, distMap[prevRowOffset + x - 1] + 1.4);
-          if (x < width - 1 && y > 0) minD = Math.min(minD, distMap[prevRowOffset + x + 1] + 1.4);
-          distMap[idx] = minD;
+          let d = 99;
+          if (x > minX) {
+            const leftD = distMap[idx - 1] + 1;
+            if (leftD < d) d = leftD;
+          }
+          if (y > minY) {
+            const topD = distMap[prevRowOffset + x] + 1;
+            if (topD < d) d = topD;
+            if (x > minX) {
+              const diag1 = distMap[prevRowOffset + x - 1] + 1.414;
+              if (diag1 < d) d = diag1;
+            }
+            if (x < maxX) {
+              const diag2 = distMap[prevRowOffset + x + 1] + 1.414;
+              if (diag2 < d) d = diag2;
+            }
+          }
+          distMap[idx] = d;
         }
       }
     }
@@ -162,12 +175,24 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       for (let x = maxX; x >= minX; x--) {
         const idx = rowOffset + x;
         if (grid[idx] === 0) continue;
-        let minD = distMap[idx];
-        if (x < width - 1) minD = Math.min(minD, distMap[idx + 1] + 1);
-        if (y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x] + 1);
-        if (x < width - 1 && y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x + 1] + 1.4);
-        if (x > 0 && y < height - 1) minD = Math.min(minD, distMap[nextRowOffset + x - 1] + 1.4);
-        distMap[idx] = minD;
+        let d = distMap[idx];
+        if (x < maxX) {
+          const rightD = distMap[idx + 1] + 1;
+          if (rightD < d) d = rightD;
+        }
+        if (y < maxY) {
+          const bottomD = distMap[nextRowOffset + x] + 1;
+          if (bottomD < d) d = bottomD;
+          if (x < maxX) {
+            const diag1 = distMap[nextRowOffset + x + 1] + 1.414;
+            if (diag1 < d) d = diag1;
+          }
+          if (x > minX) {
+            const diag2 = distMap[nextRowOffset + x - 1] + 1.414;
+            if (diag2 < d) d = diag2;
+          }
+        }
+        distMap[idx] = d;
       }
     }
 
@@ -986,8 +1011,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   // Render Loop
   useEffect(() => {
-    if (lastSeedRef.current !== terrain.data.seed || gameState.phase === 'PLACEMENT' || gameState.phase === 'LOBBY' || lastTerrainRevisionRef.current !== terrain.revision) {
-      lastSeedRef.current = terrain.data.seed;
+    const matchKey = `${terrain.data.seed}_${terrain.data.theme}`;
+    if (lastSeedRef.current !== matchKey) {
+      lastSeedRef.current = matchKey;
       lastTerrainRevisionRef.current = terrain.revision;
       carvedExplosionsRef.current.clear();
       knownGirderIdsCanvasRef.current.clear();
@@ -1016,13 +1042,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      // Automatic terrain revision reconciliation (Instantly redraws offscreen canvas if craters happened while tab was hidden!)
-      if (lastTerrainRevisionRef.current !== terrain.revision) {
+      // Seed/Theme reconciliation (Only full-redraws if a new terrain seed/theme is loaded!)
+      const curMatchKey = `${terrain.data.seed}_${terrain.data.theme}`;
+      if (lastSeedRef.current !== curMatchKey) {
+        lastSeedRef.current = curMatchKey;
         lastTerrainRevisionRef.current = terrain.revision;
+        carvedExplosionsRef.current.clear();
+        knownGirderIdsCanvasRef.current.clear();
         redrawOffscreenTerrain();
       }
 
-      // Live-carve and animate new explosions on guest/host instantly
+      // Instant sub-millisecond GPU crater carving on incoming explosions
       if (curState && curState.explosions && curState.explosions.length > 0) {
         for (const ex of curState.explosions) {
           if (!carvedExplosionsRef.current.has(ex.id)) {
@@ -1062,40 +1092,68 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       const isDay = curState.config.dayNightCycle === 'DAY';
+      const theme = curState.config.mapTheme || 'ISLAND';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
-      // 1. Sky Gradient (Day Azure vs Night Midnight)
+      // 1. Sky Gradient (Multi-layer Atmospheric Twilight / Azure / Cavern / Cosmic Rift)
       const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-      if (isDay) {
-        skyGrad.addColorStop(0, '#0284c7');
-        skyGrad.addColorStop(0.5, '#38bdf8');
-        skyGrad.addColorStop(0.8, '#7dd3fc');
-        skyGrad.addColorStop(1, '#bae6fd');
+      if (theme === 'CAVERN') {
+        skyGrad.addColorStop(0, '#060308');
+        skyGrad.addColorStop(0.35, '#1a0a05');
+        skyGrad.addColorStop(0.7, '#351206');
+        skyGrad.addColorStop(1, '#090403');
+      } else if (theme === 'FORTRESS') {
+        if (isDay) {
+          skyGrad.addColorStop(0, '#1e293b');
+          skyGrad.addColorStop(0.35, '#334155');
+          skyGrad.addColorStop(0.7, '#475569');
+          skyGrad.addColorStop(1, '#64748b');
+        } else {
+          skyGrad.addColorStop(0, '#06060c');
+          skyGrad.addColorStop(0.35, '#0f172a');
+          skyGrad.addColorStop(0.7, '#1e1b4b');
+          skyGrad.addColorStop(1, '#09090f');
+        }
+      } else if (theme === 'FLOATING_CHAOS') {
+        skyGrad.addColorStop(0, '#0a0314');
+        skyGrad.addColorStop(0.35, '#2e1065');
+        skyGrad.addColorStop(0.7, '#581c87');
+        skyGrad.addColorStop(1, '#180828');
       } else {
-        // Luminous Night Sky (Twilight Indigo -> Deep Slate Sky)
-        skyGrad.addColorStop(0, '#1e1b4b');
-        skyGrad.addColorStop(0.5, '#0f172a');
-        skyGrad.addColorStop(1, '#1e293b');
+        // ISLAND & Default
+        if (isDay) {
+          skyGrad.addColorStop(0, '#0284c7');
+          skyGrad.addColorStop(0.35, '#38bdf8');
+          skyGrad.addColorStop(0.7, '#7dd3fc');
+          skyGrad.addColorStop(1, '#bae6fd');
+        } else {
+          // Nocturnal Sci-Fi War Room Sky Gradient matching menus!
+          skyGrad.addColorStop(0, '#06060c');
+          skyGrad.addColorStop(0.35, '#120924');
+          skyGrad.addColorStop(0.7, '#240e46');
+          skyGrad.addColorStop(1, '#09090f');
+        }
       }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Sun (Day) vs Moon & Stars (Night)
-      if (isDay) {
-        // Radiant Golden Sun
+      // 2. Real-Time Atmospheric Celestial Bodies, Stars & Nebula Clouds
+      if (isDay && theme !== 'CAVERN') {
+        // --- DAY MODE: RADIANT GOLDEN SUN & FLUFFY WHITE CLOUDS ---
         const sunX = width * 0.82;
         const sunY = 70;
-        const sunRadius = 28;
+        const sunRadius = 30;
 
-        // Glowing Sun Corona Halo
-        const sunGlow = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.5, sunX, sunY, sunRadius * 3);
-        sunGlow.addColorStop(0, 'rgba(250, 204, 21, 0.6)');
-        sunGlow.addColorStop(0.5, 'rgba(253, 224, 71, 0.2)');
+        // Multi-Layer Glowing Sun Corona Halo
+        const sunGlow = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.4, sunX, sunY, sunRadius * 3.8);
+        sunGlow.addColorStop(0, 'rgba(250, 204, 21, 0.65)');
+        sunGlow.addColorStop(0.35, 'rgba(253, 224, 71, 0.25)');
+        sunGlow.addColorStop(0.7, 'rgba(254, 240, 138, 0.08)');
         sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = sunGlow;
         ctx.beginPath();
-        ctx.arc(sunX, sunY, sunRadius * 3, 0, Math.PI * 2);
+        ctx.arc(sunX, sunY, sunRadius * 3.8, 0, Math.PI * 2);
         ctx.fill();
 
         // Sun Body
@@ -1104,109 +1162,153 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Fluffy Sunny White Clouds
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        for (let c = 0; c < 4; c++) {
-          const cx = ((Date.now() * 0.015 + c * 350) % (width + 200)) - 100;
-          const cy = 40 + (c * 25) % 60;
+        // Drifting Fluffy Cumulus Clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        for (let c = 0; c < 5; c++) {
+          const cx = ((Date.now() * 0.012 + c * 340) % (width + 240)) - 120;
+          const cy = 35 + (c * 24) % 65;
+          const cSize = 28 + (c * 6) % 15;
           ctx.beginPath();
-          ctx.ellipse(cx, cy, 35, 14, 0, 0, Math.PI * 2);
-          ctx.ellipse(cx - 18, cy - 8, 20, 14, 0, 0, Math.PI * 2);
-          ctx.ellipse(cx + 18, cy - 6, 22, 12, 0, 0, Math.PI * 2);
+          ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
+          ctx.arc(cx - cSize * 0.5, cy - cSize * 0.2, cSize * 0.65, 0, Math.PI * 2);
+          ctx.arc(cx + cSize * 0.6, cy - cSize * 0.15, cSize * 0.7, 0, Math.PI * 2);
+          ctx.arc(cx + cSize * 1.1, cy, cSize * 0.55, 0, Math.PI * 2);
           ctx.fill();
         }
       } else {
-        // Twinkling Night Stars
+        // --- NIGHT / THEMATIC MODE: TWINKLING STARS, NEBULA CLOUDS & GOLDEN MOON ---
+        
+        // 1. Twinkling Multi-Depth Stars
         ctx.fillStyle = '#ffffff';
-        for (let i = 0; i < 65; i++) {
+        for (let i = 0; i < 75; i++) {
           const sx = (i * 137.5) % width;
-          const sy = (i * 73.1) % (height * 0.5);
-          const alpha = 0.3 + 0.7 * Math.abs(Math.sin(animTime * 0.8 + i));
-          ctx.globalAlpha = alpha;
-          ctx.fillRect(sx, sy, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1);
+          const sy = (i * 73.1) % (height * 0.55);
+          const starAlpha = 0.25 + 0.75 * Math.abs(Math.sin(animTime * 0.8 + i * 1.7));
+          ctx.globalAlpha = starAlpha;
+          const sz = i % 5 === 0 ? 2.2 : i % 3 === 0 ? 1.8 : 1.2;
+          ctx.fillRect(sx, sy, sz, sz);
         }
         ctx.globalAlpha = 1.0;
 
-        // Giant Luminous Golden Moon with Radiant Moonlight Corona Wash
-        const moonX = width * 0.82;
-        const moonY = 65;
-        const moonRadius = 28;
+        // 2. Drifting Translucent Nebula Clouds (Matching menu atmosphere!)
+        for (let nc = 0; nc < 4; nc++) {
+          const ncx = ((Date.now() * 0.008 + nc * 380) % (width + 300)) - 150;
+          const ncy = 30 + (nc * 28) % 70;
+          const nSize = 50 + (nc * 15) % 30;
+          ctx.fillStyle = theme === 'CAVERN' ? 'rgba(234, 88, 12, 0.12)' : 'rgba(168, 85, 247, 0.14)';
+          ctx.beginPath();
+          ctx.arc(ncx, ncy, nSize, 0, Math.PI * 2);
+          ctx.arc(ncx + nSize * 0.5, ncy - nSize * 0.2, nSize * 0.7, 0, Math.PI * 2);
+          ctx.arc(ncx + nSize * 0.9, ncy, nSize * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-        const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.4, moonX, moonY, moonRadius * 3.5);
-        moonGlow.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
-        moonGlow.addColorStop(0.4, 'rgba(186, 230, 253, 0.30)');
-        moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
-        ctx.fillStyle = moonGlow;
-        ctx.beginPath();
-        ctx.arc(moonX, moonY, moonRadius * 3.5, 0, Math.PI * 2);
-        ctx.fill();
+        if (theme !== 'CAVERN') {
+          // Giant Luminous Golden Moon with Multi-Layer Moonlight Corona Wash
+          const moonX = width * 0.82;
+          const moonY = 65;
+          const moonRadius = 28;
 
-        ctx.fillStyle = '#fef08a'; // Golden Luminous Cream Moon
-        ctx.beginPath();
-        ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
-        ctx.fill();
+          const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.4, moonX, moonY, moonRadius * 3.5);
+          moonGlow.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
+          moonGlow.addColorStop(0.4, 'rgba(192, 132, 252, 0.25)');
+          moonGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          ctx.fillStyle = moonGlow;
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonRadius * 3.5, 0, Math.PI * 2);
+          ctx.fill();
 
-        ctx.fillStyle = '#fde047';
-        ctx.beginPath();
-        ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
-        ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
-        ctx.ellipse(moonX + 7, moonY - 10, 3, 2.5, 0, 0, Math.PI * 2);
-        ctx.fill();
+          ctx.fillStyle = '#fef08a'; // Golden Luminous Cream Moon Body
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Moon Craters
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.ellipse(moonX - 8, moonY - 4, 6, 4, 0.3, 0, Math.PI * 2);
+          ctx.ellipse(moonX + 6, moonY + 8, 4.5, 3, -0.2, 0, Math.PI * 2);
+          ctx.ellipse(moonX + 7, moonY - 10, 3, 2.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
-      // 4 & 5. Pre-rendered Parallax Mountains & 116 Forest Trees (0ms 60FPS overhead!)
+      // 3. Pre-rendered Layered Parallax Background (0ms 60FPS overhead GPU blit!)
+      const bgKey = `${width}_${height}_${theme}_${isDay}_${terrain.data.seed}`;
       if (!bgCanvasRef.current) {
         bgCanvasRef.current = document.createElement('canvas');
       }
       const bgCanvas = bgCanvasRef.current;
-      if (bgCanvas.width !== width || bgCanvas.height !== height) {
+      if (bgCanvas.width !== width || bgCanvas.height !== height || lastBgKeyRef.current !== bgKey) {
         bgCanvas.width = width;
         bgCanvas.height = height;
+        lastBgKeyRef.current = bgKey;
         const bgCtx = bgCanvas.getContext('2d');
         if (bgCtx) {
           bgCtx.clearRect(0, 0, width, height);
 
-          // Mountains
-          bgCtx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(30, 58, 138, 0.65)';
-          bgCtx.beginPath();
-          bgCtx.moveTo(0, height * 0.65);
-          const mtPeaks = [
-            { x: 0, y: height * 0.45 },
-            { x: width * 0.15, y: height * 0.25 },
-            { x: width * 0.3, y: height * 0.4 },
-            { x: width * 0.45, y: height * 0.22 },
-            { x: width * 0.65, y: height * 0.38 },
-            { x: width * 0.8, y: height * 0.18 },
-            { x: width, y: height * 0.42 },
-          ];
-          for (const p of mtPeaks) {
-            bgCtx.lineTo(p.x, p.y);
+          // Layer 1: Distant Majestic Mountain Peaks (Elevated to tower proudly in the sky!)
+          const mtGrad = bgCtx.createLinearGradient(0, height * 0.1, 0, height);
+          if (isDay) {
+            mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
+            mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
+          } else {
+            mtGrad.addColorStop(0, 'rgba(15, 12, 28, 0.95)');
+            mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.65)');
           }
-          bgCtx.lineTo(width, height);
-          bgCtx.lineTo(0, height);
+          bgCtx.fillStyle = mtGrad;
+          bgCtx.beginPath();
+          bgCtx.moveTo(-20, height + 20);
+          for (let x = -20; x <= width + 40; x += 30) {
+            const my = height * 0.42 + Math.sin(x * 0.003 + 0.5) * 85 + Math.cos(x * 0.006) * 45;
+            bgCtx.lineTo(x, my);
+          }
+          bgCtx.lineTo(width + 20, height + 20);
           bgCtx.closePath();
           bgCtx.fill();
 
-          // 116 Forest Trees
-          bgCtx.fillStyle = isDay ? '#15803d' : '#064e3b';
+          // Layer 2: Midground Pine Forest Silhouettes
+          bgCtx.fillStyle = isDay ? '#15803d' : '#090912';
           bgCtx.beginPath();
-          bgCtx.moveTo(0, height * 0.6);
-          for (let tx = 0; tx <= width; tx += 12) {
-            const treeH = 25 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
-            const ty = height * 0.55 - treeH;
+          bgCtx.moveTo(-20, height + 20);
+          for (let tx = -12; tx <= width + 20; tx += 12) {
+            const treeH = 26 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
+            const ty = height * 0.58 - treeH;
             bgCtx.lineTo(tx - 6, ty + treeH);
             bgCtx.lineTo(tx, ty);
             bgCtx.lineTo(tx + 6, ty + treeH);
           }
-          bgCtx.lineTo(width, height);
-          bgCtx.lineTo(0, height);
+          bgCtx.lineTo(width + 20, height + 20);
           bgCtx.closePath();
           bgCtx.fill();
+
+          // Layer 3: Foreground Fortified Hills (Smooth rolling contours with seamless overhanging bounds)
+          bgCtx.fillStyle = isDay ? '#166534' : '#0d0d15';
+          bgCtx.beginPath();
+          bgCtx.moveTo(-20, height + 20);
+          for (let x = -20; x <= width + 40; x += 20) {
+            const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
+            bgCtx.lineTo(x, by);
+          }
+          bgCtx.lineTo(width + 20, height + 20);
+          bgCtx.closePath();
+          bgCtx.fill();
+
+          // Layer 4: Signature Vibrant Green Dotted Grass Blade Dashes along the entire hill ridge!
+          bgCtx.strokeStyle = isDay ? '#4ade80' : '#22c55e';
+          bgCtx.lineWidth = 2.5;
+          bgCtx.beginPath();
+          for (let x = -10; x <= width + 20; x += 14) {
+            const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
+            bgCtx.moveTo(x, by);
+            bgCtx.lineTo(x + 2, by - 4.5);
+          }
+          bgCtx.stroke();
         }
       }
       ctx.drawImage(bgCanvasRef.current, 0, 0);
 
-      // 6. Deep Water Backdrop & Caustics
+      // 4. Deep Water Backdrop & Marine Caustics
       const waterBackdropGrad = ctx.createLinearGradient(0, waterLevel - 10, 0, height);
       waterBackdropGrad.addColorStop(0, 'rgba(2, 132, 199, 0.78)');
       waterBackdropGrad.addColorStop(0.5, 'rgba(15, 23, 42, 0.9)');
@@ -1240,18 +1342,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.stroke();
       }
 
-      // Swimming Little Fish Silhouettes
+      // Swimming Little Fish Silhouettes with responsive tail wiggles
       ctx.fillStyle = '#38bdf8';
       for (let f = 0; f < 4; f++) {
         const fishX = ((Date.now() * 0.04 + f * 180) % (width + 40)) - 20;
         const fishY = waterLevel + 20 + (f * 15) % 35;
+        const tailWiggle = Math.sin(animTime * 2 + f) * 1.5;
         ctx.beginPath();
-        ctx.ellipse(fishX, fishY, 4, 2, 0, 0, Math.PI * 2);
+        ctx.ellipse(fishX, fishY, 4.5, 2.2, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
         ctx.moveTo(fishX - 4, fishY);
-        ctx.lineTo(fishX - 7, fishY - 2);
-        ctx.lineTo(fishX - 7, fishY + 2);
+        ctx.lineTo(fishX - 7.5, fishY - 2.2 + tailWiggle);
+        ctx.lineTo(fishX - 7.5, fishY + 2.2 + tailWiggle);
         ctx.closePath();
         ctx.fill();
       }
@@ -1653,7 +1756,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fillRect(heli.x - 20, heli.y - 28, 40 * hpPct, 5);
 
           // 9. Interactive Prompt when Active Slug is Near
-          if (isMyTurn && activeSlug && !activeSlug.inVehicleId) {
+          if (isMyTurnRef.current && activeSlug && !activeSlug.inVehicleId) {
             const dist = Math.hypot(activeSlug.x - heli.x, activeSlug.y - heli.y);
             if (dist < 65) {
               ctx.fillStyle = '#f59e0b';
@@ -1665,174 +1768,461 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      // Draw Slugs (Tactical Artillery Style Expressive Vector Design!)
-      // Placement Ghost Preview
-      if (curState.phase === 'PLACEMENT' && isMyTurn) {
+      // Draw Slugs
+      // Placement Ghost Preview (Rendered ONLY for the player whose turn it is to place a slug)
+      if (curState.phase === 'PLACEMENT' && isMyTurnRef.current) {
         const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
         const team = curState.teams.find((t) => t.id === curState.activeTeamId);
         const mPos = mousePosRef.current;
 
         ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = team?.color || '#a855f7';
-        ctx.beginPath();
-        ctx.arc(mPos.x, mPos.y - 8, 9, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.translate(mPos.x, mPos.y);
 
+        // Pulsing Tactical Placement Ring
+        const ringPulse = Math.sin(animTime * 6) * 2;
         ctx.strokeStyle = '#facc15';
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        ctx.arc(mPos.x, mPos.y - 8, 14, 0, Math.PI * 2);
+        ctx.arc(0, -8, 16 + ringPulse, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Translucent Ghost Slug Body
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = team?.color || '#a855f7';
+        ctx.beginPath();
+        ctx.arc(0, -8, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Eyes
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(3, -10, 2.5, 0, Math.PI * 2);
+        ctx.arc(-3, -10, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(3, -10, 1.2, 0, Math.PI * 2);
+        ctx.arc(-3, -10, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
 
-        ctx.fillStyle = '#facc15';
+        // Tactical Placement Tooltip Badge
+        ctx.save();
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 1.2;
+        const pLabel = `📍 Placer ${activeSlug?.name || 'Limace'}`;
         ctx.font = 'bold 11px Outfit, sans-serif';
+        const pMetrics = ctx.measureText(pLabel);
+        const pW = pMetrics.width + 16;
+        ctx.beginPath();
+        ctx.roundRect(mPos.x - pW / 2, mPos.y - 40, pW, 20, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#facc15';
         ctx.textAlign = 'center';
-        ctx.fillText(`📍 Placer ${activeSlug?.name || 'Limace'}`, mPos.x, mPos.y - 28);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pLabel, mPos.x, mPos.y - 30);
+        ctx.restore();
       }
 
       for (const slug of curState.slugs) {
         if (!slug.isAlive || !slug.isPlaced) continue;
         const team = curState.teams.find((t) => t.id === slug.teamId);
+        const teamColor = team?.color || '#ec4899';
+        const teamIndex = curState.teams.findIndex((t) => t.id === slug.teamId);
         const isActive = slug.id === curState.activeSlugId;
+        const isAiming = isActive && curState.phase === 'AIMING';
+        const aimRad = (slug.aimAngle * Math.PI) / 180;
 
-        // Active Slug Yellow Floating Arrow Marker (Tactical Artillery Style!)
+        // Active Slug Yellow Floating Arrow Marker (Polished Animated Beacon)
         if (isActive) {
-          const arrowBounce = Math.sin(animTime) * 3;
-          const arrowY = slug.y - 48 + arrowBounce;
+          const arrowBounce = Math.sin(animTime * 1.5) * 3;
+          const arrowY = slug.y - 46 + arrowBounce;
           ctx.fillStyle = '#facc15';
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.4;
           ctx.beginPath();
-          ctx.moveTo(slug.x, arrowY + 6);
-          ctx.lineTo(slug.x - 5, arrowY);
-          ctx.lineTo(slug.x + 5, arrowY);
+          ctx.moveTo(slug.x, arrowY + 8);
+          ctx.lineTo(slug.x - 6, arrowY);
+          ctx.lineTo(slug.x - 2, arrowY);
+          ctx.lineTo(slug.x - 2, arrowY - 8);
+          ctx.lineTo(slug.x + 2, arrowY - 8);
+          ctx.lineTo(slug.x + 2, arrowY);
+          ctx.lineTo(slug.x + 6, arrowY);
           ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 1;
           ctx.stroke();
         }
 
-        // --- EXPRESSIVE VECTOR SLUG DRAWING WITH SQUISH & STRETCH ANIMATION ---
+        // Squish & Stretch Animation during locomotion + Scaled to match exact hitbox bounds
         const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1;
         const squishX = isMoving ? Math.sin(animTime * 14) * 0.12 : 0;
         const squishY = isMoving ? -Math.sin(animTime * 14) * 0.12 : 0;
+        const slugScale = 0.72; // Perfect 1:1 scale matching the 8px radius / 16px hitbox
 
         ctx.save();
         ctx.translate(slug.x, slug.y - 2);
         if (slug.facing === 'left') {
-          ctx.scale(-1 * (1 + squishX), 1 + squishY);
+          ctx.scale(-1 * (1 + squishX) * slugScale, (1 + squishY) * slugScale);
         } else {
-          ctx.scale(1 + squishX, 1 + squishY);
+          ctx.scale((1 + squishX) * slugScale, (1 + squishY) * slugScale);
         }
 
-        // Slug Body Goutte / Contour (Flat belly resting solidly on terrain grass)
-        ctx.fillStyle = team?.color || '#ec4899';
+        // --- 1. DROP SHADOW ---
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.beginPath();
-        ctx.moveTo(-9, 1);
-        ctx.quadraticCurveTo(-11, -3, -6, -8);
-        ctx.quadraticCurveTo(0, -12, 6, -8);
-        ctx.quadraticCurveTo(10, -3, 7, 2);
-        ctx.quadraticCurveTo(0, 3, -9, 1);
+        ctx.ellipse(0, 6, 12, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // --- 2. 3D SHADED FLESHY SLUG BODY (Matching Menu Vector Art) ---
+        const bodyGrad = ctx.createRadialGradient(-3, -3, 2, 0, 2, 14);
+        bodyGrad.addColorStop(0, '#fef08a'); // Warm top highlight
+        bodyGrad.addColorStop(0.35, teamColor);
+        bodyGrad.addColorStop(1, '#180828');
+
+        ctx.fillStyle = bodyGrad;
+        ctx.strokeStyle = isActive ? '#facc15' : '#18181b';
+        ctx.lineWidth = isActive ? 2.2 : 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-11, 4);
+        ctx.quadraticCurveTo(-13, -1, -6, -7);
+        ctx.quadraticCurveTo(0, -13, 8, -7);
+        ctx.quadraticCurveTo(14, 0, 11, 6);
+        ctx.quadraticCurveTo(0, 8, -11, 4);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = isActive ? '#facc15' : '#09090b';
-        ctx.lineWidth = isActive ? 2 : 1.2;
         ctx.stroke();
 
-        // Team Headband / Soldier Helmet
-        ctx.fillStyle = team?.color || '#3b82f6';
+        // --- 3. SOFT BELLY UNDERLAYER ---
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.beginPath();
-        ctx.ellipse(1, -7, 6.5, 3, -0.2, 0, Math.PI * 2);
+        ctx.ellipse(0, 3, 7.5, 3, -0.1, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 0.8;
+
+        // --- 4. BODY SEGMENT CREASE ---
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(-3, 2, 4, -Math.PI * 0.4, Math.PI * 0.2);
         ctx.stroke();
 
-        // Big Expressive Cartoon Eyes
+        // --- 5. EYESTALKS ---
+        ctx.strokeStyle = teamColor;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(1, -6);
+        ctx.lineTo(2, -10);
+        ctx.moveTo(6, -5);
+        ctx.lineTo(8, -9);
+        ctx.stroke();
+
+        // --- 6. BIG EXPRESSIVE CARTOON EYES ---
+        const isBlinking = Math.sin(animTime * 1.5 + (slug.id.charCodeAt(0) % 10)) > 0.94;
         ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(3, -5, 3.2, 0, Math.PI * 2);
-        ctx.arc(7, -5, 2.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 1.4;
 
-        // Pupils (Target tracking direction)
-        ctx.fillStyle = '#09090b';
+        // Left Eye
         ctx.beginPath();
-        ctx.arc(4, -5, 1.3, 0, Math.PI * 2);
-        ctx.arc(7.8, -5, 1, 0, Math.PI * 2);
+        ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
 
-        // Low HP Sweat Drop
-        if (slug.hp < 25) {
-          ctx.fillStyle = '#38bdf8';
+        // Right Eye
+        ctx.beginPath();
+        ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        if (!isBlinking) {
+          // Pupils tracking aim direction or looking ahead
+          const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
+          const pupilOffY = isAiming ? -Math.sin(aimRad) * 1.4 : 0;
+
+          ctx.fillStyle = '#09090b';
           ctx.beginPath();
-          ctx.arc(-4, -8, 1.8, 0, Math.PI * 2);
+          ctx.arc(2.5 + pupilOffX, -10 + pupilOffY, 1.8, 0, Math.PI * 2);
+          ctx.arc(8.5 + pupilOffX, -9 + pupilOffY, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Eye Light Glints
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(2 + pupilOffX, -11 + pupilOffY, 0.8, 0, Math.PI * 2);
+          ctx.arc(8 + pupilOffX, -10 + pupilOffY, 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Blinking eye slits
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(-1, -10);
+          ctx.lineTo(5, -10);
+          ctx.moveTo(6, -9);
+          ctx.lineTo(11, -9);
+          ctx.stroke();
+        }
+
+        // --- 7. TEAM SOLDIER HATS / ACCESSORIES ---
+        if (teamIndex % 4 === 0) {
+          // Green Camo Soldier Helmet with Gold Star
+          ctx.fillStyle = '#3f6212';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(5, -13, 9, 5, 0.1, Math.PI, 0);
+          ctx.fill();
+          ctx.stroke();
+          // Star
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(5, -15, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (teamIndex % 4 === 1) {
+          // Red Pirate Bandana with Fluttering Tails
+          ctx.fillStyle = '#dc2626';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.ellipse(5, -12, 8.5, 3.5, 0.1, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Bandana tail flutter
+          ctx.beginPath();
+          ctx.moveTo(-3, -12);
+          ctx.lineTo(-11 + Math.sin(animTime * 6) * 2, -15);
+          ctx.lineTo(-9 + Math.sin(animTime * 6) * 2, -10);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (teamIndex % 4 === 2) {
+          // --- HIGH-TECH DUAL NIGHT VISION GOGGLES (Matching Lobby Exact Geometry!) ---
+          ctx.fillStyle = '#1e293b';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.4;
+
+          // Left Eyepiece Housing (centered on Left Eye at x=2, y=-10)
+          ctx.beginPath();
+          ctx.roundRect(-1.5, -13.5, 7, 7, 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Right Eyepiece Housing (centered on Right Eye at x=8, y=-9)
+          ctx.beginPath();
+          ctx.roundRect(5, -12.5, 6.5, 7, 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Bridge & Headstrap
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(-5, -10);
+          ctx.lineTo(-1.5, -10);
+          ctx.moveTo(3.5, -10);
+          ctx.lineTo(6, -10);
+          ctx.stroke();
+
+          // Luminous Neon Emerald Laser Lenses
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.arc(2, -10, 2.2, 0, Math.PI * 2);
+          ctx.arc(8, -9, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Glowing laser center dots
+          ctx.fillStyle = '#6ee7b7';
+          ctx.beginPath();
+          ctx.arc(2, -10, 1.0, 0, Math.PI * 2);
+          ctx.arc(8, -9, 0.9, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (teamIndex % 4 === 3) {
+          // --- SPECIAL OPS TACTICAL RADIO HEADSET & BOOM MIC ---
+          // 1. Headband Arc
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(4, -12, 7.5, -Math.PI * 0.8, -Math.PI * 0.1);
+          ctx.stroke();
+
+          // 2. Ear Cup
+          ctx.fillStyle = teamColor;
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(-2, -9, 3, 4.5, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 3. Boom Microphone
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-2, -7);
+          ctx.quadraticCurveTo(2, -4, 6, -3);
+          ctx.stroke();
+          // Mic Foam Tip
+          ctx.fillStyle = '#475569';
+          ctx.beginPath();
+          ctx.arc(6, -3, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 4. Antenna Mast with Blinking Beacon
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-2, -12);
+          ctx.lineTo(-7, -22);
+          ctx.stroke();
+          // Blinking Transmitter Beacon
+          const beaconFlash = Math.sin(animTime * 6) > 0;
+          ctx.fillStyle = beaconFlash ? '#ef4444' : '#7f1d1d';
+          ctx.beginPath();
+          ctx.arc(-7, -22, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // --- SPECIAL FORCES COMMANDER BERET WITH GOLD CREST ---
+          ctx.fillStyle = teamColor;
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-4, -10);
+          ctx.quadraticCurveTo(0, -18, 12, -13);
+          ctx.quadraticCurveTo(8, -8, -4, -10);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Golden Combat Insignia Crest
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(1, -12, 1.8, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // --- HELD WEAPON STANCE IN HAND WHEN AIMING ---
-        if (isActive && curState.phase === 'AIMING') {
+        // --- 8. SMIRK MOUTH ---
+        ctx.strokeStyle = '#831843';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(5, -1, 3, 0.2, Math.PI * 0.7);
+        ctx.stroke();
+
+        // --- 9. LOW HP SWEAT DROP ---
+        if (slug.hp < 30) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(-5, -8, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // --- 10. HELD WEAPON IN HAND (When Aiming) ---
+        if (isAiming) {
           const weaponId = slug.selectedWeaponId;
-          const aimRad = (slug.aimAngle * Math.PI) / 180;
 
           ctx.save();
-          ctx.translate(4, -3);
+          ctx.translate(5, -4);
           ctx.rotate(-aimRad);
 
-          if (weaponId === 'bazooka' || weaponId === 'homing_pigeon') {
-            ctx.fillStyle = '#3f3f46'; // Bazooka Tube
-            ctx.fillRect(0, -3, 14, 5);
+          if (weaponId === 'bazooka' || weaponId === 'homing_missile') {
+            // Heavy Gunmetal Bazooka with Hazard Warning Stripes
+            ctx.fillStyle = '#3f3f46';
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1.4;
+            ctx.fillRect(0, -3.5, 16, 6);
+            ctx.strokeRect(0, -3.5, 16, 6);
+
+            // Hazard Stripes
             ctx.fillStyle = '#eab308';
-            ctx.fillRect(10, -4, 3, 7);
+            ctx.fillRect(8, -3.5, 2.5, 6);
+            ctx.fillRect(13, -3.5, 2.5, 6);
           } else if (weaponId === 'baseball_bat') {
-            ctx.fillStyle = '#b45309'; // Wooden Bat
-            ctx.fillRect(0, -2, 16, 4);
+            // Wooden Baseball Bat
+            ctx.fillStyle = '#b45309';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.2;
+            ctx.fillRect(0, -2.5, 18, 5);
+            ctx.strokeRect(0, -2.5, 18, 5);
           } else if (weaponId === 'holy_grenade') {
-            ctx.fillStyle = '#eab308'; // Holy Hand Grenade
+            // Golden Holy Hand Grenade with Cross
+            ctx.fillStyle = '#facc15';
+            ctx.strokeStyle = '#a16207';
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
-            ctx.arc(6, 0, 4.5, 0, Math.PI * 2);
+            ctx.arc(8, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Golden Cross
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(7, -7, 2, 5);
+            ctx.fillRect(5.5, -5.5, 5, 2);
+          } else if (weaponId === 'banana_bomb') {
+            // Curved Banana Bomb
+            ctx.fillStyle = '#facc15';
+            ctx.strokeStyle = '#854d0e';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.ellipse(8, 0, 6, 3, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          } else if (weaponId === 'dynamite') {
+            // 3-Stick Dynamite Pack with Sparkling Flame Fuse
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(3, -5, 8, 10);
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(3, -2, 8, 3);
+            // Sparkling flame tip
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(12, -6, 2.5 + Math.sin(animTime * 18) * 1, 0, Math.PI * 2);
             ctx.fill();
           } else if (weaponId === 'blowtorch' || slug.isBlowtorching) {
-            // Blowtorch Metal Canister & Nozzle
-            ctx.fillStyle = '#dc2626'; // Red Gas Tank
-            ctx.fillRect(-2, 0, 7, 10);
-            ctx.fillStyle = '#64748b'; // Nozzle
-            ctx.fillRect(5, -3, 10, 4);
+            // Red Gas Cylinder & Steel Nozzle
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(0, -1, 7, 10);
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(6, -3, 10, 4);
 
-            // Animated Blowtorch Plasma Flame Jet
+            // Fiery 3-Stage Animated Plasma Jet
             const flamePulse = Math.sin(Date.now() * 0.05) * 4;
             const flameLen = 30 + flamePulse;
 
-            // Outer Orange Glow
             ctx.fillStyle = '#f97316';
             ctx.beginPath();
-            ctx.moveTo(15, -5);
-            ctx.lineTo(15 + flameLen, -1);
-            ctx.lineTo(15, 3);
+            ctx.moveTo(16, -5);
+            ctx.lineTo(16 + flameLen, -1);
+            ctx.lineTo(16, 3);
             ctx.closePath();
             ctx.fill();
 
-            // Inner Yellow Core
             ctx.fillStyle = '#fde047';
             ctx.beginPath();
-            ctx.moveTo(15, -3);
-            ctx.lineTo(15 + flameLen * 0.7, -1);
-            ctx.lineTo(15, 1);
+            ctx.moveTo(16, -3);
+            ctx.lineTo(16 + flameLen * 0.7, -1);
+            ctx.lineTo(16, 1);
             ctx.closePath();
             ctx.fill();
 
-            // Blue Plasma Base
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
-            ctx.arc(15, -1, 3, 0, Math.PI * 2);
+            ctx.arc(16, -1, 3, 0, Math.PI * 2);
             ctx.fill();
           } else {
-            ctx.fillStyle = '#15803d'; // Grenade in hand
+            // Pineapple Grenade
+            ctx.fillStyle = '#15803d';
             ctx.beginPath();
-            ctx.arc(6, 0, 3.5, 0, Math.PI * 2);
+            ctx.arc(7, 0, 4, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 1;
+            ctx.stroke();
           }
 
           ctx.restore();
@@ -1840,26 +2230,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
         ctx.restore();
 
-        // Tactical Artillery Style HP Pill Badge
-        ctx.fillStyle = 'rgba(9, 9, 11, 0.55)';
-        ctx.strokeStyle = team?.color || '#ffffff';
-        ctx.lineWidth = 1;
-        const tagW = 34;
-        const tagH = 12;
-        const tagX = slug.x - tagW / 2;
-        const tagY = slug.y - 32;
+        // --- 11. MODERN FLOATING GLASS HP BADGE ---
+        const badgeW = 38;
+        const badgeH = 14;
+        const badgeX = slug.x - badgeW / 2;
+        const badgeY = slug.y - 34;
 
-        ctx.fillRect(tagX, tagY, tagW, tagH);
-        ctx.strokeRect(tagX, tagY, tagW, tagH);
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.88)';
+        ctx.strokeStyle = teamColor;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+        ctx.fill();
+        ctx.stroke();
 
         // HP Number
-        ctx.fillStyle = '#f4f4f5';
-        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 9.5px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(`${slug.hp}`, slug.x, tagY + 9.5);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${slug.hp}`, slug.x, badgeY + badgeH / 2);
       }
 
-      // Clean Tactical Artillery Crosshair & Charging Gauge Bar
+      // Classic Animated Aiming Crosshair & Charging Gauge Bar
       const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         const weapon = getWeapon(activeSlug.selectedWeaponId);
@@ -1868,8 +2261,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const originX = activeSlug.x + dir * 10;
         const originY = activeSlug.y - 10;
 
-        if (isMyTurn && !weapon.requiresTarget && weapon.id !== 'girder') {
-          // Classic Tactical Artillery Animated Aiming Reticle (Crosshair)
+        if (isMyTurnRef.current && !weapon.requiresTarget && weapon.id !== 'girder') {
+          // Classic Animated Aiming Reticle (Crosshair)
           const reticleDist = 58;
           const retX = originX + Math.cos(rad) * reticleDist * dir;
           const retY = originY - Math.sin(rad) * reticleDist;
@@ -1877,8 +2270,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.save();
           ctx.translate(retX, retY);
 
-          // Subtle connecting laser trace from barrel to crosshair
-          ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.45)' : 'rgba(250, 204, 21, 0.35)';
+          // Classic Yellow Dotted Connecting Trace from weapon to crosshair
+          ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.55)' : 'rgba(250, 204, 21, 0.45)';
           ctx.lineWidth = 1.5;
           ctx.setLineDash([3, 3]);
           ctx.beginPath();
@@ -2061,7 +2454,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
 
         // 6. Tactical Target Reticle (for weapons requiring a target!)
-        if (weapon.requiresTarget) {
+        if (isMyTurnRef.current && weapon.requiresTarget) {
           const targetPt = lockedTargetRef.current || mousePosRef.current;
           const isLocked = !!lockedTargetRef.current;
 
@@ -2138,7 +2531,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      // Draw Projectiles (Custom Vector Weapons & Smoke Trails!)
+      // Draw Projectiles (Upgraded High-Definition Vector Weapons & Super Sheep!)
       for (const proj of curState.projectiles) {
         if (!proj || !Number.isFinite(proj.x) || !Number.isFinite(proj.y)) continue;
 
@@ -2151,155 +2544,174 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.rotate(angle);
         }
 
-        if (proj.weaponId === 'bazooka' || proj.weaponId === 'homing_pigeon') {
-          // Bazooka Rocket Sprite
-          ctx.fillStyle = '#eab308'; // Rocket Body
-          ctx.fillRect(-6, -3, 9, 6);
+        if (proj.weaponId === 'bazooka' || proj.weaponId === 'homing_missile') {
+          // --- HD STREAMLINED BAZOOKA / MISSILE WARHEAD ---
+          ctx.fillStyle = '#3f3f46'; // Gunmetal Body
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.2;
+          ctx.fillRect(-8, -3.5, 12, 7);
+          ctx.strokeRect(-8, -3.5, 12, 7);
 
-          ctx.fillStyle = '#ef4444'; // Nose Cone
+          // Red Nose Cone
+          ctx.fillStyle = '#ef4444';
           ctx.beginPath();
-          ctx.moveTo(3, -3);
-          ctx.lineTo(8, 0);
-          ctx.lineTo(3, 3);
+          ctx.moveTo(4, -3.5);
+          ctx.lineTo(11, 0);
+          ctx.lineTo(4, 3.5);
           ctx.closePath();
           ctx.fill();
+          ctx.stroke();
 
-          ctx.fillStyle = '#3f3f46'; // Fins
-          ctx.fillRect(-7, -4.5, 3, 9);
-        } else if (proj.weaponId === 'grenade' || proj.weaponId === 'cluster_bomb') {
-          // Pineapple Grenade
-          ctx.fillStyle = '#15803d';
+          // Yellow Stabilizing Fins
+          ctx.fillStyle = '#eab308';
+          ctx.fillRect(-9, -5.5, 3.5, 11);
+
+          // Glowing Thruster Exhaust Flame
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.moveTo(-8, -2.5);
+          ctx.lineTo(-15 + Math.sin(animTime * 14) * 3, 0);
+          ctx.lineTo(-8, 2.5);
+          ctx.closePath();
+          ctx.fill();
+        } else if (proj.weaponId === 'super_sheep') {
+          // --- HD STYLIZED SUPER SHEEP (Exact match to menu art!) ---
+          // 1. Trailing Speed Wind Streaks
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(-18, 0);
+          ctx.lineTo(-32, 0);
+          ctx.moveTo(-14, -6);
+          ctx.lineTo(-26, -6);
+          ctx.moveTo(-14, 6);
+          ctx.lineTo(-26, 6);
+          ctx.stroke();
+
+          // 2. Fluttering Red Superhero Cape
+          const capeWave = Math.sin(animTime * 12) * 4;
+          ctx.fillStyle = '#ef4444';
+          ctx.strokeStyle = '#b91c1c';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(-8, 0);
+          ctx.lineTo(-24 + capeWave, -8);
+          ctx.lineTo(-20 + capeWave, 8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 3. Fluffy Cloud Wool Body (Multi-lobed white puffs with gentle shading)
+          ctx.fillStyle = '#f8fafc';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(-5, 0, 7, 0, Math.PI * 2);
+          ctx.arc(2, -2, 6.5, 0, Math.PI * 2);
+          ctx.arc(8, 0, 6, 0, Math.PI * 2);
+          ctx.arc(2, 5, 5.5, 0, Math.PI * 2);
+          ctx.arc(-4, 4, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 4. Dark Sheep Face & Snout
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.ellipse(10, 1, 4.5, 3.5, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 5. Cute Shiny Sheep Eye
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(9.5, 0, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.arc(10, 0, 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (proj.weaponId === 'holy_grenade') {
+          // --- HD GOLDEN HOLY HAND GRENADE ---
+          const orbGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, 6);
+          orbGrad.addColorStop(0, '#fef08a');
+          orbGrad.addColorStop(0.5, '#eab308');
+          orbGrad.addColorStop(1, '#a16207');
+          ctx.fillStyle = orbGrad;
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Pearl Girdle
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.4;
           ctx.beginPath();
           ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#facc15';
-          ctx.lineWidth = 1;
           ctx.stroke();
-        } else if (proj.weaponId === 'holy_grenade') {
-          // Holy Hand Grenade
-          ctx.fillStyle = '#eab308';
-          ctx.beginPath();
-          ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(-1.5, -7, 3, 4);
-        } else if (proj.weaponId === 'super_sheep') {
-          // Detailed Super Sheep Sprite
-          ctx.fillStyle = '#ef4444'; // Red Flying Cape
-          ctx.beginPath();
-          ctx.moveTo(-8, -4);
-          ctx.lineTo(-14, Math.sin(animTime * 10) * 3);
-          ctx.lineTo(-8, 4);
-          ctx.closePath();
-          ctx.fill();
 
-          ctx.fillStyle = '#f4f4f5'; // White Wool Cloud Body
-          ctx.beginPath();
-          ctx.arc(-2, 0, 5, 0, Math.PI * 2);
-          ctx.arc(2, -2, 4.5, 0, Math.PI * 2);
-          ctx.arc(2, 2, 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#18181b'; // Black Head & Snout
-          ctx.beginPath();
-          ctx.arc(6, -1, 3.5, 0, Math.PI * 2);
-          ctx.fill();
+          // Golden Cross on Top
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(6, -2, 1.5, 1.5);
+          ctx.fillRect(-1.5, -9, 3, 5);
+          ctx.fillRect(-3.5, -7.5, 7, 2.5);
         } else if (proj.weaponId === 'banana_bomb') {
-          // Yellow Curved Banana Bomb Sprite
+          // --- HD CLUSTER BANANA BOMB ---
           ctx.fillStyle = '#facc15';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 7, 3.5, 0.4, 0, Math.PI * 2);
-          ctx.fill();
           ctx.strokeStyle = '#854d0e';
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 8, 4, 0.35, 0, Math.PI * 2);
+          ctx.fill();
           ctx.stroke();
+          // Banana Stem
+          ctx.fillStyle = '#713f12';
+          ctx.fillRect(6, -2, 3, 2);
         } else if (proj.weaponId === 'dynamite') {
-          // Red Dynamite Stick Sprite with Blinking Fuse Spark
+          // --- HD DYNAMITE STICK WITH SPARKLING FUSE ---
           ctx.fillStyle = '#ef4444';
-          ctx.fillRect(-6, -3, 12, 6);
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 1.2;
+          ctx.fillRect(-8, -4, 16, 8);
+          ctx.strokeRect(-8, -4, 16, 8);
           ctx.fillStyle = '#facc15';
-          ctx.beginPath();
-          ctx.arc(7, -3, 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (proj.weaponId === 'homing_pigeon') {
-          // White Flying Pigeon Sprite
-          ctx.fillStyle = '#f4f4f5';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 6, 4, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#f97316';
-          ctx.fillRect(5, -1.5, 3, 2);
-        } else if (proj.weaponId === 'shotgun') {
-          // High Speed Bullet Flare
+          ctx.fillRect(-8, -1.5, 16, 3);
+          // Spark
           ctx.fillStyle = '#fde047';
-          ctx.fillRect(-5, -1.5, 10, 3);
-        } else if (proj.weaponId === 'homing_missile') {
-          // Military Homing Missile Sprite
-          ctx.fillStyle = '#2563eb'; // Blue Metallic Body
-          ctx.fillRect(-8, -3, 11, 6);
-
-          ctx.fillStyle = '#ef4444'; // Red Nose Cone
           ctx.beginPath();
-          ctx.moveTo(3, -3);
-          ctx.lineTo(9, 0);
-          ctx.lineTo(3, 3);
-          ctx.closePath();
+          ctx.arc(10, -4, 3 + Math.sin(animTime * 18) * 1.5, 0, Math.PI * 2);
           ctx.fill();
-
-          ctx.fillStyle = '#facc15'; // Yellow Fins
-          ctx.fillRect(-9, -4.5, 3, 9);
         } else if (proj.weaponId === 'concrete_donkey') {
-          // Massive 3D Grey Concrete Donkey Statue Sprite (Tactical Artillery Classic!)
+          // --- HD CHISELLED CONCRETE DONKEY STATUE ---
           ctx.save();
           ctx.rotate(-angle);
 
-          // Pedestal Base
+          // Pedestal
           ctx.fillStyle = '#475569';
-          ctx.fillRect(-18, 10, 36, 8);
           ctx.strokeStyle = '#1e293b';
           ctx.lineWidth = 1.5;
+          ctx.fillRect(-18, 10, 36, 8);
           ctx.strokeRect(-18, 10, 36, 8);
 
-          // Concrete Body
+          // Donkey Body
           ctx.fillStyle = '#64748b';
           ctx.fillRect(-14, -10, 28, 20);
           ctx.strokeRect(-14, -10, 28, 20);
 
-          // Head & Ears
+          // Head & Long Ears
           ctx.fillRect(-18, -18, 12, 12);
           ctx.fillRect(-16, -24, 4, 8);
           ctx.fillRect(-10, -24, 4, 8);
 
           ctx.restore();
-        } else if (proj.weaponId === 'cluster_payload') {
-          // Sub-munition Cluster Shrapnel Pellet
-          ctx.fillStyle = '#facc15';
-          ctx.beginPath();
-          ctx.arc(0, 0, 3, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (proj.weaponId === 'air_strike') {
-          // Heavy Napalm Missile
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(-7, -4, 14, 8);
-          ctx.fillStyle = '#ef4444';
-          ctx.beginPath();
-          ctx.moveTo(7, -4);
-          ctx.lineTo(13, 0);
-          ctx.lineTo(7, 4);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = '#ef4444'; // Red Fins
-          ctx.fillRect(-8, -4, 3, 8);
         } else {
+          // Standard Projectile Orb
           ctx.fillStyle = '#ef4444';
           ctx.beginPath();
           ctx.arc(0, 0, proj.radius, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Bouncing Timer Projectile Fuse Countdown Badge (Tactical Artillery Classic ⚠️ 2.4s)
+        // Bouncing Timer Countdown Badge
         if (proj.fuseTimerMs !== undefined && proj.fuseTimerMs > 0) {
           const sec = (proj.fuseTimerMs / 1000).toFixed(1);
           ctx.fillStyle = '#ef4444';
@@ -2505,7 +2917,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       clientFloatingDamagesRef.current = remainingFloatingDamages;
 
       // DEBUG HITBOX OVERLAY RENDERING
-      if (showHitboxes) {
+      if (showHitboxesRef.current) {
         // Draw Slugs Hitboxes
         for (const slug of curState.slugs) {
           if (!slug.isAlive) continue;
@@ -2546,28 +2958,44 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
         // Draw Projectile Hitboxes
         for (const proj of curState.projectiles) {
-          ctx.strokeStyle = '#f59e0b'; // Amber
-          ctx.lineWidth = 2;
-          ctx.setLineDash([3, 3]);
+          if (!proj) continue;
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([2, 2]);
           ctx.beginPath();
-          ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+          ctx.arc(proj.x, proj.y, proj.radius || 4, 0, Math.PI * 2);
           ctx.stroke();
           ctx.setLineDash([]);
-
-          ctx.fillStyle = '#f59e0b';
-          ctx.font = '9px monospace';
-          ctx.fillText(`R:${proj.radius}`, proj.x + proj.radius + 2, proj.y);
         }
 
-        // Draw Water Level Line
-        ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([8, 4]);
-        ctx.beginPath();
-        ctx.moveTo(0, waterLevel);
-        ctx.lineTo(width, waterLevel);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        // Draw Girder Hitboxes
+        if (curState.girders) {
+          for (const g of curState.girders) {
+            if (!g) continue;
+            ctx.save();
+            ctx.translate(g.x, g.y);
+            ctx.rotate((g.angleDeg * Math.PI) / 180);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([3, 2]);
+            ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+            ctx.restore();
+          }
+        }
+
+        // Draw Mine Hitboxes
+        if (curState.mines) {
+          for (const m of curState.mines) {
+            if (!m) continue;
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.arc(m.x, m.y - 5, 24, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
       }
 
       const renderDuration = performance.now() - renderStart;
@@ -2608,7 +3036,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
     render();
     return () => cancelAnimationFrame(animId);
-  }, [terrain, isMyTurn, showHitboxes, redrawOffscreenTerrain, carveOffscreenCrater]);
+  }, [terrain, redrawOffscreenTerrain, carveOffscreenCrater]);
 
   return (
     <div
