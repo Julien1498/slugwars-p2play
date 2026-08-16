@@ -41,7 +41,18 @@ export interface DecorItem {
 
 export interface SolidProp {
   id: string;
-  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree';
+  type:
+    | 'hedgehog'
+    | 'chick'
+    | 'mushroom'
+    | 'flower'
+    | 'tree'
+    | 'bunker'
+    | 'cactus'
+    | 'crystal'
+    | 'oil_drum'
+    | 'totem'
+    | 'lamppost';
   x: number;
   y: number;
   width: number;
@@ -190,11 +201,11 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 6. Solid Destructible Decor Props Generator (Trees, Hedgehogs, Chicks, Mushrooms, Flowers stamped into terrain grid)
+  // 6. Solid Destructible Decor Props Generator (Trees, Bunkers, Totems, Cacti, Crystals, Oil Drums, Lampposts, Hedgehogs, Chicks, Mushrooms, Flowers)
   const solidProps: SolidProp[] = [];
 
   const stampSolidProp = (
-    type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree',
+    type: SolidProp['type'],
     px: number,
     py: number,
     pWidth: number,
@@ -225,12 +236,126 @@ export function generateProceduralTerrain(
     });
   };
 
-  const isFarFromProps = (testX: number, minDist: number = 60) => {
+  const isFarFromProps = (testX: number, minDist: number = 55) => {
     return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
   };
 
-  // 1. Trees FIRST! (3-5 solid destructible trees on surface cliffs & hills)
-  const treeCount = Math.floor(prng.range(3, 6));
+  // 1. Fortified Concrete Bunkers (1-2 bunkers on hills or fortresses)
+  const bunkerCount = Math.floor(prng.range(1, 3));
+  for (let i = 0; i < bunkerCount; i++) {
+    for (let attempts = 0; attempts < 25; attempts++) {
+      const bx = Math.floor(prng.range(160 + i * 420, 380 + i * 420));
+      if (!isFarFromProps(bx, 75)) continue;
+
+      let placed = false;
+      for (let by = searchStartY; by < waterLevel - 50; by++) {
+        if (grid[by * width + bx] === 1 && grid[(by - 1) * width + bx] === 0) {
+          stampSolidProp('bunker', bx, by, 38, 26, Math.floor(prng.range(0, 2)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 2. Ancient Moai / Tiki Totem Idols (1-2 totems)
+  const totemCount = Math.floor(prng.range(1, 3));
+  for (let i = 0; i < totemCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const tx = Math.floor(prng.range(220 + i * 460, 460 + i * 460));
+      if (!isFarFromProps(tx, 70)) continue;
+
+      let placed = false;
+      for (let ty = searchStartY; ty < waterLevel - 50; ty++) {
+        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
+          stampSolidProp('totem', tx, ty, 26, 36, Math.floor(prng.range(0, 2)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 3. Saguaro Wild West Cacti (2-4 cacti on hills)
+  const cactusCount = Math.floor(prng.range(2, 4));
+  for (let i = 0; i < cactusCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const cx = Math.floor(prng.range(120, width - 120));
+      if (!isFarFromProps(cx, 60)) continue;
+
+      let placed = false;
+      for (let cy = searchStartY; cy < waterLevel - 50; cy++) {
+        if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
+          stampSolidProp('cactus', cx, cy, 24, 38, Math.floor(prng.range(0, 3)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 4. Luminous Crystal Geodes (3-5 glowing crystal clusters)
+  const crystalCount = Math.floor(prng.range(3, 5));
+  for (let i = 0; i < crystalCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const rx = Math.floor(prng.range(100, width - 100));
+      if (!isFarFromProps(rx, 55)) continue;
+
+      let placed = false;
+      for (let ry = searchStartY; ry < waterLevel - 30; ry++) {
+        if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
+          stampSolidProp('crystal', rx, ry, 28, 26, Math.floor(prng.range(0, 3)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 5. Industrial Hazard Oil Drums (2-3 barrels)
+  const drumCount = Math.floor(prng.range(2, 4));
+  for (let i = 0; i < drumCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const dx = Math.floor(prng.range(140, width - 140));
+      if (!isFarFromProps(dx, 55)) continue;
+
+      let placed = false;
+      for (let dy = searchStartY; dy < waterLevel - 30; dy++) {
+        if (grid[dy * width + dx] === 1 && grid[(dy - 1) * width + dx] === 0) {
+          stampSolidProp('oil_drum', dx, dy, 20, 26, Math.floor(prng.range(0, 2)));
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 6. Vintage Street Lampposts (1-2 lampposts)
+  const lampCount = Math.floor(prng.range(1, 3));
+  for (let i = 0; i < lampCount; i++) {
+    for (let attempts = 0; attempts < 20; attempts++) {
+      const lx = Math.floor(prng.range(150, width - 150));
+      if (!isFarFromProps(lx, 65)) continue;
+
+      let placed = false;
+      for (let ly = searchStartY; ly < waterLevel - 50; ly++) {
+        if (grid[ly * width + lx] === 1 && grid[(ly - 1) * width + lx] === 0) {
+          stampSolidProp('lamppost', lx, ly, 18, 42);
+          placed = true;
+          break;
+        }
+      }
+      if (placed) break;
+    }
+  }
+
+  // 7. Trees (2-4 trees)
+  const treeCount = Math.floor(prng.range(2, 5));
   for (let i = 0; i < treeCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const tx = Math.floor(prng.range(120 + i * 220, 280 + i * 220));
@@ -248,8 +373,8 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 2. Hedgehogs (2-3 solid destructible hedgehogs on cliff ledges)
-  const hedgehogCount = Math.floor(prng.range(2, 4));
+  // 8. Hedgehogs (1-2 hedgehogs)
+  const hedgehogCount = Math.floor(prng.range(1, 3));
   for (let i = 0; i < hedgehogCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
@@ -267,8 +392,8 @@ export function generateProceduralTerrain(
     }
   }
 
-  // Chicks (2-3 solid destructible chicks on hill tops)
-  const chickCount = Math.floor(prng.range(2, 4));
+  // 9. Chicks (1-2 chicks)
+  const chickCount = Math.floor(prng.range(1, 3));
   for (let i = 0; i < chickCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
@@ -286,12 +411,12 @@ export function generateProceduralTerrain(
     }
   }
 
-  // Mushrooms (6-8 solid destructible mushrooms spaced out)
-  const mushroomCount = Math.floor(prng.range(6, 9));
+  // 10. Mushrooms (4-6 mushrooms)
+  const mushroomCount = Math.floor(prng.range(4, 7));
   for (let i = 0; i < mushroomCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
-      if (!isFarFromProps(rx, 65)) continue;
+      if (!isFarFromProps(rx, 55)) continue;
 
       let placed = false;
       for (let ry = searchStartY; ry < waterLevel - 20; ry++) {
@@ -305,12 +430,12 @@ export function generateProceduralTerrain(
     }
   }
 
-  // Flowers (8-11 solid destructible flowers spaced out)
-  const flowerCount = Math.floor(prng.range(8, 12));
+  // 11. Flowers (5-8 flowers)
+  const flowerCount = Math.floor(prng.range(5, 9));
   for (let i = 0; i < flowerCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const fx = Math.floor(prng.range(80, width - 80));
-      if (!isFarFromProps(fx, 60)) continue;
+      if (!isFarFromProps(fx, 50)) continue;
 
       let placed = false;
       for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
