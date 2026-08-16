@@ -340,7 +340,7 @@ export class SlugWarsEngine {
   }
 
   public steerVehicle(dir: 'left' | 'right' | 'up' | 'down'): void {
-    if (this.state.phase !== 'AIMING') return;
+    if (this.state.phase !== 'AIMING' && this.state.phase !== 'TURN_TIME' && this.state.phase !== 'RETREAT') return;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (!activeSlug || !activeSlug.inVehicleId) return;
 

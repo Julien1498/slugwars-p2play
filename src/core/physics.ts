@@ -160,6 +160,7 @@ export function updateHelicopterPhysics(
     pilotSlug.y = heli.y;
     pilotSlug.vx = heli.vx;
     pilotSlug.vy = heli.vy;
+    pilotSlug.fallStartY = undefined;
   }
 
   if (heli.y >= terrain.data.waterLevel - 10) {
@@ -427,7 +428,7 @@ export function updateSlugPhysics(
     slug.isAlive = false;
   }
   if (!slug.isAlive || slug.isPlaced === false) return {};
-  if (slug.ropeState) {
+  if (slug.ropeState || slug.inVehicleId) {
     slug.fallStartY = undefined;
     return {};
   }
