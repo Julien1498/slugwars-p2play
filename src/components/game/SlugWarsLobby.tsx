@@ -865,7 +865,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                 <Swords className="w-3 h-3 text-violet-400" /> Règles d'Engagement
               </label>
               
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-5 gap-1.5">
                 {/* Slugs per Team */}
                 {isHost ? (
                   <button
@@ -943,6 +943,26 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                   <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
                     <div className="text-[9px] text-zinc-400 font-bold uppercase">Véhicules</div>
                     <div className="text-xs font-black text-violet-300">{config.vehiclesEnabled ? '🚁 Hélico' : '❌ Sans'}</div>
+                  </div>
+                )}
+
+                {/* Day / Night Cycle Toggle */}
+                {isHost ? (
+                  <button
+                    onClick={() => onChangeConfig({ dayNightCycle: (config.dayNightCycle || 'DAY') === 'DAY' ? 'NIGHT' : 'DAY' })}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      (config.dayNightCycle || 'DAY') === 'DAY'
+                        ? 'bg-amber-950/70 border-amber-500/60 text-amber-200 shadow-sm'
+                        : 'bg-indigo-950/70 border-indigo-500/60 text-indigo-200 shadow-sm'
+                    }`}
+                  >
+                    <div className="text-[9px] font-bold uppercase">Atmosphère</div>
+                    <div className="text-xs font-black">{(config.dayNightCycle || 'DAY') === 'DAY' ? '☀️ Jour' : '🌙 Nuit'}</div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Atmosphère</div>
+                    <div className="text-xs font-black text-amber-300">{(config.dayNightCycle || 'DAY') === 'DAY' ? '☀️ Jour' : '🌙 Nuit'}</div>
                   </div>
                 )}
               </div>

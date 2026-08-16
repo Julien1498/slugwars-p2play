@@ -18,6 +18,7 @@ export class SlugWarsEngine {
       turnDuration: 45,
       windEnabled: true,
       vehiclesEnabled: true,
+      dayNightCycle: 'DAY',
       mapTheme: 'ISLAND',
       mapSize: 'NORMAL',
       mapSeed: Math.floor(Math.random() * 1000000),
