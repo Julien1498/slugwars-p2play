@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { GameState, Vector2D, SolidProp, CraterRecord, ExplosionEvent } from '../../core/types';
+import { GameState, Vector2D, SolidProp, CraterRecord, ExplosionEvent, PlacedGirder } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
 import { SeededRandom } from '../../core/terrainGenerator';
@@ -770,6 +770,101 @@ export function renderHDDestructibleProp(
   }
 
   drawSolidPropVector(ctx, sprop, animTime);
+  ctx.restore();
+}
+
+export function renderHDDestructibleGirder(
+  ctx: CanvasRenderingContext2D,
+  g: PlacedGirder,
+  craters: CraterRecord[] | undefined,
+  explosions: ExplosionEvent[] | undefined,
+  grid: Uint8Array,
+  width: number
+) {
+  if (g.destroyed) return;
+
+  // 1. Check if the girder has any solid pixels remaining in grid
+  const rad = (g.angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const halfL = g.length / 2;
+  const halfT = g.thickness / 2;
+
+  let solidCount = 0;
+  const totalSamples = 13;
+  for (let s = 0; s < totalSamples; s++) {
+    const t = -halfL + (s / (totalSamples - 1)) * g.length;
+    const px = Math.round(g.x + t * cos);
+    const py = Math.round(g.y + t * sin);
+    const idx = py * width + px;
+    if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
+      solidCount++;
+    }
+  }
+
+  // If 100% of the girder's mass is destroyed, don't draw it
+  if (solidCount === 0) {
+    g.destroyed = true;
+    return;
+  }
+
+  const girderRadius = Math.max(g.length, g.thickness) * 0.65;
+
+  // 2. Find all overlapping craters & active explosions
+  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
+  if (craters) {
+    for (const c of craters) {
+      const dist = Math.hypot(c.x - g.x, c.y - g.y);
+      if (dist <= c.radius + girderRadius) {
+        overlappingCraters.push(c);
+      }
+    }
+  }
+  if (explosions) {
+    for (const ex of explosions) {
+      const dist = Math.hypot(ex.x - g.x, ex.y - g.y);
+      if (dist <= ex.radius + girderRadius) {
+        overlappingCraters.push(ex);
+      }
+    }
+  }
+
+  ctx.save();
+
+  // 3. Dynamic Vector Crater Carving: carve overlapping blast holes via native GPU vector clipping!
+  if (overlappingCraters.length > 0) {
+    for (const c of overlappingCraters) {
+      const notCircle = new Path2D();
+      notCircle.rect(g.x - 200, g.y - 200, 400, 400);
+      notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+      ctx.clip(notCircle, 'evenodd');
+    }
+  }
+
+  // 4. Draw Girder Vector
+  ctx.translate(g.x, g.y);
+  ctx.rotate(rad);
+
+  // Steel beam body
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(-halfL, -halfT, g.length, g.thickness);
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-halfL, -halfT, g.length, g.thickness);
+
+  // Hazard stripes
+  ctx.fillStyle = '#facc15';
+  for (let i = -halfL + 6; i < halfL - 6; i += 16) {
+    ctx.fillRect(i, -halfT + 2, 6, g.thickness - 4);
+  }
+
+  // Rivet dots
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath();
+  ctx.arc(-halfL + 4, 0, 1.5, 0, Math.PI * 2);
+  ctx.arc(halfL - 4, 0, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.restore();
 }
 
@@ -1995,39 +2090,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
       }
 
-      // Draw Placed Steel Girders directly in HD Vector mode!
+      // Draw Placed Steel Girders (in full razor-sharp vector HD with dynamic crater carving!)
+      const { grid, solidProps } = terrain.data;
       if (curState.girders && curState.girders.length > 0) {
         for (const g of curState.girders) {
-          ctx.save();
-          ctx.translate(g.x, g.y);
-          ctx.rotate((g.angleDeg * Math.PI) / 180);
-
-          // Steel beam body
-          ctx.fillStyle = '#475569';
-          ctx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-          ctx.strokeStyle = '#94a3b8';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-
-          // Hazard stripes
-          ctx.fillStyle = '#facc15';
-          for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
-            ctx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
-          }
-
-          // Rivet dots
-          ctx.fillStyle = '#cbd5e1';
-          ctx.beginPath();
-          ctx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
-          ctx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.restore();
+          if (g.destroyed) continue;
+          renderHDDestructibleGirder(ctx, g, curState.craters, curState.explosions, grid, width);
         }
       }
 
       // Draw HD Solid Destructible Decor Props (in full razor-sharp vector HD with dynamic crater carving!)
-      const { solidProps, grid } = terrain.data;
       if (solidProps) {
         for (const sprop of solidProps) {
           if (sprop.destroyed) continue;
