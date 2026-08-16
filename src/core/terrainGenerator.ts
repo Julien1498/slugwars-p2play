@@ -57,6 +57,7 @@ export interface SolidProp {
   y: number;
   width: number;
   height: number;
+  angleRad?: number;
   variant?: number;
   destroyed?: boolean;
 }
@@ -225,6 +226,30 @@ export function generateProceduralTerrain(
       }
     }
 
+    // Calculate ground surface slope angle around placement point
+    let leftY = py;
+    let rightY = py;
+    const sampleDist = 8;
+    const leftX = Math.max(0, px - sampleDist);
+    const rightX = Math.min(width - 1, px + sampleDist);
+
+    for (let y = Math.max(0, py - 35); y <= Math.min(height - 1, py + 35); y++) {
+      if (grid[y * width + leftX] === 1 && (y === 0 || grid[(y - 1) * width + leftX] === 0)) {
+        leftY = y;
+        break;
+      }
+    }
+    for (let y = Math.max(0, py - 35); y <= Math.min(height - 1, py + 35); y++) {
+      if (grid[y * width + rightX] === 1 && (y === 0 || grid[(y - 1) * width + rightX] === 0)) {
+        rightY = y;
+        break;
+      }
+    }
+
+    const rawSlopeAngle = Math.atan2(rightY - leftY, rightX - leftX);
+    // Clamp slope angle within [-0.65, 0.65] rad (~ +-37 deg) so props stand naturally on slopes without flipping
+    const angleRad = Math.max(-0.65, Math.min(0.65, rawSlopeAngle));
+
     solidProps.push({
       id: `sprop_${type}_${solidProps.length}`,
       type,
@@ -232,6 +257,7 @@ export function generateProceduralTerrain(
       y: py,
       width: pWidth,
       height: pHeight,
+      angleRad,
       variant,
     });
   };

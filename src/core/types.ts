@@ -24,6 +24,7 @@ export interface SolidProp {
   y: number;
   width: number;
   height: number;
+  angleRad?: number;
   variant?: number;
   destroyed?: boolean;
 }
