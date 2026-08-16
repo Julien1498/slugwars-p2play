@@ -88,21 +88,26 @@ export class SlugWarsEngine {
     this.state.teams = this.state.teams.filter((t) => t.id !== id);
   }
 
-  public teamLastSlugIndex: Record<string, number> = {};
+  public teamLastPlayedSlugId: Record<string, string> = {};
 
   public getNextSlugForTeam(teamId: string): string {
-    const teamSlugs = this.state.slugs.filter((s) => s.teamId === teamId && s.isAlive && s.hp > 0);
-    if (teamSlugs.length === 0) return '';
+    const allSlugs = this.state.slugs.filter((s) => s.teamId === teamId);
+    if (allSlugs.length === 0) return '';
 
-    let prevIndex = this.teamLastSlugIndex[teamId];
-    if (prevIndex === undefined || prevIndex < 0 || prevIndex >= teamSlugs.length) {
-      prevIndex = -1;
+    const lastId = this.teamLastPlayedSlugId[teamId];
+    const lastIdx = lastId ? allSlugs.findIndex((s) => s.id === lastId) : -1;
+
+    // Search cyclically from (lastIdx + 1) for the next living, placed slug
+    for (let step = 1; step <= allSlugs.length; step++) {
+      const candidateIdx = (lastIdx + step) % allSlugs.length;
+      const candidate = allSlugs[candidateIdx];
+      if (candidate && candidate.isAlive && candidate.hp > 0 && candidate.isPlaced) {
+        this.teamLastPlayedSlugId[teamId] = candidate.id;
+        return candidate.id;
+      }
     }
 
-    const nextIndex = (prevIndex + 1) % teamSlugs.length;
-    this.teamLastSlugIndex[teamId] = nextIndex;
-
-    return teamSlugs[nextIndex].id;
+    return '';
   }
 
   public carveCrater(x: number, y: number, radius: number): void {
@@ -185,14 +190,13 @@ export class SlugWarsEngine {
     }
     this.initTerrain();
     this.state.slugs = [];
-    this.teamLastSlugIndex = {};
+    this.teamLastPlayedSlugId = {};
 
     // 1. Reset Inventory Ammo & Stats for all Teams!
     const weaponSet = getWeaponSet(this.state.config.weaponSetId);
     for (const team of this.state.teams) {
       team.inventory = { ...weaponSet.inventory };
       team.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-      this.teamLastSlugIndex[team.id] = -1;
     }
 
     // 2. Clear all transient visual effects & active entities!
