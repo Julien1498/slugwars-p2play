@@ -645,7 +645,7 @@ export class SlugWarsEngine {
       const dirX = Math.cos(angleRad);
       const dirY = Math.sin(angleRad);
 
-      const maxRange = 550;
+      const maxRange = 250;
       const startX = activeSlug.x;
       const startY = activeSlug.y - 12;
 
@@ -913,7 +913,7 @@ export class SlugWarsEngine {
         if (activeSlug.steeringDir === 'left') {
           rope.length = Math.max(25, rope.length - 4);
         } else if (activeSlug.steeringDir === 'right') {
-          rope.length = Math.min(550, rope.length + 4);
+          rope.length = Math.min(250, rope.length + 4);
         }
 
         const prevAngle = rope.angleRad;
