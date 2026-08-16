@@ -1854,6 +1854,126 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.restore();
       }
 
+      // Draw Tombstones & Ascending Cute Ghosts for Fallen Slugs
+      for (const slug of curState.slugs) {
+        if (slug.isAlive || !slug.isPlaced) continue;
+        const team = curState.teams.find((t) => t.id === slug.teamId);
+        const teamColor = team?.color || '#ec4899';
+
+        // A. Weathered Stone Tombstone (Only on solid ground / dry land)
+        if (slug.y < waterLevel + 10) {
+          ctx.save();
+          ctx.translate(slug.x, slug.y);
+
+          // Ground shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+          ctx.beginPath();
+          ctx.ellipse(0, 2, 9, 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Stone Slab (Arch Top)
+          const stoneGrad = ctx.createLinearGradient(0, -18, 0, 2);
+          stoneGrad.addColorStop(0, '#94a3b8');
+          stoneGrad.addColorStop(1, '#475569');
+          ctx.fillStyle = stoneGrad;
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 1.4;
+
+          ctx.beginPath();
+          ctx.moveTo(-7, 2);
+          ctx.lineTo(-7, -10);
+          ctx.quadraticCurveTo(-7, -18, 0, -18);
+          ctx.quadraticCurveTo(7, -18, 7, -10);
+          ctx.lineTo(7, 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Carved Cross in Stone
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(-1, -14, 2, 8);
+          ctx.fillRect(-3.5, -12, 7, 2);
+
+          // Team Ribbon / Base Floral Accent
+          ctx.fillStyle = teamColor;
+          ctx.beginPath();
+          ctx.arc(0, -2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Stone Crack Details
+          ctx.strokeStyle = '#334155';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(3, -15);
+          ctx.lineTo(1, -11);
+          ctx.lineTo(4, -8);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // B. Cute Floating Ghost with Angelic Halo & Tail Sway
+        const ghostIdSeed = slug.id.charCodeAt(0) + (slug.id.charCodeAt(slug.id.length - 1) || 0);
+        const ghostRiseSpeed = 0.02;
+        const ghostCycle = 140;
+        const ghostProgress = (Date.now() * ghostRiseSpeed + ghostIdSeed * 30) % ghostCycle;
+        const ghostY = slug.y - 10 - ghostProgress;
+        const ghostX = slug.x + Math.sin(animTime * 2.5 + ghostIdSeed) * 5;
+        const ghostAlpha = Math.max(0, 1 - (ghostProgress / ghostCycle) * 0.95);
+
+        if (ghostAlpha > 0.05 && ghostY > -30) {
+          ctx.save();
+          ctx.translate(ghostX, ghostY);
+          ctx.globalAlpha = ghostAlpha * (0.8 + Math.sin(animTime * 4 + ghostIdSeed) * 0.15);
+
+          // Floating Angelic Halo
+          const haloY = -18 + Math.sin(animTime * 3) * 1.5;
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.ellipse(0, haloY, 5, 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Ghost Body with Tail Ripple
+          const ghostGrad = ctx.createRadialGradient(-2, -6, 2, 0, 0, 12);
+          ghostGrad.addColorStop(0, '#ffffff');
+          ghostGrad.addColorStop(0.7, '#e0f2fe');
+          ghostGrad.addColorStop(1, 'rgba(186, 230, 253, 0.4)');
+          ctx.fillStyle = ghostGrad;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.lineWidth = 1.2;
+
+          const tailWave = Math.sin(animTime * 5 + ghostIdSeed) * 2;
+          ctx.beginPath();
+          ctx.moveTo(-6, 2);
+          ctx.quadraticCurveTo(-7, -8, 0, -12);
+          ctx.quadraticCurveTo(7, -8, 6, 2);
+          // Wavy bottom skirt
+          ctx.quadraticCurveTo(4, 5 + tailWave, 2, 2);
+          ctx.quadraticCurveTo(0, -1 - tailWave, -2, 2);
+          ctx.quadraticCurveTo(-4, 5 + tailWave, -6, 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Cute Ghost Eyes
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(-2, -6, 1.3, 0, Math.PI * 2);
+          ctx.arc(2, -6, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Cute Pink Blush
+          ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+          ctx.beginPath();
+          ctx.arc(-3.5, -4, 1.2, 0, Math.PI * 2);
+          ctx.arc(3.5, -4, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
       for (const slug of curState.slugs) {
         if (!slug.isAlive || !slug.isPlaced) continue;
         const team = curState.teams.find((t) => t.id === slug.teamId);
@@ -1862,6 +1982,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const isActive = slug.id === curState.activeSlugId;
         const isAiming = isActive && curState.phase === 'AIMING';
         const aimRad = (slug.aimAngle * Math.PI) / 180;
+
+        // Airborne Ballistic Blast Velocity Check
+        const speed = Math.hypot(slug.vx, slug.vy);
+        const isAirbornePanic = speed > 2.0;
+
+        // Proximity Danger Check (Dangerous incoming projectile or triggered landmine or low HP)
+        let isDangerNear = slug.hp < 35;
+        if (!isDangerNear && curState.projectiles && curState.projectiles.length > 0) {
+          for (const p of curState.projectiles) {
+            if (Math.hypot(slug.x - p.x, slug.y - p.y) < 70) {
+              isDangerNear = true;
+              break;
+            }
+          }
+        }
+        if (!isDangerNear && curState.mines && curState.mines.length > 0) {
+          for (const m of curState.mines) {
+            if (m.isTriggered && Math.hypot(slug.x - m.x, slug.y - m.y) < 55) {
+              isDangerNear = true;
+              break;
+            }
+          }
+        }
 
         // Active Slug Yellow Floating Arrow Marker (Polished Animated Beacon)
         if (isActive) {
@@ -1883,14 +2026,35 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.stroke();
         }
 
+        // Airborne Speed Trail Lines in High-Velocity Flight
+        if (isAirbornePanic) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+          ctx.lineWidth = 1.5;
+          for (let s = -1; s <= 1; s++) {
+            ctx.beginPath();
+            ctx.moveTo(slug.x - slug.vx * 1.8 + s * 4, slug.y - slug.vy * 1.8 + s * 3);
+            ctx.lineTo(slug.x - slug.vx * 3.6 + s * 4, slug.y - slug.vy * 3.6 + s * 3);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
         // Squish & Stretch Animation during locomotion + Scaled to match exact hitbox bounds
         const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1;
-        const squishX = isMoving ? Math.sin(animTime * 14) * 0.12 : 0;
-        const squishY = isMoving ? -Math.sin(animTime * 14) * 0.12 : 0;
+        const squishX = isAirbornePanic ? Math.min(0.35, speed * 0.035) : (isMoving ? Math.sin(animTime * 14) * 0.12 : 0);
+        const squishY = isAirbornePanic ? -Math.min(0.2, speed * 0.02) : (isMoving ? -Math.sin(animTime * 14) * 0.12 : 0);
         const slugScale = 0.72; // Perfect 1:1 scale matching the 8px radius / 16px hitbox
 
         ctx.save();
         ctx.translate(slug.x, slug.y - 2);
+
+        // Airborne blast tilt rotation
+        if (isAirbornePanic) {
+          const tilt = Math.atan2(slug.vy, slug.vx * (slug.facing === 'left' ? -1 : 1)) * 0.25;
+          ctx.rotate(tilt);
+        }
+
         if (slug.facing === 'left') {
           ctx.scale(-1 * (1 + squishX) * slugScale, (1 + squishY) * slugScale);
         } else {
@@ -1946,50 +2110,82 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.stroke();
 
         // --- 6. BIG EXPRESSIVE CARTOON EYES ---
-        const isBlinking = Math.sin(animTime * 1.5 + (slug.id.charCodeAt(0) % 10)) > 0.94;
+        const isBlinking = !isAirbornePanic && !isDangerNear && Math.sin(animTime * 1.5 + (slug.id.charCodeAt(0) % 10)) > 0.94;
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#18181b';
         ctx.lineWidth = 1.4;
 
-        // Left Eye
-        ctx.beginPath();
-        ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        if (isAirbornePanic) {
+          // SHOCKED PANIC EYES (Wide Ovals & Pinpoint Terrified Pupils)
+          // Left Eye
+          ctx.beginPath();
+          ctx.arc(2, -10, 5.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-        // Right Eye
-        ctx.beginPath();
-        ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+          // Right Eye
+          ctx.beginPath();
+          ctx.arc(8, -9, 4.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-        if (!isBlinking) {
-          // Pupils tracking aim direction or looking ahead
-          const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
-          const pupilOffY = isAiming ? -Math.sin(aimRad) * 1.4 : 0;
-
+          // Tiny pinpoint terrified pupils with nervous tremor
+          const jitterX = Math.sin(animTime * 20) * 0.6;
+          const jitterY = Math.cos(animTime * 20) * 0.6;
           ctx.fillStyle = '#09090b';
           ctx.beginPath();
-          ctx.arc(2.5 + pupilOffX, -10 + pupilOffY, 1.8, 0, Math.PI * 2);
-          ctx.arc(8.5 + pupilOffX, -9 + pupilOffY, 1.6, 0, Math.PI * 2);
+          ctx.arc(2.5 + jitterX, -10 + jitterY, 1.2, 0, Math.PI * 2);
+          ctx.arc(8.5 + jitterX, -9 + jitterY, 1.1, 0, Math.PI * 2);
           ctx.fill();
 
-          // Eye Light Glints
+          // Panicked eye shine
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          ctx.arc(2 + pupilOffX, -11 + pupilOffY, 0.8, 0, Math.PI * 2);
-          ctx.arc(8 + pupilOffX, -10 + pupilOffY, 0.7, 0, Math.PI * 2);
+          ctx.arc(2.2 + jitterX, -10.8 + jitterY, 0.5, 0, Math.PI * 2);
+          ctx.arc(8.2 + jitterX, -9.8 + jitterY, 0.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // Blinking eye slits
-          ctx.strokeStyle = '#18181b';
-          ctx.lineWidth = 1.6;
+          // Normal Expressive Eyes
+          // Left Eye
           ctx.beginPath();
-          ctx.moveTo(-1, -10);
-          ctx.lineTo(5, -10);
-          ctx.moveTo(6, -9);
-          ctx.lineTo(11, -9);
+          ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
+          ctx.fill();
           ctx.stroke();
+
+          // Right Eye
+          ctx.beginPath();
+          ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          if (!isBlinking) {
+            // Pupils tracking aim direction or looking ahead
+            const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
+            const pupilOffY = isAiming ? -Math.sin(aimRad) * 1.4 : 0;
+
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.arc(2.5 + pupilOffX, -10 + pupilOffY, 1.8, 0, Math.PI * 2);
+            ctx.arc(8.5 + pupilOffX, -9 + pupilOffY, 1.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eye Light Glints
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(2 + pupilOffX, -11 + pupilOffY, 0.8, 0, Math.PI * 2);
+            ctx.arc(8 + pupilOffX, -10 + pupilOffY, 0.7, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // Blinking eye slits
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(-1, -10);
+            ctx.lineTo(5, -10);
+            ctx.moveTo(6, -9);
+            ctx.lineTo(11, -9);
+            ctx.stroke();
+          }
         }
 
         // --- 7. TEAM SOLDIER HATS / ACCESSORIES ---
@@ -2129,19 +2325,60 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fill();
         }
 
-        // --- 8. SMIRK MOUTH ---
-        ctx.strokeStyle = '#831843';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(5, -1, 3, 0.2, Math.PI * 0.7);
-        ctx.stroke();
-
-        // --- 9. LOW HP SWEAT DROP ---
-        if (slug.hp < 30) {
-          ctx.fillStyle = '#38bdf8';
+        // --- 8. MOUTH (Smirk or Screaming Scream in Airborne Panic) ---
+        if (isAirbornePanic) {
+          // Wide open screaming mouth
+          ctx.fillStyle = '#09090b';
+          ctx.strokeStyle = '#831843';
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.arc(-5, -8, 2, 0, Math.PI * 2);
+          ctx.ellipse(6, 0, 3.5, 5, 0.1, 0, Math.PI * 2);
           ctx.fill();
+          ctx.stroke();
+
+          // Pink Tongue
+          ctx.fillStyle = '#f472b6';
+          ctx.beginPath();
+          ctx.ellipse(6, 2.5, 2.2, 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Classic Smirk Mouth
+          ctx.strokeStyle = '#831843';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(5, -1, 3, 0.2, Math.PI * 0.7);
+          ctx.stroke();
+        }
+
+        // --- 9. DANGER / LOW HP ANIMATED SWEAT DROPS ---
+        if (isDangerNear || isAirbornePanic) {
+          const sweatAnim = Math.sin(animTime * 8) * 1.5;
+
+          // Main Teardrop
+          ctx.fillStyle = '#38bdf8';
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(-5, -12 + sweatAnim);
+          ctx.quadraticCurveTo(-7.5, -8 + sweatAnim, -5, -6 + sweatAnim);
+          ctx.quadraticCurveTo(-2.5, -8 + sweatAnim, -5, -12 + sweatAnim);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // White Sparkle Glint on Sweat Drop
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-5.5, -8 + sweatAnim, 0.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Secondary mini-droplet if intense danger
+          if (isAirbornePanic || slug.hp < 20) {
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(-9, -10 - sweatAnim * 0.8, 1.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
         // --- 10. HELD WEAPON IN HAND (When Aiming) ---
