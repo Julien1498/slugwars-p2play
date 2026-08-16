@@ -1040,7 +1040,43 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const renderStart = performance.now();
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
-      ctx.clearRect(0, 0, width, height);
+
+      const container = containerRef.current;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cRect = container ? container.getBoundingClientRect() : { width, height };
+
+      const targetW = Math.max(100, Math.round(cRect.width * dpr));
+      const targetH = Math.max(100, Math.round(cRect.height * dpr));
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Dark atmospheric background fill behind the world
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.scale(dpr, dpr);
+
+      const W = width;
+      const H = height;
+      const fitScale = Math.min(cRect.width / W, cRect.height / H);
+      const zoom = zoomRef.current;
+      const pan = panRef.current;
+      const totalScale = fitScale * zoom;
+
+      // Set up Native World Camera View Matrix
+      ctx.translate(cRect.width / 2 + pan.x, cRect.height / 2 + pan.y);
+      ctx.scale(totalScale, totalScale);
+      ctx.translate(-W / 2, -H / 2);
+
+      // Enable crisp High-Quality image smoothing for terrain rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
       // Seed/Theme/Revision reconciliation (Only full-redraws if a new terrain seed/theme or reset terrain is loaded!)
       const curMatchKey = `${terrain.data.seed}_${terrain.data.theme}`;
@@ -2998,6 +3034,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
+      ctx.restore();
+
       const renderDuration = performance.now() - renderStart;
       perfTracker.markFrame(renderDuration, {
         slugs: curState?.slugs?.length || 0,
@@ -3060,13 +3098,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       <canvas
         ref={canvasRef}
-        width={terrain.data.width}
-        height={terrain.data.height}
-        style={{
-          transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0) scale(${zoomLevel})`,
-          transformOrigin: 'center center',
-        }}
-        className="w-full h-full object-contain cursor-crosshair block shadow-2xl pointer-events-none"
+        className="absolute inset-0 w-full h-full block cursor-crosshair pointer-events-none"
       />
 
       {/* Worms Style Floating Camera Zoom & Pan Controls */}
