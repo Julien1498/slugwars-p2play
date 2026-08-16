@@ -18,9 +18,14 @@ export class DestructibleTerrain {
     return this.data.grid[iy * this.data.width + ix] > 0;
   }
 
-  public carveExplosion(cx: number, cy: number, radius: number): number {
+  public carveExplosion(
+    cx: number,
+    cy: number,
+    radius: number
+  ): { carvedPixels: number; destroyedOilDrums: import('./types').SolidProp[] } {
     this.revision++;
     let carvedPixels = 0;
+    const destroyedOilDrums: import('./types').SolidProp[] = [];
     const icx = Math.floor(cx);
     const icy = Math.floor(cy);
     const rSq = radius * radius;
@@ -47,7 +52,7 @@ export class DestructibleTerrain {
       }
     }
 
-    // Destroy overlapping solid decor props
+    // Destroy overlapping solid decor props & collect exploding oil drums
     if (this.data.solidProps) {
       for (const sprop of this.data.solidProps) {
         if (sprop.destroyed) continue;
@@ -55,6 +60,9 @@ export class DestructibleTerrain {
         const dist = Math.hypot(cx - sprop.x, cy - sprop.y);
         if (dist <= radius + propRadius) {
           sprop.destroyed = true;
+          if (sprop.type === 'oil_drum') {
+            destroyedOilDrums.push(sprop);
+          }
         }
       }
     }
@@ -72,7 +80,7 @@ export class DestructibleTerrain {
       }
     }
 
-    return carvedPixels;
+    return { carvedPixels, destroyedOilDrums };
   }
 
   public raycastSolid(

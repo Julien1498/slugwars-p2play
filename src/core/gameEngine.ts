@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle, MAP_SIZE_CONFIGS } from './types';
+import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle, MAP_SIZE_CONFIGS, SolidProp } from './types';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
 import { generateProceduralTerrain } from './terrainGenerator';
@@ -112,7 +112,70 @@ export class SlugWarsEngine {
     const rR = Math.round(radius);
     const id = `c_${rX}_${rY}_${rR}_${this.state.craters.length}`;
     this.state.craters.push({ id, x: rX, y: rY, radius: rR });
-    this.terrain.carveExplosion(x, y, radius);
+    const { destroyedOilDrums } = this.terrain.carveExplosion(x, y, radius);
+    if (destroyedOilDrums && destroyedOilDrums.length > 0) {
+      for (const drum of destroyedOilDrums) {
+        this.detonateOilDrum(drum);
+      }
+    }
+  }
+
+  public detonateOilDrum(drum: SolidProp): void {
+    const now = Date.now();
+    const blastRadius = 65;
+    const blastDamage = 50;
+    const drumY = drum.y - 12;
+
+    this.state.explosions.push({
+      id: `ex_drum_${now}_${Math.random()}`,
+      x: drum.x,
+      y: drumY,
+      radius: blastRadius,
+      damage: blastDamage,
+      createdAt: now,
+    });
+
+    sfx.play('explosion');
+    this.addLog(`💥 UN BARIL DE PÉTROLE A EXPLOSÉ !`, 'combat');
+
+    // Apply blast damage and velocity knockback to nearby slugs
+    const expRes = applyExplosionToSlugs(
+      drum.x,
+      drumY,
+      blastRadius,
+      blastDamage,
+      this.state.slugs,
+      this.terrain,
+      this.state.teams
+    );
+
+    for (const dm of expRes.damageEvents) {
+      this.state.floatingDamages.push({
+        id: `fd_${now}_${Math.random()}`,
+        x: dm.x,
+        y: dm.y,
+        damage: dm.damage,
+        createdAt: now,
+      });
+    }
+
+    // Spawn fiery burning trail particles
+    for (let p = 0; p < 14; p++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 4.5;
+      this.state.particles.push({
+        x: drum.x,
+        y: drumY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.5,
+        color: Math.random() > 0.35 ? '#ef4444' : '#facc15',
+        size: Math.random() * 3 + 2,
+        life: 1.0,
+      });
+    }
+
+    // Carve secondary crater (which can chain-react into adjacent drums/mines!)
+    this.carveCrater(drum.x, drumY, blastRadius);
   }
 
   public startGame(): boolean {
