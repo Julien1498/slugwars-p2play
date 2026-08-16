@@ -270,362 +270,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         occCtx.putImageData(occImgData, 0, 0);
       }
     }
-
-    // Draw Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers)
-    const { solidProps } = terrain.data;
-    if (solidProps) {
-      for (const sprop of solidProps) {
-        if (sprop.destroyed) continue;
-
-        // Verify foundation: if ground pixel is destroyed, mark as destroyed and skip
-        const groundIdx = Math.floor(sprop.y) * width + Math.floor(sprop.x);
-        if (groundIdx >= 0 && groundIdx < grid.length && grid[groundIdx] === 0) {
-          sprop.destroyed = true;
-          continue;
-        }
-
-        offCtx.save();
-        offCtx.translate(sprop.x, sprop.y);
-
-        if (sprop.type === 'hedgehog') {
-          // HD Super Cute Hedgewars Style Hedgehog!
-          const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
-
-          // 1. Dark Undercoat Spikes
-          offCtx.fillStyle = '#451a03';
-          for (const a of spikeAngles) {
-            const sx = Math.cos(a - 0.7) * 14;
-            const sy = Math.sin(a - 0.7) * 11 - 10;
-            offCtx.beginPath();
-            offCtx.moveTo(sx * 0.5, sy * 0.5 - 6);
-            offCtx.lineTo(sx * 1.35, sy * 1.35);
-            offCtx.lineTo(sx * 0.5 + 3, sy * 0.5 - 6);
-            offCtx.closePath();
-            offCtx.fill();
-          }
-
-          // Golden/Brown Foreground Spikes
-          offCtx.fillStyle = '#b45309';
-          offCtx.strokeStyle = '#f59e0b';
-          offCtx.lineWidth = 0.8;
-          for (const a of spikeAngles) {
-            const sx = Math.cos(a - 0.75) * 12;
-            const sy = Math.sin(a - 0.75) * 9 - 10;
-            offCtx.beginPath();
-            offCtx.moveTo(sx * 0.4, sy * 0.4 - 5);
-            offCtx.lineTo(sx * 1.2, sy * 1.2);
-            offCtx.lineTo(sx * 0.4 + 2, sy * 0.4 - 5);
-            offCtx.closePath();
-            offCtx.fill();
-            offCtx.stroke();
-          }
-
-          // 2. Plump Brown Body
-          offCtx.fillStyle = '#78350f';
-          offCtx.beginPath();
-          offCtx.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // 3. Soft Peach Face & Snout
-          offCtx.fillStyle = '#fef08a';
-          offCtx.beginPath();
-          offCtx.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // Snout Tip Point
-          offCtx.beginPath();
-          offCtx.moveTo(8, -10);
-          offCtx.lineTo(13, -7);
-          offCtx.lineTo(8, -4);
-          offCtx.closePath();
-          offCtx.fill();
-
-          // Pink Cheek Blush
-          offCtx.fillStyle = 'rgba(244, 114, 182, 0.6)';
-          offCtx.beginPath();
-          offCtx.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // Black Button Nose
-          offCtx.fillStyle = '#09090b';
-          offCtx.beginPath();
-          offCtx.arc(13, -7, 1.8, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // 4. Glossy Eye with White Sparkle
-          offCtx.fillStyle = '#09090b';
-          offCtx.beginPath();
-          offCtx.arc(7, -10, 2.2, 0, Math.PI * 2);
-          offCtx.fill();
-
-          offCtx.fillStyle = '#ffffff';
-          offCtx.beginPath();
-          offCtx.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // Cute Ear
-          offCtx.fillStyle = '#fde047';
-          offCtx.strokeStyle = '#78350f';
-          offCtx.lineWidth = 1;
-          offCtx.beginPath();
-          offCtx.arc(-2, -14, 2.5, 0, Math.PI * 2);
-          offCtx.fill();
-          offCtx.stroke();
-
-          // 5. Cute Dark Paws on Ground
-          offCtx.fillStyle = '#542608';
-          offCtx.beginPath();
-          offCtx.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
-          offCtx.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
-          offCtx.fill();
-        } else if (sprop.type === 'chick') {
-          // Bright Yellow Chick / Poulet
-          offCtx.fillStyle = '#eab308'; // Yellow Body
-          offCtx.beginPath();
-          offCtx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
-          offCtx.fill();
-
-          offCtx.fillStyle = '#ca8a04'; // Wing
-          offCtx.beginPath();
-          offCtx.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
-          offCtx.fill();
-
-          offCtx.fillStyle = '#f97316'; // Orange Beak
-          offCtx.beginPath();
-          offCtx.moveTo(10, -14);
-          offCtx.lineTo(17, -11);
-          offCtx.lineTo(10, -8);
-          offCtx.closePath();
-          offCtx.fill();
-
-          offCtx.fillStyle = '#000000'; // Cute Black Eye
-          offCtx.beginPath();
-          offCtx.arc(7, -15, 2.2, 0, Math.PI * 2);
-          offCtx.fill();
-          offCtx.fillStyle = '#ffffff';
-          offCtx.fillRect(7.5, -16, 1, 1);
-        } else if (sprop.type === 'mushroom') {
-          // HD Organic Tactical Artillery/Super Mario Toadstool!
-          const isPurple = sprop.variant === 1;
-          const isGold = sprop.variant === 2;
-
-          // 1. Grass Tufts at Base (Seamless terrain blending)
-          offCtx.fillStyle = '#22c55e';
-          offCtx.beginPath();
-          offCtx.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
-          offCtx.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // 2. Organic Curved Stem (Flared base & soft outline)
-          const stemGrad = offCtx.createLinearGradient(0, -16, 0, 0);
-          stemGrad.addColorStop(0, '#fef9c3');
-          stemGrad.addColorStop(1, '#fde047');
-
-          offCtx.fillStyle = stemGrad;
-          offCtx.strokeStyle = '#a16207';
-          offCtx.lineWidth = 1.2;
-          offCtx.beginPath();
-          offCtx.moveTo(-4, -16);
-          offCtx.quadraticCurveTo(-6, -6, -7, 0);
-          offCtx.lineTo(7, 0);
-          offCtx.quadraticCurveTo(6, -6, 4, -16);
-          offCtx.closePath();
-          offCtx.fill();
-          offCtx.stroke();
-
-          // Ring Veil under cap
-          offCtx.fillStyle = '#ffffff';
-          offCtx.beginPath();
-          offCtx.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // 3. Dark Shadow under Cap Gills
-          offCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-          offCtx.beginPath();
-          offCtx.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
-          offCtx.fill();
-
-          // 4. Plump 3D Umbrella Dome Cap
-          const capGrad = offCtx.createLinearGradient(0, -28, 0, -14);
-          if (isPurple) {
-            capGrad.addColorStop(0, '#c084fc');
-            capGrad.addColorStop(0.5, '#9333ea');
-            capGrad.addColorStop(1, '#581c87');
-          } else if (isGold) {
-            capGrad.addColorStop(0, '#fde047');
-            capGrad.addColorStop(0.5, '#d97706');
-            capGrad.addColorStop(1, '#78350f');
-          } else {
-            capGrad.addColorStop(0, '#f87171');
-            capGrad.addColorStop(0.5, '#dc2626');
-            capGrad.addColorStop(1, '#7f1d1d');
-          }
-
-          offCtx.fillStyle = capGrad;
-          offCtx.beginPath();
-          offCtx.moveTo(-14, -16);
-          offCtx.quadraticCurveTo(-15, -28, 0, -28);
-          offCtx.quadraticCurveTo(15, -28, 14, -16);
-          offCtx.quadraticCurveTo(0, -13, -14, -16);
-          offCtx.closePath();
-          offCtx.fill();
-
-          // 5. Polka Dots
-          offCtx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
-          offCtx.beginPath();
-          offCtx.arc(0, -21, 2.8, 0, Math.PI * 2);
-          offCtx.arc(-7, -20, 2.2, 0, Math.PI * 2);
-          offCtx.arc(7, -19, 2.4, 0, Math.PI * 2);
-          offCtx.arc(-2, -25, 1.8, 0, Math.PI * 2);
-          offCtx.fill();
-        } else if (sprop.type === 'flower') {
-          // Colorful Flower
-          offCtx.fillStyle = '#15803d'; // Green Stem
-          offCtx.fillRect(-1.5, -14, 3, 14);
-
-          offCtx.fillStyle = sprop.variant === 1 ? '#ec4899' : sprop.variant === 2 ? '#3b82f6' : '#c084fc';
-          for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
-            offCtx.beginPath();
-            offCtx.arc(Math.cos(a) * 7, -16 + Math.sin(a) * 7, 4.5, 0, Math.PI * 2);
-            offCtx.fill();
-          }
-
-          offCtx.fillStyle = '#facc15'; // Yellow Core
-          offCtx.beginPath();
-          offCtx.arc(0, -16, 5, 0, Math.PI * 2);
-          offCtx.fill();
-        } else if (sprop.type === 'tree') {
-          // HD Solid Destructible Oak & Pine Trees
-          const isPine = sprop.variant === 1;
-
-          // 1. Wood Trunk & Flared Roots
-          const trunkGrad = offCtx.createLinearGradient(-6, -45, 6, 0);
-          trunkGrad.addColorStop(0, '#78350f');
-          trunkGrad.addColorStop(0.5, '#451a03');
-          trunkGrad.addColorStop(1, '#27160a');
-          offCtx.fillStyle = trunkGrad;
-
-          offCtx.beginPath();
-          offCtx.moveTo(-7, 0);
-          offCtx.lineTo(-4, -20);
-          offCtx.lineTo(-8, -32);
-          offCtx.lineTo(-5, -33);
-          offCtx.lineTo(-2, -22);
-          offCtx.lineTo(2, -22);
-          offCtx.lineTo(6, -31);
-          offCtx.lineTo(8, -30);
-          offCtx.lineTo(4, -20);
-          offCtx.lineTo(7, 0);
-          offCtx.closePath();
-          offCtx.fill();
-
-          // Wood Bark Texture Lines
-          offCtx.strokeStyle = '#27160a';
-          offCtx.lineWidth = 1;
-          offCtx.beginPath();
-          offCtx.moveTo(-2, -5);
-          offCtx.lineTo(-1, -18);
-          offCtx.moveTo(2, -8);
-          offCtx.lineTo(3, -16);
-          offCtx.stroke();
-
-          if (isPine) {
-            // Majestic Evergreen Pine Tree (4 Triangular Needle Tiers)
-            const pineTiers = [
-              { y: -16, r: 18, h: 16, color: '#064e3b' },
-              { y: -26, r: 15, h: 14, color: '#047857' },
-              { y: -35, r: 12, h: 12, color: '#10b981' },
-              { y: -43, r: 8,  h: 10, color: '#34d399' },
-            ];
-            for (const tier of pineTiers) {
-              offCtx.fillStyle = tier.color;
-              offCtx.beginPath();
-              offCtx.moveTo(0, tier.y - tier.h);
-              offCtx.lineTo(tier.r, tier.y);
-              offCtx.lineTo(-tier.r, tier.y);
-              offCtx.closePath();
-              offCtx.fill();
-            }
-            // Small Brown Pinecones
-            offCtx.fillStyle = '#78350f';
-            offCtx.beginPath();
-            offCtx.arc(-8, -20, 2.5, 0, Math.PI * 2);
-            offCtx.arc(7, -28, 2.2, 0, Math.PI * 2);
-            offCtx.fill();
-          } else {
-            // Lush Plump Oak Tree (5 Overlapping Foliage Domes & Red Wild Apples)
-            const oakClusters = [
-              { x: -11, y: -28, r: 14, color: '#14532d' },
-              { x: 11,  y: -28, r: 14, color: '#14532d' },
-              { x: -7,  y: -38, r: 13, color: '#15803d' },
-              { x: 7,   y: -38, r: 13, color: '#15803d' },
-              { x: 0,   y: -44, r: 11, color: '#22c55e' },
-            ];
-            for (const c of oakClusters) {
-              offCtx.fillStyle = c.color;
-              offCtx.beginPath();
-              offCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-              offCtx.fill();
-            }
-            // Cute Red Wild Apples / Blossoms
-            offCtx.fillStyle = '#ef4444';
-            offCtx.beginPath();
-            offCtx.arc(-8, -32, 2.2, 0, Math.PI * 2);
-            offCtx.arc(6, -36, 2.0, 0, Math.PI * 2);
-            offCtx.arc(-2, -42, 2.3, 0, Math.PI * 2);
-            offCtx.fill();
-          }
-        }
-
-        offCtx.restore();
-      }
-    }
-
-    // Draw Placed Steel Girders directly onto offscreen terrain canvas (destructible pixel-by-pixel!)
-    if (gameStateRef.current && gameStateRef.current.girders && gameStateRef.current.girders.length > 0) {
-      for (const g of gameStateRef.current.girders) {
-        offCtx.save();
-        offCtx.translate(g.x, g.y);
-        offCtx.rotate((g.angleDeg * Math.PI) / 180);
-
-        // Steel beam body
-        offCtx.fillStyle = '#475569';
-        offCtx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-        offCtx.strokeStyle = '#94a3b8';
-        offCtx.lineWidth = 1.5;
-        offCtx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-
-        // Hazard stripes
-        offCtx.fillStyle = '#facc15';
-        for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
-          offCtx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
-        }
-
-        // Rivet dots
-        offCtx.fillStyle = '#cbd5e1';
-        offCtx.beginPath();
-        offCtx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
-        offCtx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
-        offCtx.fill();
-
-        offCtx.restore();
-      }
-    }
-
-    // Clip all active explosion craters out of terrain canvas so solid props & girders stay carved pixel-by-pixel
-    if (gameStateRef.current && gameStateRef.current.explosions && gameStateRef.current.explosions.length > 0) {
-      offCtx.save();
-      offCtx.globalCompositeOperation = 'destination-out';
-      for (const ex of gameStateRef.current.explosions) {
-        const safeR = Math.max(0, ex.radius || 0);
-        if (safeR > 0) {
-          offCtx.beginPath();
-          offCtx.arc(ex.x, ex.y, safeR, 0, Math.PI * 2);
-          offCtx.fill();
-        }
-      }
-      offCtx.restore();
-    }
   }, [terrain]);
 
   // Carve crater on offscreen terrain canvas & occlusion shadow canvas when explosion happens
@@ -1269,80 +913,64 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      // 3. Pre-rendered Layered Parallax Background (0ms 60FPS overhead GPU blit!)
-      const bgKey = `${width}_${height}_${theme}_${isDay}_${terrain.data.seed}`;
-      if (!bgCanvasRef.current) {
-        bgCanvasRef.current = document.createElement('canvas');
+      // 3. Layered Parallax Background (Pure HD Vector Rendering)
+      // Layer 1: Distant Majestic Mountain Peaks
+      const mtGrad = ctx.createLinearGradient(0, height * 0.1, 0, height);
+      if (isDay) {
+        mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
+        mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
+      } else {
+        mtGrad.addColorStop(0, 'rgba(15, 12, 28, 0.95)');
+        mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.65)');
       }
-      const bgCanvas = bgCanvasRef.current;
-      if (bgCanvas.width !== width || bgCanvas.height !== height || lastBgKeyRef.current !== bgKey) {
-        bgCanvas.width = width;
-        bgCanvas.height = height;
-        lastBgKeyRef.current = bgKey;
-        const bgCtx = bgCanvas.getContext('2d');
-        if (bgCtx) {
-          bgCtx.clearRect(0, 0, width, height);
-
-          // Layer 1: Distant Majestic Mountain Peaks (Elevated to tower proudly in the sky!)
-          const mtGrad = bgCtx.createLinearGradient(0, height * 0.1, 0, height);
-          if (isDay) {
-            mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
-            mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
-          } else {
-            mtGrad.addColorStop(0, 'rgba(15, 12, 28, 0.95)');
-            mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.65)');
-          }
-          bgCtx.fillStyle = mtGrad;
-          bgCtx.beginPath();
-          bgCtx.moveTo(-20, height + 20);
-          for (let x = -20; x <= width + 40; x += 30) {
-            const my = height * 0.42 + Math.sin(x * 0.003 + 0.5) * 85 + Math.cos(x * 0.006) * 45;
-            bgCtx.lineTo(x, my);
-          }
-          bgCtx.lineTo(width + 20, height + 20);
-          bgCtx.closePath();
-          bgCtx.fill();
-
-          // Layer 2: Midground Pine Forest Silhouettes
-          bgCtx.fillStyle = isDay ? '#15803d' : '#090912';
-          bgCtx.beginPath();
-          bgCtx.moveTo(-20, height + 20);
-          for (let tx = -12; tx <= width + 20; tx += 12) {
-            const treeH = 26 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
-            const ty = height * 0.58 - treeH;
-            bgCtx.lineTo(tx - 6, ty + treeH);
-            bgCtx.lineTo(tx, ty);
-            bgCtx.lineTo(tx + 6, ty + treeH);
-          }
-          bgCtx.lineTo(width + 20, height + 20);
-          bgCtx.closePath();
-          bgCtx.fill();
-
-          // Layer 3: Foreground Fortified Hills (Smooth rolling contours with seamless overhanging bounds)
-          bgCtx.fillStyle = isDay ? '#166534' : '#0d0d15';
-          bgCtx.beginPath();
-          bgCtx.moveTo(-20, height + 20);
-          for (let x = -20; x <= width + 40; x += 20) {
-            const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
-            bgCtx.lineTo(x, by);
-          }
-          bgCtx.lineTo(width + 20, height + 20);
-          bgCtx.closePath();
-          bgCtx.fill();
-
-          // Layer 4: Signature Vibrant Green Dotted Grass Blade Dashes along the entire hill ridge!
-          bgCtx.strokeStyle = isDay ? '#4ade80' : '#22c55e';
-          bgCtx.lineWidth = 2.5;
-          bgCtx.beginPath();
-          for (let x = -10; x <= width + 20; x += 14) {
-            const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
-            bgCtx.moveTo(x, by);
-            bgCtx.lineTo(x + 2, by - 4.5);
-          }
-          bgCtx.stroke();
-        }
+      ctx.fillStyle = mtGrad;
+      ctx.beginPath();
+      ctx.moveTo(-20, height + 20);
+      for (let x = -20; x <= width + 40; x += 30) {
+        const my = height * 0.42 + Math.sin(x * 0.003 + 0.5) * 85 + Math.cos(x * 0.006) * 45;
+        ctx.lineTo(x, my);
       }
-      ctx.drawImage(bgCanvasRef.current, 0, 0);
+      ctx.lineTo(width + 20, height + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 2: Midground Pine Forest Silhouettes
+      ctx.fillStyle = isDay ? '#15803d' : '#090912';
+      ctx.beginPath();
+      ctx.moveTo(-20, height + 20);
+      for (let tx = -12; tx <= width + 20; tx += 12) {
+        const treeH = 26 + Math.sin(tx * 0.08) * 12 + Math.cos(tx * 0.03) * 15;
+        const ty = height * 0.58 - treeH;
+        ctx.lineTo(tx - 6, ty + treeH);
+        ctx.lineTo(tx, ty);
+        ctx.lineTo(tx + 6, ty + treeH);
+      }
+      ctx.lineTo(width + 20, height + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 3: Foreground Fortified Hills (Smooth rolling contours with seamless overhanging bounds)
+      ctx.fillStyle = isDay ? '#166534' : '#0d0d15';
+      ctx.beginPath();
+      ctx.moveTo(-20, height + 20);
+      for (let x = -20; x <= width + 40; x += 20) {
+        const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
+        ctx.lineTo(x, by);
+      }
+      ctx.lineTo(width + 20, height + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 4: Signature Vibrant Green Dotted Grass Blade Dashes along the entire hill ridge!
+      ctx.strokeStyle = isDay ? '#4ade80' : '#22c55e';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let x = -10; x <= width + 20; x += 14) {
+        const by = height * 0.72 + Math.sin(x * 0.004 + 2.1) * 40;
+        ctx.moveTo(x, by);
+        ctx.lineTo(x + 2, by - 4.5);
+      }
+      ctx.stroke();
 
       // 4. Deep Water Backdrop & Marine Caustics
       const waterBackdropGrad = ctx.createLinearGradient(0, waterLevel - 10, 0, height);
@@ -1395,9 +1023,343 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // Draw Pre-rendered Offscreen Terrain (Includes all Solid Destructible Props & Soil Pebbles!)
+      // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
+      }
+
+      // Draw Placed Steel Girders directly in HD Vector mode!
+      if (curState.girders && curState.girders.length > 0) {
+        for (const g of curState.girders) {
+          ctx.save();
+          ctx.translate(g.x, g.y);
+          ctx.rotate((g.angleDeg * Math.PI) / 180);
+
+          // Steel beam body
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+
+          // Hazard stripes
+          ctx.fillStyle = '#facc15';
+          for (let i = -g.length / 2 + 6; i < g.length / 2 - 6; i += 16) {
+            ctx.fillRect(i, -g.thickness / 2 + 2, 6, g.thickness - 4);
+          }
+
+          // Rivet dots
+          ctx.fillStyle = '#cbd5e1';
+          ctx.beginPath();
+          ctx.arc(-g.length / 2 + 4, 0, 1.5, 0, Math.PI * 2);
+          ctx.arc(g.length / 2 - 4, 0, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      // Draw HD Solid Destructible Decor Props (Hedgehogs, Chicks, Mushrooms, Flowers, Trees) directly in HD Vector mode!
+      const { solidProps, grid } = terrain.data;
+      if (solidProps) {
+        for (const sprop of solidProps) {
+          if (sprop.destroyed) continue;
+
+          // Verify foundation: if ground pixel is destroyed, mark as destroyed and skip
+          const groundIdx = Math.floor(sprop.y) * width + Math.floor(sprop.x);
+          if (groundIdx >= 0 && groundIdx < grid.length && grid[groundIdx] === 0) {
+            sprop.destroyed = true;
+            continue;
+          }
+
+          ctx.save();
+          ctx.translate(sprop.x, sprop.y);
+
+          if (sprop.type === 'hedgehog') {
+            const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+            // Dark Undercoat Spikes
+            ctx.fillStyle = '#451a03';
+            for (const a of spikeAngles) {
+              const sx = Math.cos(a - 0.7) * 14;
+              const sy = Math.sin(a - 0.7) * 11 - 10;
+              ctx.beginPath();
+              ctx.moveTo(sx * 0.5, sy * 0.5 - 6);
+              ctx.lineTo(sx * 1.35, sy * 1.35);
+              ctx.lineTo(sx * 0.5 + 3, sy * 0.5 - 6);
+              ctx.closePath();
+              ctx.fill();
+            }
+
+            // Golden/Brown Foreground Spikes
+            ctx.fillStyle = '#b45309';
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 0.8;
+            for (const a of spikeAngles) {
+              const sx = Math.cos(a - 0.75) * 12;
+              const sy = Math.sin(a - 0.75) * 9 - 10;
+              ctx.beginPath();
+              ctx.moveTo(sx * 0.4, sy * 0.4 - 5);
+              ctx.lineTo(sx * 1.2, sy * 1.2);
+              ctx.lineTo(sx * 0.4 + 2, sy * 0.4 - 5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+            }
+
+            // Plump Brown Body
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Soft Peach Face & Snout
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Snout Tip Point
+            ctx.beginPath();
+            ctx.moveTo(8, -10);
+            ctx.lineTo(13, -7);
+            ctx.lineTo(8, -4);
+            ctx.closePath();
+            ctx.fill();
+
+            // Pink Cheek Blush
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Black Button Nose
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.arc(13, -7, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glossy Eye with White Sparkle
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.arc(7, -10, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cute Ear
+            ctx.fillStyle = '#fde047';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(-2, -14, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Cute Dark Paws on Ground
+            ctx.fillStyle = '#542608';
+            ctx.beginPath();
+            ctx.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'chick') {
+            // Bright Yellow Chick
+            ctx.fillStyle = '#eab308';
+            ctx.beginPath();
+            ctx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ca8a04';
+            ctx.beginPath();
+            ctx.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.moveTo(10, -14);
+            ctx.lineTo(17, -11);
+            ctx.lineTo(10, -8);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(7, -15, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(7.5, -16, 1, 1);
+          } else if (sprop.type === 'mushroom') {
+            const isPurple = sprop.variant === 1;
+            const isGold = sprop.variant === 2;
+
+            // Grass Tufts at Base
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
+            ctx.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Organic Curved Stem
+            const stemGrad = ctx.createLinearGradient(0, -16, 0, 0);
+            stemGrad.addColorStop(0, '#fef9c3');
+            stemGrad.addColorStop(1, '#fde047');
+
+            ctx.fillStyle = stemGrad;
+            ctx.strokeStyle = '#a16207';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(-4, -16);
+            ctx.quadraticCurveTo(-6, -6, -7, 0);
+            ctx.lineTo(7, 0);
+            ctx.quadraticCurveTo(6, -6, 4, -16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Ring Veil under cap
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dark Shadow under Cap Gills
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Plump 3D Umbrella Dome Cap
+            const capGrad = ctx.createLinearGradient(0, -28, 0, -14);
+            if (isPurple) {
+              capGrad.addColorStop(0, '#c084fc');
+              capGrad.addColorStop(0.5, '#9333ea');
+              capGrad.addColorStop(1, '#581c87');
+            } else if (isGold) {
+              capGrad.addColorStop(0, '#fde047');
+              capGrad.addColorStop(0.5, '#d97706');
+              capGrad.addColorStop(1, '#78350f');
+            } else {
+              capGrad.addColorStop(0, '#f87171');
+              capGrad.addColorStop(0.5, '#dc2626');
+              capGrad.addColorStop(1, '#7f1d1d');
+            }
+
+            ctx.fillStyle = capGrad;
+            ctx.beginPath();
+            ctx.moveTo(-14, -16);
+            ctx.quadraticCurveTo(-15, -28, 0, -28);
+            ctx.quadraticCurveTo(15, -28, 14, -16);
+            ctx.quadraticCurveTo(0, -13, -14, -16);
+            ctx.closePath();
+            ctx.fill();
+
+            // Polka Dots
+            ctx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, -21, 2.8, 0, Math.PI * 2);
+            ctx.arc(-7, -20, 2.2, 0, Math.PI * 2);
+            ctx.arc(7, -19, 2.4, 0, Math.PI * 2);
+            ctx.arc(-2, -25, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'flower') {
+            // Colorful Flower
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(-1.5, -14, 3, 14);
+
+            ctx.fillStyle = sprop.variant === 1 ? '#ec4899' : sprop.variant === 2 ? '#3b82f6' : '#c084fc';
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+              ctx.beginPath();
+              ctx.arc(Math.cos(a) * 7, -16 + Math.sin(a) * 7, 4.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(0, -16, 5, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'tree') {
+            const isPine = sprop.variant === 1;
+
+            // Wood Trunk & Flared Roots
+            const trunkGrad = ctx.createLinearGradient(-6, -45, 6, 0);
+            trunkGrad.addColorStop(0, '#78350f');
+            trunkGrad.addColorStop(0.5, '#451a03');
+            trunkGrad.addColorStop(1, '#27160a');
+            ctx.fillStyle = trunkGrad;
+
+            ctx.beginPath();
+            ctx.moveTo(-7, 0);
+            ctx.lineTo(-4, -20);
+            ctx.lineTo(-8, -32);
+            ctx.lineTo(-5, -33);
+            ctx.lineTo(-2, -22);
+            ctx.lineTo(2, -22);
+            ctx.lineTo(6, -31);
+            ctx.lineTo(8, -30);
+            ctx.lineTo(4, -20);
+            ctx.lineTo(7, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Wood Bark Texture Lines
+            ctx.strokeStyle = '#27160a';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-2, -5);
+            ctx.lineTo(-1, -18);
+            ctx.moveTo(2, -8);
+            ctx.lineTo(3, -16);
+            ctx.stroke();
+
+            if (isPine) {
+              const pineTiers = [
+                { y: -16, r: 18, h: 16, color: '#064e3b' },
+                { y: -26, r: 15, h: 14, color: '#047857' },
+                { y: -35, r: 12, h: 12, color: '#10b981' },
+                { y: -43, r: 8,  h: 10, color: '#34d399' },
+              ];
+              for (const tier of pineTiers) {
+                ctx.fillStyle = tier.color;
+                ctx.beginPath();
+                ctx.moveTo(0, tier.y - tier.h);
+                ctx.lineTo(tier.r, tier.y);
+                ctx.lineTo(-tier.r, tier.y);
+                ctx.closePath();
+                ctx.fill();
+              }
+              ctx.fillStyle = '#78350f';
+              ctx.beginPath();
+              ctx.arc(-8, -20, 2.5, 0, Math.PI * 2);
+              ctx.arc(7, -28, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              const oakClusters = [
+                { x: -11, y: -28, r: 14, color: '#14532d' },
+                { x: 11,  y: -28, r: 14, color: '#14532d' },
+                { x: -7,  y: -38, r: 13, color: '#15803d' },
+                { x: 7,   y: -38, r: 13, color: '#15803d' },
+                { x: 0,   y: -44, r: 11, color: '#22c55e' },
+              ];
+              for (const c of oakClusters) {
+                ctx.fillStyle = c.color;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              ctx.fillStyle = '#ef4444';
+              ctx.beginPath();
+              ctx.arc(-8, -32, 2.2, 0, Math.PI * 2);
+              ctx.arc(6, -36, 2.0, 0, Math.PI * 2);
+              ctx.arc(-2, -42, 2.3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          ctx.restore();
+        }
       }
 
       // Warm Radiant Sunlight Wash over Surface Terrain in Day Mode!
