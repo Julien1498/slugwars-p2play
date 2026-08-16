@@ -704,9 +704,6 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
   ctx.restore();
 }
 
-// Persistent scratch canvas for carving craters out of HD vector props
-let scratchPropCanvas: HTMLCanvasElement | null = null;
-
 export function renderHDDestructibleProp(
   ctx: CanvasRenderingContext2D,
   sprop: SolidProp,
@@ -733,7 +730,7 @@ export function renderHDDestructibleProp(
     return;
   }
 
-  const propRadius = Math.max(sprop.width, sprop.height) * 0.8;
+  const propRadius = Math.max(sprop.width, sprop.height) * 0.85;
   const propCenterY = sprop.y - sprop.height / 2;
 
   // 2. Find all overlapping craters
@@ -756,71 +753,24 @@ export function renderHDDestructibleProp(
     }
   }
 
-  // 3. Fast Path: If NO craters touch this prop, render in 100% direct HD Vector!
+  // 3. Fast Path: If NO craters touch this prop, render in direct razor-sharp HD Vector!
   if (overlappingCraters.length === 0) {
     drawSolidPropVector(ctx, sprop, animTime);
     return;
   }
 
-  // 4. Carved Path: If craters DO touch the prop, carve them out of the HD vector drawing
-  const pad = 65;
-  const canvasSize = Math.max(sprop.width, sprop.height) * 2 + pad * 2;
-  const intSize = Math.ceil(canvasSize);
-
-  if (!scratchPropCanvas) {
-    scratchPropCanvas = document.createElement('canvas');
-  }
-  if (scratchPropCanvas.width < intSize || scratchPropCanvas.height < intSize) {
-    scratchPropCanvas.width = intSize;
-    scratchPropCanvas.height = intSize;
-  }
-
-  const sCtx = scratchPropCanvas.getContext('2d');
-  if (!sCtx) {
-    drawSolidPropVector(ctx, sprop, animTime);
-    return;
-  }
-
-  sCtx.clearRect(0, 0, intSize, intSize);
-
-  const centerX = intSize / 2;
-  const centerY = intSize / 2;
-
-  // Draw HD Prop in scratch canvas
-  sCtx.save();
-  sCtx.translate(centerX, centerY);
-  if (sprop.angleRad) {
-    sCtx.rotate(sprop.angleRad);
-  }
-  // Draw prop vector with sprop at (0, 0)
-  const localProp: SolidProp = { ...sprop, x: 0, y: 0, angleRad: 0 };
-  drawSolidPropVector(sCtx, localProp, animTime);
-  sCtx.restore();
-
-  // Carve overlapping craters using destination-out
-  sCtx.save();
-  sCtx.globalCompositeOperation = 'destination-out';
+  // 4. Carved Path: If craters DO touch the prop, carve them dynamically via native vector clipping!
+  // This preserves 100% razor-sharp vector anti-aliasing & device pixel resolution without any bitmap rasterization!
+  ctx.save();
   for (const c of overlappingCraters) {
-    const cx = centerX + (c.x - sprop.x);
-    const cy = centerY + (c.y - sprop.y);
-    sCtx.beginPath();
-    sCtx.arc(cx, cy, c.radius, 0, Math.PI * 2);
-    sCtx.fill();
+    const notCircle = new Path2D();
+    notCircle.rect(sprop.x - 200, sprop.y - 200, 400, 400);
+    notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+    ctx.clip(notCircle, 'evenodd');
   }
-  sCtx.restore();
 
-  // Draw the carved HD prop directly onto the main canvas
-  ctx.drawImage(
-    scratchPropCanvas,
-    0,
-    0,
-    intSize,
-    intSize,
-    sprop.x - centerX,
-    sprop.y - centerY,
-    intSize,
-    intSize
-  );
+  drawSolidPropVector(ctx, sprop, animTime);
+  ctx.restore();
 }
 
 export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
