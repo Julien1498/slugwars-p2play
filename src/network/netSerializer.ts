@@ -40,6 +40,7 @@ export interface CompactTeamDelta {
   deaths?: number;
   damageDealt?: number;
   damageTaken?: number;
+  inventory?: Record<string, number>;
 }
 
 export interface CompactStateDelta {
@@ -96,7 +97,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.winnerTeamId = currentState.winnerTeamId;
   }
 
-  // Team stats delta (sync kills, deaths, damageDealt, damageTaken)
+  // Team stats & inventory delta (sync kills, deaths, damageDealt, damageTaken & ammo inventory in real-time!)
   const teamDeltas: CompactTeamDelta[] = [];
   for (const team of currentState.teams) {
     const prevTeam = prevState?.teams.find((t) => t.id === team.id);
@@ -106,14 +107,38 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       prevTeam.stats?.damageDealt !== team.stats?.damageDealt ||
       prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
 
-    if (hasStatsChanged && team.stats) {
-      teamDeltas.push({
-        id: team.id,
-        kills: team.stats.kills,
-        deaths: team.stats.deaths,
-        damageDealt: team.stats.damageDealt,
-        damageTaken: team.stats.damageTaken,
-      });
+    let hasInventoryChanged = false;
+    if (!prevTeam || !prevTeam.inventory) {
+      hasInventoryChanged = true;
+    } else {
+      const curInv = team.inventory || {};
+      const prevInv = prevTeam.inventory || {};
+      const curKeys = Object.keys(curInv);
+      const prevKeys = Object.keys(prevInv);
+      if (curKeys.length !== prevKeys.length) {
+        hasInventoryChanged = true;
+      } else {
+        for (const k of curKeys) {
+          if (curInv[k] !== prevInv[k]) {
+            hasInventoryChanged = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (hasStatsChanged || hasInventoryChanged) {
+      const tDelta: CompactTeamDelta = { id: team.id };
+      if (team.stats) {
+        tDelta.kills = team.stats.kills;
+        tDelta.deaths = team.stats.deaths;
+        tDelta.damageDealt = team.stats.damageDealt;
+        tDelta.damageTaken = team.stats.damageTaken;
+      }
+      if (hasInventoryChanged && team.inventory) {
+        tDelta.inventory = { ...team.inventory };
+      }
+      teamDeltas.push(tDelta);
     }
   }
   if (teamDeltas.length > 0) delta.teams = teamDeltas;
@@ -323,6 +348,9 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dTeam.deaths !== undefined) team.stats.deaths = dTeam.deaths;
         if (dTeam.damageDealt !== undefined) team.stats.damageDealt = dTeam.damageDealt;
         if (dTeam.damageTaken !== undefined) team.stats.damageTaken = dTeam.damageTaken;
+        if (dTeam.inventory !== undefined) {
+          team.inventory = { ...dTeam.inventory };
+        }
       }
     }
   }

@@ -576,6 +576,21 @@ export class SlugWarsEngine {
     return false;
   }
 
+  public selectWeapon(weaponId: string): boolean {
+    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+    if (!activeSlug || !activeSlug.isAlive) return false;
+    const activeTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
+    if (activeTeam) {
+      const ammo = activeTeam.inventory[weaponId] ?? -1;
+      if (ammo === 0) {
+        activeSlug.selectedWeaponId = 'bazooka';
+        return false;
+      }
+    }
+    activeSlug.selectedWeaponId = weaponId;
+    return true;
+  }
+
   public fireWeapon(targetPoint?: Vector2D): boolean {
     if (this.state.phase !== 'AIMING') return false;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
@@ -585,8 +600,17 @@ export class SlugWarsEngine {
     const activeTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
     if (activeTeam) {
       const currentAmmo = activeTeam.inventory[weapon.id] ?? -1;
-      if (currentAmmo === 0) return false;
-      if (currentAmmo > 0) activeTeam.inventory[weapon.id]--;
+      if (currentAmmo === 0) {
+        activeSlug.selectedWeaponId = 'bazooka';
+        return false;
+      }
+      if (currentAmmo > 0) {
+        activeTeam.inventory[weapon.id]--;
+        // Auto-deselect when ammo reaches 0: fallback to default bazooka!
+        if (activeTeam.inventory[weapon.id] === 0) {
+          activeSlug.selectedWeaponId = 'bazooka';
+        }
+      }
     }
 
     if (targetPoint) {
@@ -1412,6 +1436,18 @@ export class SlugWarsEngine {
       }
     } else {
       this.state.activeSlugId = nextSlugId;
+    }
+
+    // Auto-verify active slug has weapon with valid ammo; fallback to bazooka if depleted
+    const currentActiveSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
+    if (currentActiveSlug) {
+      const currentTeam = this.state.teams.find((t) => t.id === currentActiveSlug.teamId);
+      if (currentTeam) {
+        const ammo = currentTeam.inventory[currentActiveSlug.selectedWeaponId] ?? -1;
+        if (ammo === 0) {
+          currentActiveSlug.selectedWeaponId = 'bazooka';
+        }
+      }
     }
 
     this.state.turnTimer = this.state.config.turnDuration;
