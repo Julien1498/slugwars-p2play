@@ -50,6 +50,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsCanvasRef = useRef<Set<string>>(new Set());
   const knownCraterIdsCanvasRef = useRef<Set<string>>(new Set());
+  const slugDeathTimestampsRef = useRef<Map<string, number>>(new Map());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -663,6 +664,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       carvedExplosionsRef.current.clear();
       knownGirderIdsCanvasRef.current.clear();
       knownCraterIdsCanvasRef.current.clear();
+      slugDeathTimestampsRef.current.clear();
       lockedTargetRef.current = null;
       redrawOffscreenTerrain();
     }
@@ -742,6 +744,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         carvedExplosionsRef.current.clear();
         knownGirderIdsCanvasRef.current.clear();
         knownCraterIdsCanvasRef.current.clear();
+        slugDeathTimestampsRef.current.clear();
         redrawOffscreenTerrain();
       }
 
@@ -1912,65 +1915,71 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.restore();
         }
 
-        // B. Cute Floating Ghost with Angelic Halo & Tail Sway
-        const ghostIdSeed = slug.id.charCodeAt(0) + (slug.id.charCodeAt(slug.id.length - 1) || 0);
-        const ghostRiseSpeed = 0.02;
-        const ghostCycle = 140;
-        const ghostProgress = (Date.now() * ghostRiseSpeed + ghostIdSeed * 30) % ghostCycle;
-        const ghostY = slug.y - 10 - ghostProgress;
-        const ghostX = slug.x + Math.sin(animTime * 2.5 + ghostIdSeed) * 5;
-        const ghostAlpha = Math.max(0, 1 - (ghostProgress / ghostCycle) * 0.95);
+        // B. Cute Floating Ghost with Angelic Halo & Tail Sway (Ascends ONCE upon death!)
+        if (!slugDeathTimestampsRef.current.has(slug.id)) {
+          slugDeathTimestampsRef.current.set(slug.id, Date.now());
+        }
+        const deathTime = slugDeathTimestampsRef.current.get(slug.id) || Date.now();
+        const elapsedMs = Date.now() - deathTime;
+        const ghostDurationMs = 3600; // 3.6 seconds one-shot gentle flight to heaven
 
-        if (ghostAlpha > 0.05 && ghostY > -30) {
-          ctx.save();
-          ctx.translate(ghostX, ghostY);
-          ctx.globalAlpha = ghostAlpha * (0.8 + Math.sin(animTime * 4 + ghostIdSeed) * 0.15);
+        if (elapsedMs < ghostDurationMs) {
+          const progress = elapsedMs / ghostDurationMs; // 0.0 to 1.0
+          const ghostY = slug.y - 10 - progress * 120;
+          const ghostX = slug.x + Math.sin(animTime * 2.5 + slug.id.charCodeAt(0)) * 5;
+          const ghostAlpha = (1 - progress) * (0.85 + Math.sin(animTime * 4) * 0.15);
 
-          // Floating Angelic Halo
-          const haloY = -18 + Math.sin(animTime * 3) * 1.5;
-          ctx.strokeStyle = '#fde047';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.ellipse(0, haloY, 5, 2, 0, 0, Math.PI * 2);
-          ctx.stroke();
+          if (ghostAlpha > 0.02 && ghostY > -30) {
+            ctx.save();
+            ctx.translate(ghostX, ghostY);
+            ctx.globalAlpha = ghostAlpha;
 
-          // Ghost Body with Tail Ripple
-          const ghostGrad = ctx.createRadialGradient(-2, -6, 2, 0, 0, 12);
-          ghostGrad.addColorStop(0, '#ffffff');
-          ghostGrad.addColorStop(0.7, '#e0f2fe');
-          ghostGrad.addColorStop(1, 'rgba(186, 230, 253, 0.4)');
-          ctx.fillStyle = ghostGrad;
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-          ctx.lineWidth = 1.2;
+            // Floating Angelic Halo
+            const haloY = -18 + Math.sin(animTime * 3) * 1.5;
+            ctx.strokeStyle = '#fde047';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(0, haloY, 5, 2, 0, 0, Math.PI * 2);
+            ctx.stroke();
 
-          const tailWave = Math.sin(animTime * 5 + ghostIdSeed) * 2;
-          ctx.beginPath();
-          ctx.moveTo(-6, 2);
-          ctx.quadraticCurveTo(-7, -8, 0, -12);
-          ctx.quadraticCurveTo(7, -8, 6, 2);
-          // Wavy bottom skirt
-          ctx.quadraticCurveTo(4, 5 + tailWave, 2, 2);
-          ctx.quadraticCurveTo(0, -1 - tailWave, -2, 2);
-          ctx.quadraticCurveTo(-4, 5 + tailWave, -6, 2);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
+            // Ghost Body with Tail Ripple
+            const ghostGrad = ctx.createRadialGradient(-2, -6, 2, 0, 0, 12);
+            ghostGrad.addColorStop(0, '#ffffff');
+            ghostGrad.addColorStop(0.7, '#e0f2fe');
+            ghostGrad.addColorStop(1, 'rgba(186, 230, 253, 0.4)');
+            ctx.fillStyle = ghostGrad;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1.2;
 
-          // Cute Ghost Eyes
-          ctx.fillStyle = '#0f172a';
-          ctx.beginPath();
-          ctx.arc(-2, -6, 1.3, 0, Math.PI * 2);
-          ctx.arc(2, -6, 1.3, 0, Math.PI * 2);
-          ctx.fill();
+            const tailWave = Math.sin(animTime * 5 + slug.id.charCodeAt(0)) * 2;
+            ctx.beginPath();
+            ctx.moveTo(-6, 2);
+            ctx.quadraticCurveTo(-7, -8, 0, -12);
+            ctx.quadraticCurveTo(7, -8, 6, 2);
+            // Wavy bottom skirt
+            ctx.quadraticCurveTo(4, 5 + tailWave, 2, 2);
+            ctx.quadraticCurveTo(0, -1 - tailWave, -2, 2);
+            ctx.quadraticCurveTo(-4, 5 + tailWave, -6, 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
-          // Cute Pink Blush
-          ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
-          ctx.beginPath();
-          ctx.arc(-3.5, -4, 1.2, 0, Math.PI * 2);
-          ctx.arc(3.5, -4, 1.2, 0, Math.PI * 2);
-          ctx.fill();
+            // Cute Ghost Eyes
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(-2, -6, 1.3, 0, Math.PI * 2);
+            ctx.arc(2, -6, 1.3, 0, Math.PI * 2);
+            ctx.fill();
 
-          ctx.restore();
+            // Cute Pink Blush
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+            ctx.beginPath();
+            ctx.arc(-3.5, -4, 1.2, 0, Math.PI * 2);
+            ctx.arc(3.5, -4, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+          }
         }
       }
 
@@ -3174,9 +3183,229 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       clientFloatingDamagesRef.current = remainingFloatingDamages;
 
-      // DEBUG HITBOX OVERLAY RENDERING
+      // COMPREHENSIVE DEBUG HITBOX OVERLAY RENDERING (Slugs, Projectiles, Vehicles, Crates, Mines, Girders, Solid Props, Terrain & Water)
       if (showHitboxesRef.current) {
-        // Draw Slugs Hitboxes
+        ctx.save();
+
+        // 1. World Map Boundaries & Deep Sea Danger Water Level
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(0, 0, width, height);
+        ctx.setLineDash([]);
+
+        // Water Hazard Danger Line
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, waterLevel);
+        ctx.lineTo(width, waterLevel);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`⚠️ NIVEAU DE L'EAU (NOYADE INSTANTANÉE: y=${waterLevel})`, 10, waterLevel - 6);
+
+        // 2. Solid Destructible Decor Props Hitboxes
+        const { solidProps } = terrain.data;
+        if (solidProps) {
+          for (const sprop of solidProps) {
+            if (sprop.destroyed) continue;
+
+            ctx.save();
+            ctx.translate(sprop.x, sprop.y);
+
+            // Ground Foundation Anchor Point
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(-1.5, -1.5, 3, 3);
+
+            ctx.setLineDash([2, 2]);
+            if (sprop.type === 'tree') {
+              ctx.strokeStyle = '#10b981'; // Emerald
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-7, -45, 14, 45); // Trunk
+              ctx.beginPath();
+              ctx.arc(0, -35, 18, 0, Math.PI * 2); // Foliage
+              ctx.stroke();
+            } else if (sprop.type === 'mushroom') {
+              ctx.strokeStyle = '#a855f7'; // Purple
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-6, -16, 12, 16);
+              ctx.beginPath();
+              ctx.ellipse(0, -21, 14, 8, 0, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (sprop.type === 'hedgehog') {
+              ctx.strokeStyle = '#f59e0b'; // Amber
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.ellipse(-2, -9, 14, 10, 0, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (sprop.type === 'chick') {
+              ctx.strokeStyle = '#eab308'; // Yellow
+              ctx.lineWidth = 1.2;
+              ctx.beginPath();
+              ctx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
+              ctx.stroke();
+            } else if (sprop.type === 'flower') {
+              ctx.strokeStyle = '#ec4899'; // Pink
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-2, -14, 4, 14);
+              ctx.beginPath();
+              ctx.arc(0, -16, 8, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Prop:${sprop.type}`, 0, -4);
+
+            ctx.restore();
+          }
+        }
+
+        // 3. Vehicles (Helicopters) Hitboxes
+        if (curState.helicopters) {
+          for (const heli of curState.helicopters) {
+            // Fuselage Bounding Rect (44x22)
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([3, 2]);
+            ctx.strokeRect(heli.x - 22, heli.y - 11, 44, 22);
+
+            // Rotor Collision Span (90px)
+            ctx.strokeStyle = '#eab308';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(heli.x - 45, heli.y - 16);
+            ctx.lineTo(heli.x + 45, heli.y - 16);
+            ctx.stroke();
+
+            // Boarding Proximity Zone (65px)
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(heli.x, heli.y, 65, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#06b6d4';
+            ctx.font = 'bold 8.5px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`🚁 Hélico (Zone: 65px)`, heli.x, heli.y + 18);
+          }
+        }
+
+        // 4. Supply Crates Hitboxes
+        if (curState.supplyCrates) {
+          for (const crate of curState.supplyCrates) {
+            // Crate Box Bounding Box (18x18)
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 1.4;
+            ctx.setLineDash([2, 2]);
+            ctx.strokeRect(crate.x - 9, crate.y - 9, 18, 18);
+
+            if (!crate.isLanded) {
+              // Parachute Collision Arc (16px radius)
+              ctx.strokeStyle = '#ef4444';
+              ctx.beginPath();
+              ctx.arc(crate.x, crate.y - 22, 16, Math.PI, 0);
+              ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`📦 Caisse 18x18`, crate.x, crate.y - 12);
+          }
+        }
+
+        // 5. Placed Steel Girders Hitboxes
+        if (curState.girders) {
+          for (const g of curState.girders) {
+            if (!g) continue;
+            ctx.save();
+            ctx.translate(g.x, g.y);
+            ctx.rotate((g.angleDeg * Math.PI) / 180);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.4;
+            ctx.setLineDash([3, 2]);
+            ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Poutre ${g.length}x${g.thickness}`, 0, 3);
+            ctx.restore();
+          }
+        }
+
+        // 6. Landmines Hitboxes & Proximity Trigger Radii
+        if (curState.mines) {
+          for (const m of curState.mines) {
+            if (!m) continue;
+            // Proximity Trigger Detection Zone (25px)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.4;
+            ctx.setLineDash([3, 2]);
+            ctx.beginPath();
+            ctx.arc(m.x, m.y - 8, 25, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Base Anchor
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(m.x - 2, m.y - 2, 4, 4);
+
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`💣 Mine (r=25)`, m.x, m.y - 16);
+          }
+        }
+
+        // 7. Projectiles Hitboxes & Blast Radii
+        for (const proj of curState.projectiles) {
+          if (!proj) continue;
+          const weapon = getWeapon(proj.weaponId);
+
+          // Projectile Collision Circle
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, proj.radius || 4, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Explosion Blast Danger Ring
+          if (weapon && weapon.radius > 0) {
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, weapon.radius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+
+          // Velocity Vector
+          ctx.strokeStyle = '#f97316';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(proj.x, proj.y);
+          ctx.lineTo(proj.x + proj.vx * 3, proj.y + proj.vy * 3);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${proj.weaponId} (r=${proj.radius}, blast=${weapon?.radius || 0})`, proj.x, proj.y - 8);
+        }
+
+        // 8. Slugs Hitboxes, Ground Sensors & Velocity Vectors
         for (const slug of curState.slugs) {
           if (!slug.isAlive) continue;
 
@@ -3212,48 +3441,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             ctx.lineTo(slug.x + slug.vx * 5, slug.y - 8 + slug.vy * 5);
             ctx.stroke();
           }
+
+          // Label
+          ctx.fillStyle = '#06b6d4';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${slug.name} (r=8)`, slug.x, slug.y - 20);
         }
 
-        // Draw Projectile Hitboxes
-        for (const proj of curState.projectiles) {
-          if (!proj) continue;
-          ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 1.2;
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath();
-          ctx.arc(proj.x, proj.y, proj.radius || 4, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-
-        // Draw Girder Hitboxes
-        if (curState.girders) {
-          for (const g of curState.girders) {
-            if (!g) continue;
-            ctx.save();
-            ctx.translate(g.x, g.y);
-            ctx.rotate((g.angleDeg * Math.PI) / 180);
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 1.2;
-            ctx.setLineDash([3, 2]);
-            ctx.strokeRect(-g.length / 2, -g.thickness / 2, g.length, g.thickness);
-            ctx.restore();
-          }
-        }
-
-        // Draw Mine Hitboxes
-        if (curState.mines) {
-          for (const m of curState.mines) {
-            if (!m) continue;
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 1.2;
-            ctx.setLineDash([2, 2]);
-            ctx.beginPath();
-            ctx.arc(m.x, m.y - 5, 24, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-        }
+        ctx.restore();
       }
 
       ctx.restore();
