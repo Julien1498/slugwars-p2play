@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { GameState, Vector2D, SolidProp } from '../../core/types';
+import { GameState, Vector2D, SolidProp, CraterRecord, ExplosionEvent } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
 import { SeededRandom } from '../../core/terrainGenerator';
@@ -704,6 +704,125 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
   ctx.restore();
 }
 
+// Persistent scratch canvas for carving craters out of HD vector props
+let scratchPropCanvas: HTMLCanvasElement | null = null;
+
+export function renderHDDestructibleProp(
+  ctx: CanvasRenderingContext2D,
+  sprop: SolidProp,
+  craters: CraterRecord[] | undefined,
+  explosions: ExplosionEvent[] | undefined,
+  animTime: number,
+  grid: Uint8Array,
+  width: number
+) {
+  // 1. Check if the foundation is completely gone across the base
+  const halfW = Math.max(4, Math.floor(sprop.width / 2));
+  let solidFoundationCount = 0;
+  for (let ox = -halfW; ox <= halfW; ox += Math.max(1, Math.floor(halfW / 2))) {
+    const gx = Math.floor(sprop.x + ox);
+    const gy = Math.floor(sprop.y + 1);
+    const idx = gy * width + gx;
+    if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
+      solidFoundationCount++;
+    }
+  }
+  // If 100% of the ground below the entire prop base has been destroyed, prop collapses
+  if (solidFoundationCount === 0) {
+    sprop.destroyed = true;
+    return;
+  }
+
+  const propRadius = Math.max(sprop.width, sprop.height) * 0.8;
+  const propCenterY = sprop.y - sprop.height / 2;
+
+  // 2. Find all overlapping craters
+  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
+
+  if (craters) {
+    for (const c of craters) {
+      const dist = Math.hypot(c.x - sprop.x, c.y - propCenterY);
+      if (dist <= c.radius + propRadius) {
+        overlappingCraters.push(c);
+      }
+    }
+  }
+  if (explosions) {
+    for (const ex of explosions) {
+      const dist = Math.hypot(ex.x - sprop.x, ex.y - propCenterY);
+      if (dist <= ex.radius + propRadius) {
+        overlappingCraters.push(ex);
+      }
+    }
+  }
+
+  // 3. Fast Path: If NO craters touch this prop, render in 100% direct HD Vector!
+  if (overlappingCraters.length === 0) {
+    drawSolidPropVector(ctx, sprop, animTime);
+    return;
+  }
+
+  // 4. Carved Path: If craters DO touch the prop, carve them out of the HD vector drawing
+  const pad = 65;
+  const canvasSize = Math.max(sprop.width, sprop.height) * 2 + pad * 2;
+  const intSize = Math.ceil(canvasSize);
+
+  if (!scratchPropCanvas) {
+    scratchPropCanvas = document.createElement('canvas');
+  }
+  if (scratchPropCanvas.width < intSize || scratchPropCanvas.height < intSize) {
+    scratchPropCanvas.width = intSize;
+    scratchPropCanvas.height = intSize;
+  }
+
+  const sCtx = scratchPropCanvas.getContext('2d');
+  if (!sCtx) {
+    drawSolidPropVector(ctx, sprop, animTime);
+    return;
+  }
+
+  sCtx.clearRect(0, 0, intSize, intSize);
+
+  const centerX = intSize / 2;
+  const centerY = intSize / 2;
+
+  // Draw HD Prop in scratch canvas
+  sCtx.save();
+  sCtx.translate(centerX, centerY);
+  if (sprop.angleRad) {
+    sCtx.rotate(sprop.angleRad);
+  }
+  // Draw prop vector with sprop at (0, 0)
+  const localProp: SolidProp = { ...sprop, x: 0, y: 0, angleRad: 0 };
+  drawSolidPropVector(sCtx, localProp, animTime);
+  sCtx.restore();
+
+  // Carve overlapping craters using destination-out
+  sCtx.save();
+  sCtx.globalCompositeOperation = 'destination-out';
+  for (const c of overlappingCraters) {
+    const cx = centerX + (c.x - sprop.x);
+    const cy = centerY + (c.y - sprop.y);
+    sCtx.beginPath();
+    sCtx.arc(cx, cy, c.radius, 0, Math.PI * 2);
+    sCtx.fill();
+  }
+  sCtx.restore();
+
+  // Draw the carved HD prop directly onto the main canvas
+  ctx.drawImage(
+    scratchPropCanvas,
+    0,
+    0,
+    intSize,
+    intSize,
+    sprop.x - centerX,
+    sprop.y - centerY,
+    intSize,
+    intSize
+  );
+}
+
 export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   gameState,
   terrain,
@@ -917,15 +1036,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     offCtx.putImageData(imgData, minX, minY);
 
     if (isFullScan) {
-      // 1. Draw HD Solid Destructible Decor Props directly onto the offscreen terrain canvas!
-      // When explosions or blowtorches happen, craters are carved through props piece by piece!
-      const { solidProps } = terrain.data;
-      if (solidProps) {
-        for (const sprop of solidProps) {
-          drawSolidPropVector(offCtx, sprop, 0);
-        }
-      }
-
       // Pre-render Subterranean Soil Occlusion Mask to offscreen canvas
       if (!occlusionCanvasRef.current) {
         occlusionCanvasRef.current = document.createElement('canvas');
@@ -1963,6 +2073,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fill();
 
           ctx.restore();
+        }
+      }
+
+      // Draw HD Solid Destructible Decor Props (in full razor-sharp vector HD with dynamic crater carving!)
+      const { solidProps, grid } = terrain.data;
+      if (solidProps) {
+        for (const sprop of solidProps) {
+          if (sprop.destroyed) continue;
+          renderHDDestructibleProp(ctx, sprop, curState.craters, curState.explosions, animTime, grid, width);
         }
       }
 
