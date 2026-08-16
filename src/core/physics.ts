@@ -553,9 +553,15 @@ export function updateSlugPhysics(
       let hitOtherSlug = false;
       for (const other of slugs) {
         if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
-        const dx = targetX - other.x;
+        const curDx = slug.x - other.x;
+        const newDx = targetX - other.x;
         const dy = (slug.y - 8) - (other.y - 8);
-        if (Math.hypot(dx, dy) < 14) {
+        const curDist = Math.hypot(curDx, dy);
+        const newDist = Math.hypot(newDx, dy);
+
+        // Only block if we are within collision radius AND moving CLOSER to the other slug!
+        // If moving AWAY (newDist >= curDist), allow the slug to walk freely to separate!
+        if (newDist < 14 && newDist < curDist) {
           hitOtherSlug = true;
           break;
         }
@@ -580,6 +586,23 @@ export function updateSlugPhysics(
           slug.vx = 0;
           break;
         }
+      }
+    }
+  }
+
+  // 3. Slug-to-Slug Soft Repulsion / De-overlap (Gently separates overlapping slugs)
+  for (const other of slugs) {
+    if (other.id === slug.id || !other.isAlive || other.isPlaced === false) continue;
+    const dx = slug.x - other.x;
+    const dy = (slug.y - 8) - (other.y - 8);
+    const dist = Math.hypot(dx, dy);
+    if (dist < 14 && dist > 0.001) {
+      // Slugs are overlapping! Push slug away from other slug gently
+      const pushDir = Math.sign(dx) || (slug.id > other.id ? 1 : -1);
+      const pushAmount = Math.min(1.5, (14 - dist) * 0.5);
+      const testX = slug.x + pushDir * pushAmount;
+      if (!terrain.isSolid(Math.floor(testX), Math.floor(slug.y - 4)) && !terrain.isSolid(Math.floor(testX), Math.floor(slug.y - 12))) {
+        slug.x = testX;
       }
     }
   }
