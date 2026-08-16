@@ -1012,7 +1012,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   // Render Loop
   useEffect(() => {
     const matchKey = `${terrain.data.seed}_${terrain.data.theme}`;
-    if (lastSeedRef.current !== matchKey) {
+    if (lastSeedRef.current !== matchKey || lastTerrainRevisionRef.current > terrain.revision) {
       lastSeedRef.current = matchKey;
       lastTerrainRevisionRef.current = terrain.revision;
       carvedExplosionsRef.current.clear();
@@ -1042,9 +1042,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const { width, height, waterLevel, decorItems } = terrain.data;
       ctx.clearRect(0, 0, width, height);
 
-      // Seed/Theme reconciliation (Only full-redraws if a new terrain seed/theme is loaded!)
+      // Seed/Theme/Revision reconciliation (Only full-redraws if a new terrain seed/theme or reset terrain is loaded!)
       const curMatchKey = `${terrain.data.seed}_${terrain.data.theme}`;
-      if (lastSeedRef.current !== curMatchKey) {
+      if (lastSeedRef.current !== curMatchKey || lastTerrainRevisionRef.current > terrain.revision) {
         lastSeedRef.current = curMatchKey;
         lastTerrainRevisionRef.current = terrain.revision;
         carvedExplosionsRef.current.clear();
