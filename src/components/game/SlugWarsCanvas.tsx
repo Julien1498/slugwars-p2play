@@ -1036,7 +1036,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           const rowOffset = y * width;
           for (let x = 0; x < width; x++) {
             const idx = rowOffset + x;
-            if (grid[idx] === 1) {
+            if (grid[idx] > 0) {
               const d = distMap[idx];
               if (d <= 2.5) {
                 // Surface Collision Perimeter Border (Bright Solid Neon Emerald #10b981)
