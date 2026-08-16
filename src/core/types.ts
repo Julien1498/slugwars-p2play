@@ -8,7 +8,18 @@ export type SlugId = string;
 
 export interface SolidProp {
   id: string;
-  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree';
+  type:
+    | 'hedgehog'
+    | 'chick'
+    | 'mushroom'
+    | 'flower'
+    | 'tree'
+    | 'bunker'
+    | 'cactus'
+    | 'crystal'
+    | 'oil_drum'
+    | 'totem'
+    | 'lamppost';
   x: number;
   y: number;
   width: number;

@@ -1430,6 +1430,394 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               ctx.arc(-2, -42, 2.3, 0, Math.PI * 2);
               ctx.fill();
             }
+          } else if (sprop.type === 'bunker') {
+            // --- FORTIFIED MILITARY REINFORCED CONCRETE BUNKER ---
+            const bunkerGrad = ctx.createLinearGradient(-18, -26, 18, 0);
+            bunkerGrad.addColorStop(0, '#64748b');
+            bunkerGrad.addColorStop(0.6, '#475569');
+            bunkerGrad.addColorStop(1, '#334155');
+            ctx.fillStyle = bunkerGrad;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+
+            // Trapezoidal Sloped Pillbox Shape
+            ctx.beginPath();
+            ctx.moveTo(-18, 0);
+            ctx.lineTo(-15, -22);
+            ctx.lineTo(15, -22);
+            ctx.lineTo(18, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Sandbag Bulwarks at base
+            ctx.fillStyle = '#b45309';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(-14, -3, 5, 3, 0.1, 0, Math.PI * 2);
+            ctx.ellipse(-13, -7, 4.5, 2.5, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.ellipse(14, -3, 5, 3, -0.1, 0, Math.PI * 2);
+            ctx.ellipse(13, -7, 4.5, 2.5, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Firing Slit Visor Window
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(-10, -16, 20, 5);
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-10, -16, 20, 5);
+
+            // Scanning Radar Light inside visor
+            const scanX = Math.sin(animTime * 3 + sprop.x) * 7;
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(scanX, -13.5, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Yellow/Black Hazard Stripes
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(-8, -10, 4, 3);
+            ctx.fillRect(4, -10, 4, 3);
+
+            // Steel Top Hatch & Antenna
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(-6, -24, 12, 2.5);
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(8, -22);
+            ctx.lineTo(8, -34);
+            ctx.stroke();
+
+            const beaconOn = Math.sin(animTime * 5 + sprop.x) > 0;
+            ctx.fillStyle = beaconOn ? '#ef4444' : '#7f1d1d';
+            ctx.beginPath();
+            ctx.arc(8, -34, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'totem') {
+            // --- ANCIENT MYSTICAL CARVED STONE MOAI / TIKI IDOL ---
+            const stoneGrad = ctx.createLinearGradient(-12, -36, 12, 0);
+            stoneGrad.addColorStop(0, '#64748b');
+            stoneGrad.addColorStop(0.5, '#475569');
+            stoneGrad.addColorStop(1, '#334155');
+            ctx.fillStyle = stoneGrad;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+
+            // Monolith Head Profile
+            ctx.beginPath();
+            ctx.moveTo(-11, 0);
+            ctx.lineTo(-12, -26);
+            ctx.lineTo(-8, -34);
+            ctx.lineTo(8, -34);
+            ctx.lineTo(12, -26);
+            ctx.lineTo(11, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Chiselled Heavy Brow
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(-10, -28, 20, 4);
+
+            // Glowing Mystical Eyes
+            const eyeGlow = sprop.variant === 1 ? '#06b6d4' : '#facc15';
+            ctx.fillStyle = eyeGlow;
+            ctx.beginPath();
+            ctx.arc(-5, -22, 2.2, 0, Math.PI * 2);
+            ctx.arc(5, -22, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.arc(-5, -22, 1, 0, Math.PI * 2);
+            ctx.arc(5, -22, 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Stylized Long Stone Nose
+            ctx.fillStyle = '#475569';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-3, -24);
+            ctx.lineTo(3, -24);
+            ctx.lineTo(4, -13);
+            ctx.lineTo(-4, -13);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Stoic Stone Mouth Slit
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(-6, -9, 12, 3);
+
+            // Moss / Lichen Patches
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.ellipse(-6, -33, 4, 2, 0.2, 0, Math.PI * 2);
+            ctx.ellipse(7, -31, 3.5, 2, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Rock Cracks
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(-7, -18);
+            ctx.lineTo(-9, -12);
+            ctx.lineTo(-7, -6);
+            ctx.stroke();
+          } else if (sprop.type === 'cactus') {
+            // --- WILD WEST SAGUARO DESERT CACTUS ---
+            const cactusGrad = ctx.createLinearGradient(-10, -36, 10, 0);
+            cactusGrad.addColorStop(0, '#22c55e');
+            cactusGrad.addColorStop(0.5, '#16a34a');
+            cactusGrad.addColorStop(1, '#15803d');
+
+            ctx.fillStyle = cactusGrad;
+            ctx.strokeStyle = '#14532d';
+            ctx.lineWidth = 1.4;
+
+            // Main Central Trunk
+            ctx.beginPath();
+            ctx.roundRect(-5.5, -36, 11, 36, [5, 5, 0, 0]);
+            ctx.fill();
+            ctx.stroke();
+
+            // Left Branch Arm
+            ctx.beginPath();
+            ctx.moveTo(-5.5, -18);
+            ctx.lineTo(-11, -18);
+            ctx.lineTo(-11, -29);
+            ctx.arc(-8.5, -29, 2.5, Math.PI, 0);
+            ctx.lineTo(-6, -14);
+            ctx.lineTo(-5.5, -14);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Right Branch Arm
+            ctx.beginPath();
+            ctx.moveTo(5.5, -22);
+            ctx.lineTo(11, -22);
+            ctx.lineTo(11, -33);
+            ctx.arc(8.5, -33, 2.5, 0, Math.PI);
+            ctx.lineTo(6, -18);
+            ctx.lineTo(5.5, -18);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Vertical Rib Lines
+            ctx.strokeStyle = '#14532d';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(-2, -34);
+            ctx.lineTo(-2, -1);
+            ctx.moveTo(2, -34);
+            ctx.lineTo(2, -1);
+            ctx.stroke();
+
+            // Prickly Needles
+            ctx.fillStyle = '#fef08a';
+            const needlesY = [-30, -24, -18, -12, -6];
+            for (const ny of needlesY) {
+              ctx.fillRect(-7, ny, 2, 1);
+              ctx.fillRect(5.5, ny, 2, 1);
+            }
+
+            // Top Desert Blossom Flower
+            ctx.fillStyle = sprop.variant === 1 ? '#f43f5e' : '#facc15';
+            ctx.beginPath();
+            ctx.arc(0, -36, 3.5, 0, Math.PI * 2);
+            ctx.arc(-2.5, -38, 2, 0, Math.PI * 2);
+            ctx.arc(2.5, -38, 2, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'crystal') {
+            // --- LUMINOUS GLOWING CRYSTAL GEODE CLUSTER ---
+            const isAmethyst = sprop.variant === 0 || sprop.variant === undefined;
+            const isCyan = sprop.variant === 1;
+
+            // Dark Rock Crust Base
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(-13, 0);
+            ctx.lineTo(-14, -6);
+            ctx.lineTo(-7, -9);
+            ctx.lineTo(6, -9);
+            ctx.lineTo(14, -6);
+            ctx.lineTo(13, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Gem Crystals Array
+            const shards = [
+              { x: 0, y: -8, h: 22, w: 7, angle: 0 },
+              { x: -6, y: -7, h: 17, w: 5.5, angle: -0.25 },
+              { x: 6, y: -7, h: 18, w: 5.5, angle: 0.22 },
+              { x: -10, y: -5, h: 12, w: 4.5, angle: -0.45 },
+              { x: 10, y: -5, h: 13, w: 4.5, angle: 0.42 },
+            ];
+
+            for (const s of shards) {
+              ctx.save();
+              ctx.translate(s.x, s.y);
+              ctx.rotate(s.angle);
+
+              const gemGrad = ctx.createLinearGradient(0, -s.h, 0, 0);
+              if (isAmethyst) {
+                gemGrad.addColorStop(0, '#f5d0fe');
+                gemGrad.addColorStop(0.4, '#c084fc');
+                gemGrad.addColorStop(1, '#6b21a8');
+              } else if (isCyan) {
+                gemGrad.addColorStop(0, '#e0f2fe');
+                gemGrad.addColorStop(0.4, '#38bdf8');
+                gemGrad.addColorStop(1, '#0284c7');
+              } else {
+                gemGrad.addColorStop(0, '#d1fae5');
+                gemGrad.addColorStop(0.4, '#34d399');
+                gemGrad.addColorStop(1, '#059669');
+              }
+
+              ctx.fillStyle = gemGrad;
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 0.8;
+
+              ctx.beginPath();
+              ctx.moveTo(-s.w / 2, 0);
+              ctx.lineTo(-s.w / 2, -s.h * 0.7);
+              ctx.lineTo(0, -s.h);
+              ctx.lineTo(s.w / 2, -s.h * 0.7);
+              ctx.lineTo(s.w / 2, 0);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.lineTo(0, -s.h);
+              ctx.stroke();
+
+              ctx.restore();
+            }
+
+            const pulse = (Math.sin(animTime * 4 + sprop.x) + 1) * 0.5;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, -22, 1.5 + pulse, 0, Math.PI * 2);
+            ctx.arc(-6, -16, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (sprop.type === 'oil_drum') {
+            // --- INDUSTRIAL RUSTED OIL / FUEL DRUM ---
+            const isRust = sprop.variant === 1;
+            const drumGrad = ctx.createLinearGradient(-9, -24, 9, 0);
+            if (isRust) {
+              drumGrad.addColorStop(0, '#b45309');
+              drumGrad.addColorStop(0.5, '#78350f');
+              drumGrad.addColorStop(1, '#451a03');
+            } else {
+              drumGrad.addColorStop(0, '#ef4444');
+              drumGrad.addColorStop(0.5, '#b91c1c');
+              drumGrad.addColorStop(1, '#7f1d1d');
+            }
+
+            ctx.fillStyle = drumGrad;
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1.4;
+
+            ctx.beginPath();
+            ctx.roundRect(-9, -24, 18, 24, 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(-9, -19);
+            ctx.lineTo(9, -19);
+            ctx.moveTo(-9, -12);
+            ctx.lineTo(9, -12);
+            ctx.moveTo(-9, -5);
+            ctx.lineTo(9, -5);
+            ctx.stroke();
+
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(-9, -16, 18, 5);
+
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.moveTo(-2.5, -12);
+            ctx.quadraticCurveTo(-4, -14, 0, -16);
+            ctx.quadraticCurveTo(4, -14, 2.5, -12);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(-5, -26, 4, 2.5);
+          } else if (sprop.type === 'lamppost') {
+            // --- VICTORIAN WROUGHT-IRON STREET LAMP ---
+            ctx.fillStyle = '#27272a';
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = 1.2;
+
+            ctx.beginPath();
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(-2, -6);
+            ctx.lineTo(2, -6);
+            ctx.lineTo(5, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#18181b';
+            ctx.fillRect(-1.5, -34, 3, 28);
+            ctx.strokeRect(-1.5, -34, 3, 28);
+
+            ctx.strokeStyle = '#18181b';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, -34);
+            ctx.quadraticCurveTo(6, -35, 6, -38);
+            ctx.lineTo(0, -38);
+            ctx.stroke();
+
+            const glowGrad = ctx.createRadialGradient(0, -32, 2, 0, -32, 16);
+            glowGrad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
+            glowGrad.addColorStop(0.4, 'rgba(245, 158, 11, 0.4)');
+            glowGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(0, -32, 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fef08a';
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-5, -28);
+            ctx.lineTo(-6, -35);
+            ctx.lineTo(6, -35);
+            ctx.lineTo(5, -28);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#18181b';
+            ctx.beginPath();
+            ctx.moveTo(-7, -35);
+            ctx.lineTo(0, -40);
+            ctx.lineTo(7, -35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
           }
 
           ctx.restore();
@@ -3309,6 +3697,30 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               ctx.beginPath();
               ctx.arc(0, -16, 8, 0, Math.PI * 2);
               ctx.stroke();
+            } else if (sprop.type === 'bunker') {
+              ctx.strokeStyle = '#94a3b8'; // Slate
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-18, -26, 36, 26);
+            } else if (sprop.type === 'totem') {
+              ctx.strokeStyle = '#f59e0b'; // Amber
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-12, -36, 24, 36);
+            } else if (sprop.type === 'cactus') {
+              ctx.strokeStyle = '#22c55e'; // Green
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-11, -38, 22, 38);
+            } else if (sprop.type === 'crystal') {
+              ctx.strokeStyle = '#c084fc'; // Purple
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-13, -26, 26, 26);
+            } else if (sprop.type === 'oil_drum') {
+              ctx.strokeStyle = '#ef4444'; // Red
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-9, -24, 18, 24);
+            } else if (sprop.type === 'lamppost') {
+              ctx.strokeStyle = '#facc15'; // Yellow
+              ctx.lineWidth = 1.2;
+              ctx.strokeRect(-7, -42, 14, 42);
             }
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
