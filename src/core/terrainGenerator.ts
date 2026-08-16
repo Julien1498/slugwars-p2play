@@ -213,20 +213,7 @@ export function generateProceduralTerrain(
     pHeight: number,
     variant?: number
   ) => {
-    const minX = Math.max(0, px - Math.floor(pWidth / 2));
-    const maxX = Math.min(width - 1, px + Math.floor(pWidth / 2));
-    const minY = Math.max(0, py - pHeight);
-    const maxY = py;
-
-    for (let y = minY; y <= maxY; y++) {
-      for (let x = minX; x <= maxX; x++) {
-        if (grid[y * width + x] === 0) {
-          grid[y * width + x] = 2; // Mark as IS_SOLID_PROP
-        }
-      }
-    }
-
-    // Calculate ground surface slope angle around placement point
+    // 1. Calculate ground surface slope angle around placement point first
     let leftY = py;
     let rightY = py;
     const sampleDist = 8;
@@ -249,6 +236,35 @@ export function generateProceduralTerrain(
     const rawSlopeAngle = Math.atan2(rightY - leftY, rightX - leftX);
     // Clamp slope angle within [-0.65, 0.65] rad (~ +-37 deg) so props stand naturally on slopes without flipping
     const angleRad = Math.max(-0.65, Math.min(0.65, rawSlopeAngle));
+
+    // 2. Stamp Exact Tilted Hitbox into the physics collision grid
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+    const halfW = pWidth / 2;
+    const maxDim = Math.ceil(Math.hypot(halfW, pHeight)) + 2;
+
+    const minX = Math.max(0, px - maxDim);
+    const maxX = Math.min(width - 1, px + maxDim);
+    const minY = Math.max(0, py - maxDim);
+    const maxY = Math.min(height - 1, py + maxDim);
+
+    for (let y = minY; y <= maxY; y++) {
+      const dy = y - py;
+      const rowOffset = y * width;
+      for (let x = minX; x <= maxX; x++) {
+        const dx = x - px;
+        // Transform world coordinate into prop's local coordinate system rotated by angleRad
+        const localX = dx * cosA + dy * sinA;
+        const localY = -dx * sinA + dy * cosA;
+
+        // Check if inside prop rectangle: [-halfW .. halfW] horizontally, [-pHeight .. 0] vertically
+        if (Math.abs(localX) <= halfW && localY >= -pHeight && localY <= 0) {
+          if (grid[rowOffset + x] === 0) {
+            grid[rowOffset + x] = 2; // Mark as IS_SOLID_PROP
+          }
+        }
+      }
+    }
 
     solidProps.push({
       id: `sprop_${type}_${solidProps.length}`,
