@@ -43,6 +43,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightmapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const occlusionCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const terrainHitboxCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const distMapRef = useRef<Float32Array | null>(null);
   const lastSeedRef = useRef<string | null>(null);
   const lastTerrainRevisionRef = useRef<number>(-1);
@@ -271,6 +272,40 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
         occCtx.putImageData(occImgData, 0, 0);
       }
+
+      // Pre-render Exact Ground Collision Hitbox Mask (Neon Emerald Border & Collision Hull)
+      if (!terrainHitboxCanvasRef.current) {
+        terrainHitboxCanvasRef.current = document.createElement('canvas');
+      }
+      const tbCanvas = terrainHitboxCanvasRef.current;
+      if (tbCanvas.width !== width || tbCanvas.height !== height) {
+        tbCanvas.width = width;
+        tbCanvas.height = height;
+      }
+      const tbCtx = tbCanvas.getContext('2d');
+      if (tbCtx) {
+        tbCtx.clearRect(0, 0, width, height);
+        const tbImgData = tbCtx.createImageData(width, height);
+        const tbData32 = new Uint32Array(tbImgData.data.buffer);
+
+        for (let y = 0; y < height; y++) {
+          const rowOffset = y * width;
+          for (let x = 0; x < width; x++) {
+            const idx = rowOffset + x;
+            if (grid[idx] === 1) {
+              const d = distMap[idx];
+              if (d <= 2.5) {
+                // Surface Collision Perimeter Border (Bright Solid Neon Emerald #10b981)
+                tbData32[idx] = 0xff81b910;
+              } else {
+                // Subterranean Solid Collision Mass (Translucent Green Tint)
+                tbData32[idx] = 0x3522c55e;
+              }
+            }
+          }
+        }
+        tbCtx.putImageData(tbImgData, 0, 0);
+      }
     }
   }, [terrain]);
 
@@ -305,6 +340,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         occCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
         occCtx.fill();
         occCtx.restore();
+      }
+    }
+
+    // 4. Cut crater out of terrain collision hitbox canvas
+    if (terrainHitboxCanvasRef.current) {
+      const tbCtx = terrainHitboxCanvasRef.current.getContext('2d');
+      if (tbCtx) {
+        tbCtx.save();
+        tbCtx.globalCompositeOperation = 'destination-out';
+        tbCtx.beginPath();
+        tbCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
+        tbCtx.fill();
+        tbCtx.restore();
       }
     }
   }, [terrain]);
@@ -3186,6 +3234,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       // COMPREHENSIVE DEBUG HITBOX OVERLAY RENDERING (Slugs, Projectiles, Vehicles, Crates, Mines, Girders, Solid Props, Terrain & Water)
       if (showHitboxesRef.current) {
         ctx.save();
+
+        // 0. Solid Ground Terrain Exact Physical Collision Hull & Mask (Neon Emerald Border)
+        if (terrainHitboxCanvasRef.current) {
+          ctx.drawImage(terrainHitboxCanvasRef.current, 0, 0);
+        }
 
         // 1. World Map Boundaries & Deep Sea Danger Water Level
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
