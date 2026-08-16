@@ -367,7 +367,7 @@ export class SlugWarsEngine {
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (!activeSlug || activeSlug.isPlaced) return false;
 
-    const safePt = this.findSafeTeleportPoint(point.x, point.y);
+    const safePt = this.findSafeTeleportPoint(point.x, point.y, this.state.slugs);
     activeSlug.x = safePt.x;
     activeSlug.y = safePt.y;
     activeSlug.isPlaced = true;
@@ -408,14 +408,23 @@ export class SlugWarsEngine {
     }
   }
 
-  public findSafeTeleportPoint(targetX: number, targetY: number): Vector2D {
+  public findSafeTeleportPoint(targetX: number, targetY: number, existingSlugs: Slug[] = []): Vector2D {
     const width = this.terrain.data.width;
     const height = this.terrain.data.height;
-    const safeX = Math.max(15, Math.min(width - 15, Math.round(targetX)));
-    const safeY = Math.max(15, Math.min(height - 15, Math.round(targetY)));
+    let safeX = Math.max(15, Math.min(width - 15, Math.round(targetX)));
+    let safeY = Math.max(15, Math.min(height - 15, Math.round(targetY)));
 
-    // 1. If clicked point is ALREADY open air, return immediately
+    // 1. If clicked point is ALREADY open air
     if (!this.terrain.isSolid(safeX, safeY)) {
+      // Check if overlapping another placed slug; if so, offset horizontally
+      const overlapSlug = existingSlugs.find((s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16);
+      if (overlapSlug) {
+        const offset = safeX >= overlapSlug.x ? 18 : -18;
+        const testX = Math.max(15, Math.min(width - 15, safeX + offset));
+        if (!this.terrain.isSolid(testX, safeY)) {
+          return { x: testX, y: safeY };
+        }
+      }
       return { x: safeX, y: safeY };
     }
 
@@ -620,7 +629,7 @@ export class SlugWarsEngine {
     }
 
     if (weapon.behavior === 'TELEPORT' && targetPoint) {
-      const safePt = this.findSafeTeleportPoint(targetPoint.x, targetPoint.y);
+      const safePt = this.findSafeTeleportPoint(targetPoint.x, targetPoint.y, this.state.slugs);
       activeSlug.x = safePt.x;
       activeSlug.y = safePt.y;
       activeSlug.vx = 0;
