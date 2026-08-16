@@ -843,6 +843,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       const theme = curState?.config?.mapTheme || 'ISLAND';
+      const isDay = (curState?.config?.dayNightCycle || 'DAY') === 'DAY';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
@@ -854,158 +855,303 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       // 1. Premium Atmospheric Sky Horizon Gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-      if (theme === 'CAVERN') {
-        skyGrad.addColorStop(0, '#060205');
-        skyGrad.addColorStop(0.35, '#170605');
-        skyGrad.addColorStop(0.7, '#2b0c07');
-        skyGrad.addColorStop(1, '#0d0403');
-      } else if (theme === 'FORTRESS') {
-        skyGrad.addColorStop(0, '#030712');
-        skyGrad.addColorStop(0.35, '#0b1120');
-        skyGrad.addColorStop(0.7, '#1e293b');
-        skyGrad.addColorStop(1, '#0f172a');
-      } else if (theme === 'FLOATING_CHAOS') {
-        skyGrad.addColorStop(0, '#030109');
-        skyGrad.addColorStop(0.35, '#130729');
-        skyGrad.addColorStop(0.7, '#2e1065');
-        skyGrad.addColorStop(1, '#080313');
+      if (isDay) {
+        // --- DAYLIGHT ATMOSPHERIC GRADIENTS ---
+        if (theme === 'CAVERN') {
+          // Subterranean Skylight Grotto / Warm Amber & Terracotta Sunlit Vault
+          skyGrad.addColorStop(0, '#1c0e08');
+          skyGrad.addColorStop(0.35, '#3b160b');
+          skyGrad.addColorStop(0.7, '#7c2d12');
+          skyGrad.addColorStop(1, '#290c05');
+        } else if (theme === 'FORTRESS') {
+          // Alpine Bastion Daylight / High-Altitude Steel Blue & Cirrus Haze
+          skyGrad.addColorStop(0, '#334155');
+          skyGrad.addColorStop(0.35, '#475569');
+          skyGrad.addColorStop(0.7, '#64748b');
+          skyGrad.addColorStop(1, '#94a3b8');
+        } else if (theme === 'FLOATING_CHAOS') {
+          // Astral Dawn / Shimmering Ultraviolet & Sunrise Amber Aurora
+          skyGrad.addColorStop(0, '#1e1b4b');
+          skyGrad.addColorStop(0.35, '#581c87');
+          skyGrad.addColorStop(0.7, '#9333ea');
+          skyGrad.addColorStop(1, '#fbbf24');
+        } else {
+          // ISLAND & Default: Radiant Tropical Azure & Cyan Sky
+          skyGrad.addColorStop(0, '#0284c7');
+          skyGrad.addColorStop(0.35, '#38bdf8');
+          skyGrad.addColorStop(0.7, '#7dd3fc');
+          skyGrad.addColorStop(1, '#bae6fd');
+        }
       } else {
-        // ISLAND & Default: Deep Cyber-Twilight Indigo / Midnight Azure
-        skyGrad.addColorStop(0, '#040714');
-        skyGrad.addColorStop(0.35, '#0a1329');
-        skyGrad.addColorStop(0.7, '#1e1b4b');
-        skyGrad.addColorStop(1, '#0f172a');
+        // --- NOCTURNAL WAR ROOM & TWILIGHT GRADIENTS (APPROVED) ---
+        if (theme === 'CAVERN') {
+          skyGrad.addColorStop(0, '#060205');
+          skyGrad.addColorStop(0.35, '#170605');
+          skyGrad.addColorStop(0.7, '#2b0c07');
+          skyGrad.addColorStop(1, '#0d0403');
+        } else if (theme === 'FORTRESS') {
+          skyGrad.addColorStop(0, '#030712');
+          skyGrad.addColorStop(0.35, '#0b1120');
+          skyGrad.addColorStop(0.7, '#1e293b');
+          skyGrad.addColorStop(1, '#0f172a');
+        } else if (theme === 'FLOATING_CHAOS') {
+          skyGrad.addColorStop(0, '#030109');
+          skyGrad.addColorStop(0.35, '#130729');
+          skyGrad.addColorStop(0.7, '#2e1065');
+          skyGrad.addColorStop(1, '#080313');
+        } else {
+          skyGrad.addColorStop(0, '#040714');
+          skyGrad.addColorStop(0.35, '#0a1329');
+          skyGrad.addColorStop(0.7, '#1e1b4b');
+          skyGrad.addColorStop(1, '#0f172a');
+        }
       }
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Subtle Twinkling Starfield & Atmospheric Particles
-      if (theme === 'CAVERN') {
-        // Drifting Fiery Magma Sparks & Embers
-        for (let i = 0; i < 28; i++) {
-          const ex = (i * 149.3 + Date.now() * 0.015) % width;
-          const ey = height * 0.85 - ((Date.now() * 0.025 + i * 85.7) % (height * 0.75));
-          const alpha = 0.2 + 0.6 * Math.abs(Math.sin(animTime * 0.9 + i * 1.8));
-          ctx.fillStyle = i % 3 === 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(249, 115, 22, ${alpha})`;
-          ctx.fillRect(ex, ey, 2, 2);
+      // 2. Day & Night Atmospheric Particles & Clouds
+      if (isDay) {
+        if (theme === 'CAVERN') {
+          // Volumetric Sunlight Shafts pouring through ceiling rock cracks
+          ctx.fillStyle = 'rgba(254, 240, 138, 0.12)';
+          for (let b = 0; b < 3; b++) {
+            const bx = width * (0.22 + b * 0.32);
+            ctx.beginPath();
+            ctx.moveTo(bx - 15, 0);
+            ctx.lineTo(bx + 15, 0);
+            ctx.lineTo(bx + 90, height);
+            ctx.lineTo(bx + 20, height);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // Golden Dust Motes floating in light beams
+          for (let i = 0; i < 20; i++) {
+            const dx = (i * 127.3 + Date.now() * 0.01) % width;
+            const dy = (i * 83.1 + Math.sin(animTime * 0.5 + i) * 20) % (height * 0.8);
+            const dAlpha = 0.2 + 0.5 * Math.abs(Math.sin(animTime * 0.8 + i * 1.5));
+            ctx.fillStyle = `rgba(254, 240, 138, ${dAlpha})`;
+            ctx.fillRect(dx, dy, 2, 2);
+          }
+        } else if (theme === 'FLOATING_CHAOS') {
+          // Shimmering Golden Astral Stardust
+          for (let i = 0; i < 35; i++) {
+            const sx = (i * 137.5 + i * 47) % width;
+            const sy = (i * 73.1 + i * 19) % (height * 0.65);
+            const starAlpha = 0.25 + 0.65 * Math.abs(Math.sin(animTime * 0.8 + i * 1.6));
+            ctx.fillStyle = i % 2 === 0 ? `rgba(253, 224, 71, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+            ctx.fillRect(sx, sy, 2, 2);
+          }
+        } else {
+          // ISLAND & FORTRESS: Drifting Soft White Cumulus Clouds
+          ctx.fillStyle = theme === 'FORTRESS' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.75)';
+          for (let c = 0; c < 4; c++) {
+            const cx = ((Date.now() * 0.012 + c * 380) % (width + 260)) - 130;
+            const cy = 35 + (c * 30) % 75;
+            const cSize = 28 + (c * 8) % 18;
+            ctx.beginPath();
+            ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
+            ctx.arc(cx - cSize * 0.5, cy - cSize * 0.2, cSize * 0.65, 0, Math.PI * 2);
+            ctx.arc(cx + cSize * 0.6, cy - cSize * 0.15, cSize * 0.7, 0, Math.PI * 2);
+            ctx.arc(cx + cSize * 1.1, cy, cSize * 0.55, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       } else {
-        // Deep Cosmic Twinkling Stars
-        for (let i = 0; i < 55; i++) {
-          const sx = (i * 137.5 + i * 47) % width;
-          const sy = (i * 73.1 + i * 19) % (height * 0.6);
-          const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
-          const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
-          ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
-          ctx.fillRect(sx, sy, sz, sz);
+        // --- NIGHT STARFIELD & DRIFTING EMBERS ---
+        if (theme === 'CAVERN') {
+          // Drifting Fiery Magma Sparks & Embers
+          for (let i = 0; i < 28; i++) {
+            const ex = (i * 149.3 + Date.now() * 0.015) % width;
+            const ey = height * 0.85 - ((Date.now() * 0.025 + i * 85.7) % (height * 0.75));
+            const alpha = 0.2 + 0.6 * Math.abs(Math.sin(animTime * 0.9 + i * 1.8));
+            ctx.fillStyle = i % 3 === 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(249, 115, 22, ${alpha})`;
+            ctx.fillRect(ex, ey, 2, 2);
+          }
+        } else {
+          // Deep Cosmic Twinkling Stars
+          for (let i = 0; i < 55; i++) {
+            const sx = (i * 137.5 + i * 47) % width;
+            const sy = (i * 73.1 + i * 19) % (height * 0.6);
+            const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
+            const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
+            ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+            ctx.fillRect(sx, sy, sz, sz);
+          }
         }
       }
 
-      // 3. Theme-Specific Iconic Celestial Focus
-      if (theme === 'ISLAND') {
-        // Stylized Luminous Crescent Celestial Moon with Soft Corona & Orbit Ring
-        const moonX = width * 0.82;
-        const moonY = height * 0.16;
-        const moonR = 26;
+      // 3. Iconic Celestial Focus (Sun in Day / Moon-Rift in Night)
+      if (isDay) {
+        if (theme === 'ISLAND' || theme === 'FORTRESS') {
+          // Radiant Golden Sun with Multi-Layer Corona Halo
+          const sunX = width * 0.82;
+          const sunY = height * 0.16;
+          const sunR = 26;
 
-        // Outer diffused glow
-        const glow = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3.2);
-        glow.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
-        glow.addColorStop(0.5, 'rgba(129, 140, 248, 0.15)');
-        glow.addColorStop(1, 'rgba(15, 23, 42, 0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(moonX, moonY, moonR * 3.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Orbital dust ring
-        ctx.save();
-        ctx.translate(moonX, moonY);
-        ctx.rotate(-0.35);
-        ctx.strokeStyle = 'rgba(186, 230, 253, 0.25)';
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, moonR * 2.2, moonR * 0.55, 0, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        // Moon Body with smooth inner shadow crater cutout
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#0a1329';
-        ctx.beginPath();
-        ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (theme === 'FLOATING_CHAOS') {
-        // Shattered Astral Core with Violet Rift Light
-        const riftX = width * 0.78;
-        const riftY = height * 0.18;
-        const riftR = 30;
-
-        const riftGlow = ctx.createRadialGradient(riftX, riftY, 5, riftX, riftY, riftR * 2.8);
-        riftGlow.addColorStop(0, 'rgba(192, 132, 252, 0.55)');
-        riftGlow.addColorStop(0.5, 'rgba(147, 51, 234, 0.18)');
-        riftGlow.addColorStop(1, 'rgba(8, 3, 19, 0)');
-        ctx.fillStyle = riftGlow;
-        ctx.beginPath();
-        ctx.arc(riftX, riftY, riftR * 2.8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shattered orbiting shards
-        ctx.fillStyle = '#c084fc';
-        for (let s = 0; s < 6; s++) {
-          const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
-          const sDist = riftR * 1.1 + Math.sin(animTime * 0.5 + s) * 4;
-          const sx = riftX + Math.cos(sAngle) * sDist;
-          const sy = riftY + Math.sin(sAngle) * sDist;
+          const sunGlow = ctx.createRadialGradient(sunX, sunY, sunR * 0.3, sunX, sunY, sunR * 3.5);
+          sunGlow.addColorStop(0, 'rgba(250, 204, 21, 0.65)');
+          sunGlow.addColorStop(0.35, 'rgba(253, 224, 71, 0.25)');
+          sunGlow.addColorStop(0.7, 'rgba(254, 240, 138, 0.08)');
+          sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = sunGlow;
           ctx.beginPath();
-          ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+          ctx.arc(sunX, sunY, sunR * 3.5, 0, Math.PI * 2);
           ctx.fill();
+
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (theme === 'FLOATING_CHAOS') {
+          // Radiant Astral Pulsar with Golden Orbiting Crystals
+          const pulsarX = width * 0.78;
+          const pulsarY = height * 0.18;
+          const pulsarR = 28;
+
+          const pGlow = ctx.createRadialGradient(pulsarX, pulsarY, 4, pulsarX, pulsarY, pulsarR * 3.0);
+          pGlow.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
+          pGlow.addColorStop(0.4, 'rgba(217, 119, 6, 0.25)');
+          pGlow.addColorStop(1, 'rgba(88, 28, 135, 0)');
+          ctx.fillStyle = pGlow;
+          ctx.beginPath();
+          ctx.arc(pulsarX, pulsarY, pulsarR * 3.0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(pulsarX, pulsarY, pulsarR * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Orbiting golden crystal shards
+          ctx.fillStyle = '#f59e0b';
+          for (let s = 0; s < 6; s++) {
+            const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
+            const sDist = pulsarR * 1.2 + Math.sin(animTime * 0.5 + s) * 4;
+            const sx = pulsarX + Math.cos(sAngle) * sDist;
+            const sy = pulsarY + Math.sin(sAngle) * sDist;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
-      } else if (theme === 'FORTRESS') {
-        // Volumetric Sweeping Tactical Searchlight Beam
-        const beamX = width * 0.22;
-        const beamY = height * 0.52;
-        const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
-        const beamLen = height * 0.85;
+      } else {
+        // --- NIGHT CELESTIAL FOCUS (APPROVED) ---
+        if (theme === 'ISLAND') {
+          // Stylized Luminous Crescent Celestial Moon with Soft Corona & Orbit Ring
+          const moonX = width * 0.82;
+          const moonY = height * 0.16;
+          const moonR = 26;
 
-        ctx.save();
-        ctx.translate(beamX, beamY);
-        ctx.rotate(sweepAngle);
+          const glow = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3.2);
+          glow.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+          glow.addColorStop(0.5, 'rgba(129, 140, 248, 0.15)');
+          glow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonR * 3.2, 0, Math.PI * 2);
+          ctx.fill();
 
-        const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
-        beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-        beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
-        beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-        ctx.fillStyle = beamGrad;
-        ctx.beginPath();
-        ctx.moveTo(-6, 0);
-        ctx.lineTo(-45, -beamLen);
-        ctx.lineTo(45, -beamLen);
-        ctx.lineTo(6, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
+          ctx.save();
+          ctx.translate(moonX, moonY);
+          ctx.rotate(-0.35);
+          ctx.strokeStyle = 'rgba(186, 230, 253, 0.25)';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, moonR * 2.2, moonR * 0.55, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#0a1329';
+          ctx.beginPath();
+          ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (theme === 'FLOATING_CHAOS') {
+          const riftX = width * 0.78;
+          const riftY = height * 0.18;
+          const riftR = 30;
+
+          const riftGlow = ctx.createRadialGradient(riftX, riftY, 5, riftX, riftY, riftR * 2.8);
+          riftGlow.addColorStop(0, 'rgba(192, 132, 252, 0.55)');
+          riftGlow.addColorStop(0.5, 'rgba(147, 51, 234, 0.18)');
+          riftGlow.addColorStop(1, 'rgba(8, 3, 19, 0)');
+          ctx.fillStyle = riftGlow;
+          ctx.beginPath();
+          ctx.arc(riftX, riftY, riftR * 2.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#c084fc';
+          for (let s = 0; s < 6; s++) {
+            const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
+            const sDist = riftR * 1.1 + Math.sin(animTime * 0.5 + s) * 4;
+            const sx = riftX + Math.cos(sAngle) * sDist;
+            const sy = riftY + Math.sin(sAngle) * sDist;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (theme === 'FORTRESS') {
+          const beamX = width * 0.22;
+          const beamY = height * 0.52;
+          const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
+          const beamLen = height * 0.85;
+
+          ctx.save();
+          ctx.translate(beamX, beamY);
+          ctx.rotate(sweepAngle);
+
+          const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
+          beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+          beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+          beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+          ctx.fillStyle = beamGrad;
+          ctx.beginPath();
+          ctx.moveTo(-6, 0);
+          ctx.lineTo(-45, -beamLen);
+          ctx.lineTo(45, -beamLen);
+          ctx.lineTo(6, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       // 4. Layered Parallax Vector Mountain & Silhouette Skyline
       // Layer 1: Distant Misty Ridge
       const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, height);
-      if (theme === 'CAVERN') {
-        mtGrad.addColorStop(0, 'rgba(23, 6, 5, 0.85)');
-        mtGrad.addColorStop(1, 'rgba(10, 3, 2, 0.95)');
-      } else if (theme === 'FORTRESS') {
-        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
-        mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
-      } else if (theme === 'FLOATING_CHAOS') {
-        mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
-        mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
+      if (isDay) {
+        if (theme === 'CAVERN') {
+          mtGrad.addColorStop(0, 'rgba(69, 26, 3, 0.85)');
+          mtGrad.addColorStop(1, 'rgba(41, 16, 4, 0.95)');
+        } else if (theme === 'FORTRESS') {
+          mtGrad.addColorStop(0, 'rgba(51, 65, 85, 0.75)');
+          mtGrad.addColorStop(1, 'rgba(30, 41, 59, 0.92)');
+        } else if (theme === 'FLOATING_CHAOS') {
+          mtGrad.addColorStop(0, 'rgba(107, 33, 168, 0.85)');
+          mtGrad.addColorStop(1, 'rgba(59, 7, 100, 0.95)');
+        } else {
+          mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
+          mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
+        }
       } else {
-        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+        if (theme === 'CAVERN') {
+          mtGrad.addColorStop(0, 'rgba(23, 6, 5, 0.85)');
+          mtGrad.addColorStop(1, 'rgba(10, 3, 2, 0.95)');
+        } else if (theme === 'FORTRESS') {
+          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+          mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
+        } else if (theme === 'FLOATING_CHAOS') {
+          mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
+          mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
+        } else {
+          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+          mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+        }
       }
       ctx.fillStyle = mtGrad;
       ctx.beginPath();
@@ -1018,8 +1164,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.closePath();
       ctx.fill();
 
-      // Layer 2: Midground Ridge with Micro-Beacons
-      ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+      // Layer 2: Midground Ridge with Lush Green or Midnight Tones
+      if (isDay) {
+        ctx.fillStyle = theme === 'CAVERN' ? '#291004' : theme === 'FORTRESS' ? '#1e293b' : theme === 'FLOATING_CHAOS' ? '#4c1d95' : '#15803d';
+      } else {
+        ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+      }
       ctx.beginPath();
       ctx.moveTo(-20, height + 20);
       for (let x = -20; x <= width + 40; x += 25) {
@@ -1030,41 +1180,72 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.closePath();
       ctx.fill();
 
-      // Blinking Radio Beacon Lights on Horizon Ridge
-      const beaconX1 = width * 0.28;
-      const beaconY1 = height * 0.62 + Math.sin(beaconX1 * 0.005 + 2.4) * 45 - 8;
-      const bOn1 = Math.sin(animTime * 4) > 0;
-      ctx.fillStyle = bOn1 ? '#ef4444' : '#7f1d1d';
-      ctx.fillRect(beaconX1 - 1, beaconY1, 2, 8);
-      ctx.beginPath();
-      ctx.arc(beaconX1, beaconY1, 2, 0, Math.PI * 2);
-      ctx.fill();
+      // Dotted Grass Blade Dashes in Island Day Mode
+      if (isDay && (theme === 'ISLAND' || !theme)) {
+        ctx.strokeStyle = '#4ade80';
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 16) {
+          const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
+          ctx.moveTo(x, by);
+          ctx.lineTo(x + 2, by - 4);
+        }
+        ctx.stroke();
+      }
 
-      const beaconX2 = width * 0.74;
-      const beaconY2 = height * 0.62 + Math.sin(beaconX2 * 0.005 + 2.4) * 45 - 10;
-      const bOn2 = Math.sin(animTime * 4 + 2) > 0;
-      ctx.fillStyle = bOn2 ? '#06b6d4' : '#0e7490';
-      ctx.fillRect(beaconX2 - 1, beaconY2, 2, 10);
-      ctx.beginPath();
-      ctx.arc(beaconX2, beaconY2, 2, 0, Math.PI * 2);
-      ctx.fill();
+      // Blinking Radio Beacon Lights on Horizon Ridge (Night Mode or Fortress)
+      if (!isDay || theme === 'FORTRESS') {
+        const beaconX1 = width * 0.28;
+        const beaconY1 = height * 0.62 + Math.sin(beaconX1 * 0.005 + 2.4) * 45 - 8;
+        const bOn1 = Math.sin(animTime * 4) > 0;
+        ctx.fillStyle = bOn1 ? '#ef4444' : '#7f1d1d';
+        ctx.fillRect(beaconX1 - 1, beaconY1, 2, 8);
+        ctx.beginPath();
+        ctx.arc(beaconX1, beaconY1, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        const beaconX2 = width * 0.74;
+        const beaconY2 = height * 0.62 + Math.sin(beaconX2 * 0.005 + 2.4) * 45 - 10;
+        const bOn2 = Math.sin(animTime * 4 + 2) > 0;
+        ctx.fillStyle = bOn2 ? '#06b6d4' : '#0e7490';
+        ctx.fillRect(beaconX2 - 1, beaconY2, 2, 10);
+        ctx.beginPath();
+        ctx.arc(beaconX2, beaconY2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // 5. Deep Abyss Water Backdrop below Water Level
       const waterBackdrop = ctx.createLinearGradient(0, waterLevel - 8, 0, height);
-      if (theme === 'CAVERN') {
-        waterBackdrop.addColorStop(0, 'rgba(185, 28, 28, 0.75)');
-        waterBackdrop.addColorStop(0.5, 'rgba(127, 29, 29, 0.9)');
-        waterBackdrop.addColorStop(1, 'rgba(24, 6, 6, 0.98)');
+      if (isDay) {
+        if (theme === 'CAVERN') {
+          waterBackdrop.addColorStop(0, 'rgba(120, 53, 15, 0.75)');
+          waterBackdrop.addColorStop(0.5, 'rgba(69, 26, 3, 0.9)');
+          waterBackdrop.addColorStop(1, 'rgba(28, 14, 8, 0.98)');
+        } else if (theme === 'FLOATING_CHAOS') {
+          waterBackdrop.addColorStop(0, 'rgba(217, 119, 6, 0.75)');
+          waterBackdrop.addColorStop(0.5, 'rgba(124, 58, 237, 0.9)');
+          waterBackdrop.addColorStop(1, 'rgba(30, 27, 75, 0.98)');
+        } else {
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.82)');
+          waterBackdrop.addColorStop(0.5, 'rgba(14, 165, 233, 0.92)');
+          waterBackdrop.addColorStop(1, 'rgba(3, 105, 161, 0.98)');
+        }
       } else {
-        waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.75)');
-        waterBackdrop.addColorStop(0.5, 'rgba(15, 23, 42, 0.92)');
-        waterBackdrop.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+        if (theme === 'CAVERN') {
+          waterBackdrop.addColorStop(0, 'rgba(185, 28, 28, 0.75)');
+          waterBackdrop.addColorStop(0.5, 'rgba(127, 29, 29, 0.9)');
+          waterBackdrop.addColorStop(1, 'rgba(24, 6, 6, 0.98)');
+        } else {
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.75)');
+          waterBackdrop.addColorStop(0.5, 'rgba(15, 23, 42, 0.92)');
+          waterBackdrop.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+        }
       }
       ctx.fillStyle = waterBackdrop;
       ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
 
       // Underwater Ambient Caustic Light Rays
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+      ctx.fillStyle = isDay ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)';
       for (let r = 0; r < 4; r++) {
         const rx = width * (0.18 + r * 0.22) + Math.sin(animTime * 0.4 + r) * 18;
         ctx.beginPath();
