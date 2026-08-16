@@ -870,11 +870,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           skyGrad.addColorStop(0.7, '#64748b');
           skyGrad.addColorStop(1, '#94a3b8');
         } else if (theme === 'FLOATING_CHAOS') {
-          // Astral Dawn / Shimmering Ultraviolet & Sunrise Amber Aurora
-          skyGrad.addColorStop(0, '#1e1b4b');
-          skyGrad.addColorStop(0.35, '#581c87');
-          skyGrad.addColorStop(0.7, '#9333ea');
-          skyGrad.addColorStop(1, '#fbbf24');
+          // Astral Dawn / Shimmering Deep Sapphire & Azure Cyan Aurora
+          skyGrad.addColorStop(0, '#0c2340');
+          skyGrad.addColorStop(0.35, '#0284c7');
+          skyGrad.addColorStop(0.7, '#38bdf8');
+          skyGrad.addColorStop(1, '#bae6fd');
         } else {
           // ISLAND & Default: Radiant Tropical Azure & Cyan Sky
           skyGrad.addColorStop(0, '#0284c7');
@@ -934,12 +934,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             ctx.fillRect(dx, dy, 2, 2);
           }
         } else if (theme === 'FLOATING_CHAOS') {
-          // Shimmering Golden Astral Stardust
+          // Shimmering Cyan & Diamond Astral Stardust
           for (let i = 0; i < 35; i++) {
             const sx = (i * 137.5 + i * 47) % width;
             const sy = (i * 73.1 + i * 19) % (height * 0.65);
             const starAlpha = 0.25 + 0.65 * Math.abs(Math.sin(animTime * 0.8 + i * 1.6));
-            ctx.fillStyle = i % 2 === 0 ? `rgba(253, 224, 71, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+            ctx.fillStyle = i % 2 === 0 ? `rgba(56, 189, 248, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
             ctx.fillRect(sx, sy, 2, 2);
           }
         } else {
@@ -1004,27 +1004,27 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
           ctx.fill();
         } else if (theme === 'FLOATING_CHAOS') {
-          // Radiant Astral Pulsar with Golden Orbiting Crystals
+          // Radiant Astral Pulsar with Cyan Orbiting Crystals
           const pulsarX = width * 0.78;
           const pulsarY = height * 0.18;
           const pulsarR = 28;
 
           const pGlow = ctx.createRadialGradient(pulsarX, pulsarY, 4, pulsarX, pulsarY, pulsarR * 3.0);
-          pGlow.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
-          pGlow.addColorStop(0.4, 'rgba(217, 119, 6, 0.25)');
-          pGlow.addColorStop(1, 'rgba(88, 28, 135, 0)');
+          pGlow.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
+          pGlow.addColorStop(0.4, 'rgba(14, 165, 233, 0.25)');
+          pGlow.addColorStop(1, 'rgba(12, 35, 64, 0)');
           ctx.fillStyle = pGlow;
           ctx.beginPath();
           ctx.arc(pulsarX, pulsarY, pulsarR * 3.0, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#fef08a';
+          ctx.fillStyle = '#e0f2fe';
           ctx.beginPath();
           ctx.arc(pulsarX, pulsarY, pulsarR * 0.7, 0, Math.PI * 2);
           ctx.fill();
 
-          // Orbiting golden crystal shards
-          ctx.fillStyle = '#f59e0b';
+          // Orbiting cyan crystal shards
+          ctx.fillStyle = '#38bdf8';
           for (let s = 0; s < 6; s++) {
             const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
             const sDist = pulsarR * 1.2 + Math.sin(animTime * 0.5 + s) * 4;
@@ -1132,8 +1132,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           mtGrad.addColorStop(0, 'rgba(51, 65, 85, 0.75)');
           mtGrad.addColorStop(1, 'rgba(30, 41, 59, 0.92)');
         } else if (theme === 'FLOATING_CHAOS') {
-          mtGrad.addColorStop(0, 'rgba(107, 33, 168, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(59, 7, 100, 0.95)');
+          mtGrad.addColorStop(0, 'rgba(3, 105, 161, 0.75)');
+          mtGrad.addColorStop(1, 'rgba(12, 74, 110, 0.95)');
         } else {
           mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
           mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.25)');
@@ -1166,7 +1166,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       // Layer 2: Midground Ridge with Lush Green or Midnight Tones
       if (isDay) {
-        ctx.fillStyle = theme === 'CAVERN' ? '#291004' : theme === 'FORTRESS' ? '#1e293b' : theme === 'FLOATING_CHAOS' ? '#4c1d95' : '#15803d';
+        ctx.fillStyle = theme === 'CAVERN' ? '#291004' : theme === 'FORTRESS' ? '#1e293b' : theme === 'FLOATING_CHAOS' ? '#075985' : '#15803d';
       } else {
         ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
       }
@@ -1222,9 +1222,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           waterBackdrop.addColorStop(0.5, 'rgba(69, 26, 3, 0.9)');
           waterBackdrop.addColorStop(1, 'rgba(28, 14, 8, 0.98)');
         } else if (theme === 'FLOATING_CHAOS') {
-          waterBackdrop.addColorStop(0, 'rgba(217, 119, 6, 0.75)');
-          waterBackdrop.addColorStop(0.5, 'rgba(124, 58, 237, 0.9)');
-          waterBackdrop.addColorStop(1, 'rgba(30, 27, 75, 0.98)');
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.85)');
+          waterBackdrop.addColorStop(0.5, 'rgba(3, 105, 161, 0.92)');
+          waterBackdrop.addColorStop(1, 'rgba(8, 47, 73, 0.98)');
         } else {
           waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.82)');
           waterBackdrop.addColorStop(0.5, 'rgba(14, 165, 233, 0.92)');
