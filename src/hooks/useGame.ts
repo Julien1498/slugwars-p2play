@@ -384,10 +384,17 @@ export function useGame(options?: {
           }
         }
 
-        // Victory sound on Game Over
+        // Victory sound on Game Over & Fresh Terrain Reset on Match Start
         if (delta.phase && delta.phase !== prevPhaseRef.current) {
           if (delta.phase === 'GAME_OVER') {
             sfx.play('victory');
+          }
+          if (delta.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') {
+            engine.initTerrain();
+            knownGirderIdsRef.current.clear();
+            knownCraterIdsRef.current.clear();
+            knownProjIdsRef.current.clear();
+            knownExplosionIdsRef.current.clear();
           }
           prevPhaseRef.current = delta.phase;
         }
@@ -443,13 +450,17 @@ export function useGame(options?: {
         const newState = payload as GameState;
         engine.state = newState;
 
-        const mapKey = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-        if (prevMapKeyRef.current !== mapKey) {
-          prevMapKeyRef.current = mapKey;
+        const isNewMatch = (newState.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') ||
+          prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+        if (isNewMatch) {
+          prevMapKeyRef.current = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
           engine.initTerrain();
           knownGirderIdsRef.current.clear();
           knownCraterIdsRef.current.clear();
+          knownProjIdsRef.current.clear();
+          knownExplosionIdsRef.current.clear();
         }
+        prevPhaseRef.current = newState.phase;
 
         if (newState.girders && newState.girders.length > 0) {
           for (const g of newState.girders) {
