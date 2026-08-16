@@ -3260,7 +3260,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
         // 3. Ninja Rope Aim Guide & Anchor Preview
         if (isMyTurn && weapon.id === 'ninja_rope') {
-          const maxDist = 550;
+          const maxDist = 250;
           let hitX = originX + Math.cos(rad) * maxDist * dir;
           let hitY = originY - Math.sin(rad) * maxDist;
           let hasSolid = false;
