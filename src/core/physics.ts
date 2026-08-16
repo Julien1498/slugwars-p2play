@@ -334,6 +334,10 @@ export function applyExplosionToSlugs(
 
     if (dist <= radius + 15) {
       hitCount++;
+      // Detach ninja rope immediately if slug gets hit or blown away by explosion!
+      if (slug.ropeState) {
+        slug.ropeState = null;
+      }
       const falloff = 1 - Math.min(1, dist / (radius + 15));
       const damage = Math.round(maxDamage * falloff);
 

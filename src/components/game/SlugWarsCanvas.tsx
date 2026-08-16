@@ -1342,12 +1342,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     [terrain]
   );
 
-  // Cursor-Centered Mouse Wheel Zoom
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+  // Cursor-Centered Mouse Wheel Zoom (Native non-passive listener to cleanly preventDefault without browser console warnings)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onWheelNative = (e: WheelEvent) => {
       e.preventDefault();
-      const container = containerRef.current;
-      if (!container) return;
       const cRect = container.getBoundingClientRect();
 
       const oldZoom = zoomRef.current;
@@ -1371,9 +1372,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       panRef.current = clamped;
       setZoomLevel(newZoom);
       setPanOffset(clamped);
-    },
-    [clampPan]
-  );
+    };
+
+    container.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', onWheelNative);
+    };
+  }, [clampPan]);
 
   // Keyboard shortcut: Press C to reset zoom to 100% and center camera
   useEffect(() => {
@@ -4179,7 +4184,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   return (
     <div
       ref={containerRef}
-      onWheel={handleWheel}
       onContextMenu={handleContextMenu}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

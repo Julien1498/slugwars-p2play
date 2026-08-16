@@ -853,20 +853,21 @@ export class SlugWarsEngine {
 
     // 3. RESOLVING Phase (Wait until all physics, explosions, damage, and falling slugs have 100% calmed down)
     if (this.state.phase === 'RESOLVING') {
-      if (this.isWorldAtRest()) {
-        if (this.state.phaseTimer === undefined) {
-          this.state.phaseTimer = 0.4;
-        } else {
-          this.state.phaseTimer -= 0.05;
-          if (this.state.phaseTimer <= 0) {
-            this.state.phaseTimer = undefined;
-            this.endTurn();
-            return;
-          }
-        }
+      // Ensure all ninja ropes are detached so slugs fall to the ground
+      for (const slug of this.state.slugs) {
+        if (slug.ropeState) slug.ropeState = null;
+      }
+
+      if (this.state.phaseTimer === undefined) {
+        this.state.phaseTimer = 2.5; // Max 2.5s watchdog timeout
       } else {
-        // Still active movement, bouncing, or explosions: keep settling timer refreshed
-        this.state.phaseTimer = 0.4;
+        this.state.phaseTimer -= 0.05;
+      }
+
+      if (this.isWorldAtRest() || this.state.phaseTimer <= 0) {
+        this.state.phaseTimer = undefined;
+        this.endTurn();
+        return;
       }
     }
 
