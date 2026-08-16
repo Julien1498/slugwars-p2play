@@ -842,12 +842,233 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
+      const theme = curState?.config?.mapTheme || 'ISLAND';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
-      // 1. Solid Pure Black In-Game Background Screen
-      ctx.fillStyle = '#000000';
+      // 1. Premium Atmospheric Sky Horizon Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+      if (theme === 'CAVERN') {
+        skyGrad.addColorStop(0, '#060205');
+        skyGrad.addColorStop(0.35, '#170605');
+        skyGrad.addColorStop(0.7, '#2b0c07');
+        skyGrad.addColorStop(1, '#0d0403');
+      } else if (theme === 'FORTRESS') {
+        skyGrad.addColorStop(0, '#030712');
+        skyGrad.addColorStop(0.35, '#0b1120');
+        skyGrad.addColorStop(0.7, '#1e293b');
+        skyGrad.addColorStop(1, '#0f172a');
+      } else if (theme === 'FLOATING_CHAOS') {
+        skyGrad.addColorStop(0, '#030109');
+        skyGrad.addColorStop(0.35, '#130729');
+        skyGrad.addColorStop(0.7, '#2e1065');
+        skyGrad.addColorStop(1, '#080313');
+      } else {
+        // ISLAND & Default: Deep Cyber-Twilight Indigo / Midnight Azure
+        skyGrad.addColorStop(0, '#040714');
+        skyGrad.addColorStop(0.35, '#0a1329');
+        skyGrad.addColorStop(0.7, '#1e1b4b');
+        skyGrad.addColorStop(1, '#0f172a');
+      }
+      ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, width, height);
+
+      // 2. Subtle Twinkling Starfield & Atmospheric Particles
+      if (theme === 'CAVERN') {
+        // Drifting Fiery Magma Sparks & Embers
+        for (let i = 0; i < 28; i++) {
+          const ex = (i * 149.3 + Date.now() * 0.015) % width;
+          const ey = height * 0.85 - ((Date.now() * 0.025 + i * 85.7) % (height * 0.75));
+          const alpha = 0.2 + 0.6 * Math.abs(Math.sin(animTime * 0.9 + i * 1.8));
+          ctx.fillStyle = i % 3 === 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(249, 115, 22, ${alpha})`;
+          ctx.fillRect(ex, ey, 2, 2);
+        }
+      } else {
+        // Deep Cosmic Twinkling Stars
+        for (let i = 0; i < 55; i++) {
+          const sx = (i * 137.5 + i * 47) % width;
+          const sy = (i * 73.1 + i * 19) % (height * 0.6);
+          const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
+          const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
+          ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+          ctx.fillRect(sx, sy, sz, sz);
+        }
+      }
+
+      // 3. Theme-Specific Iconic Celestial Focus
+      if (theme === 'ISLAND') {
+        // Stylized Luminous Crescent Celestial Moon with Soft Corona & Orbit Ring
+        const moonX = width * 0.82;
+        const moonY = height * 0.16;
+        const moonR = 26;
+
+        // Outer diffused glow
+        const glow = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3.2);
+        glow.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+        glow.addColorStop(0.5, 'rgba(129, 140, 248, 0.15)');
+        glow.addColorStop(1, 'rgba(15, 23, 42, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moonR * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Orbital dust ring
+        ctx.save();
+        ctx.translate(moonX, moonY);
+        ctx.rotate(-0.35);
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.25)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, moonR * 2.2, moonR * 0.55, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Moon Body with smooth inner shadow crater cutout
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0a1329';
+        ctx.beginPath();
+        ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (theme === 'FLOATING_CHAOS') {
+        // Shattered Astral Core with Violet Rift Light
+        const riftX = width * 0.78;
+        const riftY = height * 0.18;
+        const riftR = 30;
+
+        const riftGlow = ctx.createRadialGradient(riftX, riftY, 5, riftX, riftY, riftR * 2.8);
+        riftGlow.addColorStop(0, 'rgba(192, 132, 252, 0.55)');
+        riftGlow.addColorStop(0.5, 'rgba(147, 51, 234, 0.18)');
+        riftGlow.addColorStop(1, 'rgba(8, 3, 19, 0)');
+        ctx.fillStyle = riftGlow;
+        ctx.beginPath();
+        ctx.arc(riftX, riftY, riftR * 2.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Shattered orbiting shards
+        ctx.fillStyle = '#c084fc';
+        for (let s = 0; s < 6; s++) {
+          const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
+          const sDist = riftR * 1.1 + Math.sin(animTime * 0.5 + s) * 4;
+          const sx = riftX + Math.cos(sAngle) * sDist;
+          const sy = riftY + Math.sin(sAngle) * sDist;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (theme === 'FORTRESS') {
+        // Volumetric Sweeping Tactical Searchlight Beam
+        const beamX = width * 0.22;
+        const beamY = height * 0.52;
+        const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
+        const beamLen = height * 0.85;
+
+        ctx.save();
+        ctx.translate(beamX, beamY);
+        ctx.rotate(sweepAngle);
+
+        const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
+        beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+        beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+        beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(-6, 0);
+        ctx.lineTo(-45, -beamLen);
+        ctx.lineTo(45, -beamLen);
+        ctx.lineTo(6, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 4. Layered Parallax Vector Mountain & Silhouette Skyline
+      // Layer 1: Distant Misty Ridge
+      const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, height);
+      if (theme === 'CAVERN') {
+        mtGrad.addColorStop(0, 'rgba(23, 6, 5, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(10, 3, 2, 0.95)');
+      } else if (theme === 'FORTRESS') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+        mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
+      } else if (theme === 'FLOATING_CHAOS') {
+        mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
+      } else {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+      }
+      ctx.fillStyle = mtGrad;
+      ctx.beginPath();
+      ctx.moveTo(-20, height + 20);
+      for (let x = -20; x <= width + 40; x += 35) {
+        const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
+        ctx.lineTo(x, my);
+      }
+      ctx.lineTo(width + 20, height + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 2: Midground Ridge with Micro-Beacons
+      ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+      ctx.beginPath();
+      ctx.moveTo(-20, height + 20);
+      for (let x = -20; x <= width + 40; x += 25) {
+        const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
+        ctx.lineTo(x, my);
+      }
+      ctx.lineTo(width + 20, height + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Blinking Radio Beacon Lights on Horizon Ridge
+      const beaconX1 = width * 0.28;
+      const beaconY1 = height * 0.62 + Math.sin(beaconX1 * 0.005 + 2.4) * 45 - 8;
+      const bOn1 = Math.sin(animTime * 4) > 0;
+      ctx.fillStyle = bOn1 ? '#ef4444' : '#7f1d1d';
+      ctx.fillRect(beaconX1 - 1, beaconY1, 2, 8);
+      ctx.beginPath();
+      ctx.arc(beaconX1, beaconY1, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      const beaconX2 = width * 0.74;
+      const beaconY2 = height * 0.62 + Math.sin(beaconX2 * 0.005 + 2.4) * 45 - 10;
+      const bOn2 = Math.sin(animTime * 4 + 2) > 0;
+      ctx.fillStyle = bOn2 ? '#06b6d4' : '#0e7490';
+      ctx.fillRect(beaconX2 - 1, beaconY2, 2, 10);
+      ctx.beginPath();
+      ctx.arc(beaconX2, beaconY2, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Deep Abyss Water Backdrop below Water Level
+      const waterBackdrop = ctx.createLinearGradient(0, waterLevel - 8, 0, height);
+      if (theme === 'CAVERN') {
+        waterBackdrop.addColorStop(0, 'rgba(185, 28, 28, 0.75)');
+        waterBackdrop.addColorStop(0.5, 'rgba(127, 29, 29, 0.9)');
+        waterBackdrop.addColorStop(1, 'rgba(24, 6, 6, 0.98)');
+      } else {
+        waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.75)');
+        waterBackdrop.addColorStop(0.5, 'rgba(15, 23, 42, 0.92)');
+        waterBackdrop.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+      }
+      ctx.fillStyle = waterBackdrop;
+      ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
+
+      // Underwater Ambient Caustic Light Rays
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+      for (let r = 0; r < 4; r++) {
+        const rx = width * (0.18 + r * 0.22) + Math.sin(animTime * 0.4 + r) * 18;
+        ctx.beginPath();
+        ctx.moveTo(rx, waterLevel);
+        ctx.lineTo(rx - 30, height);
+        ctx.lineTo(rx + 40, height);
+        ctx.lineTo(rx + 25, waterLevel);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
