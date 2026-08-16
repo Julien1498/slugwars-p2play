@@ -102,7 +102,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       }
 
       // Vehicle Flight Controls (Helicopter 🚁)
-      if (activeSlug && activeSlug.inVehicleId && gameState.phase === 'AIMING') {
+      if (activeSlug && activeSlug.inVehicleId && (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT')) {
         if (key === 'arrowleft' || key === 'q' || key === 'a') {
           onSteerVehicle?.('left');
         } else if (key === 'arrowright' || key === 'd') {
