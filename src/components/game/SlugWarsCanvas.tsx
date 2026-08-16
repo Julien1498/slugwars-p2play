@@ -1148,6 +1148,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
           ctx.save();
           ctx.translate(sprop.x, sprop.y);
+          if (sprop.angleRad) {
+            ctx.rotate(sprop.angleRad);
+          }
 
           if (sprop.type === 'hedgehog') {
             const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
@@ -3658,6 +3661,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
             ctx.save();
             ctx.translate(sprop.x, sprop.y);
+            if (sprop.angleRad) {
+              ctx.rotate(sprop.angleRad);
+            }
 
             // Ground Foundation Anchor Point
             ctx.fillStyle = '#22c55e';
