@@ -209,11 +209,8 @@ export function useGame(options?: {
             break;
           }
           case 'SELECT_WEAPON': {
-            if (playerId === engine.state.activeTeamId) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug && activeSlug.teamId === playerId && msg.payload?.weaponId) {
-                activeSlug.selectedWeaponId = msg.payload.weaponId;
-              }
+            if (playerId === engine.state.activeTeamId && msg.payload?.weaponId) {
+              engine.selectWeapon(msg.payload.weaponId);
             }
             break;
           }
