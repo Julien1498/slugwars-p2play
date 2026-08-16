@@ -842,8 +842,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      const isDay = curState.config.dayNightCycle === 'DAY';
-      const theme = curState.config.mapTheme || 'ISLAND';
       const animTime = Date.now() / 300;
       const slowTime = Date.now() / 1200;
 
