@@ -49,6 +49,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const lastBgKeyRef = useRef<string>('');
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsCanvasRef = useRef<Set<string>>(new Set());
+  const knownCraterIdsCanvasRef = useRef<Set<string>>(new Set());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -661,8 +662,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       lastTerrainRevisionRef.current = terrain.revision;
       carvedExplosionsRef.current.clear();
       knownGirderIdsCanvasRef.current.clear();
+      knownCraterIdsCanvasRef.current.clear();
       lockedTargetRef.current = null;
       redrawOffscreenTerrain();
+    }
+
+    // Synchronize craters from persistent list (handles background tab recovery)
+    if (gameState.craters && gameState.craters.length > 0) {
+      for (const c of gameState.craters) {
+        if (!knownCraterIdsCanvasRef.current.has(c.id)) {
+          knownCraterIdsCanvasRef.current.add(c.id);
+          carveOffscreenCrater(c.x, c.y, c.radius);
+        }
+      }
     }
 
     for (const ex of gameState.explosions) {
@@ -729,7 +741,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         lastTerrainRevisionRef.current = terrain.revision;
         carvedExplosionsRef.current.clear();
         knownGirderIdsCanvasRef.current.clear();
+        knownCraterIdsCanvasRef.current.clear();
         redrawOffscreenTerrain();
+      }
+
+      // Reconcile persistent craters (guarantees 100% accurate terrain even if tab was in background / minimized!)
+      if (curState && curState.craters && curState.craters.length > 0) {
+        for (const c of curState.craters) {
+          if (!knownCraterIdsCanvasRef.current.has(c.id)) {
+            knownCraterIdsCanvasRef.current.add(c.id);
+            carveOffscreenCrater(c.x, c.y, c.radius);
+          }
+        }
       }
 
       // Instant sub-millisecond GPU crater carving on incoming explosions
