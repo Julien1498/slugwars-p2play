@@ -52,15 +52,15 @@ export class DestructibleTerrain {
       }
     }
 
-    // Destroy overlapping solid decor props & collect exploding oil drums
+    // Collect exploding oil drums when blast hits barrel core
     if (this.data.solidProps) {
       for (const sprop of this.data.solidProps) {
         if (sprop.destroyed) continue;
-        const propRadius = Math.max(sprop.width, sprop.height) * 0.6;
-        const dist = Math.hypot(cx - sprop.x, cy - sprop.y);
-        if (dist <= radius + propRadius) {
-          sprop.destroyed = true;
-          if (sprop.type === 'oil_drum') {
+        if (sprop.type === 'oil_drum') {
+          const propRadius = Math.max(sprop.width, sprop.height) * 0.5;
+          const dist = Math.hypot(cx - sprop.x, cy - (sprop.y - sprop.height / 2));
+          if (dist <= radius + propRadius) {
+            sprop.destroyed = true;
             destroyedOilDrums.push(sprop);
           }
         }
