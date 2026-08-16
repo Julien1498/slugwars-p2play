@@ -1108,21 +1108,24 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       // 4. Layered Parallax Vector Mountain & Silhouette Skyline
-      // Layer 1: Distant Misty Ridge
+      // Layer 1: Distant Misty Island & Mountain Ridges
       const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, height);
       if (isDay) {
         if (theme === 'CAVERN') {
           mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
           mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
         } else if (theme === 'FORTRESS') {
-          mtGrad.addColorStop(0, 'rgba(100, 116, 139, 0.65)');
-          mtGrad.addColorStop(1, 'rgba(71, 85, 105, 0.85)');
+          // Pine-Covered Alpine Ridges
+          mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
+          mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
         } else if (theme === 'FLOATING_CHAOS') {
-          mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
-          mtGrad.addColorStop(1, 'rgba(2, 132, 199, 0.85)');
+          // Lush Floating Crystalline Emerald Isles
+          mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+          mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
         } else {
-          mtGrad.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
-          mtGrad.addColorStop(1, 'rgba(14, 165, 233, 0.45)');
+          // Tropical Emerald Mountain Ridges (Unmistakably Green & Lush Land)
+          mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
+          mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
         }
       } else {
         if (theme === 'CAVERN') {
@@ -1150,9 +1153,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.closePath();
       ctx.fill();
 
-      // Layer 2: Midground Ridge with Lush Green or Midnight Tones
+      // Layer 2: Midground Ridge with Lush Green Hills & Island Plateaus
       if (isDay) {
-        ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#475569' : theme === 'FLOATING_CHAOS' ? '#0284c7' : '#16a34a';
+        ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
       } else {
         ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
       }
@@ -1166,15 +1169,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.closePath();
       ctx.fill();
 
-      // Dotted Grass Blade Dashes in Island & Floating Chaos Day Mode
-      if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || !theme)) {
-        ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#7dd3fc' : '#86efac';
-        ctx.lineWidth = 2.0;
+      // Dotted Lush Grass Blade Dashes on Green Hills
+      if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || !theme)) {
+        ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        for (let x = 0; x <= width; x += 16) {
+        for (let x = 0; x <= width; x += 14) {
           const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
           ctx.moveTo(x, by);
-          ctx.lineTo(x + 2, by - 4);
+          ctx.lineTo(x + 2, by - 5);
         }
         ctx.stroke();
       }
@@ -3034,10 +3037,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const originY = activeSlug.y - 10;
 
         if (isMyTurnRef.current && !weapon.requiresTarget && weapon.id !== 'girder') {
-          // Classic Animated Aiming Reticle (Crosshair Centered on Mouse Cursor!)
-          const mousePt = mousePosRef.current;
-          const retX = mousePt.x;
-          const retY = mousePt.y;
+          // Classic Animated Aiming Reticle (Fixed Distance Orbit, Center Aligned in Exact Mouse Direction)
+          const reticleDist = 58;
+          const retX = originX + Math.cos(rad) * reticleDist * dir;
+          const retY = originY - Math.sin(rad) * reticleDist;
 
           ctx.save();
           ctx.translate(retX, retY);
