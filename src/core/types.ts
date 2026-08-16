@@ -151,8 +151,6 @@ export const MAP_SIZE_CONFIGS: Record<MapSize, { width: number; height: number; 
   LARGE: { width: 2000, height: 1000, label: 'Grande', desc: '2000×1000 px - Épique avec vastes reliefs', icon: '🗺️' },
 };
 
-export type DayNightCycle = 'DAY' | 'NIGHT';
-
 export interface GameConfig {
   weaponSetId: string;
   slugHp: number;
@@ -160,7 +158,6 @@ export interface GameConfig {
   turnDuration: number;
   windEnabled: boolean;
   vehiclesEnabled: boolean;
-  dayNightCycle?: DayNightCycle;
   mapTheme: MapTheme;
   mapSize?: MapSize;
   mapSeed: number;
