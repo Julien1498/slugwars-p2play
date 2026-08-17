@@ -162,42 +162,35 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   const triggerWaterSplash = useCallback((x: number, y: number, scale = 1.0) => {
     // 1. Expanding surface ripples
-    clientWaterRipplesRef.current.push({
-      x,
-      radius: 4 * scale,
-      life: 1.0,
-      color: 'rgba(255, 255, 255, 0.95)',
-    });
-    clientWaterRipplesRef.current.push({
-      x,
-      radius: 1 * scale,
-      life: 1.0,
-      color: 'rgba(56, 189, 248, 0.9)',
-    });
+    clientWaterRipplesRef.current.push(
+      { x, radius: 4 * scale, life: 1.0, color: 'rgba(255, 255, 255, 0.95)' },
+      { x, radius: 10 * scale, life: 1.0, color: 'rgba(56, 189, 248, 0.85)' },
+      { x, radius: 18 * scale, life: 0.85, color: 'rgba(186, 230, 253, 0.70)' }
+    );
 
     // 2. Upward fountain splash droplets
-    const count = Math.round(14 * scale);
+    const count = Math.round(22 * scale);
     for (let i = 0; i < count; i++) {
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
-      const speed = (Math.random() * 4 + 3.5) * scale;
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.3;
+      const speed = (Math.random() * 5.0 + 3.0) * scale;
       clientWaterSplashesRef.current.push({
-        x: x + (Math.random() - 0.5) * 10,
+        x: x + (Math.random() - 0.5) * 12,
         y: y + (Math.random() - 0.5) * 4,
-        vx: Math.cos(angle) * speed * 0.7,
+        vx: Math.cos(angle) * speed * 0.75,
         vy: Math.sin(angle) * speed,
-        size: Math.random() * 3 + 2,
+        size: Math.random() * 3.5 + 2.0,
         life: 1.0,
         color: Math.random() < 0.5 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(56, 189, 248, 0.9)',
       });
     }
 
     // 3. Submerged bubbles
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       clientWaterBubblesRef.current.push({
-        x: x + (Math.random() - 0.5) * 14,
+        x: x + (Math.random() - 0.5) * 16,
         y: y + Math.random() * 10 + 2,
-        vx: (Math.random() - 0.5) * 1.2,
-        vy: -Math.random() * 1.5 - 0.8,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: -Math.random() * 1.8 - 0.8,
         size: Math.random() * 2.5 + 1.5,
         life: 1.0,
       });
