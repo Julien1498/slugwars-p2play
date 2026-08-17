@@ -30,9 +30,9 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-5 space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col max-h-[85vh]">
+      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-5 space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col h-[560px] max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
               <Sparkles className="w-5 h-5 animate-pulse" />
@@ -55,7 +55,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           </button>
         </div>
 
-        {/* Categories Tabs - Grid 5 columns, perfectly responsive, zero scrolling! */}
+        {/* Categories Tabs - Grid 5 columns, fixed height tabs, zero resizing */}
         <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
           {CATEGORIES.map((cat) => {
             const count = allWeapons.filter((w) => w.category === cat.id).length;
@@ -66,7 +66,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                 onClick={() => setActiveCategory(cat.id)}
                 className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   isActive
-                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)] scale-105'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
                     : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
@@ -80,8 +80,8 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           })}
         </div>
 
-        {/* Weapons Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0">
+        {/* Weapons Grid - Fixed container with content-start so layout never shifts */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0 content-start">
           {filtered.map((w) => {
             const ammo = inventory[w.id] ?? w.defaultAmmo;
             const isDisabled = ammo === 0;
