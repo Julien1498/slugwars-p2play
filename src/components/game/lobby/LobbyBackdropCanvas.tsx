@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const drawRoundRect = (
   c: CanvasRenderingContext2D,
@@ -235,6 +235,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
       try {
         ctx.clearRect(0, 0, width, height);
 
+        // 1. Sky Gradient
         const sky = ctx.createLinearGradient(0, 0, 0, height);
         sky.addColorStop(0, '#06060c');
         sky.addColorStop(0.35, '#120924');
@@ -243,6 +244,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, width, height);
 
+        // 2. Stars
         for (const star of stars) {
           star.alpha = 0.3 + 0.7 * Math.abs(Math.sin(t * star.blinkRate * 10));
           ctx.fillStyle = `rgba(192, 132, 252, ${star.alpha})`;
@@ -251,15 +253,19 @@ export const LobbyBackdropCanvas: React.FC = () => {
           ctx.fill();
         }
 
+        // 3. Clouds
         for (const cloud of nebulaClouds) {
           cloud.x += cloud.speed;
           if (cloud.x > width + 150) cloud.x = -150;
           ctx.fillStyle = `rgba(168, 85, 247, ${cloud.opacity})`;
           ctx.beginPath();
           ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+          ctx.arc(cloud.x + cloud.size * 0.5, cloud.y - cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2);
+          ctx.arc(cloud.x + cloud.size * 0.9, cloud.y, cloud.size * 0.6, 0, Math.PI * 2);
           ctx.fill();
         }
 
+        // 4. Distant Mountain Silhouette Ridges
         ctx.fillStyle = 'rgba(15, 12, 28, 0.9)';
         ctx.beginPath();
         ctx.moveTo(-20, height + 20);
@@ -271,6 +277,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
         ctx.closePath();
         ctx.fill();
 
+        // Foreground Fortified Bunker Hills
         ctx.fillStyle = '#0f0f17';
         ctx.beginPath();
         ctx.moveTo(-20, height + 20);
@@ -282,8 +289,21 @@ export const LobbyBackdropCanvas: React.FC = () => {
         ctx.closePath();
         ctx.fill();
 
+        // Green Dotted Grass Blade Dashes
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let x = -10; x <= width + 20; x += 14) {
+          const by = height * 0.85 + Math.sin(x * 0.004 + 2.1) * 35;
+          ctx.moveTo(x, by);
+          ctx.lineTo(x + 2, by - 4.5);
+        }
+        ctx.stroke();
+
+        // 5. LEFT FLANKING FORTIFIED BASTION & SENTRY SLUG
         const leftBastionX = Math.max(90, Math.min(width * 0.12, 220));
         const leftBastionY = Math.max(260, height * 0.52);
+
         drawFortifiedBastion(ctx, leftBastionX, leftBastionY + 20, 150, 95, 'POSTE OBSERV.', '#10b981');
 
         ctx.save();
@@ -291,8 +311,39 @@ export const LobbyBackdropCanvas: React.FC = () => {
         drawTacticalSlug(ctx, 1.25, 'NIGHT_VISION', true);
         ctx.restore();
 
+        // Searchlight Mounted on Left Watchtower
+        const searchlightX = leftBastionX + 35;
+        const searchlightY = leftBastionY - 14;
+        const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.9) * 0.55;
+
+        ctx.save();
+        ctx.translate(searchlightX, searchlightY);
+        ctx.fillStyle = '#3f3f46';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.rotate(sweepAngle);
+        const beamGrad = ctx.createRadialGradient(0, 0, 5, 0, -height * 0.85, height * 0.65);
+        beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
+        beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.22)');
+        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-80, -height * 0.85);
+        ctx.lineTo(80, -height * 0.85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // 6. RIGHT FLANKING COMMUNICATIONS OUTPOST & RADIO OPERATOR SLUG
         const rightBastionX = Math.max(width - 220, width * 0.88);
         const rightBastionY = Math.max(260, height * 0.52);
+
         drawFortifiedBastion(ctx, rightBastionX, rightBastionY + 20, 150, 95, 'TRANSMISSIONS', '#38bdf8');
 
         ctx.save();
@@ -300,13 +351,113 @@ export const LobbyBackdropCanvas: React.FC = () => {
         drawTacticalSlug(ctx, 1.25, 'RADIO_COMM', false);
         ctx.restore();
 
+        // Spinning Tactical Radar Dish on Right Outpost
+        const radarX = rightBastionX - 35;
+        const radarY = rightBastionY - 14;
+        const radarAngle = t * 3;
+
+        ctx.save();
+        ctx.translate(radarX, radarY);
+        ctx.strokeStyle = '#71717a';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(-6, 12);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(6, 12);
+        ctx.stroke();
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
+        drawSafeEllipse(ctx, 0, -4, 14 * Math.abs(Math.cos(radarAngle)), 14);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, -4, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 7. TOP SKY: TACTICAL RECON SURVEILLANCE DRONE 🛸
+        const droneX = Math.max(100, Math.min(width * 0.18, 280)) + Math.sin(t * 1.2) * 20;
+        const droneY = Math.max(80, height * 0.15) + Math.cos(t * 1.5) * 10;
+
+        ctx.save();
+        ctx.translate(droneX, droneY);
+        ctx.fillStyle = '#27272a';
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 2;
+        drawRoundRect(ctx, -14, -8, 28, 16, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#06b6d4';
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        const rotorSpin = t * 25;
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.lineTo(-26, -4);
+        ctx.stroke();
+        drawSafeEllipse(ctx, -26, -4, 12 * Math.abs(Math.cos(rotorSpin)), 2.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.lineTo(26, -4);
+        ctx.stroke();
+        drawSafeEllipse(ctx, 26, -4, 12 * Math.abs(Math.cos(rotorSpin)), 2.5);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, 8);
+        ctx.lineTo(Math.sin(t * 3) * 30, 160);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        // 8. Artillery Tracer Flares
+        if (Math.random() < 0.018 && flares.length < 3) {
+          flares.push({
+            x: Math.random() < 0.5 ? -20 : width + 20,
+            y: height * 0.4 + Math.random() * (height * 0.2),
+            vx: (Math.random() * 4 + 3) * (Math.random() < 0.5 ? 1 : -1),
+            vy: -(Math.random() * 5 + 4),
+            life: 1,
+            color: Math.random() < 0.5 ? '#f59e0b' : '#ec4899',
+            trail: [],
+          });
+        }
+
         for (let i = flares.length - 1; i >= 0; i--) {
           const f = flares[i];
+          f.trail.push({ x: f.x, y: f.y, alpha: 0.8 });
+          if (f.trail.length > 12) f.trail.shift();
+
           f.x += f.vx;
           f.y += f.vy;
           f.vy += 0.12;
           f.life -= 0.014;
-          if (f.life <= 0 || f.y > height) flares.splice(i, 1);
+
+          for (let j = 0; j < f.trail.length; j++) {
+            const tr = f.trail[j];
+            ctx.fillStyle = `${f.color}${Math.floor((j / f.trail.length) * 180).toString(16).padStart(2, '0')}`;
+            ctx.beginPath();
+            ctx.arc(tr.x, tr.y, (j / f.trail.length) * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (f.life <= 0 || f.y > height) {
+            flares.splice(i, 1);
+          }
         }
       } catch (err) {
         console.error('Lobby backdrop render error:', err);
@@ -314,6 +465,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
     };
 
     renderBackdrop();
+
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
