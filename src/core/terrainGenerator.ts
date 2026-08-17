@@ -126,7 +126,7 @@ export function generateProceduralTerrain(
     }
 
     const startY = Math.max(0, Math.min(height - 1, Math.floor(groundY)));
-    for (let y = startY; y < waterLevel; y++) {
+    for (let y = startY; y < height; y++) {
       grid[y * width + x] = 1;
     }
   }
