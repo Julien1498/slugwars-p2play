@@ -285,11 +285,11 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </Profiler>
       </div>
 
-      {/* Sleek Modern Floating Bottom HUD Controls Bar (Ultra-compact height!) */}
-      <footer className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-3 py-1 flex items-center justify-between text-xs text-zinc-300 gap-2.5 shadow-2xl shrink-0 mx-1 mb-0.5 z-30 transition-all">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Sleek Modern Floating Bottom HUD Controls Bar (Strict fixed height to guarantee 0px canvas resize!) */}
+      <footer className="h-9 min-h-[36px] max-h-[36px] bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-2.5 flex items-center justify-between text-xs text-zinc-300 gap-2 shadow-2xl shrink-0 mx-1 mb-0.5 z-30 whitespace-nowrap overflow-hidden">
+        <div className="flex items-center gap-2 shrink-0 overflow-hidden">
           {activeSlug?.inVehicleId ? (
-            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md">
+            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md shrink-0">
               <span className="font-black flex items-center gap-1 text-amber-300">
                 <span className="text-sm animate-bounce">🚁</span> Hélicoptère
               </span>
@@ -306,7 +306,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               )}
             </div>
           ) : activeSheep ? (
-            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md">
+            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md shrink-0">
               <span className="font-black flex items-center gap-1 text-amber-300">
                 <span className="text-sm animate-bounce">🐑</span> Super-Mouton
               </span>
@@ -320,7 +320,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           ) : (
             <>
               {/* Group 1: Movement & Jump */}
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner shrink-0">
                 <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-violet-300">
                   Q / D
                 </span>
@@ -335,7 +335,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               </div>
 
               {/* Group 2: Aim Angle */}
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner shrink-0">
                 <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-sky-300">
                   ▲ / ▼
                 </span>
@@ -343,7 +343,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               </div>
 
               {/* Group 3: Camera Pan & Zoom */}
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner shrink-0">
                 <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-emerald-300">
                   Clic-Droit
                 </span>
@@ -368,11 +368,11 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </div>
 
         {/* Action Controls & Arsenal */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Journal & Chat Drawer Button */}
           <button
             onClick={() => setShowDrawer(!showDrawer)}
-            className={`px-2.5 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
+            className={`px-2.5 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 ${
               showDrawer
                 ? 'bg-violet-600 border-violet-400 text-white shadow-[0_0_12px_#8b5cf6]'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
@@ -387,23 +387,25 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             )}
           </button>
 
-          {/* Fire Prompt */}
-          {isMyTurn && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/80 border border-emerald-500/60 rounded-xl shadow">
-              <span className="px-1.5 py-0.2 bg-emerald-900/90 border border-emerald-500/80 rounded font-mono text-[10px] font-black text-emerald-200">
-                Clic / Entrée
-              </span>
-              <span className="font-black text-xs text-emerald-300">Tirer 🚀</span>
-            </div>
-          )}
+          {/* Fire Prompt (Fixed space / no layout shift) */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-950/80 border border-emerald-500/60 rounded-lg shadow shrink-0 transition-all ${
+              isMyTurn ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none w-0 px-0 overflow-hidden border-0'
+            }`}
+          >
+            <span className="px-1.5 py-0.2 bg-emerald-900/90 border border-emerald-500/80 rounded font-mono text-[10px] font-black text-emerald-200">
+              Clic / Entrée
+            </span>
+            <span className="font-black text-xs text-emerald-300">Tirer 🚀</span>
+          </div>
 
           {/* Prominent Accessible Weapons Button */}
           <button
             onClick={() => setShowWeaponPicker(true)}
             disabled={!isMyTurn}
-            className={`px-3.5 py-1 rounded-xl border font-black text-xs transition-all shadow-md flex items-center gap-1.5 ${
+            className={`px-3.5 py-1 rounded-xl border font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 ${
               isMyTurn
-                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-violet-400 shadow-[0_0_15px_rgba(147,51,234,0.45)] scale-105 active:scale-95'
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-violet-400 shadow-[0_0_15px_rgba(147,51,234,0.45)] hover:scale-105 active:scale-95'
                 : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed'
             }`}
             title="Ouvrir l'Arsenal W.M.D (Touche I)"
