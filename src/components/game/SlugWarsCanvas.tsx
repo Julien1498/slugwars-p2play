@@ -2057,17 +2057,46 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // Draw Smooth Continuous Surface Waves (Spanning infinite sea horizon)
-      ctx.fillStyle = isDay ? 'rgba(14, 165, 233, 0.65)' : 'rgba(2, 132, 199, 0.55)';
+      // Draw Smooth Multi-Layer Continuous Surface Waves (Spanning infinite sea horizon)
+      // Layer A: Main Rolling Blue Ocean Swell
+      ctx.fillStyle = isDay ? 'rgba(14, 165, 233, 0.75)' : 'rgba(2, 132, 199, 0.65)';
       ctx.beginPath();
       ctx.moveTo(worldLeft, worldBottom);
-      for (let x = worldLeft; x <= worldRight; x += 15) {
-        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2.2) * 3.5 + Math.sin(x * 0.035 - slowTime * 1.5) * 1.5;
         ctx.lineTo(x, wy);
       }
       ctx.lineTo(worldRight, worldBottom);
       ctx.closePath();
       ctx.fill();
+
+      // Layer B: Luminous Turquoise Translucent Secondary Wave Crest
+      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.35)' : 'rgba(14, 165, 233, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, worldBottom);
+      for (let x = worldLeft; x <= worldRight; x += 15) {
+        const wy = waterY + 2 + Math.sin(x * 0.018 + slowTime * 2.8 + 1.2) * 2.8;
+        ctx.lineTo(x, wy);
+      }
+      ctx.lineTo(worldRight, worldBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer C: Crisp Gentle White Foam Crest Line along Wave Peak
+      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.85)' : 'rgba(186, 230, 253, 0.6)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      let firstWavePt = true;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2.2) * 3.5 + Math.sin(x * 0.035 - slowTime * 1.5) * 1.5;
+        if (firstWavePt) {
+          ctx.moveTo(x, wy);
+          firstWavePt = false;
+        } else {
+          ctx.lineTo(x, wy);
+        }
+      }
+      ctx.stroke();
 
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
