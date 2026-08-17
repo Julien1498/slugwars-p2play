@@ -3,7 +3,7 @@ import { GameState } from '../../core/types';
 import { getWeapon } from '../../core/weapons/registry';
 import { WindIndicator } from './WindIndicator';
 import { RoomCodeBadge } from 'p2play-core';
-import { Clock, Crosshair, Heart, Activity, AlertTriangle } from 'lucide-react';
+import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, ShieldAlert, Zap } from 'lucide-react';
 
 interface TurnHeaderProps {
   gameState: GameState;
@@ -36,83 +36,119 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   const teamStats = useMemo(() => {
     return gameState.teams.map((team) => {
       const teamSlugs = gameState.slugs.filter((s) => s.teamId === team.id);
+      const aliveSlugs = teamSlugs.filter((s) => s.isAlive).length;
       const totalHp = teamSlugs.reduce((acc, s) => acc + (s.isAlive ? s.hp : 0), 0);
       const maxHp = gameState.config.slugsPerTeam * gameState.config.slugHp;
       const hpPercent = Math.max(0, Math.min(1, totalHp / (maxHp || 1)));
       const isActive = team.id === gameState.activeTeamId;
-      return { team, totalHp, hpPercent, isActive };
+      return { team, totalHp, hpPercent, isActive, aliveSlugs, totalSlugs: teamSlugs.length };
     });
   }, [gameState.teams, gameState.slugs, gameState.config.slugsPerTeam, gameState.config.slugHp, gameState.activeTeamId]);
 
+  const turnTime = Math.max(0, Math.ceil(gameState.turnTimer));
+  const isTimeUrgent = turnTime <= 5 && gameState.phase === 'AIMING';
+
   return (
     <>
-      <div className="bg-zinc-900/95 backdrop-blur border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between gap-2.5 shadow-md shrink-0">
-        {/* Top Left: Active Slug & Turn Status */}
+      <header className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-2xl px-3 py-2 flex items-center justify-between gap-3 shadow-2xl shrink-0 mx-1 mt-1 z-30 transition-all">
+        {/* Left: Active Player / Turn Status Card */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-3.5 h-3.5 rounded-full border border-white/40 shadow shrink-0"
-              style={{ backgroundColor: activeTeam?.color || '#a855f7' }}
-            />
+          <div
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border bg-zinc-900/90 shadow-md transition-all"
+            style={{
+              borderColor: activeTeam ? `${activeTeam.color}60` : '#3f3f46',
+              boxShadow: activeTeam ? `0 0 14px ${activeTeam.color}20` : undefined,
+            }}
+          >
+            {/* Glowing Team Dot Beacon */}
+            <div className="relative flex items-center justify-center">
+              <div
+                className="w-3.5 h-3.5 rounded-full shadow-inner"
+                style={{ backgroundColor: activeTeam?.color || '#a855f7' }}
+              />
+              <div
+                className="absolute inset-0 rounded-full animate-ping opacity-60 pointer-events-none"
+                style={{ backgroundColor: activeTeam?.color || '#a855f7' }}
+              />
+            </div>
+
             <div>
-              <div className="font-black text-sm text-zinc-100 flex items-center gap-2 leading-none">
-                <span>{activeSlug?.name || 'Tour de jeu'}</span>
-                {isMyTurn && (
-                  <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-500/60 text-emerald-300 text-[10px] font-black uppercase rounded-full animate-pulse shadow-sm">
-                    🎯 Votre tour !
+              <div className="flex items-center gap-2 leading-none">
+                <span className="font-black text-sm text-zinc-100 tracking-tight">
+                  {activeSlug?.name || 'Limace Active'}
+                </span>
+                {isMyTurn ? (
+                  <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/70 text-emerald-300 text-[10px] font-black uppercase rounded-full animate-pulse shadow-[0_0_8px_#10b981]">
+                    🎯 Votre tour
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-semibold rounded-md">
+                    {activeTeam?.name}
                   </span>
                 )}
               </div>
-              <div className="text-[10px] font-semibold text-zinc-400 leading-none mt-0.5">Équipe {activeTeam?.name}</div>
+              <div className="text-[10px] font-semibold text-zinc-400 leading-none mt-1">
+                Équipe {activeTeam?.name}
+              </div>
             </div>
           </div>
 
-          {/* Turn Timer Clock or RETREAT / TURN_START Phase Badge */}
+          {/* Turn Timer Clock / Special Phase Badge */}
           {gameState.phase === 'RETREAT' ? (
-            <div className="flex items-center gap-1.5 bg-red-950 border border-red-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-red-400 shadow-inner animate-pulse">
-              <Clock className="w-3.5 h-3.5 text-red-400 animate-spin" style={{ animationDuration: '1s' }} />
-              <span className="font-mono text-sm uppercase">🏃 FUITE : {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
+            <div className="flex items-center gap-1.5 bg-orange-950/90 border border-orange-500/80 px-3 py-1.5 rounded-xl text-xs font-black text-orange-300 shadow-lg animate-pulse">
+              <Clock className="w-3.5 h-3.5 text-orange-400 animate-spin" style={{ animationDuration: '1.2s' }} />
+              <span className="font-mono text-sm uppercase">🏃 FUITE: {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
             </div>
           ) : gameState.phase === 'TURN_START' ? (
-            <div className="flex items-center gap-1.5 bg-purple-950 border border-purple-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-purple-300 shadow-inner animate-bounce">
-              <span>📣 DÉBUT DU TOUR !</span>
+            <div className="flex items-center gap-1.5 bg-purple-950/90 border border-purple-500/80 px-3 py-1.5 rounded-xl text-xs font-black text-purple-300 shadow-lg animate-bounce">
+              <span>📣 DÉBUT DU TOUR</span>
             </div>
           ) : gameState.phase === 'PLACEMENT' ? (
-            <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-300 shadow-inner animate-pulse">
-              <span>📍 PLACEMENT LIMACE</span>
+            <div className="flex items-center gap-1.5 bg-amber-950/90 border border-amber-500/80 px-3 py-1.5 rounded-xl text-xs font-black text-amber-300 shadow-lg animate-pulse">
+              <span>📍 PLACEMENT</span>
             </div>
           ) : gameState.phase === 'CASUALTIES' ? (
-            <div className="flex items-center gap-1.5 bg-amber-950 border border-amber-500/80 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-300 shadow-inner">
-              <span>💀 BILAN DÉGÂTS</span>
+            <div className="flex items-center gap-1.5 bg-red-950/90 border border-red-500/80 px-3 py-1.5 rounded-xl text-xs font-black text-red-300 shadow-lg">
+              <span>💀 DÉGÂTS</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 bg-zinc-950 border border-amber-500/40 px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-400 shadow-inner">
-              <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
-              <span className="font-mono text-sm">{Math.max(0, Math.ceil(gameState.turnTimer))}s</span>
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-mono text-sm font-black shadow-lg transition-all ${
+                isTimeUrgent
+                  ? 'bg-red-950/90 border-red-500 text-red-300 shadow-[0_0_14px_#ef4444] animate-pulse'
+                  : 'bg-zinc-900/90 border-zinc-800 text-amber-400'
+              }`}
+            >
+              <Clock className={`w-3.5 h-3.5 ${isTimeUrgent ? 'text-red-400 animate-spin' : 'text-amber-400'}`} style={{ animationDuration: isTimeUrgent ? '1s' : '4s' }} />
+              <span>{turnTime}s</span>
             </div>
           )}
         </div>
 
-        {/* Worms Team Total HP Leaderboard */}
-        <div className="flex items-center gap-2 overflow-x-auto max-w-full py-0.5 px-2 bg-zinc-950/80 border border-zinc-800 rounded-lg shrink min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1 shrink-0">
-            <Heart className="w-3 h-3 text-red-500 fill-red-500" /> Équipes :
+        {/* Center: Team Health Leaderboard & Bars */}
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full py-1 px-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl shrink min-w-0 shadow-inner">
+          <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1 shrink-0">
+            <Heart className="w-3 h-3 text-red-500 fill-red-500" />
           </span>
-          {teamStats.map(({ team, totalHp, hpPercent, isActive }) => (
+          {teamStats.map(({ team, totalHp, hpPercent, isActive, aliveSlugs, totalSlugs }) => (
             <div
               key={team.id}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-bold transition shrink-0 ${
+              className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all shrink-0 ${
                 isActive
-                  ? 'bg-zinc-800 border-amber-500/80 text-white shadow-sm'
-                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
+                  ? 'bg-zinc-800/95 border-amber-400/80 text-white shadow-md ring-1 ring-amber-400/30'
+                  : 'bg-zinc-950/50 border-zinc-800 text-zinc-400'
               }`}
             >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
-              <span className="truncate max-w-[100px]">{team.name}</span>
-              <span className="font-mono text-[11px] text-amber-300">{totalHp} HP</span>
-              <div className="w-10 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+              <div
+                className="w-2.5 h-2.5 rounded-full shadow-sm"
+                style={{ backgroundColor: team.color }}
+              />
+              <span className="truncate max-w-[90px] text-zinc-200">{team.name}</span>
+              <span className="text-[10px] font-semibold text-zinc-400">({aliveSlugs}/{totalSlugs})</span>
+              <span className="font-mono text-[11px] font-black text-amber-300">{totalHp} HP</span>
+              <div className="w-12 h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-700/60">
                 <div
-                  className="h-full transition-all duration-300"
+                  className="h-full rounded-full transition-all duration-300"
                   style={{
                     width: `${hpPercent * 100}%`,
                     backgroundColor: team.color,
@@ -123,81 +159,92 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           ))}
         </div>
 
-        {/* Right Controls: Wind, Rising Water, Weapon Button, Room Code & Exit */}
+        {/* Right: Tactical Sensors & Actions */}
         <div className="flex items-center gap-2 shrink-0">
           <WindIndicator wind={gameState.wind} />
 
-          {/* Rising Water Active Indicator */}
+          {/* Rising Water Active Badge */}
           {gameState.config.waterRiseSpeed && gameState.config.waterRiseSpeed !== 'OFF' && (
             <div
-              className="px-2 py-1 bg-sky-950/80 border border-sky-500/60 text-sky-300 text-[11px] font-black rounded-lg flex items-center gap-1 shadow-sm"
+              className="px-2.5 py-1 bg-sky-950/85 border border-sky-500/50 text-sky-300 text-[11px] font-black rounded-xl flex items-center gap-1.5 shadow-md"
               title={`Montée des eaux : ${gameState.config.waterRiseSpeed} (${gameState.config.waterRiseFreq === 'ROUND_CYCLE' ? 'Cycle de Round' : 'Tour par tour'})`}
             >
-              <span className="animate-pulse">🌊</span>
+              <span className="animate-bounce">🌊</span>
               <span>
                 {gameState.config.waterRiseFreq === 'ROUND_CYCLE'
-                  ? (gameState.config.waterRiseSpeed === 'SLOW' ? '+16px/round' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+36px/round' : '+68px/round')
-                  : (gameState.config.waterRiseSpeed === 'SLOW' ? '+5px/tour' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+12px/tour' : '+24px/tour')}
+                  ? (gameState.config.waterRiseSpeed === 'SLOW' ? '+16px' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+36px' : '+68px')
+                  : (gameState.config.waterRiseSpeed === 'SLOW' ? '+5px' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+12px' : '+24px')}
               </span>
             </div>
           )}
 
+          {/* Equipped Weapon Quick Button */}
           {activeWeapon && (
             <button
               onClick={onOpenWeaponPicker}
               disabled={!isMyTurn}
-              className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition ${
+              className={`px-3 py-1 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all shadow-md ${
                 isMyTurn
-                  ? 'bg-violet-950/90 border-violet-500 hover:bg-violet-900 text-violet-200 shadow-md shadow-violet-950'
-                  : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 opacity-60'
+                  ? 'bg-violet-950/90 border-violet-500/80 hover:bg-violet-900 text-violet-100 hover:scale-105 shadow-[0_0_12px_#7c3aed40]'
+                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 opacity-60 cursor-not-allowed'
               }`}
             >
-              <span className="text-sm">{activeWeapon.icon}</span>
-              <span>{activeWeapon.name}</span>
+              <span className="text-base">{activeWeapon.icon}</span>
+              <span className="font-semibold">{activeWeapon.name}</span>
               <Crosshair className="w-3.5 h-3.5 text-violet-400" />
             </button>
           )}
 
           <RoomCodeBadge code={hostPeerId} label="Salon" accentClassName="text-violet-400" />
+
+          {/* Performance & Network Monitor Modal Toggle */}
           {onOpenMetrics && (
             <button
               onClick={onOpenMetrics}
               title="Métriques de performances & réseau P2P"
-              className="px-2 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/50 rounded-lg text-xs font-bold text-emerald-300 transition flex items-center gap-1 shadow-sm"
+              className="p-1.5 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-emerald-400 transition hover:border-emerald-500/50 shadow-sm"
             >
-              <Activity className="w-3 h-3 text-emerald-400 animate-pulse" />
-              <span>Perfs</span>
+              <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
             </button>
           )}
+
+          {/* Rules Modal Toggle */}
           <button
             onClick={onOpenRules}
-            className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-300 transition"
+            title="Règles d'engagement"
+            className="p-1.5 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-zinc-300 transition hover:border-zinc-700 shadow-sm"
           >
-            📖
+            <BookOpen className="w-4 h-4" />
           </button>
+
+          {/* Return to Lobby (Host Only) */}
           {isHost && onRestartGame && (
             <button
               onClick={() => setShowConfirmLobby(true)}
-              title="Retourner au Salon (Lobby) pour tous les joueurs"
-              className="px-2 py-1 bg-amber-950/90 hover:bg-amber-900 border border-amber-500/70 rounded-lg text-xs font-bold text-amber-200 transition flex items-center gap-1 shadow-sm"
+              title="Retourner au Salon pour tous les joueurs"
+              className="px-2.5 py-1 bg-amber-950/80 hover:bg-amber-900 border border-amber-500/60 rounded-xl text-xs font-black text-amber-200 transition flex items-center gap-1.5 shadow-md"
             >
-              <span>🏠 Salon</span>
+              <Home className="w-3.5 h-3.5" />
+              <span>Salon</span>
             </button>
           )}
+
+          {/* Exit Game */}
           {onExit && (
             <button
               onClick={onExit}
-              className="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-lg text-xs font-semibold text-red-300 transition"
+              title="Quitter la partie"
+              className="p-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-xl text-red-300 transition hover:border-red-600 shadow-sm"
             >
-              Quitter
+              <LogOut className="w-4 h-4" />
             </button>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Return to Lobby Host Confirmation Modal */}
       {showConfirmLobby && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-amber-500/60 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">

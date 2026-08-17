@@ -277,109 +277,146 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </Profiler>
       </div>
 
-      {/* Sleek Compact Worms Bottom HUD Controls Bar */}
-      <div className="bg-zinc-900/90 border border-zinc-800 px-2.5 py-1 rounded-lg flex items-center justify-between text-xs text-zinc-300 gap-2 flex-wrap shadow-xl shrink-0">
-          <div className="flex items-center gap-3">
-            {activeSlug?.inVehicleId ? (
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/80 px-2.5 py-0.5 rounded-lg text-amber-200 font-black animate-pulse">
-                  <span>🚁 Hélicoptère aux Commandes !</span>
-                  <span className="font-mono text-xs text-amber-300">[ZQSD / Flèches] Voler</span>
-                </div>
-                {isMyTurn && (
-                  <button
-                    onClick={onExitVehicle}
-                    className="px-2.5 py-0.5 bg-red-900/80 hover:bg-red-800 border border-red-500/80 text-red-200 font-bold rounded-lg transition"
-                  >
-                    Sortir [E]
-                  </button>
-                )}
-              </div>
-            ) : activeSheep ? (
-              <div className="flex items-center gap-2 bg-amber-950/60 border border-amber-500/60 px-2.5 py-0.5 rounded-lg text-amber-200 font-bold animate-pulse">
-                <span>🐑 Super Mouton en Vol !</span>
-                <span className="font-mono text-zinc-300">[◄ / ►] Mettre le cap</span>
-                <span className="font-mono text-zinc-300">[Entrée] Faire tout sauter</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-1 font-semibold">
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-violet-300">◄ / ►</span>
-                  <span className="text-zinc-400">ou</span>
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-violet-300">Q / D</span>
-                  <span className="text-zinc-300 ml-1">Déplacer</span>
-                </div>
-
-                <div className="flex items-center gap-1 font-semibold">
-                  <span className="px-2 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-amber-300">Espace</span>
-                  <span className="text-zinc-300">Sauter 🦘</span>
-                </div>
-
-                <div className="flex items-center gap-1 font-semibold">
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-sky-300">▲ / ▼</span>
-                  <span className="text-zinc-300">Angle</span>
-                </div>
-
-                <div className="flex items-center gap-1 font-semibold border-l border-zinc-800 pl-2.5">
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">Clic-Droit</span>
-                  <span className="text-zinc-300">Caméra</span>
-                </div>
-
-                <div className="flex items-center gap-1 font-semibold">
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">Molette</span>
-                  <span className="text-zinc-300">Zoom</span>
-                </div>
-
-                <div className="flex items-center gap-1 font-semibold">
-                  <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">C</span>
-                  <span className="text-zinc-300">Recentrer</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Journal & Chat Toggle Drawer Button */}
-            <button
-              onClick={() => setShowDrawer(!showDrawer)}
-              className={`px-2.5 py-0.5 rounded-lg border font-bold text-xs flex items-center gap-1 transition ${
-                showDrawer
-                  ? 'bg-violet-950 border-violet-500 text-violet-300'
-                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-300'
-              }`}
-            >
-              <MessageSquare className="w-3 h-3" />
-              <span>Journal & Chat</span>
-            </button>
-
-            {/* Hitbox Toggle Button */}
-            <button
-              onClick={() => setShowHitboxes(!showHitboxes)}
-              className={`px-2.5 py-0.5 rounded-lg border font-bold text-xs flex items-center gap-1 transition ${
-                showHitboxes
-                  ? 'bg-cyan-950 border-cyan-500 text-cyan-300 shadow-sm'
-                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Afficher/Masquer les Hitboxes de collision"
-            >
-              <Eye className="w-3 h-3" />
-              <span>Hitbox {showHitboxes ? 'Activées' : '🎯'}</span>
-            </button>
-
-            <div className="flex items-center gap-1 font-semibold">
-              <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[11px] text-emerald-300">Entrée / Clic</span>
-              <span className="text-zinc-300">Tirer 🚀</span>
+      {/* Sleek Modern Floating Bottom HUD Controls Bar */}
+      <footer className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-2xl px-3.5 py-1.5 flex items-center justify-between text-xs text-zinc-300 gap-3 shadow-2xl shrink-0 mx-1 mb-1 z-30 transition-all">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {activeSlug?.inVehicleId ? (
+            <div className="flex items-center gap-2.5 bg-amber-950/80 border border-amber-500/70 px-3 py-1 rounded-xl text-amber-200 shadow-md">
+              <span className="font-black flex items-center gap-1.5 text-amber-300">
+                <span className="text-base animate-bounce">🚁</span> Hélicoptère
+              </span>
+              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                ZQSD / Flèches pour voler
+              </span>
+              {isMyTurn && (
+                <button
+                  onClick={onExitVehicle}
+                  className="px-2.5 py-0.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-lg transition shadow flex items-center gap-1"
+                >
+                  Sortir [E]
+                </button>
+              )}
             </div>
+          ) : activeSheep ? (
+            <div className="flex items-center gap-2.5 bg-amber-950/80 border border-amber-500/70 px-3 py-1 rounded-xl text-amber-200 shadow-md">
+              <span className="font-black flex items-center gap-1.5 text-amber-300">
+                <span className="text-base animate-bounce">🐑</span> Super-Mouton
+              </span>
+              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                ◄ / ► Naviguer
+              </span>
+              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                Entrée : Faire sauter
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* Group 1: Movement & Jump */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
+                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-violet-300">
+                  Q / D
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Marcher</span>
 
-            <button
-              onClick={() => setShowWeaponPicker(true)}
-              disabled={!isMyTurn}
-              className="px-2.5 py-0.5 bg-violet-950/90 hover:bg-violet-900 border border-violet-600 text-violet-200 rounded-lg font-bold text-xs transition disabled:opacity-40 shadow"
-            >
-              Armes 🎒
-            </button>
-          </div>
+                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+
+                <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-amber-300">
+                  Espace
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Sauter 🦘</span>
+              </div>
+
+              {/* Group 2: Aim Angle */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
+                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-sky-300">
+                  ▲ / ▼
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Visée</span>
+              </div>
+
+              {/* Group 3: Camera Pan & Zoom */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
+                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+                  Clic-Droit
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Caméra</span>
+
+                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+
+                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+                  Molette
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Zoom</span>
+
+                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+
+                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+                  C
+                </span>
+                <span className="text-zinc-400 text-[11px] font-semibold">Centrer</span>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Action Controls & Utilities */}
+        <div className="flex items-center gap-2">
+          {/* Journal & Chat Drawer Button */}
+          <button
+            onClick={() => setShowDrawer(!showDrawer)}
+            className={`px-3 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
+              showDrawer
+                ? 'bg-violet-600 border-violet-400 text-white shadow-[0_0_12px_#8b5cf6]'
+                : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Chat & Journal</span>
+            {chatMessages.length > 0 && (
+              <span className="px-1.5 py-0.2 bg-violet-950 border border-violet-500/50 rounded-full text-[10px] text-violet-300 font-mono">
+                {chatMessages.length}
+              </span>
+            )}
+          </button>
+
+          {/* Hitboxes Toggle */}
+          <button
+            onClick={() => setShowHitboxes(!showHitboxes)}
+            className={`px-3 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
+              showHitboxes
+                ? 'bg-cyan-950 border-cyan-400 text-cyan-300 shadow-[0_0_12px_#06b6d4]'
+                : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+            }`}
+            title="Afficher/Masquer les Hitboxes de collision"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Hitboxes {showHitboxes ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* Fire Indicator */}
+          {isMyTurn && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 border border-emerald-500/60 rounded-xl shadow-md">
+              <span className="px-1.5 py-0.5 bg-emerald-900/90 border border-emerald-500/80 rounded-md font-mono text-[11px] font-black text-emerald-200">
+                Clic / Entrée
+              </span>
+              <span className="font-black text-xs text-emerald-300">Tirer 🚀</span>
+            </div>
+          )}
+
+          {/* Weapons Button */}
+          <button
+            onClick={() => setShowWeaponPicker(true)}
+            disabled={!isMyTurn}
+            className={`px-3.5 py-1 rounded-xl border font-black text-xs transition-all shadow-md flex items-center gap-1.5 ${
+              isMyTurn
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-violet-400 shadow-[0_0_15px_rgba(147,51,234,0.4)] scale-105'
+                : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <span>Armes 🎒</span>
+          </button>
+        </div>
+      </footer>
 
       {/* Floating Collapsible Journal & Chat Drawer Panel (No canvas space wasted!) */}
       {showDrawer && (
