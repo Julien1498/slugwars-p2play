@@ -913,6 +913,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const clientFloatingDamagesRef = useRef<{ id: string; x: number; y: number; damage: number; startTime: number; duration: number }[]>([]);
   const prevSlugHpsRef = useRef<Map<string, number>>(new Map());
   const currentRenderWaterYRef = useRef<number>(terrain.data.waterLevel);
+  const clientWaterSplashesRef = useRef<{ x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }[]>([]);
+  const clientWaterRipplesRef = useRef<{ x: number; y: number; radius: number; maxRadius: number; life: number; color: string }[]>([]);
+  const clientWaterBubblesRef = useRef<{ x: number; y: number; vx: number; vy: number; size: number; life: number }[]>([]);
+  const prevSlugWaterStateRef = useRef<Map<string, { y: number; isAlive: boolean }>>(new Map());
+  const splashCooldownsRef = useRef<Map<string, number>>(new Map());
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -1235,6 +1240,34 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       startTime: performance.now(),
       duration: 1000,
     });
+  }, []);
+
+  // Trigger authentic liquid water splash FX with fountain spray and expanding ripples
+  const triggerWaterSplash = useCallback((x: number, y: number, intensity: number = 1.0) => {
+    sfx.play('splash');
+    
+    // 1. Water Drop & Foam Particles (Upward fountain arc)
+    const particleCount = Math.floor(24 * intensity);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = -Math.PI * 0.5 + (Math.random() - 0.5) * 1.3;
+      const speed = (3.5 + Math.random() * 5.5) * intensity;
+      const colors = ['#ffffff', '#bae6fd', '#38bdf8', '#0284c7', '#7dd3fc'];
+      clientWaterSplashesRef.current.push({
+        x: x + (Math.random() - 0.5) * 14,
+        y: y - 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.0,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 3.5 + 1.5,
+        life: 1.0,
+      });
+    }
+
+    // 2. Expanding Concentric Surface Water Ripples
+    clientWaterRipplesRef.current.push(
+      { x, y, radius: 4, maxRadius: 36 * intensity, life: 1.0, color: 'rgba(255, 255, 255, 0.95)' },
+      { x, y, radius: 10, maxRadius: 58 * intensity, life: 1.0, color: 'rgba(56, 189, 248, 0.80)' }
+    );
   }, []);
 
   // Global mouseup to release camera dragging even if cursor leaves canvas/window
@@ -3852,6 +3885,192 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
       clientFloatingDamagesRef.current = remainingFloatingDamages;
+
+      // =========================================================================
+      // WATER INTERACTION DETECTION (Drowning Slugs, Projectile Splash & Bubbles)
+      // =========================================================================
+      for (const slug of curState.slugs) {
+        const prevState = prevSlugWaterStateRef.current.get(slug.id);
+        const isNowUnderwater = slug.y >= waterY - 4;
+        const wasAbove = !prevState || prevState.y < waterY - 4;
+        const wasAlive = !prevState || prevState.isAlive;
+
+        if (isNowUnderwater && (wasAbove || (wasAlive && !slug.isAlive))) {
+          const nowMs = performance.now();
+          const lastSplash = splashCooldownsRef.current.get(slug.id) || 0;
+          if (nowMs - lastSplash > 400) {
+            splashCooldownsRef.current.set(slug.id, nowMs);
+            triggerWaterSplash(slug.x, waterY, 1.4);
+          }
+        }
+        prevSlugWaterStateRef.current.set(slug.id, { y: slug.y, isAlive: slug.isAlive });
+
+        // Continuous rising death bubbles for submerged fallen slugs
+        if (slug.y >= waterY && !slug.isAlive && Math.random() < 0.25 && clientWaterBubblesRef.current.length < 40) {
+          clientWaterBubblesRef.current.push({
+            x: slug.x + (Math.random() - 0.5) * 14,
+            y: slug.y - 4,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: -1.6 - Math.random() * 1.2,
+            size: 2 + Math.random() * 2.5,
+            life: 1.0,
+          });
+        }
+      }
+
+      // Detect projectiles entering water
+      if (curState.projectiles) {
+        for (const p of curState.projectiles) {
+          if (p.y >= waterY - 6 && p.y <= waterY + 30) {
+            const pKey = `proj_${p.id}`;
+            const nowMs = performance.now();
+            const lastSplash = splashCooldownsRef.current.get(pKey) || 0;
+            if (nowMs - lastSplash > 400) {
+              splashCooldownsRef.current.set(pKey, nowMs);
+              triggerWaterSplash(p.x, waterY, 1.1);
+            }
+          }
+        }
+      }
+
+      // =========================================================================
+      // FOREGROUND OCEAN LAYER & WATER SUBMERSION
+      // Submerges the lower terrain, props, and fallen slugs in realistic fluid depth!
+      // =========================================================================
+      const fgWaterBottom = worldBottom;
+      const fgWaterGrad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
+      if (isDay) {
+        if (theme === 'CAVERN') {
+          fgWaterGrad.addColorStop(0, 'rgba(217, 119, 6, 0.70)');
+          fgWaterGrad.addColorStop(0.3, 'rgba(180, 83, 9, 0.82)');
+          fgWaterGrad.addColorStop(0.7, 'rgba(120, 53, 15, 0.92)');
+          fgWaterGrad.addColorStop(1, 'rgba(23, 6, 2, 0.98)');
+        } else {
+          fgWaterGrad.addColorStop(0, 'rgba(2, 132, 199, 0.68)');
+          fgWaterGrad.addColorStop(0.25, 'rgba(3, 105, 161, 0.80)');
+          fgWaterGrad.addColorStop(0.65, 'rgba(8, 47, 73, 0.92)');
+          fgWaterGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+        }
+      } else {
+        if (theme === 'CAVERN') {
+          fgWaterGrad.addColorStop(0, 'rgba(220, 38, 38, 0.75)');
+          fgWaterGrad.addColorStop(0.4, 'rgba(153, 27, 27, 0.88)');
+          fgWaterGrad.addColorStop(1, 'rgba(3, 1, 2, 0.98)');
+        } else {
+          fgWaterGrad.addColorStop(0, 'rgba(2, 132, 199, 0.65)');
+          fgWaterGrad.addColorStop(0.35, 'rgba(15, 23, 42, 0.85)');
+          fgWaterGrad.addColorStop(1, 'rgba(2, 4, 10, 0.98)');
+        }
+      }
+
+      // 1. Translucent Submerged Ocean Body
+      ctx.fillStyle = fgWaterGrad;
+      ctx.fillRect(worldLeft, waterY, worldRight - worldLeft, fgWaterBottom - waterY);
+
+      // 2. Foreground Rolling Animated Waves
+      // Layer A: Main Rolling Blue Ocean Swell
+      ctx.fillStyle = isDay ? 'rgba(2, 132, 199, 0.75)' : 'rgba(3, 105, 161, 0.65)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, fgWaterBottom);
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2.2) * 3.5 + Math.sin(x * 0.035 - slowTime * 1.5) * 1.5;
+        ctx.lineTo(x, wy);
+      }
+      ctx.lineTo(worldRight, fgWaterBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer B: Luminous Turquoise Translucent Secondary Wave Crest
+      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.50)' : 'rgba(14, 165, 233, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, fgWaterBottom);
+      for (let x = worldLeft; x <= worldRight; x += 15) {
+        const wy = waterY + 2 + Math.sin(x * 0.018 + slowTime * 2.8 + 1.2) * 2.8;
+        ctx.lineTo(x, wy);
+      }
+      ctx.lineTo(worldRight, fgWaterBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer C: Crisp Glowing White Foam Crest Line along Wave Peak
+      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.95)' : 'rgba(186, 230, 253, 0.85)';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      let firstFgWavePt = true;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2.2) * 3.5 + Math.sin(x * 0.035 - slowTime * 1.5) * 1.5;
+        if (firstFgWavePt) {
+          ctx.moveTo(x, wy);
+          firstFgWavePt = false;
+        } else {
+          ctx.lineTo(x, wy);
+        }
+      }
+      ctx.stroke();
+
+      // 3. Render Rising Air Bubbles
+      const remainingBubbles: typeof clientWaterBubblesRef.current = [];
+      for (const b of clientWaterBubblesRef.current) {
+        b.x += b.vx + Math.sin(animTime * 6 + b.y * 0.1) * 0.4;
+        b.y += b.vy;
+        b.life -= 0.018;
+
+        if (b.life > 0 && b.y > waterY - 4) {
+          remainingBubbles.push(b);
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, b.life * 0.8);
+          ctx.fillStyle = 'rgba(224, 242, 254, 0.85)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      clientWaterBubblesRef.current = remainingBubbles;
+
+      // 4. Render Surface Expanding Water Ripples
+      const remainingRipples: typeof clientWaterRipplesRef.current = [];
+      for (const rip of clientWaterRipplesRef.current) {
+        rip.radius += 0.9;
+        rip.life -= 0.024;
+
+        if (rip.life > 0) {
+          remainingRipples.push(rip);
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, rip.life * 0.85);
+          ctx.strokeStyle = rip.color;
+          ctx.lineWidth = Math.max(0.8, 2.2 * rip.life);
+          ctx.beginPath();
+          ctx.ellipse(rip.x, waterY, rip.radius * 1.6, rip.radius * 0.45, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      clientWaterRipplesRef.current = remainingRipples;
+
+      // 5. Render Water Splash Droplets & Fountain Plumes
+      const remainingSplashes: typeof clientWaterSplashesRef.current = [];
+      for (const sp of clientWaterSplashesRef.current) {
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.vy += 0.26; // Gravity pulling water droplets down
+        sp.life -= 0.028;
+
+        if (sp.life > 0) {
+          remainingSplashes.push(sp);
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, sp.life * 0.95);
+          ctx.fillStyle = sp.color;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, Math.max(1, sp.size * sp.life), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+      clientWaterSplashesRef.current = remainingSplashes;
 
       // COMPREHENSIVE DEBUG HITBOX OVERLAY RENDERING (Slugs, Projectiles, Vehicles, Crates, Mines, Girders, Solid Props, Terrain & Water)
       if (showHitboxesRef.current) {

@@ -168,17 +168,55 @@ class SoundEffects {
         gain.connect(ctx.destination);
         whiteNoise.start(now);
       } else if (type === 'splash') {
+        // Layer 1: Resonant Water Impact Plop
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.linearRampToValueAtTime(200, now + 0.3);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(750, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(280, now + 0.22);
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.3);
+        osc.stop(now + 0.28);
+
+        // Layer 2: White Noise Liquid Spray & Foam Churn
+        const bufferSize = Math.floor(ctx.sampleRate * 0.35);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.1));
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.setValueAtTime(1400, now);
+        bpf.frequency.exponentialRampToValueAtTime(450, now + 0.32);
+        bpf.Q.value = 2.5;
+        const nGain = ctx.createGain();
+        nGain.gain.setValueAtTime(0.4, now);
+        nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        noise.connect(bpf);
+        bpf.connect(nGain);
+        nGain.connect(ctx.destination);
+        noise.start(now);
+
+        // Layer 3: Secondary Submerged Bubble Glug
+        const bubble = ctx.createOscillator();
+        const bGain = ctx.createGain();
+        bubble.type = 'sine';
+        bubble.frequency.setValueAtTime(360, now + 0.08);
+        bubble.frequency.exponentialRampToValueAtTime(580, now + 0.16);
+        bGain.gain.setValueAtTime(0.0, now);
+        bGain.gain.setValueAtTime(0.3, now + 0.08);
+        bGain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+        bubble.connect(bGain);
+        bGain.connect(ctx.destination);
+        bubble.start(now + 0.08);
+        bubble.stop(now + 0.22);
       } else if (type === 'baah') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
