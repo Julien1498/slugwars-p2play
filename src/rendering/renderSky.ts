@@ -34,6 +34,11 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       skyGrad.addColorStop(0.70, '#0284c7');
       skyGrad.addColorStop(0.90, '#38bdf8');
       skyGrad.addColorStop(1, '#e0f2fe');
+    } else if (theme === 'FLOATING_CHAOS') {
+      skyGrad.addColorStop(0, '#0369a1');
+      skyGrad.addColorStop(0.35, '#0284c7');
+      skyGrad.addColorStop(0.72, '#38bdf8');
+      skyGrad.addColorStop(1, '#e0f2fe');
     } else {
       skyGrad.addColorStop(0, '#0369a1');
       skyGrad.addColorStop(0.38, '#0284c7');
@@ -46,7 +51,12 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       skyGrad.addColorStop(0.35, '#170605');
       skyGrad.addColorStop(0.7, '#2b0c07');
       skyGrad.addColorStop(1, '#451a03');
-    } else if (theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
+    } else if (theme === 'FORTRESS') {
+      skyGrad.addColorStop(0, '#020408');
+      skyGrad.addColorStop(0.35, '#070b14');
+      skyGrad.addColorStop(0.7, '#0f172a');
+      skyGrad.addColorStop(1, '#1e293b');
+    } else if (theme === 'FLOATING_CHAOS') {
       skyGrad.addColorStop(0, '#02040a');
       skyGrad.addColorStop(0.35, '#070d1a');
       skyGrad.addColorStop(0.7, '#0f172a');
@@ -101,7 +111,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     }
   }
 
-  // 3. Iconic Celestial Focus (Sun / Moon / Rift)
+  // 3. Iconic Celestial Focus (Sun / Moon / Rift / Searchlight)
   if (isDay) {
     if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
       const sunX = width * 0.82;
@@ -176,10 +186,57 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.beginPath();
       ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
       ctx.fill();
+    } else if (theme === 'FLOATING_CHAOS') {
+      const riftX = width * 0.78;
+      const riftY = height * 0.18;
+      const riftR = 30;
+
+      const riftGlow = ctx.createRadialGradient(riftX, riftY, 5, riftX, riftY, riftR * 2.8);
+      riftGlow.addColorStop(0, 'rgba(192, 132, 252, 0.55)');
+      riftGlow.addColorStop(0.5, 'rgba(147, 51, 234, 0.18)');
+      riftGlow.addColorStop(1, 'rgba(8, 3, 19, 0)');
+      ctx.fillStyle = riftGlow;
+      ctx.beginPath();
+      ctx.arc(riftX, riftY, riftR * 2.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#c084fc';
+      for (let s = 0; s < 6; s++) {
+        const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
+        const sDist = riftR * 1.1 + Math.sin(animTime * 0.5 + s) * 4;
+        const sx = riftX + Math.cos(sAngle) * sDist;
+        const sy = riftY + Math.sin(sAngle) * sDist;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (theme === 'FORTRESS') {
+      const beamX = width * 0.22;
+      const beamY = height * 0.52;
+      const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
+      const beamLen = height * 0.85;
+
+      ctx.save();
+      ctx.translate(beamX, beamY);
+      ctx.rotate(sweepAngle);
+
+      const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
+      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+      beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+      beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(-45, -beamLen);
+      ctx.lineTo(45, -beamLen);
+      ctx.lineTo(6, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     }
   }
 
-  // 4. Parallax Mountain & Ridge Horizons
+  // 4. Parallax Mountain & Ridge Horizons (Theme-Specific Colors)
   const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
   if (isDay) {
     if (theme === 'CAVERN') {
@@ -188,13 +245,28 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     } else if (theme === 'FORTRESS') {
       mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
       mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
+    } else if (theme === 'FLOATING_CHAOS') {
+      // Radiant Emerald Green Archipelago Hills
+      mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+      mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
     } else {
       mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
       mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
     }
   } else {
-    mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-    mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+    if (theme === 'CAVERN') {
+      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+      mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+    } else if (theme === 'FORTRESS') {
+      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+      mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
+    } else if (theme === 'FLOATING_CHAOS') {
+      mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
+      mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
+    } else {
+      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+      mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+    }
   }
 
   ctx.fillStyle = mtGrad;
@@ -210,9 +282,9 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   // Midground Ridge
   if (isDay) {
-    ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#14532d' : '#15803d';
+    ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
   } else {
-    ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : '#070b16';
+    ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
   }
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
@@ -223,6 +295,19 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   ctx.lineTo(worldRight, waterY + 100);
   ctx.closePath();
   ctx.fill();
+
+  // Dotted Lush Grass Blade Dashes on Green Hills (Island, Floating Chaos, Fortress)
+  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || !theme)) {
+    ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let x = worldLeft; x <= worldRight; x += 14) {
+      const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
+      ctx.moveTo(x, by);
+      ctx.lineTo(x + Math.sin(x * 0.1) * 3, by - 5 - (Math.abs(x) % 4));
+    }
+    ctx.stroke();
+  }
 
   // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
   const bgWaterGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
