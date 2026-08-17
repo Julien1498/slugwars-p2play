@@ -7,7 +7,7 @@ import { perfTracker } from '../../core/perfTracker';
 import { screenToWorldCoords, clampPanOffset } from '../../rendering/cameraUtils';
 import { renderHDDestructibleGirder, renderHDDestructibleProp } from '../../rendering/renderProps';
 import { renderSkyAndAtmosphere } from '../../rendering/renderSky';
-import { WaterBubble, WaterRipple, WaterSplash } from '../../rendering/renderWater';
+import { renderForegroundOcean, WaterBubble, WaterRipple, WaterSplash } from '../../rendering/renderWater';
 import { createTerrainBuffers, redrawOffscreenTerrain, TerrainBuffers } from '../../rendering/renderTerrain';
 import { renderAllSlugs } from '../../rendering/renderSlugs';
 import { renderProjectiles } from '../../rendering/renderProjectiles';
@@ -566,6 +566,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       renderPlacementGhost(ctx, curState, terrain, mousePosRef.current, isMyTurnRef.current, animTime);
+
+      // 8. Foreground Ocean & Rolling Water Waves
+      renderForegroundOcean({
+        ctx,
+        height,
+        waterY,
+        theme,
+        isDay,
+        slowTime,
+        animTime,
+        worldLeft,
+        worldRight,
+        worldBottom,
+        bubbles: clientWaterBubblesRef.current,
+        ripples: clientWaterRipplesRef.current,
+        splashes: clientWaterSplashesRef.current,
+      });
 
       ctx.restore();
 
