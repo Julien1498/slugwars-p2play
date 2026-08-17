@@ -607,15 +607,21 @@ export function updateSlugPhysics(
     }
   }
 
-  // De-penetration Safety: If slug ever gets stuck inside solid rock (e.g. from explosion debris), push upward to nearest air
-  let dePen = 0;
-  while (
-    dePen < 12 &&
-    terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 4)) &&
-    terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 12))
+  // De-penetration Safety: If feet are slightly buried in solid earth (e.g. from explosion debris), push upward ONLY if clear open air exists above
+  if (
+    !terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 18)) &&
+    !terrain.isSolid(Math.floor(slug.x - 4), Math.floor(slug.y - 18)) &&
+    !terrain.isSolid(Math.floor(slug.x + 4), Math.floor(slug.y - 18))
   ) {
-    slug.y -= 1;
-    dePen++;
+    let dePen = 0;
+    while (
+      dePen < 8 &&
+      (terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 2)) ||
+        terrain.isSolid(Math.floor(slug.x), Math.floor(slug.y - 6)))
+    ) {
+      slug.y -= 1;
+      dePen++;
+    }
   }
 
   // Check Drowning
