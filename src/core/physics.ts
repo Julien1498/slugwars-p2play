@@ -472,7 +472,7 @@ export function updateSlugPhysics(
   const subSteps = Math.max(1, Math.min(16, Math.ceil(totalSpeed / maxStepSize)));
 
   const stepVx = slug.vx / subSteps;
-  const stepVy = slug.vy / subSteps;
+  let stepVy = slug.vy / subSteps;
 
   for (let s = 0; s < subSteps; s++) {
     // 1. Vertical Sub-step
@@ -486,6 +486,7 @@ export function updateSlugPhysics(
           if (dx < 14 && slug.y <= other.y - 14 && slug.y + stepVy >= other.y - 16) {
             slug.y = other.y - 16;
             slug.vy = 0;
+            stepVy = 0;
             landedOnSlug = true;
             break;
           }
@@ -499,6 +500,7 @@ export function updateSlugPhysics(
             terrain.isSolid(Math.floor(slug.x + 4), feetY)
           ) {
             slug.vy = 0;
+            stepVy = 0;
             // Snap down to ground surface
             let snapY = Math.floor(slug.y);
             for (let dy = 0; dy <= 6; dy++) {
@@ -511,13 +513,9 @@ export function updateSlugPhysics(
                 break;
               }
             }
-            // Stop further vertical sub-steps in this tick
-            break;
           } else {
             slug.y += stepVy;
           }
-        } else {
-          break;
         }
       } else {
         // Jumping / Knockback Rising Upwards
@@ -527,6 +525,7 @@ export function updateSlugPhysics(
           const dx = Math.abs(slug.x - other.x);
           if (dx < 14 && slug.y >= other.y && slug.y + stepVy <= other.y + 4) {
             slug.vy = 0;
+            stepVy = 0;
             hitSlugCeiling = true;
             break;
           }
@@ -536,19 +535,17 @@ export function updateSlugPhysics(
           const headY = Math.floor(slug.y + stepVy - 16);
           if (terrain.isSolid(Math.floor(slug.x), headY)) {
             slug.vy = 0;
-            break;
+            stepVy = 0;
           } else {
             slug.y += stepVy;
           }
-        } else {
-          break;
         }
       }
     }
 
     // 2. Horizontal Sub-step
     if (Math.abs(stepVx) > 0.001) {
-      const targetX = slug.x + stepVx;
+      const targetX = Math.max(10, Math.min(terrain.data.width - 10, slug.x + stepVx));
 
       let hitOtherSlug = false;
       for (const other of slugs) {
@@ -560,7 +557,6 @@ export function updateSlugPhysics(
         const newDist = Math.hypot(newDx, dy);
 
         // Only block if we are within collision radius AND moving CLOSER to the other slug!
-        // If moving AWAY (newDist >= curDist), allow the slug to walk freely to separate!
         if (newDist < 14 && newDist < curDist) {
           hitOtherSlug = true;
           break;
@@ -571,18 +567,27 @@ export function updateSlugPhysics(
         slug.vx = 0;
         break;
       } else {
-        let steppedUp = false;
-        for (let step = 0; step <= 5; step++) {
-          const checkY = Math.floor(slug.y - step);
-          if (!terrain.isSolid(Math.floor(targetX), checkY) && !terrain.isSolid(Math.floor(targetX), checkY - 8)) {
+        let stepped = false;
+        // Test flat (0), step up (-1 to -6) or step down (+1 to +5) for smooth slope navigation
+        const stepCandidates = [0, -1, -2, -3, -4, -5, -6, 1, 2, 3, 4, 5];
+        for (const step of stepCandidates) {
+          const checkY = Math.floor(slug.y + step);
+          if (
+            !terrain.isSolid(Math.floor(targetX), checkY) &&
+            !terrain.isSolid(Math.floor(targetX), checkY - 8) &&
+            !terrain.isSolid(Math.floor(targetX), checkY - 14)
+          ) {
+            if (step > 0 && !terrain.isSolid(Math.floor(targetX), checkY + 1)) {
+              continue;
+            }
             slug.x = targetX;
             slug.y = checkY;
-            steppedUp = true;
+            stepped = true;
             break;
           }
         }
 
-        if (!steppedUp) {
+        if (!stepped) {
           slug.vx = 0;
           break;
         }
