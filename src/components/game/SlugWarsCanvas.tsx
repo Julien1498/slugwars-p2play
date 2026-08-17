@@ -1707,37 +1707,41 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const worldBottom = height + 3500;
       const waterY = waterLevel;
 
-      // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
-      const skyGrad = ctx.createLinearGradient(0, worldTop, 0, waterY);
+      // 1. Seamless Infinite Atmospheric Sky Horizon Gradient (Anchored to visible arena for rich vibrant color transitions)
+      const skyGradTop = Math.min(-180, -height * 0.25);
+      const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
       if (isDay) {
         if (theme === 'CAVERN') {
-          // Warm Golden Subterranean Vault
+          // Warm Intense Molten Amber Subterranean Vault
           skyGrad.addColorStop(0, '#451a03');
-          skyGrad.addColorStop(0.35, '#78350f');
-          skyGrad.addColorStop(0.7, '#b45309');
+          skyGrad.addColorStop(0.3, '#7c2d12');
+          skyGrad.addColorStop(0.6, '#b45309');
+          skyGrad.addColorStop(0.85, '#d97706');
           skyGrad.addColorStop(1, '#fef08a');
         } else if (theme === 'FORTRESS') {
-          skyGrad.addColorStop(0, '#0369a1');
-          skyGrad.addColorStop(0.35, '#0284c7');
-          skyGrad.addColorStop(0.7, '#38bdf8');
+          skyGrad.addColorStop(0, '#0f172a');
+          skyGrad.addColorStop(0.3, '#0369a1');
+          skyGrad.addColorStop(0.65, '#0284c7');
+          skyGrad.addColorStop(0.88, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         } else if (theme === 'FLOATING_CHAOS') {
-          skyGrad.addColorStop(0, '#0369a1');
-          skyGrad.addColorStop(0.35, '#0284c7');
-          skyGrad.addColorStop(0.7, '#38bdf8');
-          skyGrad.addColorStop(1, '#e0f2fe');
+          skyGrad.addColorStop(0, '#312e81');
+          skyGrad.addColorStop(0.35, '#4f46e5');
+          skyGrad.addColorStop(0.7, '#9333ea');
+          skyGrad.addColorStop(1, '#fae8ff');
         } else {
+          // Standard / Island: Lush Tropical Vibrant Azure & Cyan Sky
           skyGrad.addColorStop(0, '#0369a1');
           skyGrad.addColorStop(0.35, '#0284c7');
-          skyGrad.addColorStop(0.7, '#38bdf8');
+          skyGrad.addColorStop(0.72, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         }
       } else {
         if (theme === 'CAVERN') {
           skyGrad.addColorStop(0, '#030102');
-          skyGrad.addColorStop(0.35, '#0d0403');
-          skyGrad.addColorStop(0.7, '#170605');
-          skyGrad.addColorStop(1, '#2b0c07');
+          skyGrad.addColorStop(0.35, '#170605');
+          skyGrad.addColorStop(0.7, '#2b0c07');
+          skyGrad.addColorStop(1, '#451a03');
         } else if (theme === 'FORTRESS') {
           skyGrad.addColorStop(0, '#020408');
           skyGrad.addColorStop(0.35, '#070b14');
@@ -1746,8 +1750,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         } else if (theme === 'FLOATING_CHAOS') {
           skyGrad.addColorStop(0, '#020105');
           skyGrad.addColorStop(0.35, '#090314');
-          skyGrad.addColorStop(0.7, '#130729');
-          skyGrad.addColorStop(1, '#2e1065');
+          skyGrad.addColorStop(0.7, '#1e1b4b');
+          skyGrad.addColorStop(1, '#3b0764');
         } else {
           skyGrad.addColorStop(0, '#02040a');
           skyGrad.addColorStop(0.35, '#070d1a');
@@ -2017,27 +2021,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // 5. Deep Abyss Water Backdrop below Water Level (Spanning infinite world seamlessly)
-      const waterBackdrop = ctx.createLinearGradient(0, waterY - 8, 0, worldBottom);
+      // 5. Deep Abyss Water Backdrop below Water Level (Spanning infinite world seamlessly with rich punchy depth)
+      const waterGradBottom = waterY + Math.max(380, height * 0.45);
+      const waterBackdrop = ctx.createLinearGradient(0, waterY - 8, 0, waterGradBottom);
       if (isDay) {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(180, 83, 9, 0.85)');
-          waterBackdrop.addColorStop(0.3, 'rgba(120, 53, 15, 0.92)');
-          waterBackdrop.addColorStop(1, '#270e02');
+          waterBackdrop.addColorStop(0, 'rgba(217, 119, 6, 0.92)');
+          waterBackdrop.addColorStop(0.3, 'rgba(154, 52, 18, 0.95)');
+          waterBackdrop.addColorStop(0.7, '#451a03');
+          waterBackdrop.addColorStop(1, '#1c0701');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(14, 165, 233, 0.85)');
-          waterBackdrop.addColorStop(0.25, 'rgba(2, 132, 199, 0.92)');
+          waterBackdrop.addColorStop(0, 'rgba(14, 165, 233, 0.92)');
+          waterBackdrop.addColorStop(0.3, 'rgba(2, 132, 199, 0.95)');
           waterBackdrop.addColorStop(0.7, '#082f49');
           waterBackdrop.addColorStop(1, '#020617');
         }
       } else {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(185, 28, 28, 0.75)');
-          waterBackdrop.addColorStop(0.4, 'rgba(127, 29, 29, 0.9)');
+          waterBackdrop.addColorStop(0, 'rgba(220, 38, 38, 0.85)');
+          waterBackdrop.addColorStop(0.4, 'rgba(153, 27, 27, 0.95)');
           waterBackdrop.addColorStop(1, '#030102');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.75)');
-          waterBackdrop.addColorStop(0.35, 'rgba(15, 23, 42, 0.92)');
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.85)');
+          waterBackdrop.addColorStop(0.35, 'rgba(15, 23, 42, 0.95)');
           waterBackdrop.addColorStop(1, '#02040a');
         }
       }
