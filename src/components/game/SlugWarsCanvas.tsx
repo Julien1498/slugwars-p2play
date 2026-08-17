@@ -3356,7 +3356,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
 
         // 3. Ninja Rope Aim Guide & Anchor Preview
-        if (isMyTurn && weapon.id === 'ninja_rope') {
+        if (isMyTurnRef.current && weapon.id === 'ninja_rope') {
           const maxDist = 250;
           let hitX = originX + Math.cos(rad) * maxDist * dir;
           let hitY = originY - Math.sin(rad) * maxDist;
@@ -3396,7 +3396,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
 
         // 4. Girder Hologram Blueprint Preview
-        if (isMyTurn && weapon.id === 'girder') {
+        if (isMyTurnRef.current && weapon.id === 'girder') {
           const targetPt = lockedTargetRef.current || mousePosRef.current;
           const length = 110;
           const thickness = 14;
