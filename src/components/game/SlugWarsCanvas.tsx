@@ -7,11 +7,12 @@ import { perfTracker } from '../../core/perfTracker';
 import { screenToWorldCoords, clampPanOffset } from '../../rendering/cameraUtils';
 import { renderHDDestructibleGirder, renderHDDestructibleProp } from '../../rendering/renderProps';
 import { renderSkyAndAtmosphere } from '../../rendering/renderSky';
-import { renderForegroundOcean, WaterBubble, WaterRipple, WaterSplash } from '../../rendering/renderWater';
+import { WaterBubble, WaterRipple, WaterSplash } from '../../rendering/renderWater';
 import { createTerrainBuffers, redrawOffscreenTerrain, TerrainBuffers } from '../../rendering/renderTerrain';
 import { renderAllSlugs } from '../../rendering/renderSlugs';
 import { renderProjectiles } from '../../rendering/renderProjectiles';
 import { renderAimGuides } from '../../rendering/renderAimGuides';
+import { renderPlacementGhost } from '../../rendering/renderPlacementGhost';
 import {
   renderParticles,
   renderClientExplosions,
@@ -119,17 +120,69 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   );
 
   const carveOffscreenCrater = useCallback(
-    (cx: number, cy: number, radius: number) => {
-      const { width, height } = terrain.data;
-      const r = Math.ceil(radius) + 8;
-      const minX = Math.max(0, Math.floor(cx - r));
-      const maxX = Math.min(width - 1, Math.ceil(cx + r));
-      const minY = Math.max(0, Math.floor(cy - r));
-      const maxY = Math.min(height - 1, Math.ceil(cy + r));
-      redrawTerrain({ minX, maxX, minY, maxY });
+    (x: number, y: number, radius: number) => {
+      const safeRadius = Math.max(0, radius || 0);
+      if (safeRadius <= 0) return;
+
+      // 1. Synchronize grid array & mark overlapping solidProps destroyed
+      terrain.carveExplosion(x, y, safeRadius);
+
+      // 2. Cut crater directly out of offscreen terrain canvas (erases terrain pixels and prop drawings)
+      const buffers = getBuffers();
+      if (buffers.offscreenCanvas) {
+        const offCtx = buffers.offscreenCanvas.getContext('2d');
+        if (offCtx) {
+          offCtx.save();
+          offCtx.globalCompositeOperation = 'destination-out';
+          offCtx.beginPath();
+          offCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.restore();
+        }
+      }
+
+      // 3. Cut crater out of subterranean shadow occlusion canvas
+      if (buffers.occlusionCanvas) {
+        const occCtx = buffers.occlusionCanvas.getContext('2d');
+        if (occCtx) {
+          occCtx.save();
+          occCtx.globalCompositeOperation = 'destination-out';
+          occCtx.beginPath();
+          occCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
+          occCtx.fill();
+          occCtx.restore();
+        }
+      }
     },
-    [terrain.data, redrawTerrain]
+    [terrain, getBuffers]
   );
+
+  const triggerClientExplosion = useCallback((x: number, y: number, radius: number) => {
+    const safeRadius = Math.max(10, radius || 30);
+    clientExplosionsRef.current.push({
+      id: `cex_${Date.now()}_${Math.random()}`,
+      x,
+      y,
+      radius: safeRadius,
+      startTime: performance.now(),
+      duration: 450,
+    });
+
+    // Spawn fiery debris and smoke particles (capped for 60fps)
+    for (let i = 0; i < 24; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (Math.random() * 0.7 + 0.3) * (safeRadius / 7);
+      clientParticlesRef.current.push({
+        x: x + Math.cos(angle) * (safeRadius * 0.15),
+        y: y + Math.sin(angle) * (safeRadius * 0.15),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.2,
+        color: i % 3 === 0 ? '#ef4444' : i % 3 === 1 ? '#f59e0b' : '#3f3f46',
+        size: Math.random() * 4 + 2,
+        life: 1.0,
+      });
+    }
+  }, []);
 
   const getCanvasMousePos = useCallback(
     (e: React.MouseEvent<HTMLElement> | MouseEvent): Vector2D => {
@@ -313,30 +366,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       redrawTerrain();
     }
 
-    if (gameState.craters && gameState.craters.length > 0) {
-      for (const c of gameState.craters) {
-        if (!knownCraterIdsCanvasRef.current.has(c.id)) {
-          knownCraterIdsCanvasRef.current.add(c.id);
-          carveOffscreenCrater(c.x, c.y, c.radius);
-        }
-      }
-    }
-
-    for (const ex of gameState.explosions) {
-      if (!carvedExplosionsRef.current.has(ex.id)) {
-        carvedExplosionsRef.current.add(ex.id);
-        carveOffscreenCrater(ex.x, ex.y, ex.radius);
-        clientExplosionsRef.current.push({
-          id: ex.id,
-          x: ex.x,
-          y: ex.y,
-          radius: ex.radius,
-          startTime: performance.now(),
-          duration: 450,
-        });
-      }
-    }
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -348,6 +377,26 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const renderStart = performance.now();
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
+
+      // Process new craters & explosions
+      if (curState.craters && curState.craters.length > 0) {
+        for (const c of curState.craters) {
+          if (!knownCraterIdsCanvasRef.current.has(c.id)) {
+            knownCraterIdsCanvasRef.current.add(c.id);
+            carveOffscreenCrater(c.x, c.y, c.radius);
+          }
+        }
+      }
+
+      if (curState.explosions && curState.explosions.length > 0) {
+        for (const ex of curState.explosions) {
+          if (!carvedExplosionsRef.current.has(ex.id)) {
+            carvedExplosionsRef.current.add(ex.id);
+            carveOffscreenCrater(ex.x, ex.y, ex.radius);
+            triggerClientExplosion(ex.x, ex.y, ex.radius);
+          }
+        }
+      }
 
       const container = containerRef.current;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -480,11 +529,29 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       renderAllSlugs({ ctx, gameState: curState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
       renderSupplyCrates(ctx, curState.supplyCrates);
       renderProjectiles({ ctx, projectiles: curState.projectiles || [], animTime });
+
+      // Spawn projectile smoke & fire trail particles
+      if (curState.projectiles && curState.projectiles.length > 0) {
+        for (const proj of curState.projectiles) {
+          if (Math.hypot(proj.vx, proj.vy) > 0.5 && clientParticlesRef.current.length < 60) {
+            clientParticlesRef.current.push({
+              x: proj.x - proj.vx * 0.8,
+              y: proj.y - proj.vy * 0.8,
+              vx: (Math.random() - 0.5) * 0.6,
+              vy: (Math.random() - 0.5) * 0.6,
+              color: Math.random() < 0.4 ? '#f59e0b' : '#71717a',
+              size: 2.5 + Math.random() * 3,
+              life: 1.0,
+            });
+          }
+        }
+      }
+
       renderParticles(ctx, clientParticlesRef.current);
       renderClientExplosions(ctx, clientExplosionsRef.current);
       renderFloatingDamages(ctx, clientFloatingDamagesRef.current);
 
-      // 7. Aim Guides & Holograms
+      // 7. Aim Guides, Holograms & Placement Preview
       const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         renderAimGuides({
@@ -498,143 +565,112 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         });
       }
 
-      // 8. Foreground Ocean & Waves
-      renderForegroundOcean({
-        ctx,
-        height,
-        waterY,
-        theme,
-        isDay,
-        slowTime,
-        animTime,
-        worldLeft,
-        worldRight,
-        worldBottom,
-        bubbles: clientWaterBubblesRef.current,
-        ripples: clientWaterRipplesRef.current,
-        splashes: clientWaterSplashesRef.current,
-      });
-
-      // 9. Debug Hitboxes
-      if (showHitboxesRef.current && buffers.terrainHitboxCanvas) {
-        ctx.drawImage(buffers.terrainHitboxCanvas, 0, 0);
-      }
+      renderPlacementGhost(ctx, curState, terrain, mousePosRef.current, isMyTurnRef.current, animTime);
 
       ctx.restore();
 
-      const renderDuration = performance.now() - renderStart;
-      perfTracker.markFrame(renderDuration, {
-        slugs: curState?.slugs?.length || 0,
-        livingSlugs: curState?.slugs?.filter((s) => s.isAlive).length || 0,
-        projectiles: curState?.projectiles?.length || 0,
-        explosions: curState?.explosions?.length || 0,
-        particles: curState?.particles?.length || 0,
-        mines: curState?.mines?.length || 0,
-        crates: curState?.supplyCrates?.length || 0,
+      const dt = performance.now() - renderStart;
+      perfTracker.markFrame(dt, {
+        slugs: curState.slugs.length,
+        livingSlugs: curState.slugs.filter((s) => s.isAlive).length,
+        projectiles: curState.projectiles?.length || 0,
+        explosions: clientExplosionsRef.current.length,
+        particles: clientParticlesRef.current.length,
+        mines: curState.mines?.length || 0,
+        crates: curState.supplyCrates?.length || 0,
       });
 
-      // Permanent FPS HUD updater
-      if (fpsTextRef.current && perfTracker.getFpsHudEnabled()) {
-        const now = performance.now();
-        fpsCounterFramesRef.current++;
-        if (now - lastFpsHudUpdateRef.current >= 250) {
-          const fps = Math.round((fpsCounterFramesRef.current * 1000) / (now - lastFpsHudUpdateRef.current));
-          fpsCounterFramesRef.current = 0;
-          lastFpsHudUpdateRef.current = now;
-          fpsTextRef.current.textContent = `${fps} FPS`;
-          if (fpsDotRef.current) {
-            fpsDotRef.current.className = `w-2 h-2 rounded-full ${
-              fps >= 50 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : fps >= 30 ? 'bg-amber-400' : 'bg-red-400'
-            }`;
-          }
-          if (fpsBadgeRef.current) {
-            fpsBadgeRef.current.className = `absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-lg text-xs font-mono font-black shadow-lg flex items-center gap-2 select-none z-20 ${
-              fps >= 50 ? 'text-emerald-400 border-emerald-500/30' : fps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
-            }`;
-          }
+      // Update in-game FPS HUD if enabled
+      fpsCounterFramesRef.current++;
+      const nowFps = performance.now();
+      if (nowFps - lastFpsHudUpdateRef.current >= 400) {
+        const instantFps = Math.round((fpsCounterFramesRef.current * 1000) / (nowFps - lastFpsHudUpdateRef.current));
+        if (fpsTextRef.current) {
+          fpsTextRef.current.innerText = `${instantFps} FPS`;
+          fpsTextRef.current.className = `font-mono text-xs font-black ${
+            instantFps >= 50 ? 'text-emerald-400' : instantFps >= 30 ? 'text-amber-400' : 'text-red-400'
+          }`;
         }
+        if (fpsDotRef.current) {
+          fpsDotRef.current.className = `w-2 h-2 rounded-full animate-pulse ${
+            instantFps >= 50 ? 'bg-emerald-400' : instantFps >= 30 ? 'bg-amber-400' : 'bg-red-400'
+          }`;
+        }
+        fpsCounterFramesRef.current = 0;
+        lastFpsHudUpdateRef.current = nowFps;
       }
 
       animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [terrain, redrawTerrain, carveOffscreenCrater, getBuffers]);
+  }, [terrain, redrawTerrain, carveOffscreenCrater, triggerClientExplosion, getBuffers]);
+
+  const handleCenterCamera = () => {
+    zoomRef.current = 1.0;
+    panRef.current = { x: 0, y: 0 };
+    setZoomLevel(1.0);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleZoomIn = () => {
+    const newZoom = Math.min(3.0, zoomRef.current * 1.25);
+    zoomRef.current = newZoom;
+    setZoomLevel(newZoom);
+  };
+
+  const handleZoomOut = () => {
+    const newZoom = Math.max(0.5, zoomRef.current / 1.25);
+    zoomRef.current = newZoom;
+    setZoomLevel(newZoom);
+  };
 
   return (
     <div
       ref={containerRef}
-      onContextMenu={handleContextMenu}
+      className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair select-none"
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl select-none"
+      onMouseMove={handleMouseMove}
+      onContextMenu={handleContextMenu}
     >
-      {/* Zero-Overhead In-Game Permanent FPS Counter HUD */}
+      <canvas ref={canvasRef} className="block w-full h-full" />
+
+      {/* Persistent Zero-Overhead FPS HUD */}
       <div
         ref={fpsBadgeRef}
-        style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
-        className="absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-lg text-xs font-mono font-black text-emerald-400 shadow-lg flex items-center gap-2 select-none z-20"
+        style={{ display: 'none' }}
+        className="absolute top-2 left-2 z-50 pointer-events-none items-center gap-1.5 px-2.5 py-1 bg-zinc-950/90 border border-emerald-500/50 rounded-lg shadow-xl backdrop-blur-md"
       >
-        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-        <span ref={fpsTextRef}>60 FPS</span>
+        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span ref={fpsTextRef} className="font-mono text-xs font-black text-emerald-400">
+          60 FPS
+        </span>
       </div>
 
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block cursor-crosshair pointer-events-none" />
-
-      {/* Modern Tactical Floating Camera Zoom & Center Widget */}
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        onMouseUp={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        onContextMenu={(e) => e.stopPropagation()}
-        onWheel={(e) => e.stopPropagation()}
-        className="absolute bottom-3 right-3 flex items-center gap-1 bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 px-1.5 py-1 rounded-xl shadow-2xl select-none z-10 text-xs"
-      >
+      {/* Floating Zoom & Pan Controls Widget in Bottom Right */}
+      <div className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg">
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const newZ = Math.max(0.5, Math.round((zoomLevel - 0.2) * 10) / 10);
-            const container = containerRef.current;
-            const rect = container ? container.getBoundingClientRect() : { width: 1400, height: 700 };
-            const clamped = clampPanOffset(panRef.current, newZ, rect.width, rect.height);
-            zoomRef.current = newZ;
-            panRef.current = clamped;
-            setZoomLevel(newZ);
-            setPanOffset(clamped);
-          }}
-          className="w-6 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-300 hover:text-white rounded-lg text-sm font-black border border-zinc-800 transition shadow-sm"
+          type="button"
+          onClick={handleZoomOut}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
           title="Dézoomer (- / Molette Bas)"
         >
           -
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            zoomRef.current = 1.0;
-            panRef.current = { x: 0, y: 0 };
-            setZoomLevel(1.0);
-            setPanOffset({ x: 0, y: 0 });
-          }}
-          className="px-2 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-cyan-300 hover:text-cyan-200 font-bold rounded-lg border border-zinc-800 transition text-[11px] font-mono shadow-sm"
+          type="button"
+          onClick={handleCenterCamera}
+          className="px-2 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-bold text-[10px] flex items-center justify-center transition active:scale-95"
           title="Recentrer la vue & Zoom 100% (Touche C)"
         >
           {Math.round(zoomLevel * 100)}%
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const newZ = Math.min(2.5, Math.round((zoomLevel + 0.2) * 10) / 10);
-            const container = containerRef.current;
-            const rect = container ? container.getBoundingClientRect() : { width: 1400, height: 700 };
-            const clamped = clampPanOffset(panRef.current, newZ, rect.width, rect.height);
-            zoomRef.current = newZ;
-            panRef.current = clamped;
-            setZoomLevel(newZ);
-            setPanOffset(clamped);
-          }}
-          className="w-6 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-300 hover:text-white rounded-lg text-sm font-black border border-zinc-800 transition shadow-sm"
+          type="button"
+          onClick={handleZoomIn}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
           title="Zoomer (+ / Molette Haut)"
         >
           +
