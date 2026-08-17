@@ -30,7 +30,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-2xl w-full p-5 space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col max-h-[85vh]">
+      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-5 space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
           <div className="flex items-center gap-2.5">
@@ -55,8 +55,8 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           </button>
         </div>
 
-        {/* Categories Tabs */}
-        <div className="flex gap-2 border-b border-zinc-800/80 pb-3 overflow-x-auto shrink-0">
+        {/* Categories Tabs - Grid 5 columns, perfectly responsive, zero scrolling! */}
+        <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
           {CATEGORIES.map((cat) => {
             const count = allWeapons.filter((w) => w.category === cat.id).length;
             const isActive = activeCategory === cat.id;
@@ -64,15 +64,15 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   isActive
                     ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)] scale-105'
                     : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
                 {cat.icon}
-                <span>{cat.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                <span className="truncate">{cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full shrink-0 ${isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
                   {count}
                 </span>
               </button>
@@ -81,7 +81,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
         </div>
 
         {/* Weapons Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto p-1 flex-1 min-h-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0">
           {filtered.map((w) => {
             const ammo = inventory[w.id] ?? w.defaultAmmo;
             const isDisabled = ammo === 0;
