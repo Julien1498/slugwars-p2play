@@ -131,15 +131,13 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           {gameState.config.waterRiseSpeed && gameState.config.waterRiseSpeed !== 'OFF' && (
             <div
               className="px-2 py-1 bg-sky-950/80 border border-sky-500/60 text-sky-300 text-[11px] font-black rounded-lg flex items-center gap-1 shadow-sm"
-              title={`Montée des eaux active : ${gameState.config.waterRiseSpeed}`}
+              title={`Montée des eaux : ${gameState.config.waterRiseSpeed} (${gameState.config.waterRiseFreq === 'ROUND_CYCLE' ? 'Cycle de Round' : 'Tour par tour'})`}
             >
               <span className="animate-pulse">🌊</span>
               <span>
-                {gameState.config.waterRiseSpeed === 'SLOW'
-                  ? '+6px/tour'
-                  : gameState.config.waterRiseSpeed === 'NORMAL'
-                  ? '+14px/tour'
-                  : '+26px/tour'}
+                {gameState.config.waterRiseFreq === 'ROUND_CYCLE'
+                  ? (gameState.config.waterRiseSpeed === 'SLOW' ? '+16px/round' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+36px/round' : '+68px/round')
+                  : (gameState.config.waterRiseSpeed === 'SLOW' ? '+5px/tour' : gameState.config.waterRiseSpeed === 'NORMAL' ? '+12px/tour' : '+24px/tour')}
               </span>
             </div>
           )}

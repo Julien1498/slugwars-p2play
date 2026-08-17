@@ -861,7 +861,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                 <Swords className="w-3 h-3 text-violet-400" /> Règles d'Engagement
               </label>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5">
                 {/* Slugs per Team */}
                 {isHost ? (
                   <button
@@ -962,7 +962,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                   </div>
                 )}
 
-                {/* Rising Water Toggle */}
+                {/* Rising Water Speed Toggle */}
                 {isHost ? (
                   <button
                     onClick={() => {
@@ -976,16 +976,16 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                         ? 'bg-sky-950/80 border-sky-500/70 text-sky-200 shadow-sm'
                         : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
                     }`}
-                    title="Monter le niveau de l'eau à chaque tour"
+                    title="Vitesse de montée des eaux"
                   >
                     <div className="text-[9px] font-bold uppercase">Montée des Eaux</div>
                     <div className="text-xs font-black">
                       {config.waterRiseSpeed === 'SLOW'
-                        ? '💧 Lente (+6px)'
+                        ? '💧 Lente'
                         : config.waterRiseSpeed === 'NORMAL'
-                        ? '🌊 Normale (+14px)'
+                        ? '🌊 Normale'
                         : config.waterRiseSpeed === 'FAST'
-                        ? '⚡ Rapide (+26px)'
+                        ? '⚡ Rapide'
                         : '❌ Sans'}
                     </div>
                   </button>
@@ -994,12 +994,50 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                     <div className="text-[9px] text-zinc-400 font-bold uppercase">Montée des Eaux</div>
                     <div className="text-xs font-black text-sky-300">
                       {config.waterRiseSpeed === 'SLOW'
-                        ? '💧 Lente (+6px)'
+                        ? '💧 Lente'
                         : config.waterRiseSpeed === 'NORMAL'
-                        ? '🌊 Normale (+14px)'
+                        ? '🌊 Normale'
                         : config.waterRiseSpeed === 'FAST'
-                        ? '⚡ Rapide (+26px)'
+                        ? '⚡ Rapide'
                         : '❌ Sans'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rising Water Frequency / Approach Toggle */}
+                {isHost ? (
+                  <button
+                    disabled={(config.waterRiseSpeed || 'OFF') === 'OFF'}
+                    onClick={() => {
+                      const curFreq = config.waterRiseFreq || 'EVERY_TURN';
+                      const nextFreq = curFreq === 'EVERY_TURN' ? 'ROUND_CYCLE' : 'EVERY_TURN';
+                      onChangeConfig({ waterRiseFreq: nextFreq });
+                    }}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      (config.waterRiseSpeed || 'OFF') === 'OFF'
+                        ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-60 cursor-not-allowed'
+                        : 'bg-cyan-950/80 border-cyan-500/70 text-cyan-200 shadow-sm'
+                    }`}
+                    title="Fréquence de la montée des eaux (Tour par tour ou Fin de round)"
+                  >
+                    <div className="text-[9px] font-bold uppercase">Rythme Montée</div>
+                    <div className="text-xs font-black">
+                      {(config.waterRiseSpeed || 'OFF') === 'OFF'
+                        ? '❌ Inactif'
+                        : (config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE'
+                        ? '⏱️ Fin de round'
+                        : '🔄 Tour par tour'}
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Rythme Montée</div>
+                    <div className="text-xs font-black text-cyan-300">
+                      {(config.waterRiseSpeed || 'OFF') === 'OFF'
+                        ? '❌ Inactif'
+                        : (config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE'
+                        ? '⏱️ Fin de round'
+                        : '🔄 Tour par tour'}
                     </div>
                   </div>
                 )}

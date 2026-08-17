@@ -1478,7 +1478,9 @@ export class SlugWarsEngine {
     }
 
     const currentIdx = aliveTeams.findIndex((t) => t.id === this.state.activeTeamId);
-    const nextTeam = aliveTeams[(currentIdx + 1) % aliveTeams.length];
+    const nextIdx = (currentIdx + 1) % aliveTeams.length;
+    const isRoundCycleCompleted = nextIdx === 0;
+    const nextTeam = aliveTeams[nextIdx];
     this.state.activeTeamId = nextTeam.id;
 
     const nextSlugId = this.getNextSlugForTeam(nextTeam.id);
@@ -1509,13 +1511,27 @@ export class SlugWarsEngine {
 
     // Montée des Eaux (Rising Water) Mechanic
     const waterSpeed = this.state.config.waterRiseSpeed;
-    if (waterSpeed && waterSpeed !== 'OFF') {
-      const riseAmounts: Record<string, number> = {
-        SLOW: 6,
-        NORMAL: 14,
-        FAST: 26,
-      };
-      const risePx = riseAmounts[waterSpeed] || 14;
+    const waterFreq = this.state.config.waterRiseFreq || 'EVERY_TURN';
+    const shouldRise = waterSpeed && waterSpeed !== 'OFF' && (waterFreq === 'EVERY_TURN' || isRoundCycleCompleted);
+
+    if (shouldRise) {
+      let risePx = 0;
+      if (waterFreq === 'EVERY_TURN') {
+        const perTurnMap: Record<string, number> = {
+          SLOW: 5,
+          NORMAL: 12,
+          FAST: 24,
+        };
+        risePx = perTurnMap[waterSpeed] || 12;
+      } else {
+        const perRoundMap: Record<string, number> = {
+          SLOW: 16,
+          NORMAL: 36,
+          FAST: 68,
+        };
+        risePx = perRoundMap[waterSpeed] || 36;
+      }
+
       const minWaterY = Math.max(120, Math.floor(this.terrain.data.height * 0.18));
       const currentWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
       const newWaterY = Math.max(minWaterY, currentWaterY - risePx);
@@ -1523,7 +1539,8 @@ export class SlugWarsEngine {
       if (newWaterY !== currentWaterY) {
         this.state.waterLevel = newWaterY;
         this.terrain.data.waterLevel = newWaterY;
-        this.addLog(`🌊 Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
+        const roundPrefix = waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
+        this.addLog(`🌊 ${roundPrefix}Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
         sfx.play('splash');
 
         // Check if any slug was submerged by rising water
