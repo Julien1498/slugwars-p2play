@@ -1541,7 +1541,6 @@ export class SlugWarsEngine {
         this.terrain.data.waterLevel = newWaterY;
         const roundPrefix = waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
         this.addLog(`🌊 ${roundPrefix}Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
-        sfx.play('splash');
 
         // Check if any slug was submerged by rising water
         for (const s of this.state.slugs) {
