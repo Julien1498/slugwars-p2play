@@ -2069,31 +2069,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.closePath();
       ctx.fill();
 
-      // Gentle White Foam Crest Line
-      ctx.strokeStyle = isDay ? 'rgba(224, 242, 254, 0.7)' : 'rgba(186, 230, 253, 0.45)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let x = worldLeft; x <= worldRight; x += 15) {
-        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
-        if (x === worldLeft) ctx.moveTo(x, wy);
-        else ctx.lineTo(x, wy);
-      }
-      ctx.stroke();
-
-      // Subtle Soft Tactical Boundary Cue (Soft vertical depth lines at map edge)
-      ctx.save();
-      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.14)' : 'rgba(56, 189, 248, 0.1)';
-      ctx.lineWidth = 1.0;
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, waterY);
-      ctx.moveTo(width, 0);
-      ctx.lineTo(width, waterY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
         ctx.drawImage(offscreenCanvasRef.current, 0, 0);
