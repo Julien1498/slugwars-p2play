@@ -69,7 +69,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 
   return (
     <>
-      <header className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-2.5 py-1 flex items-center justify-between gap-2 shadow-xl shrink-0 mx-1 mt-0.5 z-30 transition-all">
+      <header className="h-9 min-h-[36px] max-h-[36px] bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-2.5 flex items-center justify-between gap-2 shadow-xl shrink-0 mx-1 mt-0.5 z-30 transition-all whitespace-nowrap">
         {/* Left: Active Player / Turn Status Card */}
         <div className="flex items-center gap-2 shrink-0">
           <div
