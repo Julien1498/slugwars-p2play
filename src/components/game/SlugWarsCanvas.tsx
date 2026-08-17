@@ -3905,16 +3905,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
         prevSlugWaterStateRef.current.set(slug.id, { y: slug.y, isAlive: slug.isAlive });
 
-        // Continuous rising death bubbles for submerged fallen slugs
-        if (slug.y >= waterY && !slug.isAlive && Math.random() < 0.25 && clientWaterBubblesRef.current.length < 40) {
-          clientWaterBubblesRef.current.push({
-            x: slug.x + (Math.random() - 0.5) * 14,
-            y: slug.y - 4,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: -1.6 - Math.random() * 1.2,
-            size: 2 + Math.random() * 2.5,
-            life: 1.0,
-          });
+        // One-shot rising death bubbles (lasts only 2.5 seconds after drowning, not an infinite loop!)
+        if (!slug.isAlive) {
+          if (!slugDeathTimestampsRef.current.has(slug.id)) {
+            slugDeathTimestampsRef.current.set(slug.id, Date.now());
+          }
+          const deathTime = slugDeathTimestampsRef.current.get(slug.id) || Date.now();
+          const timeSinceDeath = Date.now() - deathTime;
+          if (slug.y >= waterY && timeSinceDeath < 2500 && Math.random() < 0.3 && clientWaterBubblesRef.current.length < 25) {
+            clientWaterBubblesRef.current.push({
+              x: slug.x + (Math.random() - 0.5) * 12,
+              y: slug.y - 4,
+              vx: (Math.random() - 0.5) * 0.4,
+              vy: -1.8 - Math.random() * 1.0,
+              size: 2 + Math.random() * 2.2,
+              life: 1.0,
+            });
+          }
         }
       }
 
