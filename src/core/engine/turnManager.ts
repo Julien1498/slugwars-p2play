@@ -1,0 +1,133 @@
+import { GameState, Slug, Vector2D, JournalEntry } from '../types';
+import { DestructibleTerrain } from '../terrain';
+import { isSlugGrounded } from '../physics';
+import { sfx } from '../audio';
+
+export function getNextSlugForTeam(
+  state: GameState,
+  teamId: string,
+  teamLastPlayedSlugId: Record<string, string>
+): string {
+  const allSlugs = state.slugs.filter((s) => s.teamId === teamId);
+  if (allSlugs.length === 0) return '';
+
+  const lastId = teamLastPlayedSlugId[teamId];
+  const lastIdx = lastId ? allSlugs.findIndex((s) => s.id === lastId) : -1;
+
+  for (let step = 1; step <= allSlugs.length; step++) {
+    const candidateIdx = (lastIdx + step) % allSlugs.length;
+    const candidate = allSlugs[candidateIdx];
+    if (candidate && candidate.isAlive && candidate.hp > 0 && candidate.isPlaced) {
+      teamLastPlayedSlugId[teamId] = candidate.id;
+      return candidate.id;
+    }
+  }
+
+  return '';
+}
+
+export function randomizeWind(state: GameState) {
+  if (state.config.windEnabled) {
+    state.wind = Math.floor(Math.random() * 11) - 5;
+  } else {
+    state.wind = 0;
+  }
+}
+
+export function findSafePlacementPoint(
+  terrain: DestructibleTerrain,
+  targetX: number,
+  targetY: number,
+  existingSlugs: Slug[] = []
+): Vector2D {
+  const width = terrain.data.width;
+  const waterLevel = terrain.data.waterLevel;
+  const safeX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
+  const safeY = Math.max(25, Math.min(waterLevel - 15, Math.round(targetY)));
+
+  const hasClearAir = (x: number, y: number): boolean => {
+    if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
+    for (let check = 0; check <= 18; check++) {
+      if (
+        terrain.isSolid(x, y - check) ||
+        terrain.isSolid(x - 4, y - check) ||
+        terrain.isSolid(x + 4, y - check)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (hasClearAir(safeX, safeY)) {
+    const overlapSlug = existingSlugs.find(
+      (s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16
+    );
+    if (overlapSlug) {
+      const offset = safeX >= overlapSlug.x ? 20 : -20;
+      const testX = Math.max(20, Math.min(width - 20, safeX + offset));
+      if (hasClearAir(testX, safeY)) {
+        return { x: testX, y: safeY };
+      }
+    }
+    return { x: safeX, y: safeY };
+  }
+
+  for (let testY = safeY; testY < waterLevel - 15; testY += 2) {
+    if (hasClearAir(safeX, testY)) {
+      return { x: safeX, y: testY };
+    }
+  }
+
+  for (let testY = 25; testY < waterLevel - 15; testY += 6) {
+    for (let testX = 25; testX < width - 25; testX += 6) {
+      if (hasClearAir(testX, testY)) {
+        return { x: testX, y: testY };
+      }
+    }
+  }
+
+  return terrain.data.spawnPoints[0] || { x: 500, y: 150 };
+}
+
+export function findSafeTeleportPoint(
+  terrain: DestructibleTerrain,
+  targetX: number,
+  targetY: number,
+  existingSlugs: Slug[] = []
+): Vector2D {
+  return findSafePlacementPoint(terrain, targetX, targetY, existingSlugs);
+}
+
+export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): boolean {
+  if (state.projectiles && state.projectiles.length > 0) return false;
+  if (
+    state.mines &&
+    state.mines.some((m) => m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0)
+  ) {
+    return false;
+  }
+  if (state.supplyCrates && state.supplyCrates.some((c) => !c.isLanded)) return false;
+
+  for (const slug of state.slugs) {
+    if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
+    if (Math.abs(slug.vx) > 0.25 || Math.abs(slug.vy) > 0.25) return false;
+    if (!isSlugGrounded(slug, terrain, state.slugs)) return false;
+  }
+
+  return true;
+}
+
+export function checkWinner(state: GameState, addLog: (msg: string, type?: JournalEntry['type']) => void) {
+  const aliveTeams = state.teams.filter((t) =>
+    state.slugs.some((s) => s.teamId === t.id && s.isAlive)
+  );
+  if (aliveTeams.length === 1) {
+    state.phase = 'GAME_OVER';
+    state.winnerTeamId = aliveTeams[0].id;
+    addLog(`Victoire de l'équipe ${aliveTeams[0].name} ! 🎉`, 'info');
+  } else if (aliveTeams.length === 0) {
+    state.phase = 'GAME_OVER';
+    addLog(`Égalité parfaite ! Toutes les limaces sont éliminées.`, 'info');
+  }
+}

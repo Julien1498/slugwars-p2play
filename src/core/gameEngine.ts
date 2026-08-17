@@ -1,62 +1,56 @@
-import { GameState, GameConfig, Team, Slug, Vector2D, JournalEntry, Landmine, Particle, HelicopterVehicle, MAP_SIZE_CONFIGS, SolidProp } from './types';
+import { GameState, GameConfig, Vector2D, JournalEntry, Particle, SolidProp } from './types';
+import { DestructibleTerrain } from './terrain';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
-import { generateProceduralTerrain } from './terrainGenerator';
-import { DestructibleTerrain } from './terrain';
-import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded, updateHelicopterPhysics } from './physics';
+import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded } from './physics';
 import { sfx } from './audio';
+import {
+  createInitialConfig,
+  createInitialState,
+  initializeTerrainForConfig,
+  registerTeam,
+  unregisterTeam,
+} from './engine/engineState';
+import {
+  getNextSlugForTeam,
+  randomizeWind,
+  findSafePlacementPoint,
+  findSafeTeleportPoint,
+  isWorldAtRest,
+  checkWinner,
+} from './engine/turnManager';
+import {
+  selectWeapon,
+  setFuseTimer,
+  detonateOilDrum,
+  fireWeapon,
+} from './engine/weaponHandler';
+import {
+  enterVehicle,
+  exitVehicle,
+  steerVehicle,
+  updateHelicopters,
+} from './engine/vehicleManager';
+import {
+  updateMines,
+  updateSupplyCrates,
+} from './engine/supplyDropManager';
 
 export class SlugWarsEngine {
   public state: GameState;
   public terrain!: DestructibleTerrain;
+  public teamLastPlayedSlugId: Record<string, string> = {};
 
   constructor(initialConfig?: Partial<GameConfig>) {
-    const config: GameConfig = {
-      weaponSetId: 'CLASSIC',
-      slugHp: 100,
-      slugsPerTeam: 3,
-      turnDuration: 45,
-      windEnabled: true,
-      vehiclesEnabled: true,
-      dayNightCycle: 'DAY',
-      mapTheme: 'ISLAND',
-      mapSize: 'NORMAL',
-      mapSeed: Math.floor(Math.random() * 1000000),
-      ...initialConfig,
-    };
-
-    this.state = {
-      phase: 'LOBBY',
-      config,
-      teams: [],
-      slugs: [],
-      mines: [],
-      helicopters: [],
-      activeTeamId: '',
-      activeSlugId: '',
-      turnTimer: config.turnDuration,
-      wind: 0,
-      projectiles: [],
-      explosions: [],
-      particles: [],
-      floatingDamages: [],
-      journal: [],
-      turnCount: 0,
-    };
-
+    const config = createInitialConfig(initialConfig);
+    this.state = createInitialState(config);
     this.initTerrain();
   }
 
   public initTerrain(): void {
-    const sizeCfg = MAP_SIZE_CONFIGS[this.state.config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
-    const data = generateProceduralTerrain(
-      this.state.config.mapSeed,
-      this.state.config.mapTheme,
-      sizeCfg.width,
-      sizeCfg.height
-    );
-    this.terrain = new DestructibleTerrain(data);
-    this.state.waterLevel = data.waterLevel;
+    const { terrain, waterLevel } = initializeTerrainForConfig(this.state.config);
+    this.terrain = terrain;
+    this.state.waterLevel = waterLevel;
   }
 
   public setConfig(partial: Partial<GameConfig>): boolean {
@@ -72,43 +66,15 @@ export class SlugWarsEngine {
   }
 
   public addTeam(id: string, name: string, color: string, avatar: string, isHost: boolean): void {
-    if (this.state.teams.some((t) => t.id === id)) return;
-    const wSet = getWeaponSet(this.state.config.weaponSetId);
-    const newTeam: Team = {
-      id,
-      name,
-      color,
-      avatar,
-      isHost,
-      inventory: { ...wSet.inventory },
-    };
-    this.state.teams.push(newTeam);
+    registerTeam(this.state, id, name, color, avatar, isHost);
   }
 
   public removeTeam(id: string): void {
-    this.state.teams = this.state.teams.filter((t) => t.id !== id);
+    unregisterTeam(this.state, id);
   }
 
-  public teamLastPlayedSlugId: Record<string, string> = {};
-
   public getNextSlugForTeam(teamId: string): string {
-    const allSlugs = this.state.slugs.filter((s) => s.teamId === teamId);
-    if (allSlugs.length === 0) return '';
-
-    const lastId = this.teamLastPlayedSlugId[teamId];
-    const lastIdx = lastId ? allSlugs.findIndex((s) => s.id === lastId) : -1;
-
-    // Search cyclically from (lastIdx + 1) for the next living, placed slug
-    for (let step = 1; step <= allSlugs.length; step++) {
-      const candidateIdx = (lastIdx + step) % allSlugs.length;
-      const candidate = allSlugs[candidateIdx];
-      if (candidate && candidate.isAlive && candidate.hp > 0 && candidate.isPlaced) {
-        this.teamLastPlayedSlugId[teamId] = candidate.id;
-        return candidate.id;
-      }
-    }
-
-    return '';
+    return getNextSlugForTeam(this.state, teamId, this.teamLastPlayedSlugId);
   }
 
   public carveCrater(x: number, y: number, radius: number): void {
@@ -127,61 +93,13 @@ export class SlugWarsEngine {
   }
 
   public detonateOilDrum(drum: SolidProp): void {
-    const now = Date.now();
-    const blastRadius = 65;
-    const blastDamage = 50;
-    const drumY = drum.y - 12;
-
-    this.state.explosions.push({
-      id: `ex_drum_${now}_${Math.random()}`,
-      x: drum.x,
-      y: drumY,
-      radius: blastRadius,
-      damage: blastDamage,
-      createdAt: now,
-    });
-
-    sfx.play('explosion');
-    this.addLog(`💥 UN BARIL DE PÉTROLE A EXPLOSÉ !`, 'combat');
-
-    // Apply blast damage and velocity knockback to nearby slugs
-    const expRes = applyExplosionToSlugs(
-      drum.x,
-      drumY,
-      blastRadius,
-      blastDamage,
-      this.state.slugs,
+    detonateOilDrum(
+      this.state,
       this.terrain,
-      this.state.teams
+      drum,
+      (x, y, r) => this.carveCrater(x, y, r),
+      (msg, type) => this.addLog(msg, type)
     );
-
-    for (const dm of expRes.damageEvents) {
-      this.state.floatingDamages.push({
-        id: `fd_${now}_${Math.random()}`,
-        x: dm.x,
-        y: dm.y,
-        damage: dm.damage,
-        createdAt: now,
-      });
-    }
-
-    // Spawn fiery burning trail particles
-    for (let p = 0; p < 14; p++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 4.5;
-      this.state.particles.push({
-        x: drum.x,
-        y: drumY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
-        color: Math.random() > 0.35 ? '#ef4444' : '#facc15',
-        size: Math.random() * 3 + 2,
-        life: 1.0,
-      });
-    }
-
-    // Carve secondary crater (which can chain-react into adjacent drums/mines!)
-    this.carveCrater(drum.x, drumY, blastRadius);
   }
 
   public startGame(): boolean {
@@ -193,14 +111,12 @@ export class SlugWarsEngine {
     this.state.slugs = [];
     this.teamLastPlayedSlugId = {};
 
-    // 1. Reset Inventory Ammo & Stats for all Teams!
     const weaponSet = getWeaponSet(this.state.config.weaponSetId);
     for (const team of this.state.teams) {
       team.inventory = { ...weaponSet.inventory };
       team.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
     }
 
-    // 2. Clear all transient visual effects & active entities!
     this.state.explosions = [];
     this.state.particles = [];
     this.state.projectiles = [];
@@ -210,7 +126,6 @@ export class SlugWarsEngine {
     this.state.craters = [];
     this.state.journal = [];
 
-    let slugIndex = 1;
     for (const team of this.state.teams) {
       for (let i = 0; i < this.state.config.slugsPerTeam; i++) {
         this.state.slugs.push({
@@ -230,7 +145,6 @@ export class SlugWarsEngine {
           aimPower: 0,
           selectedWeaponId: 'bazooka',
         });
-        slugIndex++;
       }
     }
 
@@ -242,22 +156,17 @@ export class SlugWarsEngine {
     }));
 
     if (this.state.config.vehiclesEnabled) {
-      const { width, height, theme, waterLevel } = this.terrain.data;
+      const { width, theme, waterLevel } = this.terrain.data;
       let spawnX = Math.floor(width * 0.5);
       let spawnY = 150;
       let foundGround = false;
-
       const scanStartY = theme === 'CAVERN' ? 70 : 20;
-
-      // Scan X columns from center outward to find solid earth ground with clear open headroom
       const candidateOffsets = [0, -100, 100, -200, 200, -300, 300, -400, 400];
+
       for (const offsetX of candidateOffsets) {
         const testX = Math.max(100, Math.min(width - 100, Math.floor(width * 0.5) + offsetX));
-
         for (let y = scanStartY; y < waterLevel - 45; y++) {
-          // Check for solid ground pixel
           if (this.terrain.isSolid(testX, y)) {
-            // Verify there is at least 32px of OPEN AIR headroom directly above this ground!
             let hasOpenHeadroom = true;
             for (let check = 1; check <= 32; check++) {
               if (this.terrain.isSolid(testX, y - check)) {
@@ -265,10 +174,9 @@ export class SlugWarsEngine {
                 break;
               }
             }
-
             if (hasOpenHeadroom) {
               spawnX = testX;
-              spawnY = y - 14; // Place helicopter skids sitting flat ON TOP of solid ground!
+              spawnY = y - 14;
               foundGround = true;
               break;
             }
@@ -279,7 +187,7 @@ export class SlugWarsEngine {
 
       this.state.helicopters = [
         {
-          id: `heli_1`,
+          id: 'heli_1',
           x: spawnX,
           y: spawnY,
           vx: 0,
@@ -305,62 +213,15 @@ export class SlugWarsEngine {
   }
 
   public enterVehicle(): boolean {
-    if (this.state.phase !== 'AIMING') return false;
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (!activeSlug || !activeSlug.isAlive || activeSlug.inVehicleId) return false;
-
-    const nearbyHeli = this.state.helicopters.find(
-      (h) => !h.pilotSlugId && Math.hypot(h.x - activeSlug.x, h.y - activeSlug.y) < 65
-    );
-
-    if (nearbyHeli) {
-      nearbyHeli.pilotSlugId = activeSlug.id;
-      activeSlug.inVehicleId = nearbyHeli.id;
-      sfx.play('teleport');
-      this.addLog(`${activeSlug.name} s'est installé aux commandes de l'hélicoptère ! 🚁`, 'info');
-      return true;
-    }
-    return false;
+    return enterVehicle(this.state, (msg, type) => this.addLog(msg, type));
   }
 
   public exitVehicle(): boolean {
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (!activeSlug || !activeSlug.inVehicleId) return false;
-
-    const heli = this.state.helicopters.find((h) => h.id === activeSlug.inVehicleId);
-    if (heli) {
-      heli.pilotSlugId = null;
-      activeSlug.inVehicleId = null;
-      activeSlug.x = heli.x + (heli.facing === 'right' ? 25 : -25);
-      activeSlug.y = heli.y - 10;
-      activeSlug.vy = -4;
-      this.addLog(`${activeSlug.name} est sorti de l'hélicoptère.`, 'info');
-      return true;
-    }
-    return false;
+    return exitVehicle(this.state, (msg, type) => this.addLog(msg, type));
   }
 
   public steerVehicle(dir: 'left' | 'right' | 'up' | 'down'): void {
-    if (this.state.phase !== 'AIMING' && this.state.phase !== 'TURN_TIME' && this.state.phase !== 'RETREAT') return;
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (!activeSlug || !activeSlug.inVehicleId) return;
-
-    const heli = this.state.helicopters.find((h) => h.id === activeSlug.inVehicleId);
-    if (!heli) return;
-
-    if (dir === 'left') {
-      heli.vx = -4.5;
-      heli.facing = 'left';
-    } else if (dir === 'right') {
-      heli.vx = 4.5;
-      heli.facing = 'right';
-    } else if (dir === 'up') {
-      if (heli.y > 30) {
-        heli.vy = -4.8;
-      }
-    } else if (dir === 'down') {
-      heli.vy = 3.5;
-    }
+    steerVehicle(this.state, dir);
   }
 
   public placeSlug(point: Vector2D): boolean {
@@ -402,131 +263,15 @@ export class SlugWarsEngine {
   }
 
   public randomizeWind(): void {
-    if (this.state.config.windEnabled) {
-      this.state.wind = Math.floor(Math.random() * 11) - 5;
-    } else {
-      this.state.wind = 0;
-    }
+    randomizeWind(this.state);
   }
 
   public findSafePlacementPoint(targetX: number, targetY: number, existingSlugs: Slug[] = []): Vector2D {
-    const width = this.terrain.data.width;
-    const waterLevel = this.terrain.data.waterLevel;
-    let safeX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
-    let safeY = Math.max(25, Math.min(waterLevel - 15, Math.round(targetY)));
-
-    // Helper: test if (x, y) has full open air for slug body & head (no ceiling rock clipping!)
-    const hasClearAir = (x: number, y: number): boolean => {
-      if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
-      for (let check = 0; check <= 18; check++) {
-        if (
-          this.terrain.isSolid(x, y - check) ||
-          this.terrain.isSolid(x - 4, y - check) ||
-          this.terrain.isSolid(x + 4, y - check)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    // 1. If clicked point ALREADY has clear open air (player can place in the air anywhere, slug falls down!):
-    if (hasClearAir(safeX, safeY)) {
-      const overlapSlug = existingSlugs.find((s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16);
-      if (overlapSlug) {
-        const offset = safeX >= overlapSlug.x ? 20 : -20;
-        const testX = Math.max(20, Math.min(width - 20, safeX + offset));
-        if (hasClearAir(testX, safeY)) {
-          return { x: testX, y: safeY };
-        }
-      }
-      return { x: safeX, y: safeY };
-    }
-
-    // 2. If clicked near ceiling or inside solid rock, scan downward to find the first open air spot with headroom
-    for (let testY = safeY; testY < waterLevel - 15; testY += 2) {
-      if (hasClearAir(safeX, testY)) {
-        return { x: safeX, y: testY };
-      }
-    }
-
-    // 3. Fallback: Search nearest open air pixel with clear headroom
-    let bestPoint: Vector2D | null = null;
-    let minDistSq = Infinity;
-
-    for (let testY = 25; testY < waterLevel - 15; testY += 6) {
-      for (let testX = 25; testX < width - 25; testX += 6) {
-        if (hasClearAir(testX, testY)) {
-          const distSq = (testX - safeX) ** 2 + (testY - safeY) ** 2;
-          if (distSq < minDistSq) {
-            minDistSq = distSq;
-            bestPoint = { x: testX, y: testY };
-          }
-        }
-      }
-    }
-
-    return bestPoint || this.terrain.data.spawnPoints[0] || { x: 500, y: 150 };
+    return findSafePlacementPoint(this.terrain, targetX, targetY, existingSlugs);
   }
 
   public findSafeTeleportPoint(targetX: number, targetY: number, existingSlugs: Slug[] = []): Vector2D {
-    const width = this.terrain.data.width;
-    const waterLevel = this.terrain.data.waterLevel;
-    let safeX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
-    let safeY = Math.max(25, Math.min(waterLevel - 15, Math.round(targetY)));
-
-    // Helper: test if (x, y) has full open air for slug body & head
-    const hasClearAir = (x: number, y: number): boolean => {
-      if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
-      for (let check = 0; check <= 18; check++) {
-        if (
-          this.terrain.isSolid(x, y - check) ||
-          this.terrain.isSolid(x - 4, y - check) ||
-          this.terrain.isSolid(x + 4, y - check)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    // 1. If clicked point has clear air
-    if (hasClearAir(safeX, safeY)) {
-      const overlapSlug = existingSlugs.find((s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16);
-      if (overlapSlug) {
-        const offset = safeX >= overlapSlug.x ? 20 : -20;
-        const testX = Math.max(20, Math.min(width - 20, safeX + offset));
-        if (hasClearAir(testX, safeY)) {
-          return { x: testX, y: safeY };
-        }
-      }
-      return { x: safeX, y: safeY };
-    }
-
-    // 2. Scan downwards to find open air with headroom
-    for (let testY = safeY; testY < waterLevel - 15; testY += 4) {
-      if (hasClearAir(safeX, testY)) {
-        return { x: safeX, y: testY };
-      }
-    }
-
-    // 3. Search nearest open air pixel with clear headroom
-    let bestPoint: Vector2D | null = null;
-    let minDistSq = Infinity;
-
-    for (let testY = 25; testY < waterLevel - 15; testY += 6) {
-      for (let testX = 25; testX < width - 25; testX += 6) {
-        if (hasClearAir(testX, testY)) {
-          const distSq = (testX - safeX) ** 2 + (testY - safeY) ** 2;
-          if (distSq < minDistSq) {
-            minDistSq = distSq;
-            bestPoint = { x: testX, y: testY };
-          }
-        }
-      }
-    }
-
-    return bestPoint || this.terrain.data.spawnPoints[0] || { x: 500, y: 150 };
+    return findSafeTeleportPoint(this.terrain, targetX, targetY, existingSlugs);
   }
 
   public startMove(dir: 'left' | 'right'): void {
@@ -644,7 +389,6 @@ export class SlugWarsEngine {
     if (!activeSlug || !activeSlug.isAlive) return false;
 
     if (activeSlug.ropeState) {
-      // Detach from rope with full swinging momentum!
       const rope = activeSlug.ropeState;
       activeSlug.vx = Math.cos(rope.angleRad) * rope.length * rope.angularVelocity * 1.25;
       activeSlug.vy = -Math.sin(rope.angleRad) * rope.length * rope.angularVelocity * 1.25 - 2;
@@ -663,262 +407,21 @@ export class SlugWarsEngine {
   }
 
   public selectWeapon(weaponId: string): boolean {
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (!activeSlug || !activeSlug.isAlive) return false;
-    const activeTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
-    if (activeTeam) {
-      const ammo = activeTeam.inventory[weaponId] ?? -1;
-      if (ammo === 0) {
-        activeSlug.selectedWeaponId = 'bazooka';
-        return false;
-      }
-    }
-    activeSlug.selectedWeaponId = weaponId;
-    const newWeapon = getWeapon(weaponId);
-    if (newWeapon.allowCustomFuse && !activeSlug.fuseTimerSec) {
-      activeSlug.fuseTimerSec = newWeapon.fuseTimeMs ? Math.round(newWeapon.fuseTimeMs / 1000) : 3;
-    }
-    return true;
+    return selectWeapon(this.state, weaponId);
   }
 
   public setFuseTimer(slugId: string, seconds: number): void {
-    const slug = this.state.slugs.find((s) => s.id === slugId);
-    if (slug) {
-      slug.fuseTimerSec = Math.max(1, Math.min(5, Math.round(seconds)));
-    }
+    setFuseTimer(this.state, slugId, seconds);
   }
 
   public fireWeapon(targetPoint?: Vector2D): boolean {
-    if (this.state.phase !== 'AIMING') return false;
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (!activeSlug || !activeSlug.isAlive) return false;
-
-    const weapon = getWeapon(activeSlug.selectedWeaponId);
-    const activeTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
-    if (activeTeam) {
-      const currentAmmo = activeTeam.inventory[weapon.id] ?? -1;
-      if (currentAmmo === 0) {
-        activeSlug.selectedWeaponId = 'bazooka';
-        return false;
-      }
-      if (currentAmmo > 0) {
-        activeTeam.inventory[weapon.id]--;
-        // Auto-deselect when ammo reaches 0: fallback to default bazooka!
-        if (activeTeam.inventory[weapon.id] === 0) {
-          activeSlug.selectedWeaponId = 'bazooka';
-        }
-      }
-    }
-
-    if (targetPoint) {
-      activeSlug.currentTargetPoint = targetPoint;
-    } else if (activeSlug.currentTargetPoint) {
-      targetPoint = activeSlug.currentTargetPoint;
-    }
-
-    if (weapon.behavior === 'TELEPORT' && targetPoint) {
-      const safePt = this.findSafeTeleportPoint(targetPoint.x, targetPoint.y, this.state.slugs);
-      activeSlug.x = safePt.x;
-      activeSlug.y = safePt.y;
-      activeSlug.vx = 0;
-      activeSlug.vy = 0;
-      sfx.play('teleport');
-      this.addLog(`${activeSlug.name} s'est téléporté !`, 'weapon');
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.5;
-      return true;
-    }
-
-    if (weapon.id === 'blowtorch') {
-      activeSlug.isBlowtorching = true;
-      activeSlug.aimPower = 5;
-      sfx.play('fire');
-      this.addLog(`${activeSlug.name} allume son Chalumeau ! 🔥 (Maintenez pour creuser)`, 'weapon');
-      return true;
-    }
-
-    if (weapon.id === 'ninja_rope') {
-      const angleRad = (activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle) * (Math.PI / 180);
-      const dirX = Math.cos(angleRad);
-      const dirY = Math.sin(angleRad);
-
-      const maxRange = 250;
-      const startX = activeSlug.x;
-      const startY = activeSlug.y - 12;
-
-      let hitSolid = false;
-      let hookX = startX;
-      let hookY = startY;
-
-      for (let dist = 10; dist <= maxRange; dist += 3) {
-        const testX = startX + dirX * dist;
-        const testY = startY + dirY * dist;
-
-        if (testX < 0 || testX >= this.terrain.data.width || testY < 0) {
-          break;
-        }
-
-        if (this.terrain.isSolid(testX, testY)) {
-          hitSolid = true;
-          hookX = testX;
-          hookY = testY;
-          break;
-        }
-      }
-
-      if (hitSolid) {
-        const ropeLength = Math.hypot(startX - hookX, startY - hookY);
-        const initialAngle = Math.atan2(startX - hookX, startY - hookY);
-
-        activeSlug.ropeState = {
-          hookX,
-          hookY,
-          length: Math.max(25, ropeLength),
-          angleRad: initialAngle,
-          angularVelocity: activeSlug.facing === 'right' ? 0.04 : -0.04,
-        };
-
-        sfx.play('rope_attach');
-        this.addLog(`${activeSlug.name} a accroché son Grappin Ninja ! 🪢`, 'weapon');
-      } else {
-        sfx.play('rope_shoot');
-        this.addLog(`Le grappin n'a rien accroché !`, 'info');
-      }
-      return true;
-    }
-
-    if (weapon.id === 'girder' && targetPoint) {
-      const length = 110;
-      const thickness = 14;
-      const angleDeg = activeSlug.aimAngle || 0;
-      const rad = (angleDeg * Math.PI) / 180;
-      const cos = Math.cos(rad);
-      const sin = Math.sin(rad);
-
-      const halfL = length / 2;
-      const halfT = thickness / 2;
-
-      const gx = targetPoint.x;
-      const gy = targetPoint.y;
-
-      const w = this.terrain.data.width;
-      const h = this.terrain.data.height;
-
-      for (let dl = -halfL; dl <= halfL; dl++) {
-        for (let dt = -halfT; dt <= halfT; dt++) {
-          const px = Math.round(gx + dl * cos - dt * sin);
-          const py = Math.round(gy + dl * sin + dt * cos);
-          if (px >= 0 && px < w && py >= 0 && py < h) {
-            this.terrain.data.grid[py * w + px] = 1;
-          }
-        }
-      }
-
-      if (!this.state.girders) this.state.girders = [];
-      this.state.girders = [
-        ...this.state.girders,
-        {
-          id: `girder_${Date.now()}_${Math.random()}`,
-          x: gx,
-          y: gy,
-          angleDeg,
-          length,
-          thickness,
-        }
-      ];
-
-      sfx.play('girder');
-      this.addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.5;
-      return true;
-    }
-
-    if (weapon.behavior === 'AIRDROP' && targetPoint) {
-      if (!this.state.supplyCrates) this.state.supplyCrates = [];
-      this.state.supplyCrates.push({
-        id: `crate_${Date.now()}_${Math.random()}`,
-        x: targetPoint.x,
-        y: -30,
-        vy: 2.2,
-        isLanded: false,
-        crateType: 'health',
-        healAmount: 50,
-      });
-
-      sfx.play('airdrop');
-      this.addLog(`✈️ Largage aérien d'une Caisse de Ravitaillement en cours ! 📦`, 'weapon');
-      this.state.phase = 'RETREAT';
-      this.state.retreatTimer = 4.0;
-      return true;
-    }
-
-    if (weapon.behavior === 'MELEE_PUSH') {
-      const targetSlug = this.state.slugs.find(
-        (s) => s.id !== activeSlug.id && s.isAlive && Math.hypot(s.x - activeSlug.x, s.y - activeSlug.y) < 40
-      );
-      if (targetSlug) {
-        const dir = activeSlug.facing === 'right' ? 1 : -1;
-        const victimHpBefore = targetSlug.hp;
-        const actualDamage = Math.min(victimHpBefore, weapon.damage);
-        targetSlug.hp = Math.max(0, targetSlug.hp - weapon.damage);
-        if (targetSlug.hp === 0) {
-          targetSlug.isAlive = false;
-        }
-        targetSlug.vx = dir * 18;
-        targetSlug.vy = -10;
-
-        const victimTeam = this.state.teams.find((t) => t.id === targetSlug.teamId);
-        if (victimTeam) {
-          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-          victimTeam.stats.damageTaken += actualDamage;
-          if (targetSlug.hp === 0 && victimHpBefore > 0) victimTeam.stats.deaths++;
-        }
-
-        if (activeTeam && activeTeam.id !== targetSlug.teamId) {
-          if (!activeTeam.stats) activeTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-          activeTeam.stats.damageDealt += actualDamage;
-          if (targetSlug.hp === 0 && victimHpBefore > 0) activeTeam.stats.kills++;
-        }
-
-        this.addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
-      }
-      sfx.play('melee');
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.8;
-      return true;
-    }
-
-    const customFuseMs = activeSlug.fuseTimerSec ? activeSlug.fuseTimerSec * 1000 : (weapon.fuseTimeMs ?? 3000);
-    const projs = weapon.createProjectiles({
-      originX: activeSlug.x + (activeSlug.facing === 'right' ? 10 : -10),
-      originY: activeSlug.y - 10,
-      angleDeg: activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle,
-      power: activeSlug.aimPower,
-      ownerSlugId: activeSlug.id,
-      targetPoint,
-      fuseTimerMs: customFuseMs,
-    });
-
-    this.state.projectiles.push(...projs);
-    this.state.phase = 'PROJECTILE_ACTIVE';
-
-    if (weapon.id === 'dynamite' || weapon.id === 'holy_grenade' || weapon.id === 'banana_bomb' || weapon.behavior === 'BOUNCING_TIMER') {
-      this.state.phase = 'RETREAT';
-      this.state.retreatTimer = 4.0;
-      this.addLog(`🏃 TEMPS DE FUITE (RETREAT) ! 4s pour vous mettre à l'abri !`, 'info');
-    }
-
-    sfx.play('fire');
-    this.addLog(`${activeSlug.name} a tiré avec ${weapon.name} ! (Puissance: ${Math.round(activeSlug.aimPower)}%)`, 'weapon');
-    return true;
+    return fireWeapon(this.state, this.terrain, targetPoint, (msg, type) => this.addLog(msg, type));
   }
 
   public tick(): void {
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     const activeSlugHpBefore = activeSlug && activeSlug.isAlive ? activeSlug.hp : 0;
 
-    // 1. TURN_START Phase (Banner transition)
     if (this.state.phase === 'TURN_START') {
       if (this.state.phaseTimer !== undefined) {
         this.state.phaseTimer -= 0.05;
@@ -929,7 +432,6 @@ export class SlugWarsEngine {
       }
     }
 
-    // 2. RETREAT Phase (3 to 5 second retreat countdown with fast beeps)
     if (this.state.phase === 'RETREAT') {
       if (this.state.retreatTimer !== undefined) {
         const prevSec = Math.ceil(this.state.retreatTimer);
@@ -950,15 +452,13 @@ export class SlugWarsEngine {
       }
     }
 
-    // 3. RESOLVING Phase (Wait until all physics, explosions, damage, and falling slugs have 100% calmed down)
     if (this.state.phase === 'RESOLVING') {
-      // Ensure all ninja ropes are detached so slugs fall to the ground
       for (const slug of this.state.slugs) {
         if (slug.ropeState) slug.ropeState = null;
       }
 
       if (this.state.phaseTimer === undefined) {
-        this.state.phaseTimer = 2.5; // Max 2.5s watchdog timeout
+        this.state.phaseTimer = 2.5;
       } else {
         this.state.phaseTimer -= 0.05;
       }
@@ -970,27 +470,20 @@ export class SlugWarsEngine {
       }
     }
 
-    // If active slug dies (e.g. drowns or dies from explosion), transition to resolution
     if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')) {
       this.state.phase = 'RESOLVING';
       this.state.phaseTimer = 0.6;
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
-      // Active Ninja Rope Swinging & Climbing (Smooth Pendulum with Slug Body Collision & Support Check)
       if (activeSlug.ropeState) {
         const rope = activeSlug.ropeState;
-
-        // Check if rope anchor point is still anchored in solid terrain
         const isHookSolid =
           this.terrain.isSolid(rope.hookX, rope.hookY) ||
           this.terrain.isSolid(rope.hookX - 2, rope.hookY) ||
-          this.terrain.isSolid(rope.hookX + 2, rope.hookY) ||
-          this.terrain.isSolid(rope.hookX, rope.hookY - 2) ||
-          this.terrain.isSolid(rope.hookX, rope.hookY + 2);
+          this.terrain.isSolid(rope.hookX + 2, rope.hookY);
 
         if (!isHookSolid) {
-          // Anchor support was destroyed by explosion or crater! Detach rope and slug falls
           activeSlug.vx = Math.cos(rope.angleRad) * rope.length * rope.angularVelocity;
           activeSlug.vy = -Math.sin(rope.angleRad) * rope.length * rope.angularVelocity;
           activeSlug.ropeState = null;
@@ -1002,29 +495,18 @@ export class SlugWarsEngine {
         const g = 20;
         let alpha = -(g / Math.max(25, rope.length)) * Math.sin(rope.angleRad);
 
-        // Swing pump with movement keys (A/D or Left/Right)
-        if (activeSlug.movingDir === 'left') {
-          alpha -= 0.15;
-        } else if (activeSlug.movingDir === 'right') {
-          alpha += 0.15;
-        }
+        if (activeSlug.movingDir === 'left') alpha -= 0.15;
+        else if (activeSlug.movingDir === 'right') alpha += 0.15;
 
         const prevAngle = rope.angleRad;
         const prevLength = rope.length;
-
-        // Climb up (W / Z / ArrowUp) or Descend down (S / ArrowDown)
         let targetLength = rope.length;
-        if (activeSlug.steeringDir === 'left') {
-          targetLength = Math.max(25, rope.length - 4);
-        } else if (activeSlug.steeringDir === 'right') {
-          targetLength = Math.min(250, rope.length + 4);
-        }
+        if (activeSlug.steeringDir === 'left') targetLength = Math.max(25, rope.length - 4);
+        else if (activeSlug.steeringDir === 'right') targetLength = Math.min(250, rope.length + 4);
 
         rope.angularVelocity = (rope.angularVelocity + alpha) * 0.993;
         const targetAngle = prevAngle + rope.angularVelocity;
 
-        // Continuous Collision Detection (CCD):
-        // Micro-step along the circular pendulum arc to detect wall/obstacle collision before clipping!
         const angleDiff = targetAngle - prevAngle;
         const lengthDiff = targetLength - prevLength;
         const arcDist = Math.abs(angleDiff) * targetLength;
@@ -1041,21 +523,16 @@ export class SlugWarsEngine {
           const t = s / subSteps;
           const stepAngle = prevAngle + angleDiff * t;
           const stepLength = prevLength + lengthDiff * t;
-
           const stepX = rope.hookX + Math.sin(stepAngle) * stepLength;
           const stepY = rope.hookY + Math.cos(stepAngle) * stepLength;
 
-          // Check solid collision around slug body bounding points (feet, head, torso)
           const isBodySolid =
             this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY - 6)) ||
             this.terrain.isSolid(Math.floor(stepX - 6), Math.floor(stepY - 6)) ||
-            this.terrain.isSolid(Math.floor(stepX + 6), Math.floor(stepY - 6)) ||
-            this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY - 14)) ||
-            this.terrain.isSolid(Math.floor(stepX), Math.floor(stepY + 2));
+            this.terrain.isSolid(Math.floor(stepX + 6), Math.floor(stepY - 6));
 
           if (isBodySolid) {
             hitWall = true;
-            // Stop at last safe open-air position before collision!
             break;
           }
 
@@ -1066,36 +543,17 @@ export class SlugWarsEngine {
         }
 
         if (hitWall) {
-          const wasFast = Math.abs(rope.angularVelocity) > 0.04;
-          // Rebound with elastic coefficient
           rope.angularVelocity = -rope.angularVelocity * 0.45;
           rope.angleRad = finalAngle;
           rope.length = finalLength;
-
-          if (wasFast) {
-            sfx.play('bounce');
-          }
+          sfx.play('bounce');
         } else {
           rope.angleRad = finalAngle;
           rope.length = finalLength;
         }
 
-        let newX = finalX;
-        let newY = finalY;
-
-        // De-penetration safety: if slug body is still overlapping rock, push toward hook
-        let ropeDePen = 0;
-        while (
-          ropeDePen < 10 &&
-          (this.terrain.isSolid(Math.floor(newX), Math.floor(newY - 6)) ||
-            this.terrain.isSolid(Math.floor(newX), Math.floor(newY + 2)))
-        ) {
-          rope.length = Math.max(25, rope.length - 2);
-          newX = rope.hookX + Math.sin(rope.angleRad) * rope.length;
-          newY = rope.hookY + Math.cos(rope.angleRad) * rope.length;
-          ropeDePen++;
-        }
-
+        const newX = finalX;
+        const newY = finalY;
         if (newY >= this.terrain.data.waterLevel) {
           activeSlug.ropeState = null;
           activeSlug.y = this.terrain.data.waterLevel;
@@ -1120,7 +578,6 @@ export class SlugWarsEngine {
       }
     }
 
-    // Active Blowtorch Tunneling with gradual fuel depletion (usable little by little!)
     if (activeSlug && activeSlug.isAlive && activeSlug.isBlowtorching) {
       const activeTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
       const fuel = activeTeam ? activeTeam.inventory['blowtorch'] ?? 0 : 0;
@@ -1130,7 +587,6 @@ export class SlugWarsEngine {
         if (activeTeam) activeTeam.inventory['blowtorch'] = 0;
         this.addLog(`Le réservoir du Chalumeau est vide ! ⛽`, 'info');
       } else {
-        // Deplete fuel by ~1.43% per 50ms tick (total 3.5 seconds across all bursts)
         if (activeTeam) {
           activeTeam.inventory['blowtorch'] = Math.max(0, fuel - 1.43);
         }
@@ -1138,11 +594,9 @@ export class SlugWarsEngine {
         const angleRad = (activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle) * (Math.PI / 180);
         const dirX = Math.cos(angleRad);
         const dirY = Math.sin(angleRad);
-
         const flameX = activeSlug.x + dirX * 18;
         const flameY = activeSlug.y - 8 + dirY * 18;
 
-        // 1. Carve destructible terrain tunnel
         this.carveCrater(flameX, flameY, 18);
         this.state.explosions.push({
           id: `ex_bt_${Date.now()}_${Math.random()}`,
@@ -1153,24 +607,9 @@ export class SlugWarsEngine {
           createdAt: Date.now(),
         });
 
-        // 2. Move slug forward along blowtorch angle
         activeSlug.x += dirX * 1.3;
         activeSlug.y += dirY * 1.3;
 
-        // 3. Flame particles
-        for (let i = 0; i < 3; i++) {
-          this.state.particles.push({
-            x: flameX + (Math.random() - 0.5) * 6,
-            y: flameY + (Math.random() - 0.5) * 6,
-            vx: dirX * 4 + (Math.random() - 0.5) * 2,
-            vy: dirY * 4 + (Math.random() - 0.5) * 2,
-            color: Math.random() > 0.3 ? '#f97316' : '#fde047',
-            size: Math.random() * 4 + 2,
-            life: 0.8,
-          });
-        }
-
-        // 4. Damage & push enemy slugs touched by torch beam
         for (const other of this.state.slugs) {
           if (other.id !== activeSlug.id && other.isAlive && Math.hypot(other.x - flameX, other.y - flameY) < 22) {
             const victimHpBefore = other.hp;
@@ -1185,16 +624,9 @@ export class SlugWarsEngine {
               victimTeam.stats.damageTaken += actualDamage;
               if (other.hp === 0 && victimHpBefore > 0) victimTeam.stats.deaths++;
             }
-            const attackerTeam = this.state.teams.find((t) => t.id === activeSlug.teamId);
-            if (attackerTeam && attackerTeam.id !== other.teamId) {
-              if (!attackerTeam.stats) attackerTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-              attackerTeam.stats.damageDealt += actualDamage;
-              if (other.hp === 0 && victimHpBefore > 0) attackerTeam.stats.kills++;
-            }
           }
         }
 
-        // Stop blowtorch if slug falls into water
         const curWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
         if (activeSlug.y >= curWaterY) {
           activeSlug.isBlowtorching = false;
@@ -1207,36 +639,10 @@ export class SlugWarsEngine {
       this.steerSheep(activeSlug.steeringDir);
     }
 
+    updateHelicopters(this.state, this.terrain, (msg, type) => this.addLog(msg, type));
+
     const effectiveWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
-    if (this.state.helicopters && this.state.helicopters.length > 0) {
-      for (const heli of this.state.helicopters) {
-        const pilot = this.state.slugs.find((s) => s.id === heli.pilotSlugId);
-        const res = updateHelicopterPhysics(heli, this.terrain, pilot);
-
-        if (res.crashed || heli.hp <= 0) {
-          this.state.explosions.push({
-            id: `ex_heli_${Date.now()}_${Math.random()}`,
-            x: heli.x,
-            y: heli.y,
-            radius: 55,
-            damage: 45,
-            createdAt: Date.now(),
-          });
-          if (pilot) {
-            pilot.inVehicleId = null;
-            pilot.hp = Math.max(0, pilot.hp - 35);
-            pilot.vy = -8;
-          }
-          applyExplosionToSlugs(heli.x, heli.y, 55, 45, this.state.slugs, this.terrain, this.state.teams, heli.pilotSlugId || undefined);
-          this.addLog(`💥 L'hélicoptère s'est crashé et a explosé !`, 'combat');
-          heli.hp = 0;
-        }
-      }
-      this.state.helicopters = this.state.helicopters.filter((h) => h.hp > 0 && h.y < effectiveWaterY);
-    }
-
     for (const slug of this.state.slugs) {
-      // Check Drowning
       if (slug.y >= effectiveWaterY) {
         if (slug.isAlive) {
           const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
@@ -1270,7 +676,6 @@ export class SlugWarsEngine {
       }
     }
 
-    // End turn immediately only if active player hurts THEMSELVES during their own active aiming turn!
     if (
       activeSlug &&
       activeSlug.isAlive &&
@@ -1283,16 +688,9 @@ export class SlugWarsEngine {
       return;
     }
 
-    if (this.state.phase === 'PROJECTILE_ACTIVE' && (!this.state.projectiles || this.state.projectiles.length === 0)) {
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.6;
-      return;
-    }
-
     if (this.state.projectiles.length > 0) {
       const remaining: typeof this.state.projectiles = [];
       for (const proj of this.state.projectiles) {
-        // Spawn Smoke & Fire Trail Particles behind active flying projectiles (capped to 40 max)
         if (Math.hypot(proj.vx, proj.vy) > 0.5 && this.state.particles.length < 40) {
           this.state.particles.push({
             x: proj.x - proj.vx * 0.8,
@@ -1309,8 +707,8 @@ export class SlugWarsEngine {
         if (res.exploded) {
           const pt = res.collisionPoint || { x: proj.x, y: proj.y };
           const weapon = getWeapon(proj.weaponId);
-
           const now = Date.now();
+
           this.carveCrater(pt.x, pt.y, weapon.radius);
           this.state.explosions.push({
             id: `ex_${now}_${Math.random()}`,
@@ -1334,7 +732,6 @@ export class SlugWarsEngine {
             });
           }
 
-          // Banana Bomb Cluster Separation into 5 mini-bananas!
           if (proj.weaponId === 'banana_bomb') {
             for (let i = 0; i < 5; i++) {
               const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
@@ -1354,168 +751,36 @@ export class SlugWarsEngine {
               });
             }
           }
-
-          // Concrete Donkey Multiple Bounce Tunneling (Crushes straight down through terrain!)
-          if (proj.weaponId === 'concrete_donkey') {
-            const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
-            if (bouncesLeft > 0 && pt.y < this.terrain.data.waterLevel - 30) {
-              remaining.push({
-                ...proj,
-                id: `proj_donkey_${now}_${bouncesLeft}`,
-                x: pt.x,
-                y: pt.y + 16,
-                vx: 0,
-                vy: 14,
-                behaviorData: { bouncesLeft },
-              });
-            }
-          }
         } else {
           remaining.push(proj);
         }
       }
       this.state.projectiles = remaining;
-
       if (this.state.projectiles.length === 0 && this.state.phase === 'PROJECTILE_ACTIVE') {
         this.state.phase = 'RESOLVING';
         this.state.phaseTimer = 0.6;
       }
     }
 
-    // Landmine Proximity Trigger, Countdown & Chain Reaction Processing
-    if (this.state.mines && this.state.mines.length > 0) {
-      const remainingMines: Landmine[] = [];
-      for (const mine of this.state.mines) {
-        let exploded = false;
+    updateMines(
+      this.state,
+      this.terrain,
+      (x, y, r) => this.carveCrater(x, y, r),
+      (msg, type) => this.addLog(msg, type)
+    );
+    updateSupplyCrates(this.state, this.terrain, (msg, type) => this.addLog(msg, type));
 
-        // Proximity Trigger Check by any living placed slug (25px radius)
-        if (!mine.isTriggered) {
-          for (const slug of this.state.slugs) {
-            if (!slug.isAlive || slug.isPlaced === false) continue;
-            if (Math.hypot(slug.x - mine.x, (slug.y - 8) - mine.y) <= 25) {
-              mine.isTriggered = true;
-              mine.fuseTimerMs = 2000;
-              sfx.play('tick');
-              this.addLog('🚨 UNE MINE A ÉTÉ DÉCLENCHÉE !', 'combat');
-              break;
-            }
-          }
-        } else if (mine.fuseTimerMs !== undefined) {
-          mine.fuseTimerMs -= 50;
-          if (mine.fuseTimerMs <= 0) {
-            exploded = true;
-          }
-        }
-
-        // Chain Reaction Check (Explosion hitting mine)
-        for (const ex of this.state.explosions) {
-          if (Math.hypot(mine.x - ex.x, mine.y - ex.y) <= ex.radius + 10) {
-            exploded = true;
-            break;
-          }
-        }
-
-        if (exploded) {
-          const now = Date.now();
-          const radius = 65;
-          const damage = 45;
-          this.carveCrater(mine.x, mine.y, radius);
-          this.state.explosions.push({
-            id: `ex_mine_${now}_${Math.random()}`,
-            x: mine.x,
-            y: mine.y,
-            radius,
-            damage,
-            createdAt: now,
-          });
-          sfx.play('explosion');
-          const mineExpRes = applyExplosionToSlugs(mine.x, mine.y, radius, damage, this.state.slugs, this.terrain, this.state.teams);
-          for (const dm of mineExpRes.damageEvents) {
-            this.state.floatingDamages.push({
-              id: `fd_${now}_${Math.random()}`,
-              x: dm.x,
-              y: dm.y,
-              damage: dm.damage,
-              createdAt: now,
-            });
-          }
-
-          // If the active slug took damage during its active turn, transition to resolving!
-          const activeSlugTookDamage = mineExpRes.damageEvents.some(
-            (dm) => dm.slugId === this.state.activeSlugId
-          );
-          if (activeSlugTookDamage && this.state.phase === 'AIMING') {
-            const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-            this.addLog(`💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`, 'combat');
-            this.state.phase = 'RESOLVING';
-            this.state.phaseTimer = 0.8;
-          }
-        } else {
-          remainingMines.push(mine);
-        }
-      }
-      this.state.mines = remainingMines;
-    }
-
-    // 6. Update Supply Crates (Falling with Parachute & Ground Pickup)
-    if (this.state.supplyCrates && this.state.supplyCrates.length > 0) {
-      const remainingCrates: typeof this.state.supplyCrates = [];
-      for (const crate of this.state.supplyCrates) {
-        if (!crate.isLanded) {
-          crate.x += this.state.wind * 0.15;
-          crate.y += crate.vy;
-
-          if (this.terrain.isSolid(crate.x, crate.y + 10) || crate.y >= this.terrain.data.waterLevel - 15) {
-            crate.isLanded = true;
-            crate.vy = 0;
-          }
-        }
-
-        let collected = false;
-        // Check if collected by any living slug
-        for (const s of this.state.slugs) {
-          if (s.isAlive && Math.hypot(s.x - crate.x, (s.y - 8) - crate.y) < 20) {
-            const oldHp = s.hp;
-            s.hp = Math.min(s.maxHp, s.hp + crate.healAmount);
-            const gained = s.hp - oldHp;
-
-            this.state.floatingDamages.push({
-              id: `heal_${Date.now()}_${Math.random()}`,
-              x: s.x,
-              y: s.y - 22,
-              damage: -gained,
-              createdAt: Date.now(),
-            });
-
-            sfx.play('airdrop');
-            this.addLog(`📦 ${s.name} a ramassé une Caisse de Ravitaillement (+${gained} HP) !`, 'combat');
-            collected = true;
-            break;
-          }
-        }
-
-        if (!collected && crate.y < this.terrain.data.waterLevel) {
-          remainingCrates.push(crate);
-        }
-      }
-      this.state.supplyCrates = remainingCrates;
-    }
-
-    // Update and decay flying smoke & fire particles
     if (this.state.particles && this.state.particles.length > 0) {
       const remainingParticles: Particle[] = [];
       for (const p of this.state.particles) {
         p.x += p.vx;
         p.y += p.vy;
         p.life -= 0.04;
-        if (p.life > 0) {
-          remainingParticles.push(p);
-        }
+        if (p.life > 0) remainingParticles.push(p);
       }
       this.state.particles = remainingParticles;
     }
 
-    // Clean up expired explosions and floating damage numbers
     const currentTime = Date.now();
     this.state.explosions = this.state.explosions.filter(
       (ex) => currentTime - (ex.createdAt || currentTime) < 350
@@ -1543,7 +808,6 @@ export class SlugWarsEngine {
       activeSlug.currentTargetPoint = undefined;
     }
 
-    // Ensure all 0 HP slugs are marked as dead & reset charging power
     for (const slug of this.state.slugs) {
       slug.isChargingPower = false;
       slug.aimPower = 5;
@@ -1586,7 +850,6 @@ export class SlugWarsEngine {
       this.state.activeSlugId = nextSlugId;
     }
 
-    // Auto-verify active slug has weapon with valid ammo; fallback to bazooka if depleted
     const currentActiveSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (currentActiveSlug) {
       const currentTeam = this.state.teams.find((t) => t.id === currentActiveSlug.teamId);
@@ -1606,18 +869,10 @@ export class SlugWarsEngine {
     if (shouldRise) {
       let risePx = 0;
       if (waterFreq === 'EVERY_TURN') {
-        const perTurnMap: Record<string, number> = {
-          SLOW: 5,
-          NORMAL: 12,
-          FAST: 24,
-        };
+        const perTurnMap: Record<string, number> = { SLOW: 5, NORMAL: 12, FAST: 24 };
         risePx = perTurnMap[waterSpeed] || 12;
       } else {
-        const perRoundMap: Record<string, number> = {
-          SLOW: 16,
-          NORMAL: 36,
-          FAST: 68,
-        };
+        const perRoundMap: Record<string, number> = { SLOW: 16, NORMAL: 36, FAST: 68 };
         risePx = perRoundMap[waterSpeed] || 36;
       }
 
@@ -1631,7 +886,6 @@ export class SlugWarsEngine {
         const roundPrefix = waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
         this.addLog(`🌊 ${roundPrefix}Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
 
-        // Check if any slug was submerged by rising water
         for (const s of this.state.slugs) {
           if (s.isAlive && s.y >= newWaterY) {
             s.hp = 0;
@@ -1653,42 +907,11 @@ export class SlugWarsEngine {
   }
 
   public checkWinner(): void {
-    const aliveTeams = this.state.teams.filter((t) =>
-      this.state.slugs.some((s) => s.teamId === t.id && s.isAlive)
-    );
-    if (aliveTeams.length === 1) {
-      this.state.phase = 'GAME_OVER';
-      this.state.winnerTeamId = aliveTeams[0].id;
-      this.addLog(`Victoire de l'équipe ${aliveTeams[0].name} ! 🎉`, 'info');
-    } else if (aliveTeams.length === 0) {
-      this.state.phase = 'GAME_OVER';
-      this.addLog(`Égalité parfaite ! Toutes les limaces sont éliminées.`, 'info');
-    }
+    checkWinner(this.state, (msg, type) => this.addLog(msg, type));
   }
 
   public isWorldAtRest(): boolean {
-    // 1. Any active flying projectiles?
-    if (this.state.projectiles && this.state.projectiles.length > 0) return false;
-
-    // 2. Any triggered mines counting down?
-    if (
-      this.state.mines &&
-      this.state.mines.some((m) => m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0)
-    ) {
-      return false;
-    }
-
-    // 3. Any unlanded supply crates falling?
-    if (this.state.supplyCrates && this.state.supplyCrates.some((c) => !c.isLanded)) return false;
-
-    // 4. Any slugs flying / bouncing / falling in the air?
-    for (const slug of this.state.slugs) {
-      if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
-      if (Math.abs(slug.vx) > 0.25 || Math.abs(slug.vy) > 0.25) return false;
-      if (!isSlugGrounded(slug, this.terrain, this.state.slugs)) return false;
-    }
-
-    return true;
+    return isWorldAtRest(this.state, this.terrain);
   }
 
   public addLog(msgText: string, type: JournalEntry['type'] = 'info'): void {
