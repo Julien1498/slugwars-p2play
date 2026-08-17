@@ -2504,59 +2504,41 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const width = terrain.data.width;
         const currentWaterLevel = terrain.data.waterLevel;
         const clampedX = Math.max(20, Math.min(width - 20, Math.round(mPos.x)));
+        let previewY = Math.max(25, Math.min(currentWaterLevel - 15, Math.round(mPos.y)));
 
-        // Snap preview to valid solid ground surface with open headroom (never floating in ceiling)
-        let snapX = clampedX;
-        let snapY = Math.max(35, Math.min(currentWaterLevel - 15, Math.round(mPos.y)));
-        let foundValidGround = false;
-
-        const isValidGroundCheck = (x: number, y: number): boolean => {
-          if (x < 20 || x > width - 20 || y < 35 || y >= currentWaterLevel - 10) return false;
-          const solidBelow = terrain.isSolid(x, y + 1) || terrain.isSolid(x - 4, y + 1) || terrain.isSolid(x + 4, y + 1);
-          if (!solidBelow) return false;
-          for (let check = 0; check <= 20; check++) {
-            if (terrain.isSolid(x, y - check) || terrain.isSolid(x - 4, y - check) || terrain.isSolid(x + 4, y - check)) {
-              return false; // Overhead ceiling!
+        // Helper: check if (x, y) has full open air for slug body & head (no ceiling rock clipping!)
+        const hasClearAir = (x: number, y: number): boolean => {
+          if (x < 15 || x > width - 15 || y < 20 || y >= currentWaterLevel - 5) return false;
+          for (let check = 0; check <= 18; check++) {
+            if (
+              terrain.isSolid(x, y - check) ||
+              terrain.isSolid(x - 4, y - check) ||
+              terrain.isSolid(x + 4, y - check)
+            ) {
+              return false;
             }
           }
           return true;
         };
 
-        // Scan downwards from mouse cursor to find ground floor
-        for (let y = Math.max(35, Math.round(mPos.y)); y < currentWaterLevel - 10; y++) {
-          if (isValidGroundCheck(clampedX, y)) {
-            snapX = clampedX;
-            snapY = y;
-            foundValidGround = true;
-            break;
-          }
-        }
-
-        if (!foundValidGround) {
-          // Scan from top of map down to find first ground floor
-          for (let y = 35; y < currentWaterLevel - 10; y++) {
-            if (isValidGroundCheck(clampedX, y)) {
-              snapX = clampedX;
-              snapY = y;
-              foundValidGround = true;
+        // If mouse is near ceiling rock or in solid rock, push down to first open air with clearance
+        if (!hasClearAir(clampedX, previewY)) {
+          for (let testY = previewY; testY < currentWaterLevel - 15; testY += 2) {
+            if (hasClearAir(clampedX, testY)) {
+              previewY = testY;
               break;
             }
           }
         }
 
-        ctx.save();
-        ctx.translate(snapX, snapY);
+        const isValidPos = hasClearAir(clampedX, previewY);
 
-        // Ground Target Indicator Marker
-        ctx.strokeStyle = foundValidGround ? '#22c55e' : '#ef4444';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.save();
+        ctx.translate(clampedX, previewY);
 
         // Pulsing Tactical Placement Ring
         const ringPulse = Math.sin(animTime * 6) * 2;
-        ctx.strokeStyle = foundValidGround ? '#4ade80' : '#f87171';
+        ctx.strokeStyle = isValidPos ? '#4ade80' : '#f87171';
         ctx.lineWidth = 1.8;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
@@ -2591,21 +2573,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         // Tactical Placement Tooltip Badge
         ctx.save();
         ctx.fillStyle = 'rgba(9, 9, 11, 0.90)';
-        ctx.strokeStyle = foundValidGround ? '#22c55e' : '#ef4444';
+        ctx.strokeStyle = isValidPos ? '#22c55e' : '#ef4444';
         ctx.lineWidth = 1.2;
         const pLabel = `📍 Placer ${activeSlug?.name || 'Limace'}`;
         ctx.font = 'bold 11px Outfit, sans-serif';
         const pMetrics = ctx.measureText(pLabel);
         const pW = pMetrics.width + 16;
         ctx.beginPath();
-        ctx.roundRect(snapX - pW / 2, snapY - 44, pW, 20, 6);
+        ctx.roundRect(clampedX - pW / 2, previewY - 44, pW, 20, 6);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = foundValidGround ? '#4ade80' : '#f87171';
+        ctx.fillStyle = isValidPos ? '#4ade80' : '#f87171';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(pLabel, snapX, snapY - 34);
+        ctx.fillText(pLabel, clampedX, previewY - 34);
         ctx.restore();
       }
 

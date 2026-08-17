@@ -412,82 +412,61 @@ export class SlugWarsEngine {
   public findSafePlacementPoint(targetX: number, targetY: number, existingSlugs: Slug[] = []): Vector2D {
     const width = this.terrain.data.width;
     const waterLevel = this.terrain.data.waterLevel;
-    const clampedX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
-    const clampedY = Math.max(20, Math.min(waterLevel - 15, Math.round(targetY)));
+    let safeX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
+    let safeY = Math.max(25, Math.min(waterLevel - 15, Math.round(targetY)));
 
-    // Helper: test if a specific (x, y) is a valid standing ground surface with full open headroom
-    const isValidStandingGround = (x: number, y: number): boolean => {
-      if (x < 20 || x > width - 20 || y < 35 || y >= waterLevel - 10) return false;
-
-      // 1. Must have solid earth ground directly beneath feet
-      const solidBelow =
-        this.terrain.isSolid(x, y + 1) ||
-        this.terrain.isSolid(x - 4, y + 1) ||
-        this.terrain.isSolid(x + 4, y + 1);
-      if (!solidBelow) return false;
-
-      // 2. Must NOT be completely submerged in solid earth at waist
-      if (this.terrain.isSolid(x, y - 4) && this.terrain.isSolid(x - 3, y - 4) && this.terrain.isSolid(x + 3, y - 4)) {
-        return false;
-      }
-
-      // 3. Must have at least 22px of clear OPEN AIR headroom directly above (NO CEILING OVERHANG!)
-      for (let check = 0; check <= 22; check++) {
+    // Helper: test if (x, y) has full open air for slug body & head (no ceiling rock clipping!)
+    const hasClearAir = (x: number, y: number): boolean => {
+      if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
+      for (let check = 0; check <= 18; check++) {
         if (
           this.terrain.isSolid(x, y - check) ||
           this.terrain.isSolid(x - 4, y - check) ||
           this.terrain.isSolid(x + 4, y - check)
         ) {
-          return false; // Obstructed by ceiling or rock overhead!
-        }
-      }
-
-      // 4. Must not overlap another placed slug
-      for (const s of existingSlugs) {
-        if (s.isAlive && s.isPlaced && Math.hypot(s.x - x, s.y - y) < 18) {
           return false;
         }
       }
-
       return true;
     };
 
-    // Approach 1: Scan vertically downwards from clicked point to find the true solid ground floor
-    const startScanY = Math.max(30, clampedY);
-    for (let y = startScanY; y < waterLevel - 10; y++) {
-      if (isValidStandingGround(clampedX, y)) {
-        return { x: clampedX, y };
+    // 1. If clicked point ALREADY has clear open air (player can place in the air anywhere, slug falls down!):
+    if (hasClearAir(safeX, safeY)) {
+      const overlapSlug = existingSlugs.find((s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16);
+      if (overlapSlug) {
+        const offset = safeX >= overlapSlug.x ? 20 : -20;
+        const testX = Math.max(20, Math.min(width - 20, safeX + offset));
+        if (hasClearAir(testX, safeY)) {
+          return { x: testX, y: safeY };
+        }
+      }
+      return { x: safeX, y: safeY };
+    }
+
+    // 2. If clicked near ceiling or inside solid rock, scan downward to find the first open air spot with headroom
+    for (let testY = safeY; testY < waterLevel - 15; testY += 2) {
+      if (hasClearAir(safeX, testY)) {
+        return { x: safeX, y: testY };
       }
     }
 
-    // Approach 2: If clicking in solid cavern rock, scan downwards from where rock ends into open cavern air
-    for (let y = 35; y < waterLevel - 10; y++) {
-      if (isValidStandingGround(clampedX, y)) {
-        return { x: clampedX, y };
-      }
-    }
+    // 3. Fallback: Search nearest open air pixel with clear headroom
+    let bestPoint: Vector2D | null = null;
+    let minDistSq = Infinity;
 
-    // Approach 3: Spiral / radial search for nearest valid ground with full open headroom
-    for (let radius = 10; radius <= 400; radius += 12) {
-      const angleSteps = Math.max(8, Math.floor(radius * 0.35));
-      for (let i = 0; i < angleSteps; i++) {
-        const angle = (i / angleSteps) * Math.PI * 2;
-        const testX = Math.round(clampedX + Math.cos(angle) * radius);
-        const testY = Math.round(clampedY + Math.sin(angle) * radius);
-        if (isValidStandingGround(testX, testY)) {
-          return { x: testX, y: testY };
+    for (let testY = 25; testY < waterLevel - 15; testY += 6) {
+      for (let testX = 25; testX < width - 25; testX += 6) {
+        if (hasClearAir(testX, testY)) {
+          const distSq = (testX - safeX) ** 2 + (testY - safeY) ** 2;
+          if (distSq < minDistSq) {
+            minDistSq = distSq;
+            bestPoint = { x: testX, y: testY };
+          }
         }
       }
     }
 
-    // Approach 4: Fallback to pre-tested spawn points from terrain generator
-    for (const sp of this.terrain.data.spawnPoints) {
-      if (isValidStandingGround(sp.x, sp.y)) {
-        return { x: sp.x, y: sp.y };
-      }
-    }
-
-    return this.terrain.data.spawnPoints[0] || { x: 500, y: 150 };
+    return bestPoint || this.terrain.data.spawnPoints[0] || { x: 500, y: 150 };
   }
 
   public findSafeTeleportPoint(targetX: number, targetY: number, existingSlugs: Slug[] = []): Vector2D {
