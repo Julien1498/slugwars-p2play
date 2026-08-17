@@ -1699,128 +1699,86 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const slowTime = Date.now() / 1200;
 
       // =========================================================================
-      // SLEEK AMBIENT BACKDROP (Smooth, soft, dark, non-distracting void)
+      // SEAMLESS INFINITE WORLD ATMOSPHERE (Sky, Mountains, Sun, Clouds & Ocean)
       // =========================================================================
       const worldLeft = -3500;
       const worldRight = width + 3500;
-      const worldTop = -3000;
+      const worldTop = -2500;
       const worldBottom = height + 3500;
+      const waterY = waterLevel;
 
-      // 1. Soft Deep Obsidian Ambient Void
-      const infDarkGrad = ctx.createRadialGradient(
-        width / 2, height / 2, Math.min(width, height) * 0.4,
-        width / 2, height / 2, Math.max(width, height) * 1.8
-      );
-      infDarkGrad.addColorStop(0, '#0d1117');
-      infDarkGrad.addColorStop(0.5, '#080a0f');
-      infDarkGrad.addColorStop(1, '#040508');
-
-      ctx.fillStyle = infDarkGrad;
-      ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, worldBottom - worldTop);
-
-      // 2. Soft Ambient Drop Shadow behind the Map Arena (Floating Depth)
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-      ctx.shadowBlur = 40;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 6;
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-
-      // Strictly clip all in-game rendering to the exact map grid bounds [0, 0, width, height]
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, width, height);
-      ctx.clip();
-
-      // 1. Premium Atmospheric Sky Horizon Gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+      // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
+      const skyGrad = ctx.createLinearGradient(0, worldTop, 0, waterY);
       if (isDay) {
-        // --- DAYLIGHT ATMOSPHERIC GRADIENTS (Ultra-Bright, Sunny & Luminous) ---
         if (theme === 'CAVERN') {
-          // Subterranean Skylight Grotto / Warm Amber & Golden Sunlit Vault
-          skyGrad.addColorStop(0, '#78350f');
-          skyGrad.addColorStop(0.35, '#b45309');
-          skyGrad.addColorStop(0.7, '#f59e0b');
+          // Warm Golden Subterranean Vault
+          skyGrad.addColorStop(0, '#451a03');
+          skyGrad.addColorStop(0.35, '#78350f');
+          skyGrad.addColorStop(0.7, '#b45309');
           skyGrad.addColorStop(1, '#fef08a');
         } else if (theme === 'FORTRESS') {
-          // Alpine Bastion Daylight / High-Altitude Sunny Sky Blue & Cirrus Haze
-          skyGrad.addColorStop(0, '#0284c7');
-          skyGrad.addColorStop(0.35, '#38bdf8');
-          skyGrad.addColorStop(0.7, '#7dd3fc');
+          skyGrad.addColorStop(0, '#0369a1');
+          skyGrad.addColorStop(0.35, '#0284c7');
+          skyGrad.addColorStop(0.7, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         } else if (theme === 'FLOATING_CHAOS') {
-          // Archipel Cosmique / Luminous Celestial Sky Blue & Brilliant Cyan
-          skyGrad.addColorStop(0, '#0284c7');
-          skyGrad.addColorStop(0.35, '#38bdf8');
-          skyGrad.addColorStop(0.7, '#7dd3fc');
+          skyGrad.addColorStop(0, '#0369a1');
+          skyGrad.addColorStop(0.35, '#0284c7');
+          skyGrad.addColorStop(0.7, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         } else {
-          // ISLAND & Default: Radiant Tropical Azure & Sunny Cyan Sky
-          skyGrad.addColorStop(0, '#0284c7');
-          skyGrad.addColorStop(0.35, '#38bdf8');
-          skyGrad.addColorStop(0.7, '#7dd3fc');
+          skyGrad.addColorStop(0, '#0369a1');
+          skyGrad.addColorStop(0.35, '#0284c7');
+          skyGrad.addColorStop(0.7, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         }
       } else {
-        // --- NOCTURNAL WAR ROOM & TWILIGHT GRADIENTS (APPROVED) ---
         if (theme === 'CAVERN') {
-          skyGrad.addColorStop(0, '#060205');
-          skyGrad.addColorStop(0.35, '#170605');
-          skyGrad.addColorStop(0.7, '#2b0c07');
-          skyGrad.addColorStop(1, '#0d0403');
+          skyGrad.addColorStop(0, '#030102');
+          skyGrad.addColorStop(0.35, '#0d0403');
+          skyGrad.addColorStop(0.7, '#170605');
+          skyGrad.addColorStop(1, '#2b0c07');
         } else if (theme === 'FORTRESS') {
-          skyGrad.addColorStop(0, '#030712');
-          skyGrad.addColorStop(0.35, '#0b1120');
-          skyGrad.addColorStop(0.7, '#1e293b');
-          skyGrad.addColorStop(1, '#0f172a');
+          skyGrad.addColorStop(0, '#020408');
+          skyGrad.addColorStop(0.35, '#070b14');
+          skyGrad.addColorStop(0.7, '#0f172a');
+          skyGrad.addColorStop(1, '#1e293b');
         } else if (theme === 'FLOATING_CHAOS') {
-          skyGrad.addColorStop(0, '#030109');
-          skyGrad.addColorStop(0.35, '#130729');
-          skyGrad.addColorStop(0.7, '#2e1065');
-          skyGrad.addColorStop(1, '#080313');
+          skyGrad.addColorStop(0, '#020105');
+          skyGrad.addColorStop(0.35, '#090314');
+          skyGrad.addColorStop(0.7, '#130729');
+          skyGrad.addColorStop(1, '#2e1065');
         } else {
-          skyGrad.addColorStop(0, '#040714');
-          skyGrad.addColorStop(0.35, '#0a1329');
-          skyGrad.addColorStop(0.7, '#1e1b4b');
-          skyGrad.addColorStop(1, '#0f172a');
+          skyGrad.addColorStop(0, '#02040a');
+          skyGrad.addColorStop(0.35, '#070d1a');
+          skyGrad.addColorStop(0.7, '#0f172a');
+          skyGrad.addColorStop(1, '#1e1b4b');
         }
       }
       ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
 
-      // 2. Day & Night Atmospheric Particles & Clouds
+      // 2. Day & Night Atmospheric Particles & Clouds (Spanning across full world)
       if (isDay) {
         if (theme === 'CAVERN') {
-          // Volumetric Sunlight Shafts pouring through ceiling rock cracks
           ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
-          for (let b = 0; b < 3; b++) {
-            const bx = width * (0.22 + b * 0.32);
+          for (let b = 0; b < 9; b++) {
+            const bx = worldLeft + ((b * 750 + 400) % (worldRight - worldLeft));
             ctx.beginPath();
-            ctx.moveTo(bx - 15, 0);
-            ctx.lineTo(bx + 15, 0);
-            ctx.lineTo(bx + 90, height);
-            ctx.lineTo(bx + 20, height);
+            ctx.moveTo(bx - 20, worldTop);
+            ctx.lineTo(bx + 20, worldTop);
+            ctx.lineTo(bx + 160, waterY);
+            ctx.lineTo(bx + 40, waterY);
             ctx.closePath();
             ctx.fill();
           }
-
-          // Golden Dust Motes floating in light beams
-          for (let i = 0; i < 20; i++) {
-            const dx = (i * 127.3 + Date.now() * 0.01) % width;
-            const dy = (i * 83.1 + Math.sin(animTime * 0.5 + i) * 20) % (height * 0.8);
-            const dAlpha = 0.2 + 0.5 * Math.abs(Math.sin(animTime * 0.8 + i * 1.5));
-            ctx.fillStyle = `rgba(254, 240, 138, ${dAlpha})`;
-            ctx.fillRect(dx, dy, 2, 2);
-          }
         } else {
-          // ISLAND, FORTRESS & FLOATING_CHAOS: Drifting Crisp Soft White Cumulus Clouds
+          // Drifting Crisp Cumulus Clouds across the sky
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          for (let c = 0; c < 5; c++) {
-            const cx = ((Date.now() * 0.014 + c * 320) % (width + 300)) - 150;
-            const cy = 30 + (c * 35) % 85;
-            const cSize = 30 + (c * 7) % 20;
+          for (let c = 0; c < 14; c++) {
+            const cx = (((Date.now() * 0.014 + c * 520) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
+            const cy = -300 + (c * 65) % (waterY * 0.7 + 300);
+            const cSize = 32 + (c * 7) % 22;
             ctx.beginPath();
             ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
             ctx.arc(cx - cSize * 0.5, cy - cSize * 0.2, cSize * 0.65, 0, Math.PI * 2);
@@ -1830,38 +1788,24 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           }
         }
       } else {
-        // --- NIGHT STARFIELD & DRIFTING EMBERS ---
-        if (theme === 'CAVERN') {
-          // Drifting Fiery Magma Sparks & Embers
-          for (let i = 0; i < 28; i++) {
-            const ex = (i * 149.3 + Date.now() * 0.015) % width;
-            const ey = height * 0.85 - ((Date.now() * 0.025 + i * 85.7) % (height * 0.75));
-            const alpha = 0.2 + 0.6 * Math.abs(Math.sin(animTime * 0.9 + i * 1.8));
-            ctx.fillStyle = i % 3 === 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(249, 115, 22, ${alpha})`;
-            ctx.fillRect(ex, ey, 2, 2);
-          }
-        } else {
-          // Deep Cosmic Twinkling Stars
-          for (let i = 0; i < 55; i++) {
-            const sx = (i * 137.5 + i * 47) % width;
-            const sy = (i * 73.1 + i * 19) % (height * 0.6);
-            const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
-            const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
-            ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
-            ctx.fillRect(sx, sy, sz, sz);
-          }
+        // Deep Cosmic Twinkling Stars across infinite night sky
+        for (let i = 0; i < 180; i++) {
+          const sx = worldLeft + ((i * 317 + i * 83) % (worldRight - worldLeft));
+          const sy = worldTop + ((i * 179 + i * 47) % (waterY - worldTop));
+          const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
+          const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
+          ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+          ctx.fillRect(sx, sy, sz, sz);
         }
       }
 
-      // 3. Iconic Celestial Focus (Radiant Sun in Day / Moon-Rift in Night)
+      // 3. Iconic Celestial Focus (Sun / Moon)
       if (isDay) {
         if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
-          // Radiant Golden Sun with Multi-Layer Corona Halo & Sunbeams
           const sunX = width * 0.82;
           const sunY = height * 0.16;
           const sunR = 28;
 
-          // Outer diffused warm sunny glow
           const sunGlow = ctx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 4.0);
           sunGlow.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
           sunGlow.addColorStop(0.3, 'rgba(250, 204, 21, 0.5)');
@@ -1872,7 +1816,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.arc(sunX, sunY, sunR * 4.0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Warm radiating sunbeams
           ctx.save();
           ctx.translate(sunX, sunY);
           ctx.rotate(animTime * 0.08);
@@ -1887,7 +1830,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           }
           ctx.restore();
 
-          // Golden Sun Core
           ctx.fillStyle = '#fef08a';
           ctx.beginPath();
           ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
@@ -1899,9 +1841,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fill();
         }
       } else {
-        // --- NIGHT CELESTIAL FOCUS (APPROVED) ---
         if (theme === 'ISLAND') {
-          // Stylized Luminous Crescent Celestial Moon with Soft Corona & Orbit Ring
           const moonX = width * 0.82;
           const moonY = height * 0.16;
           const moonR = 26;
@@ -1984,23 +1924,20 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      // 4. Layered Parallax Vector Mountain & Silhouette Skyline
-      // Layer 1: Distant Misty Island & Mountain Ridges
-      const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, height);
+      // 4. Layered Parallax Vector Mountains (Spanning infinite horizon seamlessly)
+      // Layer 1: Distant Misty Mountain Ridges
+      const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
       if (isDay) {
         if (theme === 'CAVERN') {
           mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
           mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
         } else if (theme === 'FORTRESS') {
-          // Pine-Covered Alpine Ridges
           mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
           mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
         } else if (theme === 'FLOATING_CHAOS') {
-          // Lush Floating Crystalline Emerald Isles
           mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
           mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
         } else {
-          // Tropical Emerald Mountain Ridges (Unmistakably Green & Lush Land)
           mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
           mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
         }
@@ -2021,28 +1958,28 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       ctx.fillStyle = mtGrad;
       ctx.beginPath();
-      ctx.moveTo(-20, height + 20);
-      for (let x = -20; x <= width + 40; x += 35) {
+      ctx.moveTo(worldLeft, waterY + 100);
+      for (let x = worldLeft; x <= worldRight + 40; x += 35) {
         const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
         ctx.lineTo(x, my);
       }
-      ctx.lineTo(width + 20, height + 20);
+      ctx.lineTo(worldRight, waterY + 100);
       ctx.closePath();
       ctx.fill();
 
-      // Layer 2: Midground Ridge with Lush Green Hills & Island Plateaus
+      // Layer 2: Midground Ridge with Lush Hills
       if (isDay) {
         ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
       } else {
         ctx.fillStyle = theme === 'CAVERN' ? '#0d0403' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
       }
       ctx.beginPath();
-      ctx.moveTo(-20, height + 20);
-      for (let x = -20; x <= width + 40; x += 25) {
+      ctx.moveTo(worldLeft, waterY + 100);
+      for (let x = worldLeft; x <= worldRight + 40; x += 25) {
         const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
         ctx.lineTo(x, my);
       }
-      ctx.lineTo(width + 20, height + 20);
+      ctx.lineTo(worldRight, waterY + 100);
       ctx.closePath();
       ctx.fill();
 
@@ -2051,7 +1988,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
         ctx.lineWidth = 2.2;
         ctx.beginPath();
-        for (let x = 0; x <= width; x += 14) {
+        for (let x = worldLeft; x <= worldRight; x += 14) {
           const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
           ctx.moveTo(x, by);
           ctx.lineTo(x + 2, by - 5);
@@ -2080,45 +2017,82 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // 5. Deep Abyss Water Backdrop below Water Level
-      const waterBackdrop = ctx.createLinearGradient(0, waterLevel - 8, 0, height);
+      // 5. Deep Abyss Water Backdrop below Water Level (Spanning infinite world seamlessly)
+      const waterBackdrop = ctx.createLinearGradient(0, waterY - 8, 0, worldBottom);
       if (isDay) {
         if (theme === 'CAVERN') {
           waterBackdrop.addColorStop(0, 'rgba(180, 83, 9, 0.85)');
-          waterBackdrop.addColorStop(0.5, 'rgba(120, 53, 15, 0.92)');
-          waterBackdrop.addColorStop(1, 'rgba(69, 26, 3, 0.98)');
+          waterBackdrop.addColorStop(0.3, 'rgba(120, 53, 15, 0.92)');
+          waterBackdrop.addColorStop(1, '#270e02');
         } else {
           waterBackdrop.addColorStop(0, 'rgba(14, 165, 233, 0.85)');
-          waterBackdrop.addColorStop(0.5, 'rgba(2, 132, 199, 0.92)');
-          waterBackdrop.addColorStop(1, 'rgba(3, 105, 161, 0.98)');
+          waterBackdrop.addColorStop(0.25, 'rgba(2, 132, 199, 0.92)');
+          waterBackdrop.addColorStop(0.7, '#082f49');
+          waterBackdrop.addColorStop(1, '#020617');
         }
       } else {
         if (theme === 'CAVERN') {
           waterBackdrop.addColorStop(0, 'rgba(185, 28, 28, 0.75)');
-          waterBackdrop.addColorStop(0.5, 'rgba(127, 29, 29, 0.9)');
-          waterBackdrop.addColorStop(1, 'rgba(24, 6, 6, 0.98)');
+          waterBackdrop.addColorStop(0.4, 'rgba(127, 29, 29, 0.9)');
+          waterBackdrop.addColorStop(1, '#030102');
         } else {
           waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.75)');
-          waterBackdrop.addColorStop(0.5, 'rgba(15, 23, 42, 0.92)');
-          waterBackdrop.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+          waterBackdrop.addColorStop(0.35, 'rgba(15, 23, 42, 0.92)');
+          waterBackdrop.addColorStop(1, '#02040a');
         }
       }
       ctx.fillStyle = waterBackdrop;
-      ctx.fillRect(0, waterLevel - 5, width, height - (waterLevel - 5));
+      ctx.fillRect(worldLeft, waterY - 5, worldRight - worldLeft, worldBottom - (waterY - 5));
 
       // Underwater Ambient Caustic Light Rays
-      ctx.fillStyle = isDay ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.06)';
       ctx.fillStyle = isDay ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)';
-      for (let r = 0; r < 4; r++) {
-        const rx = width * (0.18 + r * 0.22) + Math.sin(animTime * 0.4 + r) * 18;
+      for (let r = 0; r < 8; r++) {
+        const rx = worldLeft + ((r * 620 + 200) % (worldRight - worldLeft)) + Math.sin(animTime * 0.4 + r) * 18;
         ctx.beginPath();
-        ctx.moveTo(rx, waterLevel);
-        ctx.lineTo(rx - 30, height);
-        ctx.lineTo(rx + 40, height);
-        ctx.lineTo(rx + 25, waterLevel);
+        ctx.moveTo(rx, waterY);
+        ctx.lineTo(rx - 30, height + 400);
+        ctx.lineTo(rx + 40, height + 400);
+        ctx.lineTo(rx + 25, waterY);
         ctx.closePath();
         ctx.fill();
       }
+
+      // Draw Smooth Continuous Surface Waves (Spanning infinite sea horizon)
+      ctx.fillStyle = isDay ? 'rgba(14, 165, 233, 0.65)' : 'rgba(2, 132, 199, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, worldBottom);
+      for (let x = worldLeft; x <= worldRight; x += 15) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
+        ctx.lineTo(x, wy);
+      }
+      ctx.lineTo(worldRight, worldBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gentle White Foam Crest Line
+      ctx.strokeStyle = isDay ? 'rgba(224, 242, 254, 0.7)' : 'rgba(186, 230, 253, 0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = worldLeft; x <= worldRight; x += 15) {
+        const wy = waterY + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
+        if (x === worldLeft) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
+      }
+      ctx.stroke();
+
+      // Subtle Soft Tactical Boundary Cue (Soft vertical depth lines at map edge)
+      ctx.save();
+      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.14)' : 'rgba(56, 189, 248, 0.1)';
+      ctx.lineWidth = 1.0;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, waterY);
+      ctx.moveTo(width, 0);
+      ctx.lineTo(width, waterY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
 
       // Draw Pre-rendered Offscreen Terrain
       if (offscreenCanvasRef.current) {
@@ -2142,33 +2116,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         }
       }
 
-      // 7. Subterranean Real-Time Dynamic Light & Occlusion Engine
+      // Subterranean Real-Time Dynamic Light & Occlusion Engine
       if (occlusionCanvasRef.current) {
         ctx.drawImage(occlusionCanvasRef.current, 0, 0);
       }
-
-      // Draw Smooth & Slow Surface Waves
-      ctx.fillStyle = 'rgba(14, 165, 233, 0.65)';
-      ctx.beginPath();
-      ctx.moveTo(0, height);
-      for (let x = 0; x <= width; x += 10) {
-        const wy = waterLevel + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
-        ctx.lineTo(x, wy);
-      }
-      ctx.lineTo(width, height);
-      ctx.closePath();
-      ctx.fill();
-
-      // Gentle White Foam Crest Line
-      ctx.strokeStyle = 'rgba(224, 242, 254, 0.7)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let x = 0; x <= width; x += 10) {
-        const wy = waterLevel + Math.sin(x * 0.015 + slowTime * 2) * 2.5;
-        if (x === 0) ctx.moveTo(x, wy);
-        else ctx.lineTo(x, wy);
-      }
-      ctx.stroke();
 
       // Draw Visual Decor Items (Hanging Leaf Roots & Floating Butterflies)
       if (decorItems) {
