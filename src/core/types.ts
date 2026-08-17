@@ -92,6 +92,7 @@ export interface Slug {
   isBlowtorching?: boolean;
   blowtorchTimerMs?: number;
   ropeState?: RopeState | null;
+  fuseTimerSec?: number; // Configurable fuse timer in seconds (1 to 5, default 3)
 }
 
 export interface HelicopterVehicle {

@@ -84,6 +84,7 @@ export const grenadeWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: true,
   fuseTimeMs: 3000,
+  allowCustomFuse: true,
   craftable: true,
   customSoundKey: 'grenade_throw',
   createProjectiles: (ctx) => {
@@ -98,7 +99,7 @@ export const grenadeWeapon: WeaponDefinition = {
         vx: Math.cos(rad) * speed,
         vy: Math.sin(rad) * speed,
         radius: 5,
-        fuseTimerMs: 3000,
+        fuseTimerMs: ctx.fuseTimerMs ?? 3000,
         bounces: true,
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
@@ -120,6 +121,7 @@ export const holyGrenadeWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: true,
   fuseTimeMs: 4000,
+  allowCustomFuse: true,
   craftable: true,
   customSoundKey: 'holy_choir',
   createProjectiles: (ctx) => {
@@ -134,7 +136,7 @@ export const holyGrenadeWeapon: WeaponDefinition = {
         vx: Math.cos(rad) * speed,
         vy: Math.sin(rad) * speed,
         radius: 6,
-        fuseTimerMs: 4000,
+        fuseTimerMs: ctx.fuseTimerMs ?? 4000,
         bounces: true,
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
@@ -156,6 +158,7 @@ export const bananaBombWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: true,
   fuseTimeMs: 3000,
+  allowCustomFuse: true,
   craftable: true,
   customSoundKey: 'grenade_throw',
   createProjectiles: (ctx) => {
@@ -172,7 +175,7 @@ export const bananaBombWeapon: WeaponDefinition = {
         radius: 6,
         bounces: true,
         windAffected: false,
-        fuseTimerMs: 3000,
+        fuseTimerMs: ctx.fuseTimerMs ?? 3000,
         ownerSlugId: ctx.ownerSlugId,
       },
     ];

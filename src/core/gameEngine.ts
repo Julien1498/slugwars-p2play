@@ -674,7 +674,18 @@ export class SlugWarsEngine {
       }
     }
     activeSlug.selectedWeaponId = weaponId;
+    const newWeapon = getWeapon(weaponId);
+    if (newWeapon.allowCustomFuse && !activeSlug.fuseTimerSec) {
+      activeSlug.fuseTimerSec = newWeapon.fuseTimeMs ? Math.round(newWeapon.fuseTimeMs / 1000) : 3;
+    }
     return true;
+  }
+
+  public setFuseTimer(slugId: string, seconds: number): void {
+    const slug = this.state.slugs.find((s) => s.id === slugId);
+    if (slug) {
+      slug.fuseTimerSec = Math.max(1, Math.min(5, Math.round(seconds)));
+    }
   }
 
   public fireWeapon(targetPoint?: Vector2D): boolean {
@@ -878,6 +889,7 @@ export class SlugWarsEngine {
       return true;
     }
 
+    const customFuseMs = activeSlug.fuseTimerSec ? activeSlug.fuseTimerSec * 1000 : (weapon.fuseTimeMs ?? 3000);
     const projs = weapon.createProjectiles({
       originX: activeSlug.x + (activeSlug.facing === 'right' ? 10 : -10),
       originY: activeSlug.y - 10,
@@ -885,6 +897,7 @@ export class SlugWarsEngine {
       power: activeSlug.aimPower,
       ownerSlugId: activeSlug.id,
       targetPoint,
+      fuseTimerMs: customFuseMs,
     });
 
     this.state.projectiles.push(...projs);

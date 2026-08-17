@@ -99,6 +99,7 @@ export const App: React.FC<AppProps> = ({
         onPlaceSlug={(point) => sendAction('PLACE_SLUG', { point })}
         onUpdateAim={(aimAngle, aimPower, facing) => sendAction('AIM', { aimAngle, aimPower, facing })}
         onSelectWeapon={(weaponId) => sendAction('SELECT_WEAPON', { weaponId })}
+        onSetFuseTimer={(seconds) => sendAction('SET_FUSE_TIMER', { seconds })}
         onStartMove={(dir) => sendAction('START_MOVE', { dir })}
         onStopMove={() => sendAction('STOP_MOVE')}
         onJump={() => sendAction('JUMP')}

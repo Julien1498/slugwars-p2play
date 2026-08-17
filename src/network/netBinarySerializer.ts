@@ -29,7 +29,7 @@ const KNOWN_KEYS = [
   // Team / stats keys
   'kills', 'deaths', 'damageDealt', 'damageTaken', 'inventory',
   // Slug keys
-  'i', 'idx', 'x', 'y', 'vx', 'vy', 'hp', 'f', 'a', 'p', 'c', 'w', 'al', 'pl', 'v', 'tp', 'rs',
+  'i', 'idx', 'x', 'y', 'vx', 'vy', 'hp', 'f', 'a', 'p', 'c', 'w', 'al', 'pl', 'v', 'tp', 'rs', 'ft',
   // Rope keys
   'hx', 'hy', 'l',
   // Vehicle keys

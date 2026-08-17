@@ -13,6 +13,7 @@ interface TurnHeaderProps {
   showHitboxes?: boolean;
   onToggleHitboxes?: () => void;
   onOpenWeaponPicker: () => void;
+  onSetFuseTimer?: (seconds: number) => void;
   onOpenRules: () => void;
   onOpenMetrics?: () => void;
   onRestartGame?: () => void;
@@ -27,6 +28,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   showHitboxes,
   onToggleHitboxes,
   onOpenWeaponPicker,
+  onSetFuseTimer,
   onOpenRules,
   onOpenMetrics,
   onRestartGame,
@@ -174,6 +176,42 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
         {/* Right: Tactical Sensors, Weapons & Menu Popover */}
         <div className="flex items-center gap-1.5 shrink-0">
           <WindIndicator wind={gameState.wind} />
+
+          {/* Tactical Fuse Timer Selector for Timed Weapons (Grenades, Bananas, etc.) */}
+          {activeWeapon?.allowCustomFuse && (
+            <div
+              className="flex items-center gap-1 bg-amber-950/80 border border-amber-500/60 px-1.5 py-0.5 rounded-lg text-amber-200 shadow-sm shrink-0"
+              title="Temps de retardement avant détonation (Touches 1 à 5)"
+            >
+              <span className="font-mono text-[10px] font-black text-amber-300 flex items-center gap-0.5">
+                <span>⏱️</span>
+                <span className="hidden sm:inline">Mèche :</span>
+              </span>
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((sec) => {
+                  const currentFuse = activeSlug?.fuseTimerSec ?? (activeWeapon.fuseTimeMs ? Math.round(activeWeapon.fuseTimeMs / 1000) : 3);
+                  const isSelected = currentFuse === sec;
+                  return (
+                    <button
+                      key={sec}
+                      disabled={!isMyTurn}
+                      onClick={() => onSetFuseTimer?.(sec)}
+                      className={`w-4 h-4 rounded font-mono font-black text-[9px] flex items-center justify-center transition-all ${
+                        isSelected
+                          ? 'bg-amber-400 text-black shadow-[0_0_6px_#f59e0b] scale-105'
+                          : isMyTurn
+                          ? 'bg-zinc-900 hover:bg-zinc-800 text-amber-400/80 border border-amber-900/60'
+                          : 'bg-zinc-900 text-zinc-600 opacity-50'
+                      }`}
+                      title={`Régler la mèche à ${sec} seconde${sec > 1 ? 's' : ''} (Touche ${sec})`}
+                    >
+                      {sec}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Rising Water Active Badge */}
           {gameState.config.waterRiseSpeed && gameState.config.waterRiseSpeed !== 'OFF' && (
@@ -367,6 +405,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   const nActiveSlug = nState.slugs.find((s) => s.id === nState.activeSlugId);
   if (pActiveSlug?.selectedWeaponId !== nActiveSlug?.selectedWeaponId) return false;
   if (pActiveSlug?.name !== nActiveSlug?.name) return false;
+  if (pActiveSlug?.fuseTimerSec !== nActiveSlug?.fuseTimerSec) return false;
 
   if (pState.slugs !== nState.slugs) {
     if (pState.slugs.length !== nState.slugs.length) return false;
