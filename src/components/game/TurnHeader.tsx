@@ -3,7 +3,8 @@ import { GameState } from '../../core/types';
 import { getWeapon } from '../../core/weapons/registry';
 import { WindIndicator } from './WindIndicator';
 import { RoomCodeBadge } from 'p2play-core';
-import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, Settings, Eye, ChevronDown } from 'lucide-react';
+import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, Settings, Eye, Gauge, ChevronDown } from 'lucide-react';
+import { perfTracker } from '../../core/perfTracker';
 
 interface TurnHeaderProps {
   gameState: GameState;
@@ -36,7 +37,12 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 }) => {
   const [showConfirmLobby, setShowConfirmLobby] = useState(false);
   const [showMenuPopover, setShowMenuPopover] = useState(false);
+  const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return perfTracker.onFpsHudToggle((enabled) => setFpsHudActive(enabled));
+  }, []);
 
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
@@ -249,6 +255,23 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                     </span>
                   </button>
                 )}
+
+                {/* In-Game FPS HUD Toggle */}
+                <button
+                  onClick={() => {
+                    perfTracker.setFpsHudEnabled(!fpsHudActive);
+                    setShowMenuPopover(false);
+                  }}
+                  className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <Gauge className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Compteur FPS</span>
+                  </div>
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${fpsHudActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                    {fpsHudActive ? 'ON' : 'OFF'}
+                  </span>
+                </button>
 
                 {/* Perfs Monitor */}
                 {onOpenMetrics && (

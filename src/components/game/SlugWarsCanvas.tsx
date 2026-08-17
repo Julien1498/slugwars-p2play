@@ -13,6 +13,7 @@ import { renderAllSlugs } from '../../rendering/renderSlugs';
 import { renderProjectiles } from '../../rendering/renderProjectiles';
 import { renderAimGuides } from '../../rendering/renderAimGuides';
 import { renderPlacementGhost } from '../../rendering/renderPlacementGhost';
+import { renderHitboxDebugOverlay } from '../../rendering/renderHitboxes';
 import {
   renderParticles,
   renderClientExplosions,
@@ -83,6 +84,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
   const clientFloatingDamagesRef = useRef<ClientFloatingDamage[]>([]);
   const prevSlugHpsRef = useRef<Map<string, number>>(new Map());
+  const prevSlugWaterStateRef = useRef<Map<string, { y: number; isAlive: boolean }>>(new Map());
+  const splashCooldownsRef = useRef<Map<string, number>>(new Map());
   const currentRenderWaterYRef = useRef<number>(terrain.data.waterLevel);
   const clientWaterSplashesRef = useRef<WaterSplash[]>([]);
   const clientWaterRipplesRef = useRef<WaterRipple[]>([]);
@@ -156,6 +159,52 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     },
     [terrain, getBuffers]
   );
+
+  const triggerWaterSplash = useCallback((x: number, y: number, scale = 1.0) => {
+    // 1. Expanding surface ripples
+    clientWaterRipplesRef.current.push({
+      x,
+      radius: 4 * scale,
+      life: 1.0,
+      color: 'rgba(255, 255, 255, 0.95)',
+    });
+    clientWaterRipplesRef.current.push({
+      x,
+      radius: 1 * scale,
+      life: 1.0,
+      color: 'rgba(56, 189, 248, 0.9)',
+    });
+
+    // 2. Upward fountain splash droplets
+    const count = Math.round(14 * scale);
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
+      const speed = (Math.random() * 4 + 3.5) * scale;
+      clientWaterSplashesRef.current.push({
+        x: x + (Math.random() - 0.5) * 10,
+        y: y + (Math.random() - 0.5) * 4,
+        vx: Math.cos(angle) * speed * 0.7,
+        vy: Math.sin(angle) * speed,
+        size: Math.random() * 3 + 2,
+        life: 1.0,
+        color: Math.random() < 0.5 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(56, 189, 248, 0.9)',
+      });
+    }
+
+    // 3. Submerged bubbles
+    for (let i = 0; i < 6; i++) {
+      clientWaterBubblesRef.current.push({
+        x: x + (Math.random() - 0.5) * 14,
+        y: y + Math.random() * 10 + 2,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: -Math.random() * 1.5 - 0.8,
+        size: Math.random() * 2.5 + 1.5,
+        life: 1.0,
+      });
+    }
+
+    sfx.play('splash');
+  }, []);
 
   const triggerClientExplosion = useCallback((x: number, y: number, radius: number) => {
     const safeRadius = Math.max(10, radius || 30);
@@ -463,7 +512,55 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       const waterY = currentRenderWaterYRef.current;
 
-      // 1. Sky & Atmosphere
+      // Water entry splash & bubble detectors
+      if (curState && curState.slugs) {
+        for (const slug of curState.slugs) {
+          const prev = prevSlugWaterStateRef.current.get(slug.id);
+          if (prev && prev.y < waterY && slug.y >= waterY && slug.isAlive) {
+            const nowMs = performance.now();
+            const lastSplash = splashCooldownsRef.current.get(slug.id) || 0;
+            if (nowMs - lastSplash > 400) {
+              splashCooldownsRef.current.set(slug.id, nowMs);
+              triggerWaterSplash(slug.x, waterY, 1.4);
+            }
+          }
+          prevSlugWaterStateRef.current.set(slug.id, { y: slug.y, isAlive: slug.isAlive });
+
+          if (!slug.isAlive) {
+            if (!slugDeathTimestampsRef.current.has(slug.id)) {
+              slugDeathTimestampsRef.current.set(slug.id, Date.now());
+            }
+            const deathTime = slugDeathTimestampsRef.current.get(slug.id) || Date.now();
+            const timeSinceDeath = Date.now() - deathTime;
+            if (slug.y >= waterY && timeSinceDeath < 2500 && Math.random() < 0.3 && clientWaterBubblesRef.current.length < 25) {
+              clientWaterBubblesRef.current.push({
+                x: slug.x + (Math.random() - 0.5) * 12,
+                y: slug.y - 4,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: -1.8 - Math.random() * 1.0,
+                size: 2 + Math.random() * 2.2,
+                life: 1.0,
+              });
+            }
+          }
+        }
+      }
+
+      if (curState && curState.projectiles) {
+        for (const p of curState.projectiles) {
+          if (p.y >= waterY - 6 && p.y <= waterY + 30) {
+            const pKey = `proj_${p.id}`;
+            const nowMs = performance.now();
+            const lastSplash = splashCooldownsRef.current.get(pKey) || 0;
+            if (nowMs - lastSplash > 400) {
+              splashCooldownsRef.current.set(pKey, nowMs);
+              triggerWaterSplash(p.x, waterY, 1.1);
+            }
+          }
+        }
+      }
+
+      // 1. Sky, Atmosphere & Deep Background Ocean Swell
       renderSkyAndAtmosphere({
         ctx,
         width,
@@ -476,6 +573,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         worldLeft,
         worldRight,
         worldTop,
+        worldBottom,
       });
 
       // 2. Offscreen Terrain Buffer
@@ -584,6 +682,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         splashes: clientWaterSplashesRef.current,
       });
 
+      // 9. Comprehensive Debug Hitboxes Overlay
+      if (showHitboxesRef.current) {
+        renderHitboxDebugOverlay({
+          ctx,
+          gameState: curState,
+          terrain,
+          terrainHitboxCanvas: buffers.terrainHitboxCanvas,
+          waterLevel,
+          width,
+          height,
+        });
+      }
+
       ctx.restore();
 
       const dt = performance.now() - renderStart;
@@ -598,23 +709,25 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       });
 
       // Update in-game FPS HUD if enabled
-      fpsCounterFramesRef.current++;
-      const nowFps = performance.now();
-      if (nowFps - lastFpsHudUpdateRef.current >= 400) {
-        const instantFps = Math.round((fpsCounterFramesRef.current * 1000) / (nowFps - lastFpsHudUpdateRef.current));
-        if (fpsTextRef.current) {
-          fpsTextRef.current.innerText = `${instantFps} FPS`;
-          fpsTextRef.current.className = `font-mono text-xs font-black ${
-            instantFps >= 50 ? 'text-emerald-400' : instantFps >= 30 ? 'text-amber-400' : 'text-red-400'
-          }`;
+      if (fpsTextRef.current && perfTracker.getFpsHudEnabled()) {
+        fpsCounterFramesRef.current++;
+        const nowFps = performance.now();
+        if (nowFps - lastFpsHudUpdateRef.current >= 250) {
+          const instantFps = Math.round((fpsCounterFramesRef.current * 1000) / (nowFps - lastFpsHudUpdateRef.current));
+          fpsCounterFramesRef.current = 0;
+          lastFpsHudUpdateRef.current = nowFps;
+          fpsTextRef.current.textContent = `${instantFps} FPS`;
+          if (fpsDotRef.current) {
+            fpsDotRef.current.className = `w-2 h-2 rounded-full ${
+              instantFps >= 50 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : instantFps >= 30 ? 'bg-amber-400' : 'bg-red-400'
+            }`;
+          }
+          if (fpsBadgeRef.current) {
+            fpsBadgeRef.current.className = `absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-lg text-xs font-mono font-black shadow-lg flex items-center gap-2 select-none z-20 ${
+              instantFps >= 50 ? 'text-emerald-400 border-emerald-500/30' : instantFps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
+            }`;
+          }
         }
-        if (fpsDotRef.current) {
-          fpsDotRef.current.className = `w-2 h-2 rounded-full animate-pulse ${
-            instantFps >= 50 ? 'bg-emerald-400' : instantFps >= 30 ? 'bg-amber-400' : 'bg-red-400'
-          }`;
-        }
-        fpsCounterFramesRef.current = 0;
-        lastFpsHudUpdateRef.current = nowFps;
       }
 
       animId = requestAnimationFrame(render);
@@ -622,7 +735,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [terrain, redrawTerrain, carveOffscreenCrater, triggerClientExplosion, getBuffers]);
+  }, [terrain, redrawTerrain, carveOffscreenCrater, triggerClientExplosion, triggerWaterSplash, getBuffers]);
 
   const handleCenterCamera = () => {
     zoomRef.current = 1.0;
@@ -652,22 +765,23 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       onMouseMove={handleMouseMove}
       onContextMenu={handleContextMenu}
     >
-      <canvas ref={canvasRef} className="block w-full h-full" />
-
-      {/* Persistent Zero-Overhead FPS HUD */}
+      {/* Zero-Overhead In-Game Permanent FPS Counter HUD */}
       <div
         ref={fpsBadgeRef}
-        style={{ display: 'none' }}
-        className="absolute top-2 left-2 z-50 pointer-events-none items-center gap-1.5 px-2.5 py-1 bg-zinc-950/90 border border-emerald-500/50 rounded-lg shadow-xl backdrop-blur-md"
+        style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
+        className="absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-lg text-xs font-mono font-black text-emerald-400 shadow-lg flex items-center gap-2 select-none z-20"
       >
-        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span ref={fpsTextRef} className="font-mono text-xs font-black text-emerald-400">
-          60 FPS
-        </span>
+        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+        <span ref={fpsTextRef}>60 FPS</span>
       </div>
 
+      <canvas ref={canvasRef} className="block w-full h-full" />
+
       {/* Floating Zoom & Pan Controls Widget in Bottom Right */}
-      <div className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg">
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg"
+      >
         <button
           type="button"
           onClick={handleZoomOut}

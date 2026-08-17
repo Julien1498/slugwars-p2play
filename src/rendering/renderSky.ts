@@ -12,10 +12,11 @@ export interface SkyRenderContext {
   worldLeft: number;
   worldRight: number;
   worldTop: number;
+  worldBottom: number;
 }
 
 export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
-  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, animTime, slowTime, width } = rc;
+  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
 
   // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
   const skyGradTop = Math.min(-650, -height * 0.9);
@@ -222,4 +223,90 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   ctx.lineTo(worldRight, waterY + 100);
   ctx.closePath();
   ctx.fill();
+
+  // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
+  const bgWaterGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
+  if (isDay) {
+    if (theme === 'CAVERN') {
+      bgWaterGrad.addColorStop(0, '#d97706');
+      bgWaterGrad.addColorStop(0.3, '#9a3412');
+      bgWaterGrad.addColorStop(0.7, '#431407');
+      bgWaterGrad.addColorStop(1, '#170602');
+    } else {
+      bgWaterGrad.addColorStop(0, '#0284c7');
+      bgWaterGrad.addColorStop(0.25, '#0369a1');
+      bgWaterGrad.addColorStop(0.65, '#082f49');
+      bgWaterGrad.addColorStop(1, '#020617');
+    }
+  } else {
+    if (theme === 'CAVERN') {
+      bgWaterGrad.addColorStop(0, '#dc2626');
+      bgWaterGrad.addColorStop(0.35, '#7f1d1d');
+      bgWaterGrad.addColorStop(1, '#170602');
+    } else {
+      bgWaterGrad.addColorStop(0, '#0ea5e9');
+      bgWaterGrad.addColorStop(0.3, '#0f172a');
+      bgWaterGrad.addColorStop(1, '#020617');
+    }
+  }
+
+  // Layer 1: Back Ocean Deep Body Polygon
+  ctx.fillStyle = bgWaterGrad;
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, worldBottom);
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    const wy1 = waterY + Math.sin(x * 0.008 + slowTime * 1.5) * 10 + Math.cos(x * 0.016 - slowTime * 1.0) * 4;
+    ctx.lineTo(x, wy1);
+  }
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Layer 2: Mid Wave Translucent Swell
+  ctx.fillStyle = isDay
+    ? theme === 'CAVERN'
+      ? 'rgba(249, 115, 22, 0.60)'
+      : 'rgba(14, 165, 233, 0.55)'
+    : 'rgba(30, 58, 138, 0.45)';
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, worldBottom);
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
+    ctx.lineTo(x, wy2);
+  }
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Layer 3: Front Horizon Wave with Clean White Foam Edge
+  ctx.fillStyle = isDay
+    ? theme === 'CAVERN'
+      ? 'rgba(220, 38, 38, 0.80)'
+      : 'rgba(2, 132, 199, 0.80)'
+    : 'rgba(15, 23, 42, 0.80)';
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, worldBottom);
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+    ctx.lineTo(x, wy3);
+  }
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Smooth White Foam Crest Line
+  ctx.strokeStyle = isDay ? '#ffffff' : '#94a3b8';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  let firstPt = true;
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+    if (firstPt) {
+      ctx.moveTo(x, wy3);
+      firstPt = false;
+    } else {
+      ctx.lineTo(x, wy3);
+    }
+  }
+  ctx.stroke();
 }
