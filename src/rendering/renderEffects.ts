@@ -1,0 +1,397 @@
+import { GameState, Landmine, SupplyCrate, HelicopterVehicle, Slug } from '../core/types';
+
+export interface ClientParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  life: number;
+}
+
+export interface ClientExplosion {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  startTime: number;
+  duration: number;
+}
+
+export interface ClientFloatingDamage {
+  id: string;
+  x: number;
+  y: number;
+  damage: number;
+  startTime: number;
+  duration: number;
+}
+
+export function renderParticles(ctx: CanvasRenderingContext2D, particles: ClientParticle[]) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.035;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    } else {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life * 0.85);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+export function renderClientExplosions(ctx: CanvasRenderingContext2D, explosions: ClientExplosion[]) {
+  const now = performance.now();
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    const ex = explosions[i];
+    const elapsed = now - ex.startTime;
+    const progress = Math.min(1, elapsed / ex.duration);
+    const alpha = Math.max(0, 1 - progress);
+    const safeRadius = ex.radius;
+
+    // Shockwave
+    const shockRadius = safeRadius * (0.3 + progress * 0.9);
+    if (shockRadius > 0) {
+      ctx.strokeStyle = `rgba(249, 115, 22, ${alpha * 0.9})`;
+      ctx.lineWidth = Math.max(1, 3.5 * (1 - progress));
+      ctx.beginPath();
+      ctx.arc(ex.x, ex.y, shockRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Fireball
+    const fireballRadius = safeRadius * (0.35 + progress * 0.65);
+    const exGrad = ctx.createRadialGradient(ex.x, ex.y, 0, ex.x, ex.y, fireballRadius);
+    exGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    exGrad.addColorStop(0.25, `rgba(250, 204, 21, ${alpha * 0.9})`);
+    exGrad.addColorStop(0.65, `rgba(239, 68, 68, ${alpha * 0.7})`);
+    exGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');
+
+    ctx.fillStyle = exGrad;
+    ctx.beginPath();
+    ctx.arc(ex.x, ex.y, fireballRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (progress >= 1) {
+      explosions.splice(i, 1);
+    }
+  }
+}
+
+export function renderNinjaRopes(ctx: CanvasRenderingContext2D, slugs: Slug[]) {
+  for (const s of slugs) {
+    if (s.isAlive && s.ropeState) {
+      const rope = s.ropeState;
+      ctx.save();
+      ctx.strokeStyle = '#e4e4e7';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(rope.hookX, rope.hookY);
+      ctx.lineTo(s.x, s.y - 8);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#71717a';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(rope.hookX, rope.hookY);
+      ctx.lineTo(s.x, s.y - 8);
+      ctx.stroke();
+
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(rope.hookX, rope.hookY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+export function renderSupplyCrates(ctx: CanvasRenderingContext2D, crates: SupplyCrate[] | undefined) {
+  if (!crates) return;
+  for (const crate of crates) {
+    ctx.save();
+    ctx.translate(crate.x, crate.y);
+
+    if (!crate.isLanded) {
+      // Parachute
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(0, -22, 16, Math.PI, 0);
+      ctx.fill();
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, -22, 8, Math.PI, 0);
+      ctx.fill();
+
+      // Cords
+      ctx.strokeStyle = '#e4e4e7';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-14, -22);
+      ctx.lineTo(0, -8);
+      ctx.moveTo(14, -22);
+      ctx.lineTo(0, -8);
+      ctx.moveTo(0, -38);
+      ctx.lineTo(0, -8);
+      ctx.stroke();
+    }
+
+    // Wooden Box
+    ctx.fillStyle = '#ca8a04';
+    ctx.fillRect(-9, -9, 18, 18);
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-9, -9, 18, 18);
+
+    // Cross Icon
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-2, -6, 4, 12);
+    ctx.fillRect(-6, -2, 12, 4);
+
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('+50 HP', 0, 16);
+
+    ctx.restore();
+  }
+}
+
+export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDamages: ClientFloatingDamage[]) {
+  const now = performance.now();
+  for (let i = floatingDamages.length - 1; i >= 0; i--) {
+    const fd = floatingDamages[i];
+    const elapsed = now - fd.startTime;
+    const progress = Math.min(1, elapsed / fd.duration);
+    const alpha = Math.max(0, 1 - progress);
+    const floatY = fd.y - progress * 30;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const isHeal = fd.damage < 0;
+    ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.font = 'extrabold 14px Outfit, sans-serif';
+    ctx.textAlign = 'center';
+    const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+    ctx.strokeText(text, fd.x, floatY);
+    ctx.fillText(text, fd.x, floatY);
+    ctx.restore();
+
+    if (progress >= 1) {
+      floatingDamages.splice(i, 1);
+    }
+  }
+}
+
+export function renderMines(ctx: CanvasRenderingContext2D, mines: Landmine[] | undefined) {
+  if (!mines) return;
+  for (const mine of mines) {
+    ctx.fillStyle = '#4b5563';
+    ctx.beginPath();
+    ctx.ellipse(mine.x, mine.y, 6, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const blink = mine.isTriggered
+      ? Math.floor(Date.now() / 100) % 2 === 0
+      : Math.floor(Date.now() / 600) % 2 === 0;
+
+    ctx.fillStyle = blink ? '#ef4444' : '#7f1d1d';
+    ctx.beginPath();
+    ctx.arc(mine.x, mine.y - 4, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (mine.isTriggered && mine.fuseTimerMs !== undefined) {
+      const sec = (mine.fuseTimerMs / 1000).toFixed(1);
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'extrabold 10px Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚠️ ${sec}s`, mine.x, mine.y - 12);
+    }
+  }
+}
+
+export function renderHelicopters(
+  ctx: CanvasRenderingContext2D,
+  helicopters: HelicopterVehicle[] | undefined,
+  gameState: GameState,
+  animTime: number,
+  isMyTurn: boolean
+) {
+  if (!helicopters) return;
+  const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+
+  for (const heli of helicopters) {
+    ctx.save();
+    ctx.translate(heli.x, heli.y);
+    if (heli.facing === 'left') ctx.scale(-1, 1);
+
+    // Skids
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-18, 14);
+    ctx.lineTo(18, 14);
+    ctx.moveTo(-10, 8);
+    ctx.lineTo(-12, 14);
+    ctx.moveTo(10, 8);
+    ctx.lineTo(12, 14);
+    ctx.stroke();
+
+    // Fuselage
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 22, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Glass
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.55)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(8, -2, 11, 7, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Pilot
+    if (heli.pilotSlugId) {
+      const pilot = gameState.slugs.find((s) => s.id === heli.pilotSlugId);
+      const team = pilot ? gameState.teams.find((t) => t.id === pilot.teamId) : null;
+      const teamColor = team ? team.color : '#a855f7';
+
+      ctx.save();
+      ctx.translate(7, -3);
+      ctx.fillStyle = teamColor;
+      ctx.beginPath();
+      ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(0, -1, 5, Math.PI, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(-2, -1, 5, 2.5);
+      ctx.restore();
+    }
+
+    // Tail
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(-35, -3, 20, 5);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-37, -9, 4, 12);
+
+    const isPiloted = Boolean(heli.pilotSlugId);
+    const isAirborne = isPiloted || (Math.abs(heli.vx) > 0.1 || Math.abs(heli.vy) > 0.1);
+
+    // Tail Rotor
+    const tailRotorSpeed = isPiloted ? 45 : isAirborne ? 20 : 6;
+    const tSpin = Math.sin(animTime * tailRotorSpeed);
+    ctx.strokeStyle = isPiloted ? '#cbd5e1' : '#94a3b8';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(-35, -3 - tSpin * 8);
+    ctx.lineTo(-35, -3 + tSpin * 8);
+    ctx.stroke();
+
+    // Main Rotor
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(-2, -16, 4, 6);
+
+    const mainRotorSpeed = isPiloted ? 35 : isAirborne ? 16 : 4;
+    const currentRotorAngle = animTime * mainRotorSpeed;
+    const bladeWidth = Math.cos(currentRotorAngle) * 45;
+    ctx.strokeStyle = isPiloted ? '#e2e8f0' : '#64748b';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-bladeWidth, -16);
+    ctx.lineTo(bladeWidth, -16);
+    ctx.stroke();
+
+    // Rotor Hub
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(0, -16, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // HP Bar
+    const hpPct = Math.max(0, heli.hp / heli.maxHp);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.fillRect(heli.x - 20, heli.y - 28, 40, 5);
+    ctx.fillStyle = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
+    ctx.fillRect(heli.x - 20, heli.y - 28, 40 * hpPct, 5);
+
+    if (isMyTurn && activeSlug && !activeSlug.inVehicleId) {
+      const dist = Math.hypot(activeSlug.x - heli.x, activeSlug.y - heli.y);
+      if (dist < 65) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 11px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🚁 [ENTRER / E] pour Piloter', heli.x, heli.y - 36);
+      }
+    }
+  }
+}
+
+export function renderTombstones(ctx: CanvasRenderingContext2D, slugs: Slug[], waterLevel: number) {
+  for (const slug of slugs) {
+    if (slug.isAlive || !slug.isPlaced) continue;
+    if (slug.y < waterLevel + 10) {
+      ctx.save();
+      ctx.translate(slug.x, slug.y);
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 9, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const stoneGrad = ctx.createLinearGradient(0, -18, 0, 2);
+      stoneGrad.addColorStop(0, '#94a3b8');
+      stoneGrad.addColorStop(1, '#475569');
+      ctx.fillStyle = stoneGrad;
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.4;
+
+      ctx.beginPath();
+      ctx.moveTo(-7, 2);
+      ctx.lineTo(-7, -10);
+      ctx.quadraticCurveTo(-7, -18, 0, -18);
+      ctx.quadraticCurveTo(7, -18, 7, -10);
+      ctx.lineTo(7, 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(-1, -14, 2, 8);
+      ctx.fillRect(-3.5, -12, 7, 2);
+      ctx.restore();
+    }
+  }
+}
