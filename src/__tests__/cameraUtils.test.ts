@@ -1,45 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-/**
- * Screen <-> World Coordinate Transformations
- */
-export function screenToWorld(
-  clientX: number,
-  clientY: number,
-  canvasRect: { left: number; top: number; width: number; height: number },
-  pan: { x: number; y: number },
-  zoom: number
-): { x: number; y: number } {
-  const relX = clientX - canvasRect.left;
-  const relY = clientY - canvasRect.top;
-  const centerX = canvasRect.width / 2;
-  const centerY = canvasRect.height / 2;
-
-  const worldX = (relX - centerX) / zoom - pan.x;
-  const worldY = (relY - centerY) / zoom - pan.y;
-  return { x: worldX, y: worldY };
-}
-
-export function worldToScreen(
-  worldX: number,
-  worldY: number,
-  canvasRect: { width: number; height: number },
-  pan: { x: number; y: number },
-  zoom: number
-): { x: number; y: number } {
-  const centerX = canvasRect.width / 2;
-  const centerY = canvasRect.height / 2;
-
-  const screenX = (worldX + pan.x) * zoom + centerX;
-  const screenY = (worldY + pan.y) * zoom + centerY;
-  return { x: screenX, y: screenY };
-}
-
-export function getNextGirderAngle(currentAngle: number): number {
-  const angles = [0, 45, 90, 135];
-  const curIdx = angles.indexOf(currentAngle);
-  return angles[(curIdx + 1) % angles.length];
-}
+import { screenToWorld, worldToScreen, getNextGirderAngle, lerpCamera } from '../rendering/cameraUtils';
 
 describe('Camera & Aiming Coordinate Maths', () => {
   it('losslessly converts coordinates from Screen to World and back to Screen', () => {
@@ -60,5 +20,13 @@ describe('Camera & Aiming Coordinate Maths', () => {
     expect(getNextGirderAngle(45)).toBe(90);
     expect(getNextGirderAngle(90)).toBe(135);
     expect(getNextGirderAngle(135)).toBe(0);
+  });
+
+  it('smoothly interpolates camera position with lerp factor', () => {
+    const current = { x: 100, y: 100 };
+    const target = { x: 200, y: 200 };
+    const next = lerpCamera(current, target, 0.1);
+    expect(next.x).toBe(110);
+    expect(next.y).toBe(110);
   });
 });
