@@ -3831,14 +3831,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       clientFloatingDamagesRef.current = remainingFloatingDamages;
 
-      // End of world rendering: restore map boundary clipping
-      ctx.restore();
-
-      // Sleek, subtle game arena border frame
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(0, 0, width, height);
-
       // COMPREHENSIVE DEBUG HITBOX OVERLAY RENDERING (Slugs, Projectiles, Vehicles, Crates, Mines, Girders, Solid Props, Terrain & Water)
       if (showHitboxesRef.current) {
         ctx.save();
