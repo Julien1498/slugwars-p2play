@@ -1707,33 +1707,33 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const worldBottom = height + 3500;
       const waterY = waterLevel;
 
-      // 1. Seamless Infinite Atmospheric Sky Horizon Gradient (Anchored to visible arena for rich vibrant color transitions)
-      const skyGradTop = Math.min(-180, -height * 0.25);
+      // 1. Seamless Infinite Atmospheric Sky Horizon Gradient (Harmonious balanced middle-ground)
+      const skyGradTop = Math.min(-650, -height * 0.9);
       const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
       if (isDay) {
         if (theme === 'CAVERN') {
-          // Warm Intense Molten Amber Subterranean Vault
+          // Warm Atmospheric Subterranean Amber Glow
           skyGrad.addColorStop(0, '#451a03');
-          skyGrad.addColorStop(0.3, '#7c2d12');
-          skyGrad.addColorStop(0.6, '#b45309');
-          skyGrad.addColorStop(0.85, '#d97706');
+          skyGrad.addColorStop(0.35, '#78350f');
+          skyGrad.addColorStop(0.65, '#b45309');
+          skyGrad.addColorStop(0.88, '#d97706');
           skyGrad.addColorStop(1, '#fef08a');
         } else if (theme === 'FORTRESS') {
           skyGrad.addColorStop(0, '#0f172a');
-          skyGrad.addColorStop(0.3, '#0369a1');
-          skyGrad.addColorStop(0.65, '#0284c7');
-          skyGrad.addColorStop(0.88, '#38bdf8');
+          skyGrad.addColorStop(0.35, '#0369a1');
+          skyGrad.addColorStop(0.70, '#0284c7');
+          skyGrad.addColorStop(0.90, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         } else if (theme === 'FLOATING_CHAOS') {
           skyGrad.addColorStop(0, '#312e81');
-          skyGrad.addColorStop(0.35, '#4f46e5');
-          skyGrad.addColorStop(0.7, '#9333ea');
+          skyGrad.addColorStop(0.38, '#4f46e5');
+          skyGrad.addColorStop(0.72, '#9333ea');
           skyGrad.addColorStop(1, '#fae8ff');
         } else {
-          // Standard / Island: Lush Tropical Vibrant Azure & Cyan Sky
+          // Standard / Island: Lush Balanced Tropical Cyan & Azure Sky
           skyGrad.addColorStop(0, '#0369a1');
-          skyGrad.addColorStop(0.35, '#0284c7');
-          skyGrad.addColorStop(0.72, '#38bdf8');
+          skyGrad.addColorStop(0.38, '#0284c7');
+          skyGrad.addColorStop(0.74, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         }
       } else {
@@ -2021,37 +2021,41 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // 5. Deep Abyss Water Backdrop below Water Level (Spanning infinite world seamlessly with rich punchy depth)
-      const waterGradBottom = waterY + Math.max(380, height * 0.45);
+      // 5. Deep Abyss Water Backdrop below Water Level (High-Contrast Rich Ocean Depth)
+      const waterGradBottom = waterY + Math.max(500, height * 0.65);
       const waterBackdrop = ctx.createLinearGradient(0, waterY - 8, 0, waterGradBottom);
       if (isDay) {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(217, 119, 6, 0.92)');
-          waterBackdrop.addColorStop(0.3, 'rgba(154, 52, 18, 0.95)');
-          waterBackdrop.addColorStop(0.7, '#451a03');
-          waterBackdrop.addColorStop(1, '#1c0701');
+          waterBackdrop.addColorStop(0, 'rgba(217, 119, 6, 0.95)');
+          waterBackdrop.addColorStop(0.2, 'rgba(180, 83, 9, 0.98)');
+          waterBackdrop.addColorStop(0.5, '#78350f');
+          waterBackdrop.addColorStop(0.8, '#451a03');
+          waterBackdrop.addColorStop(1, '#170602');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(14, 165, 233, 0.92)');
-          waterBackdrop.addColorStop(0.3, 'rgba(2, 132, 199, 0.95)');
-          waterBackdrop.addColorStop(0.7, '#082f49');
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.95)');
+          waterBackdrop.addColorStop(0.2, 'rgba(3, 105, 161, 0.98)');
+          waterBackdrop.addColorStop(0.5, '#082f49');
+          waterBackdrop.addColorStop(0.8, '#031826');
           waterBackdrop.addColorStop(1, '#020617');
         }
       } else {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(220, 38, 38, 0.85)');
-          waterBackdrop.addColorStop(0.4, 'rgba(153, 27, 27, 0.95)');
+          waterBackdrop.addColorStop(0, 'rgba(220, 38, 38, 0.90)');
+          waterBackdrop.addColorStop(0.35, 'rgba(153, 27, 27, 0.98)');
+          waterBackdrop.addColorStop(0.7, '#450a0a');
           waterBackdrop.addColorStop(1, '#030102');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.85)');
-          waterBackdrop.addColorStop(0.35, 'rgba(15, 23, 42, 0.95)');
+          waterBackdrop.addColorStop(0, 'rgba(2, 132, 199, 0.90)');
+          waterBackdrop.addColorStop(0.3, 'rgba(15, 23, 42, 0.98)');
+          waterBackdrop.addColorStop(0.7, '#070b14');
           waterBackdrop.addColorStop(1, '#02040a');
         }
       }
       ctx.fillStyle = waterBackdrop;
       ctx.fillRect(worldLeft, waterY - 5, worldRight - worldLeft, worldBottom - (waterY - 5));
 
-      // Underwater Ambient Caustic Light Rays
-      ctx.fillStyle = isDay ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.06)';
+      // Underwater Ambient Caustic Light Rays (Crisp Shimmering Rays)
+      ctx.fillStyle = isDay ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.08)';
       for (let r = 0; r < 8; r++) {
         const rx = worldLeft + ((r * 620 + 200) % (worldRight - worldLeft)) + Math.sin(animTime * 0.4 + r) * 18;
         ctx.beginPath();
@@ -2063,9 +2067,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // Draw Smooth Multi-Layer Continuous Surface Waves (Spanning infinite sea horizon)
+      // Draw Smooth Multi-Layer Continuous Surface Waves (Spanning infinite sea horizon with high-contrast crest)
       // Layer A: Main Rolling Blue Ocean Swell
-      ctx.fillStyle = isDay ? 'rgba(14, 165, 233, 0.75)' : 'rgba(2, 132, 199, 0.65)';
+      ctx.fillStyle = isDay ? 'rgba(2, 132, 199, 0.80)' : 'rgba(3, 105, 161, 0.70)';
       ctx.beginPath();
       ctx.moveTo(worldLeft, worldBottom);
       for (let x = worldLeft; x <= worldRight; x += 12) {
@@ -2077,7 +2081,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.fill();
 
       // Layer B: Luminous Turquoise Translucent Secondary Wave Crest
-      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.35)' : 'rgba(14, 165, 233, 0.25)';
+      ctx.fillStyle = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(14, 165, 233, 0.30)';
       ctx.beginPath();
       ctx.moveTo(worldLeft, worldBottom);
       for (let x = worldLeft; x <= worldRight; x += 15) {
@@ -2089,8 +2093,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.fill();
 
       // Layer C: Crisp Gentle White Foam Crest Line along Wave Peak
-      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.85)' : 'rgba(186, 230, 253, 0.6)';
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.95)' : 'rgba(186, 230, 253, 0.75)';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       let firstWavePt = true;
       for (let x = worldLeft; x <= worldRight; x += 12) {
