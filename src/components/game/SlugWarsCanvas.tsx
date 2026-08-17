@@ -1777,12 +1777,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             ctx.fill();
           }
         } else {
-          // Drifting Crisp Cumulus Clouds across the sky
+          // Drifting Crisp Cumulus Clouds across the high open sky (floating safely above hills & mountains)
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          for (let c = 0; c < 14; c++) {
-            const cx = (((Date.now() * 0.014 + c * 520) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
-            const cy = -300 + (c * 65) % (waterY * 0.7 + 300);
-            const cSize = 32 + (c * 7) % 22;
+          for (let c = 0; c < 12; c++) {
+            const cx = (((Date.now() * 0.014 + c * 620) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
+            // Keep clouds in upper sky (between -300 and height * 0.22)
+            const cy = -250 + (c * 42) % (Math.max(160, height * 0.22) + 250);
+            const cSize = 28 + (c * 7) % 18;
             ctx.beginPath();
             ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
             ctx.arc(cx - cSize * 0.5, cy - cSize * 0.2, cSize * 0.65, 0, Math.PI * 2);
