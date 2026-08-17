@@ -85,13 +85,13 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
 
   // Retreat timer sync
-  if (currentState.retreatTimer !== undefined) {
-    const prevRetreatSec = prevState?.retreatTimer !== undefined ? Math.floor(prevState.retreatTimer) : -1;
+  if (currentState.retreatTimer !== undefined && currentState.retreatTimer !== null) {
+    const prevRetreatSec = prevState?.retreatTimer !== undefined && prevState?.retreatTimer !== null ? Math.floor(prevState.retreatTimer) : -1;
     const curRetreatSec = Math.floor(currentState.retreatTimer);
     if (isPhaseChanged || prevRetreatSec !== curRetreatSec || currentState.retreatTimer <= 3) {
       delta.retreatTimer = quantizeFloat(currentState.retreatTimer, 1);
     }
-  } else if (prevState && prevState.retreatTimer !== undefined) {
+  } else if (prevState && prevState.retreatTimer !== undefined && prevState.retreatTimer !== null) {
     delta.retreatTimer = null;
   }
 
