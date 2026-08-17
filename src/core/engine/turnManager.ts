@@ -1,7 +1,6 @@
 import { GameState, Slug, Vector2D, JournalEntry } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { isSlugGrounded } from '../physics';
-import { sfx } from '../audio';
 
 export function getNextSlugForTeam(
   state: GameState,
@@ -45,6 +44,7 @@ export function findSafePlacementPoint(
   const safeX = Math.max(20, Math.min(width - 20, Math.round(targetX)));
   const safeY = Math.max(25, Math.min(waterLevel - 15, Math.round(targetY)));
 
+  // Helper: test if (x, y) has full open air for slug body & head (no ceiling rock clipping!)
   const hasClearAir = (x: number, y: number): boolean => {
     if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
     for (let check = 0; check <= 18; check++) {
@@ -59,6 +59,7 @@ export function findSafePlacementPoint(
     return true;
   };
 
+  // 1. If clicked point ALREADY has clear open air (player can place in the air anywhere, slug falls down!):
   if (hasClearAir(safeX, safeY)) {
     const overlapSlug = existingSlugs.find(
       (s) => s.isAlive && s.isPlaced && Math.hypot(s.x - safeX, s.y - safeY) < 16
@@ -73,21 +74,30 @@ export function findSafePlacementPoint(
     return { x: safeX, y: safeY };
   }
 
+  // 2. If clicked near ceiling or inside solid rock, scan downward to find the first open air spot with headroom
   for (let testY = safeY; testY < waterLevel - 15; testY += 2) {
     if (hasClearAir(safeX, testY)) {
       return { x: safeX, y: testY };
     }
   }
 
+  // 3. Fallback: Search NEAREST open air pixel with clear headroom (nearest to user click, not top-left corner!)
+  let bestPoint: Vector2D | null = null;
+  let minDistSq = Infinity;
+
   for (let testY = 25; testY < waterLevel - 15; testY += 6) {
     for (let testX = 25; testX < width - 25; testX += 6) {
       if (hasClearAir(testX, testY)) {
-        return { x: testX, y: testY };
+        const distSq = (testX - safeX) ** 2 + (testY - safeY) ** 2;
+        if (distSq < minDistSq) {
+          minDistSq = distSq;
+          bestPoint = { x: testX, y: testY };
+        }
       }
     }
   }
 
-  return terrain.data.spawnPoints[0] || { x: 500, y: 150 };
+  return bestPoint || terrain.data.spawnPoints[0] || { x: 500, y: 150 };
 }
 
 export function findSafeTeleportPoint(
@@ -100,15 +110,21 @@ export function findSafeTeleportPoint(
 }
 
 export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): boolean {
+  // 1. Any active flying projectiles?
   if (state.projectiles && state.projectiles.length > 0) return false;
+
+  // 2. Any triggered mines counting down?
   if (
     state.mines &&
     state.mines.some((m) => m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0)
   ) {
     return false;
   }
+
+  // 3. Any unlanded supply crates falling?
   if (state.supplyCrates && state.supplyCrates.some((c) => !c.isLanded)) return false;
 
+  // 4. Any slugs flying / bouncing / falling in the air?
   for (const slug of state.slugs) {
     if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
     if (Math.abs(slug.vx) > 0.25 || Math.abs(slug.vy) > 0.25) return false;
@@ -118,16 +134,20 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
   return true;
 }
 
-export function checkWinner(state: GameState, addLog: (msg: string, type?: JournalEntry['type']) => void) {
+export function checkWinner(
+  state: GameState,
+  addLog?: (msg: string, type: JournalEntry['type']) => void
+): void {
   const aliveTeams = state.teams.filter((t) =>
     state.slugs.some((s) => s.teamId === t.id && s.isAlive)
   );
+
   if (aliveTeams.length === 1) {
     state.phase = 'GAME_OVER';
     state.winnerTeamId = aliveTeams[0].id;
-    addLog(`Victoire de l'équipe ${aliveTeams[0].name} ! 🎉`, 'info');
+    addLog?.(`Victoire de l'équipe ${aliveTeams[0].name} ! 🎉`, 'info');
   } else if (aliveTeams.length === 0) {
     state.phase = 'GAME_OVER';
-    addLog(`Égalité parfaite ! Toutes les limaces sont éliminées.`, 'info');
+    addLog?.('Égalité parfaite ! Toutes les limaces sont éliminées.', 'info');
   }
 }
