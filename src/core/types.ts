@@ -153,6 +153,8 @@ export const MAP_SIZE_CONFIGS: Record<MapSize, { width: number; height: number; 
 
 export type DayNightCycle = 'DAY' | 'NIGHT';
 
+export type WaterRiseSpeed = 'OFF' | 'SLOW' | 'NORMAL' | 'FAST';
+
 export interface GameConfig {
   weaponSetId: string;
   slugHp: number;
@@ -160,6 +162,7 @@ export interface GameConfig {
   turnDuration: number;
   windEnabled: boolean;
   vehiclesEnabled: boolean;
+  waterRiseSpeed?: WaterRiseSpeed;
   dayNightCycle?: DayNightCycle;
   mapTheme: MapTheme;
   mapSize?: MapSize;
@@ -245,6 +248,7 @@ export interface GameState {
   retreatTimer?: number;
   phaseTimer?: number;
   wind: number;
+  waterLevel?: number;
   projectiles: ActiveProjectile[];
   explosions: ExplosionEvent[];
   particles: Particle[];

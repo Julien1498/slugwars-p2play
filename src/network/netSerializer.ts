@@ -51,6 +51,7 @@ export interface CompactStateDelta {
   turnTimer?: number;
   retreatTimer?: number | null;
   wind?: number;
+  waterLevel?: number;
   teams?: CompactTeamDelta[];
   slugs?: CompactSlugDelta[];
   helicopters?: Partial<HelicopterVehicle>[];
@@ -95,6 +96,11 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
   if (currentState.winnerTeamId !== undefined && (!prevState || prevState.winnerTeamId !== currentState.winnerTeamId)) {
     delta.winnerTeamId = currentState.winnerTeamId;
+  }
+
+  // Water level sync (Montée des Eaux)
+  if (currentState.waterLevel !== undefined && (!prevState || prevState.waterLevel !== currentState.waterLevel)) {
+    delta.waterLevel = quantizeFloat(currentState.waterLevel, 1);
   }
 
   // Team stats & inventory delta (sync kills, deaths, damageDealt, damageTaken & ammo inventory in real-time!)
@@ -338,6 +344,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     localState.retreatTimer = delta.retreatTimer === null ? undefined : delta.retreatTimer;
   }
   if (delta.wind !== undefined) localState.wind = delta.wind;
+  if (delta.waterLevel !== undefined) localState.waterLevel = delta.waterLevel;
 
   if (delta.teams) {
     for (const dTeam of delta.teams) {

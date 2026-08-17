@@ -56,6 +56,7 @@ export class SlugWarsEngine {
       sizeCfg.height
     );
     this.terrain = new DestructibleTerrain(data);
+    this.state.waterLevel = data.waterLevel;
   }
 
   public setConfig(partial: Partial<GameConfig>): boolean {
@@ -1105,7 +1106,8 @@ export class SlugWarsEngine {
         }
 
         // Stop blowtorch if slug falls into water
-        if (activeSlug.y >= this.terrain.data.waterLevel) {
+        const curWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
+        if (activeSlug.y >= curWaterY) {
           activeSlug.isBlowtorching = false;
         }
       }
@@ -1116,6 +1118,7 @@ export class SlugWarsEngine {
       this.steerSheep(activeSlug.steeringDir);
     }
 
+    const effectiveWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
     if (this.state.helicopters && this.state.helicopters.length > 0) {
       for (const heli of this.state.helicopters) {
         const pilot = this.state.slugs.find((s) => s.id === heli.pilotSlugId);
@@ -1140,12 +1143,12 @@ export class SlugWarsEngine {
           heli.hp = 0;
         }
       }
-      this.state.helicopters = this.state.helicopters.filter((h) => h.hp > 0 && h.y < this.terrain.data.waterLevel);
+      this.state.helicopters = this.state.helicopters.filter((h) => h.hp > 0 && h.y < effectiveWaterY);
     }
 
     for (const slug of this.state.slugs) {
       // Check Drowning
-      if (slug.y >= this.terrain.data.waterLevel) {
+      if (slug.y >= effectiveWaterY) {
         if (slug.isAlive) {
           const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
           if (victimTeam) {
@@ -1500,6 +1503,41 @@ export class SlugWarsEngine {
         const ammo = currentTeam.inventory[currentActiveSlug.selectedWeaponId] ?? -1;
         if (ammo === 0) {
           currentActiveSlug.selectedWeaponId = 'bazooka';
+        }
+      }
+    }
+
+    // Montée des Eaux (Rising Water) Mechanic
+    const waterSpeed = this.state.config.waterRiseSpeed;
+    if (waterSpeed && waterSpeed !== 'OFF') {
+      const riseAmounts: Record<string, number> = {
+        SLOW: 6,
+        NORMAL: 14,
+        FAST: 26,
+      };
+      const risePx = riseAmounts[waterSpeed] || 14;
+      const minWaterY = Math.max(120, Math.floor(this.terrain.data.height * 0.18));
+      const currentWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
+      const newWaterY = Math.max(minWaterY, currentWaterY - risePx);
+
+      if (newWaterY !== currentWaterY) {
+        this.state.waterLevel = newWaterY;
+        this.terrain.data.waterLevel = newWaterY;
+        this.addLog(`🌊 Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
+        sfx.play('splash');
+
+        // Check if any slug was submerged by rising water
+        for (const s of this.state.slugs) {
+          if (s.isAlive && s.y >= newWaterY) {
+            s.hp = 0;
+            s.isAlive = false;
+            const victimTeam = this.state.teams.find((t) => t.id === s.teamId);
+            if (victimTeam) {
+              if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+              victimTeam.stats.deaths++;
+            }
+            this.addLog(`🌊 ${s.name} a été englouti par les flots montants !`, 'death');
+          }
         }
       }
     }
