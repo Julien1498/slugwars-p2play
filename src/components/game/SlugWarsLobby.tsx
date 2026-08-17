@@ -21,7 +21,7 @@ const MAP_THEMES: { id: MapTheme; label: string; icon: string; desc: string }[] 
   { id: 'ISLAND', label: 'Île Tropicale', icon: '🏝️', desc: 'Collines ouvertes & lagons' },
   { id: 'CAVERN', label: 'Grotte Caverne', icon: '🦇', desc: 'Plafond rocheux & tunnels' },
   { id: 'FORTRESS', label: 'Deux Forteresses', icon: '🏰', desc: 'Canyons & châteaux' },
-  { id: 'FLOATING_CHAOS', label: 'Archipel Cosmique', icon: '🌌', desc: 'Îlots suspendus' },
+  { id: 'FLOATING_CHAOS', label: 'Archipel Flottant', icon: '🏝️', desc: 'Îlots suspendus & ciel azur' },
 ];
 
 // --- SAFE CANVAS DRAWING UTILITIES ---
@@ -87,7 +87,7 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
 
     // Sky Background
     const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
-    if (theme === 'ISLAND') {
+    if (theme === 'ISLAND' || theme === 'FLOATING_CHAOS') {
       skyGrad.addColorStop(0, '#38bdf8');
       skyGrad.addColorStop(0.7, '#93c5fd');
       skyGrad.addColorStop(1, '#60a5fa');
@@ -99,10 +99,6 @@ const MapThumbnailPreview: React.FC<{ theme: MapTheme; size: MapSize; seed: numb
       skyGrad.addColorStop(0, '#ea580c');
       skyGrad.addColorStop(0.5, '#9a3412');
       skyGrad.addColorStop(1, '#431407');
-    } else {
-      skyGrad.addColorStop(0, '#09090b');
-      skyGrad.addColorStop(0.5, '#2e1065');
-      skyGrad.addColorStop(1, '#581c87');
     }
 
     ctx.fillStyle = skyGrad;

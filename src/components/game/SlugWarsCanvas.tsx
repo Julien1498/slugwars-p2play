@@ -1734,10 +1734,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           skyGrad.addColorStop(0.90, '#38bdf8');
           skyGrad.addColorStop(1, '#e0f2fe');
         } else if (theme === 'FLOATING_CHAOS') {
-          skyGrad.addColorStop(0, '#312e81');
-          skyGrad.addColorStop(0.38, '#4f46e5');
-          skyGrad.addColorStop(0.72, '#9333ea');
-          skyGrad.addColorStop(1, '#fae8ff');
+          // Archipel Flottant: Radiant Vibrant Tropical Blue Sky
+          skyGrad.addColorStop(0, '#0369a1');
+          skyGrad.addColorStop(0.35, '#0284c7');
+          skyGrad.addColorStop(0.72, '#38bdf8');
+          skyGrad.addColorStop(1, '#e0f2fe');
         } else {
           // Standard / Island: Lush Balanced Tropical Cyan & Azure Sky
           skyGrad.addColorStop(0, '#0369a1');
@@ -1757,10 +1758,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           skyGrad.addColorStop(0.7, '#0f172a');
           skyGrad.addColorStop(1, '#1e293b');
         } else if (theme === 'FLOATING_CHAOS') {
-          skyGrad.addColorStop(0, '#020105');
-          skyGrad.addColorStop(0.35, '#090314');
-          skyGrad.addColorStop(0.7, '#1e1b4b');
-          skyGrad.addColorStop(1, '#3b0764');
+          // Archipel Night: Deep Midnight Blue
+          skyGrad.addColorStop(0, '#02040a');
+          skyGrad.addColorStop(0.35, '#070d1a');
+          skyGrad.addColorStop(0.7, '#0f172a');
+          skyGrad.addColorStop(1, '#1e293b');
         } else {
           skyGrad.addColorStop(0, '#02040a');
           skyGrad.addColorStop(0.35, '#070d1a');
