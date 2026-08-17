@@ -912,6 +912,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const clientExplosionsRef = useRef<{ id: string; x: number; y: number; radius: number; startTime: number; duration: number }[]>([]);
   const clientFloatingDamagesRef = useRef<{ id: string; x: number; y: number; damage: number; startTime: number; duration: number }[]>([]);
   const prevSlugHpsRef = useRef<Map<string, number>>(new Map());
+  const currentRenderWaterYRef = useRef<number>(terrain.data.waterLevel);
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -1705,7 +1706,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const worldRight = width + 3500;
       const worldTop = -2500;
       const worldBottom = height + 3500;
-      const waterY = waterLevel;
+      
+      // Smooth 60 FPS local water rise interpolation
+      const targetWaterLevel = curState?.waterLevel ?? waterLevel;
+      if (Math.abs(currentRenderWaterYRef.current - targetWaterLevel) > 0.05) {
+        currentRenderWaterYRef.current += (targetWaterLevel - currentRenderWaterYRef.current) * 0.08;
+      } else {
+        currentRenderWaterYRef.current = targetWaterLevel;
+      }
+      const waterY = currentRenderWaterYRef.current;
 
       // 1. Seamless Infinite Atmospheric Sky Horizon Gradient (Harmonious balanced middle-ground)
       const skyGradTop = Math.min(-650, -height * 0.9);

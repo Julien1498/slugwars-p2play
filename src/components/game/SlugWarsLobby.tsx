@@ -865,7 +865,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                 <Swords className="w-3 h-3 text-violet-400" /> Règles d'Engagement
               </label>
               
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
                 {/* Slugs per Team */}
                 {isHost ? (
                   <button
@@ -963,6 +963,48 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
                   <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
                     <div className="text-[9px] text-zinc-400 font-bold uppercase">Atmosphère</div>
                     <div className="text-xs font-black text-amber-300">{(config.dayNightCycle || 'DAY') === 'DAY' ? '☀️ Jour' : '🌙 Nuit'}</div>
+                  </div>
+                )}
+
+                {/* Rising Water Toggle */}
+                {isHost ? (
+                  <button
+                    onClick={() => {
+                      const speeds: Array<'OFF' | 'SLOW' | 'NORMAL' | 'FAST'> = ['OFF', 'SLOW', 'NORMAL', 'FAST'];
+                      const cur = config.waterRiseSpeed || 'OFF';
+                      const next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
+                      onChangeConfig({ waterRiseSpeed: next });
+                    }}
+                    className={`p-2 rounded-xl border text-left transition ${
+                      (config.waterRiseSpeed || 'OFF') !== 'OFF'
+                        ? 'bg-sky-950/80 border-sky-500/70 text-sky-200 shadow-sm'
+                        : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
+                    }`}
+                    title="Monter le niveau de l'eau à chaque tour"
+                  >
+                    <div className="text-[9px] font-bold uppercase">Montée des Eaux</div>
+                    <div className="text-xs font-black">
+                      {config.waterRiseSpeed === 'SLOW'
+                        ? '💧 Lente (+6px)'
+                        : config.waterRiseSpeed === 'NORMAL'
+                        ? '🌊 Normale (+14px)'
+                        : config.waterRiseSpeed === 'FAST'
+                        ? '⚡ Rapide (+26px)'
+                        : '❌ Sans'}
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase">Montée des Eaux</div>
+                    <div className="text-xs font-black text-sky-300">
+                      {config.waterRiseSpeed === 'SLOW'
+                        ? '💧 Lente (+6px)'
+                        : config.waterRiseSpeed === 'NORMAL'
+                        ? '🌊 Normale (+14px)'
+                        : config.waterRiseSpeed === 'FAST'
+                        ? '⚡ Rapide (+26px)'
+                        : '❌ Sans'}
+                    </div>
                   </div>
                 )}
               </div>
