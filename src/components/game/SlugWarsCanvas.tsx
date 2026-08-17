@@ -1699,126 +1699,33 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const slowTime = Date.now() / 1200;
 
       // =========================================================================
-      // INFINITE AMBIENT BACKDROP (Smooth, clean, infinite atmosphere outside map)
+      // SLEEK AMBIENT BACKDROP (Smooth, soft, dark, non-distracting void)
       // =========================================================================
       const worldLeft = -3500;
       const worldRight = width + 3500;
       const worldTop = -3000;
       const worldBottom = height + 3500;
-      const waterY = terrain.data.waterLevel;
 
-      // 1. Infinite Sky / Atmospheric Dome (y < waterY)
-      const infSkyGrad = ctx.createLinearGradient(0, worldTop, 0, waterY);
-      if (isDay) {
-        if (theme === 'CAVERN') {
-          infSkyGrad.addColorStop(0, '#451a03');
-          infSkyGrad.addColorStop(0.5, '#78350f');
-          infSkyGrad.addColorStop(1, '#b45309');
-        } else if (theme === 'FORTRESS') {
-          infSkyGrad.addColorStop(0, '#0369a1');
-          infSkyGrad.addColorStop(0.5, '#0284c7');
-          infSkyGrad.addColorStop(1, '#38bdf8');
-        } else if (theme === 'FLOATING_CHAOS') {
-          infSkyGrad.addColorStop(0, '#0369a1');
-          infSkyGrad.addColorStop(0.5, '#0284c7');
-          infSkyGrad.addColorStop(1, '#38bdf8');
-        } else {
-          infSkyGrad.addColorStop(0, '#0369a1');
-          infSkyGrad.addColorStop(0.5, '#0284c7');
-          infSkyGrad.addColorStop(1, '#38bdf8');
-        }
-      } else {
-        if (theme === 'CAVERN') {
-          infSkyGrad.addColorStop(0, '#030102');
-          infSkyGrad.addColorStop(0.5, '#0d0403');
-          infSkyGrad.addColorStop(1, '#170605');
-        } else if (theme === 'FORTRESS') {
-          infSkyGrad.addColorStop(0, '#020408');
-          infSkyGrad.addColorStop(0.5, '#070b14');
-          infSkyGrad.addColorStop(1, '#0f172a');
-        } else if (theme === 'FLOATING_CHAOS') {
-          infSkyGrad.addColorStop(0, '#020105');
-          infSkyGrad.addColorStop(0.5, '#090314');
-          infSkyGrad.addColorStop(1, '#130729');
-        } else {
-          infSkyGrad.addColorStop(0, '#02040a');
-          infSkyGrad.addColorStop(0.5, '#070d1a');
-          infSkyGrad.addColorStop(1, '#0f172a');
-        }
-      }
-      ctx.fillStyle = infSkyGrad;
-      ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
+      // 1. Soft Deep Obsidian Ambient Void
+      const infDarkGrad = ctx.createRadialGradient(
+        width / 2, height / 2, Math.min(width, height) * 0.4,
+        width / 2, height / 2, Math.max(width, height) * 1.8
+      );
+      infDarkGrad.addColorStop(0, '#0d1117');
+      infDarkGrad.addColorStop(0.5, '#080a0f');
+      infDarkGrad.addColorStop(1, '#040508');
 
-      // Infinite Distant Celestial Atmosphere & Stars (Night mode or Cavern)
-      if (!isDay && theme !== 'CAVERN') {
-        // Subtle soft cosmic starfield outside map
-        for (let i = 0; i < 140; i++) {
-          const sx = worldLeft + ((i * 337 + i * 97) % (worldRight - worldLeft));
-          const sy = worldTop + ((i * 191 + i * 53) % (waterY - worldTop));
-          // Skip if inside active map area
-          if (sx >= 0 && sx <= width && sy >= 0 && sy <= height) continue;
-          const sz = i % 4 === 0 ? 1.5 : 1.0;
-          const alpha = 0.12 + 0.3 * Math.abs(Math.sin(animTime * 0.4 + i));
-          ctx.fillStyle = `rgba(224, 242, 254, ${alpha})`;
-          ctx.fillRect(sx, sy, sz, sz);
-        }
-      } else if (isDay && theme !== 'CAVERN') {
-        // Subtle soft distant cirrus haze outside map
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-        for (let c = 0; c < 8; c++) {
-          const cx = worldLeft + ((c * 880 + 300) % (worldRight - worldLeft));
-          const cy = -600 + (c * 180) % 800;
-          if (cx >= -100 && cx <= width + 100 && cy >= 0 && cy <= height) continue;
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, 220, 30, 0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      ctx.fillStyle = infDarkGrad;
+      ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, worldBottom - worldTop);
 
-      // 2. Infinite Ocean / Deep Abyssal Water (y >= waterY)
-      const infOceanGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
-      if (isDay) {
-        if (theme === 'CAVERN') {
-          infOceanGrad.addColorStop(0, 'rgba(180, 83, 9, 0.95)');
-          infOceanGrad.addColorStop(0.3, 'rgba(120, 53, 15, 0.98)');
-          infOceanGrad.addColorStop(1, '#270e02');
-        } else {
-          infOceanGrad.addColorStop(0, '#0284c7');
-          infOceanGrad.addColorStop(0.25, '#0369a1');
-          infOceanGrad.addColorStop(0.7, '#082f49');
-          infOceanGrad.addColorStop(1, '#020617');
-        }
-      } else {
-        if (theme === 'CAVERN') {
-          infOceanGrad.addColorStop(0, '#170605');
-          infOceanGrad.addColorStop(0.4, '#0d0403');
-          infOceanGrad.addColorStop(1, '#030102');
-        } else {
-          infOceanGrad.addColorStop(0, '#0f172a');
-          infOceanGrad.addColorStop(0.35, '#090d16');
-          infOceanGrad.addColorStop(1, '#02040a');
-        }
-      }
-      ctx.fillStyle = infOceanGrad;
-      ctx.fillRect(worldLeft, waterY, worldRight - worldLeft, worldBottom - waterY);
-
-      // Infinite Horizon Water Line Wave extending seamlessly to left and right horizons
-      const waveColor = isDay ? 'rgba(56, 189, 248, 0.45)' : 'rgba(56, 189, 248, 0.2)';
-      ctx.strokeStyle = waveColor;
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(worldLeft, waterY);
-      for (let wx = worldLeft; wx <= worldRight; wx += 45) {
-        const wy = waterY + Math.sin(wx * 0.012 + animTime * 1.4) * 2.2;
-        ctx.lineTo(wx, wy);
-      }
-      ctx.stroke();
-
-      // Subtle Soft Arena Boundary Glow & Line (Clean, elegant, non-distracting)
+      // 2. Soft Ambient Drop Shadow behind the Map Arena (Floating Depth)
       ctx.save();
-      ctx.strokeStyle = isDay ? 'rgba(255, 255, 255, 0.15)' : 'rgba(56, 189, 248, 0.1)';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(-0.5, -0.5, width + 1, height + 1);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
       ctx.restore();
 
       // Strictly clip all in-game rendering to the exact map grid bounds [0, 0, width, height]
