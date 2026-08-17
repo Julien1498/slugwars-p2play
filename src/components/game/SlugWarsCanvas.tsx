@@ -2339,9 +2339,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fillStyle = '#0f172a';
           ctx.fillRect(-37, -9, 4, 12);
 
-          // Spinning Tail Rotor Blades
-          const tSpin = Math.sin(Date.now() * 0.05);
-          ctx.strokeStyle = '#94a3b8';
+          const isPiloted = Boolean(heli.pilotSlugId);
+          const isAirborne = isPiloted || (Math.abs(heli.vx) > 0.1 || Math.abs(heli.vy) > 0.1);
+
+          // Spinning Tail Rotor Blades (calculated locally at 60 FPS on both host and guest!)
+          const tailRotorSpeed = isPiloted ? 45 : isAirborne ? 20 : 6;
+          const tSpin = Math.sin(animTime * tailRotorSpeed);
+          ctx.strokeStyle = isPiloted ? '#cbd5e1' : '#94a3b8';
           ctx.lineWidth = 1.8;
           ctx.beginPath();
           ctx.moveTo(-35, -3 - tSpin * 8);
@@ -2352,9 +2356,21 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.fillStyle = '#475569';
           ctx.fillRect(-2, -16, 4, 6);
 
-          // Spinning Main Blades
-          const bladeWidth = Math.cos(heli.rotorAngle) * 45;
-          ctx.strokeStyle = heli.isFlying ? '#cbd5e1' : '#64748b';
+          // High-speed rotor blur disc when flying
+          if (isPiloted) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(203, 213, 225, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 45, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // Spinning Main Blades (calculated locally at 60 FPS on both host and guest!)
+          const mainRotorSpeed = isPiloted ? 35 : isAirborne ? 16 : 4;
+          const currentRotorAngle = animTime * mainRotorSpeed;
+          const bladeWidth = Math.cos(currentRotorAngle) * 45;
+          ctx.strokeStyle = isPiloted ? '#e2e8f0' : '#64748b';
           ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.moveTo(-bladeWidth, -16);
