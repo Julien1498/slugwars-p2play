@@ -2501,14 +2501,63 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
         const team = curState.teams.find((t) => t.id === curState.activeTeamId);
         const mPos = mousePosRef.current;
+        const width = terrain.data.width;
+        const currentWaterLevel = terrain.data.waterLevel;
+        const clampedX = Math.max(20, Math.min(width - 20, Math.round(mPos.x)));
+
+        // Snap preview to valid solid ground surface with open headroom (never floating in ceiling)
+        let snapX = clampedX;
+        let snapY = Math.max(35, Math.min(currentWaterLevel - 15, Math.round(mPos.y)));
+        let foundValidGround = false;
+
+        const isValidGroundCheck = (x: number, y: number): boolean => {
+          if (x < 20 || x > width - 20 || y < 35 || y >= currentWaterLevel - 10) return false;
+          const solidBelow = terrain.isSolid(x, y + 1) || terrain.isSolid(x - 4, y + 1) || terrain.isSolid(x + 4, y + 1);
+          if (!solidBelow) return false;
+          for (let check = 0; check <= 20; check++) {
+            if (terrain.isSolid(x, y - check) || terrain.isSolid(x - 4, y - check) || terrain.isSolid(x + 4, y - check)) {
+              return false; // Overhead ceiling!
+            }
+          }
+          return true;
+        };
+
+        // Scan downwards from mouse cursor to find ground floor
+        for (let y = Math.max(35, Math.round(mPos.y)); y < currentWaterLevel - 10; y++) {
+          if (isValidGroundCheck(clampedX, y)) {
+            snapX = clampedX;
+            snapY = y;
+            foundValidGround = true;
+            break;
+          }
+        }
+
+        if (!foundValidGround) {
+          // Scan from top of map down to find first ground floor
+          for (let y = 35; y < currentWaterLevel - 10; y++) {
+            if (isValidGroundCheck(clampedX, y)) {
+              snapX = clampedX;
+              snapY = y;
+              foundValidGround = true;
+              break;
+            }
+          }
+        }
 
         ctx.save();
-        ctx.translate(mPos.x, mPos.y);
+        ctx.translate(snapX, snapY);
+
+        // Ground Target Indicator Marker
+        ctx.strokeStyle = foundValidGround ? '#22c55e' : '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
+        ctx.stroke();
 
         // Pulsing Tactical Placement Ring
         const ringPulse = Math.sin(animTime * 6) * 2;
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = foundValidGround ? '#4ade80' : '#f87171';
+        ctx.lineWidth = 1.8;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
         ctx.arc(0, -8, 16 + ringPulse, 0, Math.PI * 2);
@@ -2516,7 +2565,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.setLineDash([]);
 
         // Translucent Ghost Slug Body
-        ctx.globalAlpha = 0.75;
+        ctx.globalAlpha = 0.85;
         ctx.fillStyle = team?.color || '#a855f7';
         ctx.beginPath();
         ctx.arc(0, -8, 8, 0, Math.PI * 2);
@@ -2541,22 +2590,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
         // Tactical Placement Tooltip Badge
         ctx.save();
-        ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
-        ctx.strokeStyle = '#facc15';
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.90)';
+        ctx.strokeStyle = foundValidGround ? '#22c55e' : '#ef4444';
         ctx.lineWidth = 1.2;
         const pLabel = `📍 Placer ${activeSlug?.name || 'Limace'}`;
         ctx.font = 'bold 11px Outfit, sans-serif';
         const pMetrics = ctx.measureText(pLabel);
         const pW = pMetrics.width + 16;
         ctx.beginPath();
-        ctx.roundRect(mPos.x - pW / 2, mPos.y - 40, pW, 20, 6);
+        ctx.roundRect(snapX - pW / 2, snapY - 44, pW, 20, 6);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#facc15';
+        ctx.fillStyle = foundValidGround ? '#4ade80' : '#f87171';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(pLabel, mPos.x, mPos.y - 30);
+        ctx.fillText(pLabel, snapX, snapY - 34);
         ctx.restore();
       }
 
