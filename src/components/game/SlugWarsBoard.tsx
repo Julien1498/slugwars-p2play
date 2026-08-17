@@ -12,6 +12,7 @@ import { Trophy, RefreshCw, MessageSquare, Eye, X } from 'lucide-react';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
 import { sfx } from '../../core/audio';
 import { perfTracker } from '../../core/perfTracker';
+import { getWeapon } from '../../core/weapons/registry';
 
 interface SlugWarsBoardProps {
   gameState: GameState;
@@ -26,6 +27,7 @@ interface SlugWarsBoardProps {
   onPlaceSlug?: (point: Vector2D) => void;
   onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right') => void;
   onSelectWeapon: (weaponId: string) => void;
+  onSetFuseTimer?: (seconds: number) => void;
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
@@ -54,6 +56,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   onPlaceSlug,
   onUpdateAim,
   onSelectWeapon,
+  onSetFuseTimer,
   onStartMove,
   onStopMove,
   onJump,
@@ -148,6 +151,24 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           e.preventDefault();
           setShowWeaponPicker((prev) => !prev);
           return;
+        }
+
+        // Fuse Timer Selection (Keys 1 to 5, AZERTY '&', 'é', '"', '\'', '(')
+        const fuseKeyMap: Record<string, number> = {
+          '1': 1, '&': 1,
+          '2': 2, 'é': 2,
+          '3': 3, '"': 3,
+          '4': 4, '\'': 4,
+          '5': 5, '(': 5,
+        };
+        if (fuseKeyMap[key] !== undefined && gameState.phase !== 'RETREAT') {
+          const currentWeapon = activeSlug ? getWeapon(activeSlug.selectedWeaponId) : null;
+          if (currentWeapon?.allowCustomFuse) {
+            e.preventDefault();
+            onSetFuseTimer?.(fuseKeyMap[key]);
+            sfx.play('tick');
+            return;
+          }
         }
 
         if (key === 'r' && activeSlug && activeSlug.selectedWeaponId === 'girder') {
@@ -254,6 +275,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           showHitboxes={showHitboxes}
           onToggleHitboxes={() => setShowHitboxes(!showHitboxes)}
           onOpenWeaponPicker={handleOpenWeaponPicker}
+          onSetFuseTimer={onSetFuseTimer}
           onOpenRules={handleOpenRules}
           onOpenMetrics={handleOpenMetrics}
           onRestartGame={onRestartGame}

@@ -3331,10 +3331,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
           ctx.fill();
 
-          // Angle Readout Floating Glass Badge
-          const badgeX = dir === 1 ? 18 : -18;
+          // Angle & Fuse Readout Floating Glass Badge
+          const badgeX = dir === 1 ? 22 : -22;
           const badgeY = -16;
-          const badgeText = `${Math.round(activeSlug.aimAngle)}°`;
+          const currentFuse = activeSlug.fuseTimerSec ?? (weapon.fuseTimeMs ? Math.round(weapon.fuseTimeMs / 1000) : 3);
+          const badgeText = weapon.allowCustomFuse ? `${Math.round(activeSlug.aimAngle)}° [⏱️${currentFuse}s]` : `${Math.round(activeSlug.aimAngle)}°`;
 
           ctx.font = 'bold 9.5px monospace';
           const textW = ctx.measureText(badgeText).width;

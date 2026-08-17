@@ -32,6 +32,7 @@ export interface CompactSlugDelta {
   v?: string | null; // inVehicleId
   tp?: { x: number; y: number }; // currentTargetPoint
   rs?: CompactRopeDelta | null; // ropeState
+  ft?: number; // fuseTimerSec (1 to 5)
 }
 
 export interface CompactTeamDelta {
@@ -196,6 +197,11 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       hasChange = true;
     } else if (prevSlug?.ropeState) {
       sDelta.rs = null;
+      hasChange = true;
+    }
+
+    if (!prevSlug || prevSlug.fuseTimerSec !== slug.fuseTimerSec) {
+      sDelta.ft = slug.fuseTimerSec;
       hasChange = true;
     }
 
@@ -382,6 +388,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.pl !== undefined) slug.isPlaced = dSlug.pl;
         if (dSlug.v !== undefined) slug.inVehicleId = dSlug.v;
         if (dSlug.tp !== undefined) slug.currentTargetPoint = dSlug.tp;
+        if (dSlug.ft !== undefined) slug.fuseTimerSec = dSlug.ft;
 
         // Apply Ninja Rope State
         if (dSlug.rs === null || ('rs' in dSlug && !dSlug.rs)) {

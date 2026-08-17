@@ -214,6 +214,15 @@ export function useGame(options?: {
             }
             break;
           }
+          case 'SET_FUSE_TIMER': {
+            if (playerId === engine.state.activeTeamId && msg.payload?.seconds !== undefined) {
+              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+              if (activeSlug && activeSlug.teamId === playerId) {
+                engine.setFuseTimer(activeSlug.id, msg.payload.seconds);
+              }
+            }
+            break;
+          }
           case 'FIRE':
             if (playerId === engine.state.activeTeamId) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);

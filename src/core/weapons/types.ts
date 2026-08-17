@@ -48,6 +48,7 @@ export interface FireContext {
   power: number;
   ownerSlugId: SlugId;
   targetPoint?: Vector2D;
+  fuseTimerMs?: number;
 }
 
 export interface WeaponDefinition {
@@ -63,6 +64,7 @@ export interface WeaponDefinition {
   windAffected: boolean;
   bounces: boolean;
   fuseTimeMs?: number;
+  allowCustomFuse?: boolean; // When true, allows choosing 1s, 2s, 3s, 4s, 5s fuse
   craftable: boolean;
   customSoundKey?: string;
   minPower?: number;

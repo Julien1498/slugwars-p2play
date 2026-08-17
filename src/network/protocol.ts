@@ -21,6 +21,7 @@ export type SlugWarsActionType =
   | 'EXIT_VEHICLE'
   | 'STEER_VEHICLE'
   | 'REQUEST_FULL_STATE'
+  | 'SET_FUSE_TIMER'
   | 'RESTART_GAME';
 
 export interface SlugWarsNetworkPayload {
@@ -33,6 +34,7 @@ export interface SlugWarsNetworkPayload {
   aimPower?: number;
   facing?: 'left' | 'right';
   weaponId?: string;
+  seconds?: number;
   targetPoint?: Vector2D;
   point?: Vector2D;
 }
