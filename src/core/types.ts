@@ -154,6 +154,7 @@ export const MAP_SIZE_CONFIGS: Record<MapSize, { width: number; height: number; 
 export type DayNightCycle = 'DAY' | 'NIGHT';
 
 export type WaterRiseSpeed = 'OFF' | 'SLOW' | 'NORMAL' | 'FAST';
+export type WaterRiseFrequency = 'EVERY_TURN' | 'ROUND_CYCLE';
 
 export interface GameConfig {
   weaponSetId: string;
@@ -163,6 +164,7 @@ export interface GameConfig {
   windEnabled: boolean;
   vehiclesEnabled: boolean;
   waterRiseSpeed?: WaterRiseSpeed;
+  waterRiseFreq?: WaterRiseFrequency;
   dayNightCycle?: DayNightCycle;
   mapTheme: MapTheme;
   mapSize?: MapSize;
