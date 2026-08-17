@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Vector2D, JournalEntry, Particle, SolidProp } from './types';
+import { GameState, GameConfig, Vector2D, JournalEntry, Particle, SolidProp, Slug } from './types';
 import { DestructibleTerrain } from './terrain';
 import { getWeaponSet } from './weapons/weaponSets';
 import { getWeapon } from './weapons/registry';
