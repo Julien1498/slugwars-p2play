@@ -4510,14 +4510,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         className="absolute inset-0 w-full h-full block cursor-crosshair pointer-events-none"
       />
 
-      {/* Worms Style Floating Camera Zoom & Pan Controls */}
+      {/* Modern Tactical Floating Camera Zoom & Center Widget */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
-        className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-700/80 px-2.5 py-1.5 rounded-xl shadow-xl backdrop-blur select-none z-10 text-xs"
+        className="absolute bottom-3 right-3 flex items-center gap-1 bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 px-1.5 py-1 rounded-xl shadow-2xl select-none z-10 text-xs"
       >
         <button
           onClick={(e) => {
@@ -4529,7 +4529,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             setZoomLevel(newZ);
             setPanOffset(clamped);
           }}
-          className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
+          className="w-6 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-300 hover:text-white rounded-lg text-sm font-black border border-zinc-800 transition shadow-sm"
           title="Dézoomer (- / Molette Bas)"
         >
           -
@@ -4542,10 +4542,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             setZoomLevel(1.0);
             setPanOffset({ x: 0, y: 0 });
           }}
-          className="px-2.5 h-7 flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-bold rounded-lg border border-zinc-600/50 transition text-xs font-mono"
+          className="px-2 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-cyan-300 hover:text-cyan-200 font-bold rounded-lg border border-zinc-800 transition text-[11px] font-mono shadow-sm"
           title="Recentrer la vue & Zoom 100% (Touche C)"
         >
-          🎯 {Math.round(zoomLevel * 100)}% [C]
+          {Math.round(zoomLevel * 100)}%
         </button>
         <button
           onClick={(e) => {
@@ -4557,7 +4557,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             setZoomLevel(newZ);
             setPanOffset(clamped);
           }}
-          className="w-7 h-7 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-sm font-bold border border-zinc-600/50 transition"
+          className="w-6 h-6 flex items-center justify-center bg-zinc-900/90 hover:bg-zinc-800 active:scale-95 text-zinc-300 hover:text-white rounded-lg text-sm font-black border border-zinc-800 transition shadow-sm"
           title="Zoomer (+ / Molette Haut)"
         >
           +

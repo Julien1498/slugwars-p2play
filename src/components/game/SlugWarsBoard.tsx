@@ -144,6 +144,12 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
       // Normal Aiming, Walking, Rope Climbing & Retreating
       if (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT') {
+        if ((key === 'i' || key === 'tab') && gameState.phase !== 'RETREAT') {
+          e.preventDefault();
+          setShowWeaponPicker((prev) => !prev);
+          return;
+        }
+
         if (key === 'r' && activeSlug && activeSlug.selectedWeaponId === 'girder') {
           // Rotate Girder orientation (0, 45, 90, 135)
           const angles = [0, 45, 90, 135];
@@ -245,6 +251,8 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           hostPeerId={hostPeerId}
           isMyTurn={isMyTurn}
           isHost={isHost}
+          showHitboxes={showHitboxes}
+          onToggleHitboxes={() => setShowHitboxes(!showHitboxes)}
           onOpenWeaponPicker={handleOpenWeaponPicker}
           onOpenRules={handleOpenRules}
           onOpenMetrics={handleOpenMetrics}
@@ -277,80 +285,80 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </Profiler>
       </div>
 
-      {/* Sleek Modern Floating Bottom HUD Controls Bar */}
-      <footer className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-2xl px-3.5 py-1.5 flex items-center justify-between text-xs text-zinc-300 gap-3 shadow-2xl shrink-0 mx-1 mb-1 z-30 transition-all">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      {/* Sleek Modern Floating Bottom HUD Controls Bar (Ultra-compact height!) */}
+      <footer className="bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-3 py-1 flex items-center justify-between text-xs text-zinc-300 gap-2.5 shadow-2xl shrink-0 mx-1 mb-0.5 z-30 transition-all">
+        <div className="flex items-center gap-2 flex-wrap">
           {activeSlug?.inVehicleId ? (
-            <div className="flex items-center gap-2.5 bg-amber-950/80 border border-amber-500/70 px-3 py-1 rounded-xl text-amber-200 shadow-md">
-              <span className="font-black flex items-center gap-1.5 text-amber-300">
-                <span className="text-base animate-bounce">🚁</span> Hélicoptère
+            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md">
+              <span className="font-black flex items-center gap-1 text-amber-300">
+                <span className="text-sm animate-bounce">🚁</span> Hélicoptère
               </span>
-              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+              <span className="font-mono text-[11px] text-amber-200 bg-black/40 px-1.5 py-0.2 rounded border border-amber-500/30">
                 ZQSD / Flèches pour voler
               </span>
               {isMyTurn && (
                 <button
                   onClick={onExitVehicle}
-                  className="px-2.5 py-0.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-lg transition shadow flex items-center gap-1"
+                  className="px-2 py-0.2 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] rounded transition shadow flex items-center gap-1"
                 >
                   Sortir [E]
                 </button>
               )}
             </div>
           ) : activeSheep ? (
-            <div className="flex items-center gap-2.5 bg-amber-950/80 border border-amber-500/70 px-3 py-1 rounded-xl text-amber-200 shadow-md">
-              <span className="font-black flex items-center gap-1.5 text-amber-300">
-                <span className="text-base animate-bounce">🐑</span> Super-Mouton
+            <div className="flex items-center gap-2 bg-amber-950/80 border border-amber-500/70 px-2.5 py-0.5 rounded-lg text-amber-200 shadow-md">
+              <span className="font-black flex items-center gap-1 text-amber-300">
+                <span className="text-sm animate-bounce">🐑</span> Super-Mouton
               </span>
-              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+              <span className="font-mono text-[11px] text-amber-200 bg-black/40 px-1.5 py-0.2 rounded border border-amber-500/30">
                 ◄ / ► Naviguer
               </span>
-              <span className="font-mono text-xs text-amber-200 bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+              <span className="font-mono text-[11px] text-amber-200 bg-black/40 px-1.5 py-0.2 rounded border border-amber-500/30">
                 Entrée : Faire sauter
               </span>
             </div>
           ) : (
             <>
               {/* Group 1: Movement & Jump */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
-                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-violet-300">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-violet-300">
                   Q / D
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Marcher</span>
 
-                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+                <div className="w-px h-3 bg-zinc-700/60 mx-0.5" />
 
-                <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-amber-300">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-amber-300">
                   Espace
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Sauter 🦘</span>
               </div>
 
               {/* Group 2: Aim Angle */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
-                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-sky-300">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-sky-300">
                   ▲ / ▼
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Visée</span>
               </div>
 
               {/* Group 3: Camera Pan & Zoom */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 border border-zinc-800/80 rounded-xl shadow-inner">
-                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-zinc-900/80 border border-zinc-800/80 rounded-lg shadow-inner">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-emerald-300">
                   Clic-Droit
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Caméra</span>
 
-                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+                <div className="w-px h-3 bg-zinc-700/60 mx-0.5" />
 
-                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-emerald-300">
                   Molette
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Zoom</span>
 
-                <div className="w-px h-3.5 bg-zinc-700/60 mx-1" />
+                <div className="w-px h-3 bg-zinc-700/60 mx-0.5" />
 
-                <span className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md font-mono text-[11px] font-bold text-emerald-300">
+                <span className="px-1.5 py-0.2 bg-zinc-800 border border-zinc-700 rounded font-mono text-[10px] font-bold text-emerald-300">
                   C
                 </span>
                 <span className="text-zinc-400 text-[11px] font-semibold">Centrer</span>
@@ -359,12 +367,12 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           )}
         </div>
 
-        {/* Action Controls & Utilities */}
+        {/* Action Controls & Arsenal */}
         <div className="flex items-center gap-2">
           {/* Journal & Chat Drawer Button */}
           <button
             onClick={() => setShowDrawer(!showDrawer)}
-            className={`px-3 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
+            className={`px-2.5 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
               showDrawer
                 ? 'bg-violet-600 border-violet-400 text-white shadow-[0_0_12px_#8b5cf6]'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
@@ -379,41 +387,28 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             )}
           </button>
 
-          {/* Hitboxes Toggle */}
-          <button
-            onClick={() => setShowHitboxes(!showHitboxes)}
-            className={`px-3 py-1 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all shadow-md ${
-              showHitboxes
-                ? 'bg-cyan-950 border-cyan-400 text-cyan-300 shadow-[0_0_12px_#06b6d4]'
-                : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Afficher/Masquer les Hitboxes de collision"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Hitboxes {showHitboxes ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* Fire Indicator */}
+          {/* Fire Prompt */}
           {isMyTurn && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 border border-emerald-500/60 rounded-xl shadow-md">
-              <span className="px-1.5 py-0.5 bg-emerald-900/90 border border-emerald-500/80 rounded-md font-mono text-[11px] font-black text-emerald-200">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-950/80 border border-emerald-500/60 rounded-xl shadow">
+              <span className="px-1.5 py-0.2 bg-emerald-900/90 border border-emerald-500/80 rounded font-mono text-[10px] font-black text-emerald-200">
                 Clic / Entrée
               </span>
               <span className="font-black text-xs text-emerald-300">Tirer 🚀</span>
             </div>
           )}
 
-          {/* Weapons Button */}
+          {/* Prominent Accessible Weapons Button */}
           <button
             onClick={() => setShowWeaponPicker(true)}
             disabled={!isMyTurn}
             className={`px-3.5 py-1 rounded-xl border font-black text-xs transition-all shadow-md flex items-center gap-1.5 ${
               isMyTurn
-                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-violet-400 shadow-[0_0_15px_rgba(147,51,234,0.4)] scale-105'
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-violet-400 shadow-[0_0_15px_rgba(147,51,234,0.45)] scale-105 active:scale-95'
                 : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed'
             }`}
+            title="Ouvrir l'Arsenal W.M.D (Touche I)"
           >
-            <span>Armes 🎒</span>
+            <span>Armes 🎒 [I]</span>
           </button>
         </div>
       </footer>

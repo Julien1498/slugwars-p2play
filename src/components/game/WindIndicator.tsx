@@ -21,13 +21,13 @@ export const WindIndicatorComponent: React.FC<WindIndicatorProps> = ({ wind }) =
 
   return (
     <div
-      className={`flex items-center gap-2 bg-zinc-950/85 backdrop-blur-md border px-2.5 py-1 rounded-xl shadow-lg transition-all ${getWindColor()}`}
+      className={`flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border px-2 py-0.5 rounded-lg shadow transition-all ${getWindColor()}`}
       title={`Vent: ${wind < 0 ? 'Ouest ◄' : wind > 0 ? 'Est ►' : 'Calme'} (${absWind.toFixed(1)} m/s)`}
     >
-      <div className="flex items-center gap-1.5">
-        <Wind className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-        <span className="font-mono font-black text-xs text-zinc-100">
-          {absWind.toFixed(1)} <span className="text-[10px] text-zinc-400 font-semibold">m/s</span>
+      <div className="flex items-center gap-1">
+        <Wind className="w-3 h-3 text-cyan-400 animate-pulse" />
+        <span className="font-mono font-black text-[11px] text-zinc-100">
+          {absWind.toFixed(1)} <span className="text-[9px] text-zinc-400 font-semibold">m/s</span>
         </span>
       </div>
 
