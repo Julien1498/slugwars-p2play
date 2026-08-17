@@ -2066,109 +2066,94 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.fill();
       }
 
-      // 5. Deep Abyss Water Backdrop below Water Level (High-Contrast Rich Ocean Depth)
-      const waterGradBottom = waterY + Math.max(500, height * 0.65);
-      const waterBackdrop = ctx.createLinearGradient(0, waterY - 8, 0, waterGradBottom);
+      // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
+      const bgWaterGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
       if (isDay) {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(245, 158, 11, 0.95)');
-          waterBackdrop.addColorStop(0.2, 'rgba(217, 119, 6, 0.98)');
-          waterBackdrop.addColorStop(0.5, '#78350f');
-          waterBackdrop.addColorStop(0.8, '#451a03');
-          waterBackdrop.addColorStop(1, '#170602');
+          bgWaterGrad.addColorStop(0, '#d97706');
+          bgWaterGrad.addColorStop(0.3, '#9a3412');
+          bgWaterGrad.addColorStop(0.7, '#431407');
+          bgWaterGrad.addColorStop(1, '#170602');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(6, 182, 212, 0.95)');
-          waterBackdrop.addColorStop(0.15, 'rgba(2, 132, 199, 0.98)');
-          waterBackdrop.addColorStop(0.5, '#082f49');
-          waterBackdrop.addColorStop(0.8, '#031826');
-          waterBackdrop.addColorStop(1, '#020617');
+          bgWaterGrad.addColorStop(0, '#0284c7');
+          bgWaterGrad.addColorStop(0.25, '#0369a1');
+          bgWaterGrad.addColorStop(0.65, '#082f49');
+          bgWaterGrad.addColorStop(1, '#020617');
         }
       } else {
         if (theme === 'CAVERN') {
-          waterBackdrop.addColorStop(0, 'rgba(239, 68, 68, 0.92)');
-          waterBackdrop.addColorStop(0.35, 'rgba(153, 27, 27, 0.98)');
-          waterBackdrop.addColorStop(0.7, '#450a0a');
-          waterBackdrop.addColorStop(1, '#030102');
+          bgWaterGrad.addColorStop(0, '#dc2626');
+          bgWaterGrad.addColorStop(0.35, '#7f1d1d');
+          bgWaterGrad.addColorStop(1, '#170602');
         } else {
-          waterBackdrop.addColorStop(0, 'rgba(14, 165, 233, 0.90)');
-          waterBackdrop.addColorStop(0.3, 'rgba(15, 23, 42, 0.98)');
-          waterBackdrop.addColorStop(0.7, '#070b14');
-          waterBackdrop.addColorStop(1, '#02040a');
+          bgWaterGrad.addColorStop(0, '#0ea5e9');
+          bgWaterGrad.addColorStop(0.3, '#0f172a');
+          bgWaterGrad.addColorStop(1, '#020617');
         }
       }
-      ctx.fillStyle = waterBackdrop;
-      ctx.fillRect(worldLeft, waterY - 5, worldRight - worldLeft, worldBottom - (waterY - 5));
 
-      // Underwater Volumetric Light Rays (Crisp Shimmering God Rays piercing depth)
-      ctx.fillStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(253, 224, 71, 0.14)'
-          : 'rgba(255, 255, 255, 0.18)'
-        : 'rgba(56, 189, 248, 0.09)';
-      for (let r = 0; r < 8; r++) {
-        const rx = worldLeft + ((r * 620 + 200) % (worldRight - worldLeft)) + Math.sin(animTime * 0.4 + r) * 18;
-        ctx.beginPath();
-        ctx.moveTo(rx, waterY);
-        ctx.lineTo(rx - 45, height + 400);
-        ctx.lineTo(rx + 55, height + 400);
-        ctx.lineTo(rx + 28, waterY);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // Draw Smooth Multi-Layer Continuous Surface Waves (Spanning infinite sea horizon with high-contrast crest)
-      // Layer A: Main Rolling Ocean Swell (Trochoidal sharp crest)
-      ctx.fillStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(217, 119, 6, 0.85)'
-          : 'rgba(2, 132, 199, 0.82)'
-        : 'rgba(3, 105, 161, 0.72)';
-      ctx.beginPath();
-      ctx.moveTo(worldLeft, worldBottom);
-      for (let x = worldLeft; x <= worldRight; x += 10) {
-        const s1 = Math.sin(x * 0.014 + slowTime * 2.2);
-        const s2 = Math.sin(x * 0.032 - slowTime * 1.6) * 0.4;
-        const wy = waterY + (s1 * 3.6 + s2 * 2.0);
-        ctx.lineTo(x, wy);
-      }
-      ctx.lineTo(worldRight, worldBottom);
-      ctx.closePath();
-      ctx.fill();
-
-      // Layer B: Luminous Turquoise Translucent Secondary Wave Crest
-      ctx.fillStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(251, 146, 60, 0.55)'
-          : 'rgba(56, 189, 248, 0.50)'
-        : 'rgba(14, 165, 233, 0.35)';
+      // Layer 1: Back Ocean Deep Body Polygon
+      ctx.fillStyle = bgWaterGrad;
       ctx.beginPath();
       ctx.moveTo(worldLeft, worldBottom);
       for (let x = worldLeft; x <= worldRight; x += 12) {
-        const wy = waterY + 2 + Math.sin(x * 0.018 + slowTime * 2.8 + 1.2) * 2.8;
-        ctx.lineTo(x, wy);
+        const wy1 = waterY + Math.sin(x * 0.008 + slowTime * 1.5) * 10 + Math.cos(x * 0.016 - slowTime * 1.0) * 4;
+        ctx.lineTo(x, wy1);
       }
       ctx.lineTo(worldRight, worldBottom);
       ctx.closePath();
       ctx.fill();
 
-      // Layer C: Crisp Gentle White / Gold Foam Crest Line along Wave Peak
+      // Layer 2: Mid Wave Translucent Swell
+      ctx.fillStyle = isDay
+        ? theme === 'CAVERN'
+          ? 'rgba(249, 115, 22, 0.60)'
+          : 'rgba(14, 165, 233, 0.55)'
+        : 'rgba(30, 58, 138, 0.45)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, worldBottom);
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
+        ctx.lineTo(x, wy2);
+      }
+      ctx.lineTo(worldRight, worldBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 3: Front Horizon Wave with Clean White Foam Edge
+      ctx.fillStyle = isDay
+        ? theme === 'CAVERN'
+          ? 'rgba(234, 88, 12, 0.85)'
+          : 'rgba(2, 132, 199, 0.80)'
+        : 'rgba(15, 23, 42, 0.80)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, worldBottom);
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+        ctx.lineTo(x, wy3);
+      }
+      ctx.lineTo(worldRight, worldBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Smooth White Foam Crest Line
       ctx.strokeStyle = isDay
         ? theme === 'CAVERN'
-          ? 'rgba(254, 240, 138, 0.95)'
-          : 'rgba(255, 255, 255, 0.95)'
-        : 'rgba(186, 230, 253, 0.80)';
-      ctx.lineWidth = 2.2;
+          ? '#fef08a'
+          : '#ffffff'
+        : '#bae6fd';
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
-      let firstWavePt = true;
-      for (let x = worldLeft; x <= worldRight; x += 10) {
-        const s1 = Math.sin(x * 0.014 + slowTime * 2.2);
-        const s2 = Math.sin(x * 0.032 - slowTime * 1.6) * 0.4;
-        const wy = waterY + (s1 * 3.6 + s2 * 2.0);
-        if (firstWavePt) {
-          ctx.moveTo(x, wy);
-          firstWavePt = false;
+      let firstBgPt = true;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+        if (firstBgPt) {
+          ctx.moveTo(x, wy3);
+          firstBgPt = false;
         } else {
-          ctx.lineTo(x, wy);
+          ctx.lineTo(x, wy3);
         }
       }
       ctx.stroke();
@@ -3992,207 +3977,107 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       // =========================================================================
-      // FOREGROUND STYLIZED OCEAN LAYER & CRYSTALLINE FLUID SUBMERSION
-      // Submerges the lower terrain, props, and fallen slugs in vibrant stylized depth!
+      // FOREGROUND OCEAN LAYER & WATER SUBMERSION
+      // Smooth, stylized, cartoon rolling ocean waves with glowing white foam crests!
       // =========================================================================
       const fgWaterBottom = worldBottom;
+
+      // Layer 1: Mid Translucent Rolling Wave
+      ctx.fillStyle = isDay
+        ? theme === 'CAVERN'
+          ? 'rgba(249, 115, 22, 0.60)'
+          : 'rgba(14, 165, 233, 0.55)'
+        : 'rgba(30, 58, 138, 0.45)';
+      ctx.beginPath();
+      ctx.moveTo(worldLeft, fgWaterBottom);
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
+        ctx.lineTo(x, wy2);
+      }
+      ctx.lineTo(worldRight, fgWaterBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Layer 2: Front Main Ocean Body (Smooth gradient following the wave surface)
       const fgWaterGrad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
       if (isDay) {
         if (theme === 'CAVERN') {
           fgWaterGrad.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
           fgWaterGrad.addColorStop(0.12, 'rgba(249, 115, 22, 0.88)');
           fgWaterGrad.addColorStop(0.45, 'rgba(220, 38, 38, 0.94)');
-          fgWaterGrad.addColorStop(0.85, 'rgba(120, 53, 15, 0.97)');
           fgWaterGrad.addColorStop(1, 'rgba(23, 6, 2, 0.99)');
         } else {
           fgWaterGrad.addColorStop(0, 'rgba(6, 182, 212, 0.65)');
           fgWaterGrad.addColorStop(0.15, 'rgba(2, 132, 199, 0.78)');
           fgWaterGrad.addColorStop(0.45, 'rgba(3, 105, 161, 0.90)');
-          fgWaterGrad.addColorStop(0.80, 'rgba(8, 47, 73, 0.96)');
           fgWaterGrad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
         }
       } else {
         if (theme === 'CAVERN') {
-          fgWaterGrad.addColorStop(0, 'rgba(239, 68, 68, 0.88)');
-          fgWaterGrad.addColorStop(0.3, 'rgba(185, 28, 28, 0.94)');
-          fgWaterGrad.addColorStop(0.7, 'rgba(69, 10, 10, 0.98)');
+          fgWaterGrad.addColorStop(0, 'rgba(239, 68, 68, 0.85)');
+          fgWaterGrad.addColorStop(0.35, 'rgba(153, 27, 27, 0.94)');
           fgWaterGrad.addColorStop(1, 'rgba(3, 1, 2, 0.99)');
         } else {
           fgWaterGrad.addColorStop(0, 'rgba(14, 165, 233, 0.60)');
-          fgWaterGrad.addColorStop(0.25, 'rgba(2, 132, 199, 0.75)');
-          fgWaterGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.90)');
+          fgWaterGrad.addColorStop(0.3, 'rgba(15, 23, 42, 0.88)');
           fgWaterGrad.addColorStop(1, 'rgba(2, 4, 10, 0.99)');
         }
       }
 
-      // 1. Translucent Submerged Ocean Body
       ctx.fillStyle = fgWaterGrad;
-      ctx.fillRect(worldLeft, waterY, worldRight - worldLeft, fgWaterBottom - waterY);
-
-      // 2. Subsurface Animated Caustic Diamond Light Net (Réseau de caustiques cristallines)
-      ctx.save();
-      ctx.strokeStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(254, 240, 138, 0.22)'
-          : 'rgba(255, 255, 255, 0.20)'
-        : 'rgba(56, 189, 248, 0.12)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      for (let cx = worldLeft; cx <= worldRight; cx += 32) {
-        const cy1 = waterY + 12 + Math.sin(cx * 0.02 + slowTime * 2.0) * 6;
-        const cy2 = waterY + 34 + Math.cos(cx * 0.025 - slowTime * 1.6) * 8;
-        const cy3 = waterY + 65 + Math.sin(cx * 0.018 + slowTime * 1.2) * 10;
-        ctx.moveTo(cx - 16, cy1);
-        ctx.lineTo(cx, cy2);
-        ctx.lineTo(cx + 16, cy1);
-        ctx.moveTo(cx, cy2);
-        ctx.lineTo(cx, cy3);
-      }
-      ctx.stroke();
-      ctx.restore();
-
-      // 3. Foreground Rolling Animated Waves (3 Parallax Harmonic Layers with Trochoidal Peaks)
-      // Layer A: Deeper Back Ocean Swell
-      ctx.fillStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(217, 119, 6, 0.80)'
-          : 'rgba(2, 132, 199, 0.78)'
-        : 'rgba(3, 105, 161, 0.68)';
-      ctx.beginPath();
-      ctx.moveTo(worldLeft, fgWaterBottom);
-      for (let x = worldLeft; x <= worldRight; x += 10) {
-        const s1 = Math.sin(x * 0.013 + slowTime * 2.0);
-        const s2 = Math.sin(x * 0.026 - slowTime * 1.4) * 0.45;
-        const wy = waterY + (s1 * 3.8 + s2 * 2.2);
-        ctx.lineTo(x, wy);
-      }
-      ctx.lineTo(worldRight, fgWaterBottom);
-      ctx.closePath();
-      ctx.fill();
-
-      // Layer B: Luminous Turquoise Translucent Mid Wave Crest
-      ctx.fillStyle = isDay
-        ? theme === 'CAVERN'
-          ? 'rgba(251, 146, 60, 0.60)'
-          : 'rgba(56, 189, 248, 0.55)'
-        : 'rgba(14, 165, 233, 0.38)';
       ctx.beginPath();
       ctx.moveTo(worldLeft, fgWaterBottom);
       for (let x = worldLeft; x <= worldRight; x += 12) {
-        const wy = waterY + 2 + Math.sin(x * 0.018 + slowTime * 2.7 + 1.1) * 2.8;
-        ctx.lineTo(x, wy);
+        const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+        ctx.lineTo(x, wy3);
       }
       ctx.lineTo(worldRight, fgWaterBottom);
       ctx.closePath();
       ctx.fill();
 
-      // Layer C1: Glowing Neon Aqua / Gold Outer Foam Rim
+      // Layer 3: Glowing Outer Aqua Rim
       ctx.strokeStyle = isDay
         ? theme === 'CAVERN'
-          ? 'rgba(253, 224, 71, 0.85)'
-          : 'rgba(56, 189, 248, 0.85)'
-        : 'rgba(56, 189, 248, 0.65)';
-      ctx.lineWidth = 4.2;
+          ? 'rgba(253, 224, 71, 0.75)'
+          : 'rgba(56, 189, 248, 0.70)'
+        : 'rgba(56, 189, 248, 0.50)';
+      ctx.lineWidth = 5.0;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
-      let firstFgWavePt = true;
-      for (let x = worldLeft; x <= worldRight; x += 10) {
-        const s1 = Math.sin(x * 0.013 + slowTime * 2.0);
-        const s2 = Math.sin(x * 0.026 - slowTime * 1.4) * 0.45;
-        const wy = waterY + (s1 * 3.8 + s2 * 2.2);
-        if (firstFgWavePt) {
-          ctx.moveTo(x, wy);
-          firstFgWavePt = false;
+      let firstFgPt = true;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+        if (firstFgPt) {
+          ctx.moveTo(x, wy3);
+          firstFgPt = false;
         } else {
-          ctx.lineTo(x, wy);
+          ctx.lineTo(x, wy3);
         }
       }
       ctx.stroke();
 
-      // Layer C2: Ultra-Crisp Pure White Foam Crest Line along Wave Peak
+      // Layer 4: Ultra-Crisp Pure White Foam Crest Line
       ctx.strokeStyle = isDay
         ? theme === 'CAVERN'
           ? '#ffffff'
           : '#ffffff'
-        : 'rgba(224, 242, 254, 0.95)';
-      ctx.lineWidth = 2.2;
+        : '#e0f2fe';
+      ctx.lineWidth = 2.8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
-      firstFgWavePt = true;
-      for (let x = worldLeft; x <= worldRight; x += 10) {
-        const s1 = Math.sin(x * 0.013 + slowTime * 2.0);
-        const s2 = Math.sin(x * 0.026 - slowTime * 1.4) * 0.45;
-        const wy = waterY + (s1 * 3.8 + s2 * 2.2);
-        if (firstFgWavePt) {
-          ctx.moveTo(x, wy);
-          firstFgWavePt = false;
+      firstFgPt = true;
+      for (let x = worldLeft; x <= worldRight; x += 12) {
+        const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+        if (firstFgPt) {
+          ctx.moveTo(x, wy3);
+          firstFgPt = false;
         } else {
-          ctx.lineTo(x, wy);
+          ctx.lineTo(x, wy3);
         }
       }
       ctx.stroke();
-
-      // 4. Drifting Stylized Sea Foam Clusters along Wave Crests (Écume organique)
-      ctx.fillStyle = theme === 'CAVERN' ? 'rgba(254, 240, 138, 0.85)' : 'rgba(255, 255, 255, 0.85)';
-      for (let fx = worldLeft; fx <= worldRight; fx += 52) {
-        const foamOffset = (slowTime * 40 + fx * 1.25) % (worldRight - worldLeft);
-        const foamX = worldLeft + foamOffset;
-        const s1 = Math.sin(foamX * 0.013 + slowTime * 2.0);
-        const s2 = Math.sin(foamX * 0.026 - slowTime * 1.4) * 0.45;
-        const foamY = waterY + (s1 * 3.8 + s2 * 2.2) + 1.2;
-        const foamSize = 2.2 + Math.sin(foamX * 0.08 + animTime * 2.5) * 1.0;
-        ctx.beginPath();
-        ctx.arc(foamX, foamY, Math.max(1, foamSize), 0, Math.PI * 2);
-        ctx.arc(foamX + 3.5, foamY + 0.8, Math.max(0.7, foamSize * 0.7), 0, Math.PI * 2);
-        ctx.arc(foamX - 2.8, foamY + 0.6, Math.max(0.7, foamSize * 0.6), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // 5. Stylized 4-Point Sparkle Star Glints on Wave Peaks ⭐ (Anime/Cartoon Diamond Glints)
-      if (isDay) {
-        for (let sx = 0; sx < 7; sx++) {
-          const sparkX = worldLeft + ((sx * 360 + Math.floor(animTime * 55)) % (worldRight - worldLeft));
-          const s1 = Math.sin(sparkX * 0.013 + slowTime * 2.0);
-          const s2 = Math.sin(sparkX * 0.026 - slowTime * 1.4) * 0.45;
-          const sparkY = waterY + (s1 * 3.8 + s2 * 2.2) - 2;
-          const sparkAlpha = Math.max(0, Math.sin(animTime * 4.5 + sx * 1.8));
-
-          if (sparkAlpha > 0.25) {
-            ctx.fillStyle = theme === 'CAVERN'
-              ? `rgba(253, 224, 71, ${sparkAlpha})`
-              : `rgba(255, 255, 255, ${sparkAlpha})`;
-            const sLen = 4.2 * sparkAlpha;
-            ctx.beginPath();
-            ctx.moveTo(sparkX, sparkY - sLen);
-            ctx.lineTo(sparkX + 1.2, sparkY);
-            ctx.lineTo(sparkX + sLen, sparkY);
-            ctx.lineTo(sparkX + 1.2, sparkY);
-            ctx.lineTo(sparkX, sparkY + sLen);
-            ctx.lineTo(sparkX - 1.2, sparkY);
-            ctx.lineTo(sparkX - sLen, sparkY);
-            ctx.lineTo(sparkX - 1.2, sparkY);
-            ctx.closePath();
-            ctx.fill();
-
-            // Tiny central star core
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(sparkX, sparkY, 1.0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-
-      // 6. Ambient Magma Heat Embers in CAVERN map
-      if (theme === 'CAVERN') {
-        for (let e = 0; e < 10; e++) {
-          const emberX = worldLeft + ((e * 280 + Math.sin(animTime * 0.8 + e) * 40 + animTime * 30) % (worldRight - worldLeft));
-          const emberY = waterY - 8 - ((animTime * 35 + e * 45) % 90);
-          const emberLife = 1 - ((animTime * 35 + e * 45) % 90) / 90;
-          ctx.fillStyle = `rgba(251, 146, 60, ${emberLife * 0.9})`;
-          ctx.beginPath();
-          ctx.arc(emberX, emberY, 1.8 * emberLife, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
 
       // 3. Render Rising Air Bubbles
       const remainingBubbles: typeof clientWaterBubblesRef.current = [];
