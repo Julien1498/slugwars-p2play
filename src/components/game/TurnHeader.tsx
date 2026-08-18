@@ -5,6 +5,7 @@ import { WindIndicator } from './WindIndicator';
 import { RoomCodeBadge } from 'p2play-core';
 import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, Settings, Eye, Gauge, ChevronDown } from 'lucide-react';
 import { perfTracker } from '../../core/perfTracker';
+import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 
 interface TurnHeaderProps {
   gameState: GameState;
@@ -37,8 +38,10 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 }) => {
   const [showConfirmLobby, setShowConfirmLobby] = useState(false);
   const [showMenuPopover, setShowMenuPopover] = useState(false);
+  const [showScorePopover, setShowScorePopover] = useState(false);
   const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
   const menuRef = useRef<HTMLDivElement>(null);
+  const isTouch = useIsTouchDevice();
 
   useEffect(() => {
     return perfTracker.onFpsHudToggle((enabled) => setFpsHudActive(enabled));
@@ -75,6 +78,215 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   const turnTime = Math.max(0, Math.ceil(gameState.turnTimer));
   const isTimeUrgent = turnTime <= 5 && gameState.phase === 'AIMING';
 
+  // Dedicated Mobile Header Layout
+  if (isTouch) {
+    return (
+      <>
+        <header className="h-10 min-h-[40px] max-h-[40px] bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/80 px-2.5 flex items-center justify-between gap-2 shadow-xl shrink-0 z-30 select-none">
+          {/* Left: Active Slug + Turn Indicator */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div
+              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-900 shadow"
+              style={{ borderColor: activeTeam ? `${activeTeam.color}70` : '#3f3f46' }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTeam?.color || '#a855f7' }} />
+              <span className="font-black text-xs text-zinc-100 truncate max-w-[100px]">
+                {activeSlug?.name || 'Tour de jeu'}
+              </span>
+            </div>
+
+            {/* Big glowing Turn Timer */}
+            {gameState.phase === 'RETREAT' ? (
+              <div className="flex items-center gap-1 bg-orange-950/90 border border-orange-500/80 px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow animate-pulse">
+                <Clock className="w-3 h-3 text-orange-400" />
+                <span>FUITE: {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
+              </div>
+            ) : gameState.phase === 'PLACEMENT' ? (
+              <div className="flex items-center gap-1 bg-amber-950/90 border border-amber-500/80 px-2 py-1 rounded-xl text-xs font-black text-amber-300 shadow animate-pulse">
+                <span>📍 PLACEMENT</span>
+              </div>
+            ) : (
+              <div
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border font-mono text-xs font-black shadow transition-all ${
+                  isTimeUrgent
+                    ? 'bg-red-950/90 border-red-500 text-red-300 animate-pulse shadow-[0_0_8px_#ef4444]'
+                    : 'bg-zinc-900 border-zinc-700 text-amber-300'
+                }`}
+              >
+                <Clock className="w-3 h-3 text-amber-400" />
+                <span>{turnTime}s</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Wind + Scoreboard Toggle + Menu */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <WindIndicator wind={gameState.wind} />
+
+            {/* Scoreboard Popover Toggle */}
+            <div className="relative">
+              <button
+                onClick={() => setShowScorePopover(!showScorePopover)}
+                className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm ${
+                  showScorePopover
+                    ? 'bg-amber-950/80 border-amber-500 text-amber-300'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-300 active:scale-95'
+                }`}
+                title="Scores des équipes"
+              >
+                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              </button>
+
+              {/* Scoreboard Popover */}
+              {showScorePopover && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-zinc-950/95 border border-zinc-800 backdrop-blur-2xl rounded-2xl p-3 shadow-2xl z-50 flex flex-col gap-2 animate-in fade-in zoom-in-95">
+                  <div className="flex items-center justify-between pb-1 border-b border-zinc-800">
+                    <span className="font-black text-xs text-zinc-300">📊 SCOREBOARD</span>
+                    <button onClick={() => setShowScorePopover(false)} className="text-xs text-zinc-500 hover:text-white">✕</button>
+                  </div>
+                  {teamStats.map(({ team, totalHp, hpPercent, isActive, aliveSlugs, totalSlugs }) => (
+                    <div
+                      key={team.id}
+                      className={`flex items-center justify-between p-2 rounded-xl border text-xs ${
+                        isActive ? 'bg-zinc-900 border-amber-500/60 text-white' : 'bg-zinc-950/60 border-zinc-800/80 text-zinc-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.color }} />
+                        <span className="font-bold text-zinc-200 truncate max-w-[80px]">{team.name}</span>
+                        <span className="text-[10px] text-zinc-500">({aliveSlugs}/{totalSlugs})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-amber-400 text-xs">{totalHp} HP</span>
+                        <div className="w-12 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                          <div className="h-full rounded-full" style={{ width: `${hpPercent * 100}%`, backgroundColor: team.color }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Menu Dropdown Button */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenuPopover(!showMenuPopover)}
+                className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm ${
+                  showMenuPopover ? 'bg-zinc-800 border-zinc-600 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-300 active:scale-95'
+                }`}
+                title="Menu des options"
+              >
+                <Settings className="w-4 h-4 text-zinc-300" />
+              </button>
+
+              {/* Menu Popover Dropdown */}
+              {showMenuPopover && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-zinc-950/95 border border-zinc-800/90 backdrop-blur-xl rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                  {/* Hitboxes Toggle */}
+                  {onToggleHitboxes && (
+                    <button
+                      onClick={() => {
+                        onToggleHitboxes();
+                        setShowMenuPopover(false);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Hitboxes</span>
+                      </div>
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${showHitboxes ? 'bg-cyan-950 text-cyan-300 border border-cyan-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                        {showHitboxes ? 'ON' : 'OFF'}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Rules */}
+                  <button
+                    onClick={() => {
+                      onOpenRules();
+                      setShowMenuPopover(false);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center gap-2 text-zinc-200"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Règles d'engagement</span>
+                  </button>
+
+                  <div className="w-full h-px bg-zinc-800/80 my-1" />
+
+                  {/* Return to Lobby (Host Only) */}
+                  {isHost && onRestartGame && (
+                    <button
+                      onClick={() => {
+                        setShowConfirmLobby(true);
+                        setShowMenuPopover(false);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-amber-950/40 transition flex items-center gap-2 text-amber-300"
+                    >
+                      <Home className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Retourner au Salon</span>
+                    </button>
+                  )}
+
+                  {/* Exit Game */}
+                  {onExit && (
+                    <button
+                      onClick={() => {
+                        onExit();
+                        setShowMenuPopover(false);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-red-950/40 transition flex items-center gap-2 text-red-400"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-red-400" />
+                      <span>Quitter la partie</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Return to Lobby Confirmation Modal */}
+        {showConfirmLobby && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-zinc-900 border border-amber-500/60 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-100">Retourner au Salon ?</h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">La partie en cours sera interrompue pour tous les joueurs connectés.</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-800">
+                <button
+                  onClick={() => setShowConfirmLobby(false)}
+                  className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs font-semibold text-zinc-300 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmLobby(false);
+                    onRestartGame?.();
+                  }}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold text-white transition shadow"
+                >
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Full Desktop Header Layout (PC)
   return (
     <>
       <header className="h-9 min-h-[36px] max-h-[36px] bg-zinc-950/85 backdrop-blur-xl border border-zinc-800/80 rounded-xl px-2.5 flex items-center justify-between gap-2 shadow-xl shrink-0 mx-1 mt-0.5 z-30 transition-all whitespace-nowrap">
