@@ -160,22 +160,71 @@ export const LobbyBackdropCanvas: React.FC = () => {
         c.arc(13, -13, 2.6, 0, Math.PI * 2);
         c.fill();
       } else if (gear === 'RADIO_COMM') {
-        c.strokeStyle = '#38bdf8';
-        c.lineWidth = 2.4;
+        // 1. Back/Left Tactical Earcup (Oreillette gauche)
+        c.fillStyle = '#0f172a';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 1.6;
+        drawSafeEllipse(c, -3, -11, 4.5, 6, 0.15);
+        c.fill();
+        c.stroke();
+        c.fillStyle = '#38bdf8';
+        drawSafeEllipse(c, -3, -11, 2.2, 3.5, 0.15);
+        c.fill();
+
+        // 2. Heavy Padded Headband Arch (Arceau rembourré)
+        c.strokeStyle = '#0f172a';
+        c.lineWidth = 4.2;
         c.beginPath();
-        c.arc(8, -14, 12, -Math.PI * 0.7, -Math.PI * 0.1);
+        c.moveTo(-3, -11);
+        c.quadraticCurveTo(7, -23, 17, -9);
         c.stroke();
 
-        c.strokeStyle = '#e4e4e7';
+        c.strokeStyle = '#38bdf8';
+        c.lineWidth = 1.6;
+        c.beginPath();
+        c.moveTo(-2, -12);
+        c.quadraticCurveTo(7, -22, 16, -10);
+        c.stroke();
+
+        // 3. Front/Right Tactical Earcup (Oreillette droite)
+        c.fillStyle = '#0f172a';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 1.6;
+        drawSafeEllipse(c, 17, -9, 4.8, 6.2, -0.15);
+        c.fill();
+        c.stroke();
+        c.fillStyle = '#38bdf8';
+        drawSafeEllipse(c, 17, -9, 2.4, 3.6, -0.15);
+        c.fill();
+
+        // 4. Flexible Boom Microphone (Micro-tige orienté vers la bouche)
+        c.strokeStyle = '#64748b';
         c.lineWidth = 2;
         c.beginPath();
-        c.moveTo(-10, 4);
-        c.lineTo(-24, -28);
+        c.moveTo(17, -6);
+        c.quadraticCurveTo(21, 0, 14, 2);
         c.stroke();
 
-        c.fillStyle = Math.sin(t * 7) > 0 ? '#ef4444' : '#991b1b';
+        // Foam Mic Windscreen
+        c.fillStyle = '#09090b';
+        c.strokeStyle = '#18181b';
+        c.lineWidth = 1.2;
         c.beginPath();
-        c.arc(-24, -28, 3.8, 0, Math.PI * 2);
+        c.arc(14, 2, 2.5, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        // 5. Back Antenna with Flashing Radio LED
+        c.strokeStyle = '#94a3b8';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-3, -12);
+        c.lineTo(-17, -32);
+        c.stroke();
+
+        c.fillStyle = Math.sin(t * 7) > 0 ? '#ef4444' : '#7f1d1d';
+        c.beginPath();
+        c.arc(-17, -32, 3.2, 0, Math.PI * 2);
         c.fill();
       }
 

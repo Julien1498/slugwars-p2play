@@ -465,18 +465,76 @@ export const ConnectionBackdropCanvas: React.FC = () => {
         const isLeftBlink = Math.sin(t * 1.7) > 0.95;
         drawSlug(ctx, 1.35, '#ec4899', '#f472b6', { x: 2, y: -1 }, isLeftBlink);
 
-        // Green Camo Helmet
-        ctx.fillStyle = '#3f6212';
+        // Authentic Military Corporal Peaked Cap
+        ctx.save();
+        ctx.scale(1.35, 1.35);
+
+        // 1. Cap Crown (Dôme vert militaire d'officier avec dégradé d'ombre)
+        const capGrad = ctx.createLinearGradient(0, -19, 8, -13);
+        capGrad.addColorStop(0, '#4d7c0f');
+        capGrad.addColorStop(0.55, '#365314');
+        capGrad.addColorStop(1, '#1a2e05');
+        ctx.fillStyle = capGrad;
         ctx.strokeStyle = '#18181b';
-        ctx.lineWidth = 2.4;
-        drawSafeEllipse(ctx, 8, -24, 20, 11, 0.1, Math.PI, 0);
+        ctx.lineWidth = 1.3;
+
+        ctx.beginPath();
+        ctx.moveTo(-3.5, -13);
+        ctx.quadraticCurveTo(5, -14, 13, -12.5);
+        ctx.lineTo(13.5, -14.5);
+        ctx.quadraticCurveTo(9, -19.5, 4, -19);
+        ctx.quadraticCurveTo(-2, -18.5, -4, -13.5);
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
-        // Gold Helmet Star
-        ctx.fillStyle = '#facc15';
+
+        // 2. Leather Finished Base Rim
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 0.9;
         ctx.beginPath();
-        ctx.arc(8, -28, 3.5, 0, Math.PI * 2);
+        ctx.moveTo(-3.5, -13);
+        ctx.quadraticCurveTo(5, -14, 13, -12.5);
+        ctx.lineTo(13.2, -11.7);
+        ctx.quadraticCurveTo(5, -13.1, -3.8, -12.2);
+        ctx.closePath();
         ctx.fill();
+        ctx.stroke();
+
+        // 3. Golden Braid Cord
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(-2, -13.3);
+        ctx.quadraticCurveTo(5, -14.2, 12.5, -12.8);
+        ctx.stroke();
+
+        // 4. Subtle Glossy Visor
+        ctx.fillStyle = '#09090b';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(6, -13.2);
+        ctx.quadraticCurveTo(10, -13.5, 14.5, -12.2);
+        ctx.quadraticCurveTo(10, -12.4, 6, -12.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 5. Golden Corporal Insignia
+        ctx.fillStyle = '#fde047';
+        ctx.strokeStyle = '#ca8a04';
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.arc(5, -16.2, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.arc(5, -16.2, 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
 
         // Heavy Metal Bazooka
         ctx.save();
