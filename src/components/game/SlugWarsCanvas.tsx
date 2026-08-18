@@ -273,6 +273,146 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
+  // Native Multi-Touch Gestures (Pinch-to-zoom, 2-finger Pan, 1-finger aim / placement)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let touchPinchDist: number | null = null;
+    let touchStartCenter: Vector2D | null = null;
+    let touchStartPan: Vector2D | null = null;
+    let isPinching = false;
+
+    const getTouchDist = (t1: Touch, t2: Touch) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const getTouchMid = (t1: Touch, t2: Touch) => ({ x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 });
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        isPinching = true;
+        touchPinchDist = getTouchDist(e.touches[0], e.touches[1]);
+        touchStartCenter = getTouchMid(e.touches[0], e.touches[1]);
+        touchStartPan = { ...panRef.current };
+      } else if (e.touches.length === 1 && !isPinching) {
+        const touch = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        const pos = screenToWorldCoords(
+          touch.clientX,
+          touch.clientY,
+          rect,
+          terrain.data.width,
+          terrain.data.height,
+          zoomRef.current,
+          panRef.current
+        );
+        mousePosRef.current = pos;
+
+        if (gameState.phase === 'PLACEMENT' && isMyTurn) {
+          onPlaceSlug?.({ x: pos.x, y: pos.y });
+        } else if (isMyTurn && gameState.phase === 'AIMING') {
+          const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+          if (activeSlug) {
+            const weapon = getWeapon(activeSlug.selectedWeaponId);
+            if (weapon.requiresTarget || weapon.id === 'girder') {
+              lockedTargetRef.current = pos;
+              sfx.play('tick');
+            } else {
+              const dx = pos.x - activeSlug.x;
+              const dy = pos.y - activeSlug.y;
+              let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+              angle = Math.max(-85, Math.min(85, angle));
+              const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
+              if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+                onUpdateAim?.(angle, activeSlug.aimPower, facing);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2 && touchPinchDist && touchStartCenter && touchStartPan) {
+        e.preventDefault();
+        const newDist = getTouchDist(e.touches[0], e.touches[1]);
+        const newCenter = getTouchMid(e.touches[0], e.touches[1]);
+        const zoomRatio = newDist / touchPinchDist;
+        const newZoom = Math.max(0.5, Math.min(3.0, zoomRef.current * (1 + (zoomRatio - 1) * 0.4)));
+
+        const dx = newCenter.x - touchStartCenter.x;
+        const dy = newCenter.y - touchStartCenter.y;
+        const rect = container.getBoundingClientRect();
+        const clamped = clampPanOffset(
+          { x: touchStartPan.x + dx, y: touchStartPan.y + dy },
+          newZoom,
+          rect.width,
+          rect.height
+        );
+
+        zoomRef.current = newZoom;
+        panRef.current = clamped;
+        setZoomLevel(newZoom);
+        setPanOffset(clamped);
+        touchPinchDist = newDist;
+      } else if (e.touches.length === 1 && !isPinching) {
+        const touch = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        const pos = screenToWorldCoords(
+          touch.clientX,
+          touch.clientY,
+          rect,
+          terrain.data.width,
+          terrain.data.height,
+          zoomRef.current,
+          panRef.current
+        );
+        mousePosRef.current = pos;
+
+        if (isMyTurn && gameState.phase === 'AIMING') {
+          const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+          if (activeSlug) {
+            const weapon = getWeapon(activeSlug.selectedWeaponId);
+            if (weapon.requiresTarget || weapon.id === 'girder') {
+              lockedTargetRef.current = pos;
+            } else {
+              const dx = pos.x - activeSlug.x;
+              const dy = pos.y - activeSlug.y;
+              let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+              angle = Math.max(-85, Math.min(85, angle));
+              const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
+              if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+                onUpdateAim?.(angle, activeSlug.aimPower, facing);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        touchPinchDist = null;
+        touchStartCenter = null;
+        touchStartPan = null;
+        if (e.touches.length === 0) {
+          isPinching = false;
+        }
+      }
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd);
+    container.addEventListener('touchcancel', onTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [terrain.data.width, terrain.data.height, isMyTurn, gameState, onPlaceSlug, onUpdateAim]);
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       if (isDraggingCameraRef.current) {
@@ -752,6 +892,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   return (
     <div
       ref={containerRef}
+      style={{ touchAction: 'none' }}
       className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair select-none"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
