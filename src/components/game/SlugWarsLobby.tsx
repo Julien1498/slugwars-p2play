@@ -58,7 +58,9 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
 
           {/* Room Code Badge & Optional Hub Exit Button */}
           <div className="flex items-center gap-2.5">
-            <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
+            <div className="select-text selection:bg-violet-600 selection:text-white cursor-text">
+              <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
+            </div>
             {isEmbedded && onExit && (
               <button
                 onClick={onExit}
