@@ -315,6 +315,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     (e: React.MouseEvent<HTMLElement>) => {
       e.preventDefault();
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
+      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      if (!activeSlug) return;
+      const weapon = getWeapon(activeSlug.selectedWeaponId);
+      if (!weapon.requiresTarget && weapon.id !== 'girder') {
+        return;
+      }
       const pos = getCanvasMousePos(e);
       lockedTargetRef.current = pos;
       sfx.play('tick');
@@ -352,8 +358,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       onUpdateAim?.(angle, activeSlug.aimPower, facing);
 
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
+      const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
       if (!isInstantTarget) {
-        const targetPt = lockedTargetRef.current || { x: mouseX, y: mouseY };
+        const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: mouseX, y: mouseY };
         onStartCharge?.(targetPt);
       }
     },
@@ -373,7 +380,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
-      const targetPt = lockedTargetRef.current || { x: clickX, y: clickY };
+      const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
+      const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: clickX, y: clickY };
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
 
       if (isInstantTarget) {
