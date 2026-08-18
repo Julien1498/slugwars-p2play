@@ -164,8 +164,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const triggerWaterSplash = useCallback((x: number, y: number, scale = 1.0) => {
     // 1. Expanding surface ripples
     clientWaterRipplesRef.current.push(
-      { x, radius: 3 * scale, life: 1.0, color: 'rgba(255, 255, 255, 0.90)' },
-      { x, radius: 7 * scale, life: 0.85, color: 'rgba(56, 189, 248, 0.75)' }
+      { x, radius: 4 * scale, life: 1.0, color: 'rgba(255, 255, 255, 0.95)' },
+      { x, radius: 9 * scale, life: 0.90, color: 'rgba(56, 189, 248, 0.80)' }
     );
 
     // 2. Upward fountain splash droplets
