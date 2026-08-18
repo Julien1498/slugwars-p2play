@@ -195,70 +195,64 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
               </div>
             ) : inVehicle ? (
-              // Helicopter directional cross-pad & exit button
-              <div className="flex flex-col items-center gap-2">
+              // Helicopter directional cross-pad with Sortir in the center
+              <div className="grid grid-cols-3 gap-1.5 items-center justify-items-center">
+                <div />
                 <button
                   type="button"
-                  className="px-4 py-1.5 rounded-xl bg-red-600 active:bg-red-500 border border-red-400 text-white font-black text-xs shadow-xl flex items-center gap-1 active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  onClick={() => {
+                    triggerHaptic();
+                    onSteerVehicle?.('up');
+                  }}
+                >
+                  ▲
+                </button>
+                <div />
+
+                <button
+                  type="button"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  onClick={() => {
+                    triggerHaptic();
+                    onSteerVehicle?.('left');
+                  }}
+                >
+                  ◀
+                </button>
+                <button
+                  type="button"
+                  className="w-14 h-14 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xs flex items-center justify-center shadow-xl uppercase active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic(30);
                     onExitVehicle?.();
                   }}
                 >
-                  <span>Sortir</span>
+                  Sortir
+                </button>
+                <button
+                  type="button"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  onClick={() => {
+                    triggerHaptic();
+                    onSteerVehicle?.('right');
+                  }}
+                >
+                  ▶
                 </button>
 
-                <div className="grid grid-cols-3 gap-1.5 items-center justify-items-center">
-                  <div />
-                  <button
-                    type="button"
-                    className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
-                    onClick={() => {
-                      triggerHaptic();
-                      onSteerVehicle?.('up');
-                    }}
-                  >
-                    ▲
-                  </button>
-                  <div />
-
-                  <button
-                    type="button"
-                    className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
-                    onClick={() => {
-                      triggerHaptic();
-                      onSteerVehicle?.('left');
-                    }}
-                  >
-                    ◀
-                  </button>
-                  <div className="w-14 h-14 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-center text-2xl shadow-inner select-none">
-                    🚁
-                  </div>
-                  <button
-                    type="button"
-                    className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
-                    onClick={() => {
-                      triggerHaptic();
-                      onSteerVehicle?.('right');
-                    }}
-                  >
-                    ▶
-                  </button>
-
-                  <div />
-                  <button
-                    type="button"
-                    className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
-                    onClick={() => {
-                      triggerHaptic();
-                      onSteerVehicle?.('down');
-                    }}
-                  >
-                    ▼
-                  </button>
-                  <div />
-                </div>
+                <div />
+                <button
+                  type="button"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  onClick={() => {
+                    triggerHaptic();
+                    onSteerVehicle?.('down');
+                  }}
+                >
+                  ▼
+                </button>
+                <div />
               </div>
             ) : (
               // Standard Slug D-Pad (Walk & Jump) - Balanced comfortable touch targets
