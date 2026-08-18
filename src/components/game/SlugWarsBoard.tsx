@@ -126,25 +126,47 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   });
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-zinc-950 p-1 md:p-1.5 text-zinc-100 relative">
+    <div
+      className={
+        isTouch
+          ? 'fixed inset-0 overflow-hidden bg-zinc-950 text-zinc-100 select-none'
+          : 'flex flex-col h-screen max-h-screen overflow-hidden bg-zinc-950 p-1 md:p-1.5 text-zinc-100 relative'
+      }
+    >
+      {/* Top Header - Floating transparent on mobile, standard flex row on PC */}
       <Profiler id="TurnHeader" onRender={perfTracker.onReactRender}>
-        <TurnHeader
-          gameState={gameState}
-          hostPeerId={hostPeerId}
-          isMyTurn={isMyTurn}
-          isHost={isHost}
-          showHitboxes={showHitboxes}
-          onToggleHitboxes={handleToggleHitboxes}
-          onOpenWeaponPicker={handleOpenWeaponPicker}
-          onSetFuseTimer={onSetFuseTimer}
-          onOpenRules={handleOpenRules}
-          onOpenMetrics={handleOpenMetrics}
-          onRestartGame={onRestartGame}
-          onExit={onExit}
-        />
+        <div
+          className={
+            isTouch
+              ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]'
+              : ''
+          }
+        >
+          <TurnHeader
+            gameState={gameState}
+            hostPeerId={hostPeerId}
+            isMyTurn={isMyTurn}
+            isHost={isHost}
+            showHitboxes={showHitboxes}
+            onToggleHitboxes={handleToggleHitboxes}
+            onOpenWeaponPicker={handleOpenWeaponPicker}
+            onSetFuseTimer={onSetFuseTimer}
+            onOpenRules={handleOpenRules}
+            onOpenMetrics={handleOpenMetrics}
+            onRestartGame={onRestartGame}
+            onExit={onExit}
+          />
+        </div>
       </Profiler>
 
-      <div className="relative flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden my-0.5">
+      {/* Main Canvas Area - Fullscreen behind header on mobile, middle flex container on PC */}
+      <div
+        className={
+          isTouch
+            ? 'absolute inset-0 z-10 flex items-center justify-center overflow-hidden'
+            : 'relative flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden my-0.5'
+        }
+      >
         {!isTouch && gameState.phase === 'PLACEMENT' && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-4 py-1 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-xl backdrop-blur-md animate-pulse">
             📍 Cliquez sur le terrain pour placer votre limace ({activeSlug?.name})
