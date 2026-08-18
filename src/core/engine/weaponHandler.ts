@@ -216,14 +216,17 @@ export function fireWeapon(
       }
     }
 
+    const now = Date.now();
     if (!state.girders) state.girders = [];
     state.girders.push({
-      id: `girder_${Date.now()}_${Math.random()}`,
+      id: `girder_${now}_${Math.random()}`,
       x: gx,
       y: gy,
       angleDeg,
       length,
       thickness,
+      createdAt: now,
+      initialCraterCount: state.craters?.length || 0,
     });
 
     sfx.play('girder');

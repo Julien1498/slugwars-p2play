@@ -160,49 +160,49 @@ export const LobbyBackdropCanvas: React.FC = () => {
         c.arc(13, -13, 2.6, 0, Math.PI * 2);
         c.fill();
       } else if (gear === 'RADIO_COMM') {
-        // 1. Back/Left Tactical Earcup (Oreillette gauche)
+        // 1. Back/Left Tactical Earcup (Oreillette gauche à l'arrière du cou)
         c.fillStyle = '#0f172a';
         c.strokeStyle = '#18181b';
         c.lineWidth = 1.6;
-        drawSafeEllipse(c, -3, -11, 4.5, 6, 0.15);
+        drawSafeEllipse(c, -9, -6, 5, 7, 0.25);
         c.fill();
         c.stroke();
         c.fillStyle = '#38bdf8';
-        drawSafeEllipse(c, -3, -11, 2.2, 3.5, 0.15);
+        drawSafeEllipse(c, -9, -6, 2.5, 4, 0.25);
         c.fill();
 
-        // 2. Heavy Padded Headband Arch (Arceau rembourré)
+        // 2. Heavy Padded Headband Arch (Arceau supérieur passant au-dessus des yeux)
         c.strokeStyle = '#0f172a';
-        c.lineWidth = 4.2;
+        c.lineWidth = 4.5;
         c.beginPath();
-        c.moveTo(-3, -11);
-        c.quadraticCurveTo(7, -23, 17, -9);
+        c.moveTo(-9, -8);
+        c.quadraticCurveTo(6, -26, 21, -6);
         c.stroke();
 
         c.strokeStyle = '#38bdf8';
         c.lineWidth = 1.6;
         c.beginPath();
-        c.moveTo(-2, -12);
-        c.quadraticCurveTo(7, -22, 16, -10);
+        c.moveTo(-8, -9);
+        c.quadraticCurveTo(6, -25, 20, -7);
         c.stroke();
 
-        // 3. Front/Right Tactical Earcup (Oreillette droite)
+        // 3. Front/Right Tactical Earcup (Oreillette droite sur la tempe avant)
         c.fillStyle = '#0f172a';
         c.strokeStyle = '#18181b';
         c.lineWidth = 1.6;
-        drawSafeEllipse(c, 17, -9, 4.8, 6.2, -0.15);
+        drawSafeEllipse(c, 21, -4, 5, 7, -0.2);
         c.fill();
         c.stroke();
         c.fillStyle = '#38bdf8';
-        drawSafeEllipse(c, 17, -9, 2.4, 3.6, -0.15);
+        drawSafeEllipse(c, 21, -4, 2.5, 4, -0.2);
         c.fill();
 
-        // 4. Flexible Boom Microphone (Micro-tige orienté vers la bouche)
+        // 4. Flexible Boom Microphone (Micro articulé orienté vers la bouche)
         c.strokeStyle = '#64748b';
         c.lineWidth = 2;
         c.beginPath();
-        c.moveTo(17, -6);
-        c.quadraticCurveTo(21, 0, 14, 2);
+        c.moveTo(21, -3);
+        c.quadraticCurveTo(25, 2, 16, 4);
         c.stroke();
 
         // Foam Mic Windscreen
@@ -210,21 +210,21 @@ export const LobbyBackdropCanvas: React.FC = () => {
         c.strokeStyle = '#18181b';
         c.lineWidth = 1.2;
         c.beginPath();
-        c.arc(14, 2, 2.5, 0, Math.PI * 2);
+        c.arc(16, 4, 2.5, 0, Math.PI * 2);
         c.fill();
         c.stroke();
 
-        // 5. Back Antenna with Flashing Radio LED
+        // 5. Tactical Back Antenna with Flashing Radio LED
         c.strokeStyle = '#94a3b8';
-        c.lineWidth = 2;
+        c.lineWidth = 2.2;
         c.beginPath();
-        c.moveTo(-3, -12);
-        c.lineTo(-17, -32);
+        c.moveTo(-9, -8);
+        c.lineTo(-22, -34);
         c.stroke();
 
         c.fillStyle = Math.sin(t * 7) > 0 ? '#ef4444' : '#7f1d1d';
         c.beginPath();
-        c.arc(-17, -32, 3.2, 0, Math.PI * 2);
+        c.arc(-22, -34, 3.2, 0, Math.PI * 2);
         c.fill();
       }
 

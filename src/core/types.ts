@@ -65,6 +65,8 @@ export interface PlacedGirder {
   length: number;
   thickness: number;
   destroyed?: boolean;
+  createdAt?: number;
+  initialCraterCount?: number;
 }
 
 export interface Slug {
@@ -236,6 +238,7 @@ export interface CraterRecord {
   x: number;
   y: number;
   radius: number;
+  createdAt?: number;
 }
 
 export interface GameState {
