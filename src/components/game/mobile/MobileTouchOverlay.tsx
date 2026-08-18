@@ -129,6 +129,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     e.stopPropagation();
     if (!isHoldingFireRef.current) return;
     isHoldingFireRef.current = false;
+    lastDirectFireTimeRef.current = Date.now();
     triggerHaptic(25);
     onReleaseCharge?.(activeSlug?.currentTargetPoint);
   };
@@ -420,6 +421,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (Date.now() - lastDirectFireTimeRef.current < 650) return; // Prevent ghost click on unmount!
                     triggerHaptic(20);
                     setShowWeaponPicker((prev) => !prev);
                   }}
@@ -466,26 +468,30 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </div>
               )}
 
-              {/* Main Fire / Action Button */}
-              {isMyTurn && isAimingPhase && (
+              {/* Main Fire / Action Button - Always maintains layout stability */}
+              {isMyTurn && !isRetreat && (
                 <button
                   type="button"
-                  className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-transform ${
-                    currentWeapon?.id === 'girder'
-                      ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50'
+                  disabled={!isAimingPhase}
+                  className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl transition-all ${
+                    !isAimingPhase
+                      ? 'opacity-30 border-slate-700 bg-slate-900 cursor-not-allowed scale-95'
+                      : currentWeapon?.id === 'girder'
+                      ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50 active:scale-95'
                       : currentWeapon?.requiresTarget
-                      ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50'
-                      : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50'
+                      ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50 active:scale-95'
+                      : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50 active:scale-95'
                   }`}
                   onPointerDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
+                    if (!isAimingPhase || currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
                     handleFirePointerDown(e);
                   }}
                   onPointerUp={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (!isAimingPhase) return;
                     if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
                       handleDirectFire();
                       return;
@@ -495,6 +501,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (!isAimingPhase) return;
                     if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
                       handleDirectFire();
                     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WeaponCategory, WeaponDefinition } from '../../core/weapons/types';
 import { getAllWeapons } from '../../core/weapons/registry';
+import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 import { X, Sparkles, Zap, ShieldAlert, Bomb, Swords, Plane, Flame, Wrench, Check } from 'lucide-react';
 
 interface WeaponPickerProps {
@@ -24,6 +25,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   onSelectWeapon,
   onClose,
 }) => {
+  const isTouch = useIsTouchDevice();
   const [activeCategory, setActiveCategory] = useState<WeaponCategory>('EXPLOSIVE');
   const allWeapons = getAllWeapons();
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
@@ -140,10 +142,12 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                       </span>
                     )}
                   </div>
-                  {/* Description: ONLY on PC desktop (hidden on mobile) */}
-                  <div className="hidden sm:block text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
-                    {w.description}
-                  </div>
+                  {/* Description: ONLY on PC desktop (never on mobile) */}
+                  {!isTouch && (
+                    <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
+                      {w.description}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-zinc-400 pt-1.5 sm:pt-2 border-t border-zinc-800/80">
