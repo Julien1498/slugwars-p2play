@@ -175,30 +175,33 @@ export function renderSupplyCrates(ctx: CanvasRenderingContext2D, crates: Supply
 
 export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDamages: ClientFloatingDamage[]) {
   const now = performance.now();
-  for (let i = floatingDamages.length - 1; i >= 0; i--) {
+  let writeIdx = 0;
+  for (let i = 0; i < floatingDamages.length; i++) {
     const fd = floatingDamages[i];
     const elapsed = now - fd.startTime;
     const progress = Math.min(1, elapsed / fd.duration);
-    const alpha = Math.max(0, 1 - progress);
-    const floatY = fd.y - progress * 30;
 
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    const isHeal = fd.damage < 0;
-    ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2.5;
-    ctx.font = 'extrabold 14px Outfit, sans-serif';
-    ctx.textAlign = 'center';
-    const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
-    ctx.strokeText(text, fd.x, floatY);
-    ctx.fillText(text, fd.x, floatY);
-    ctx.restore();
+    if (progress < 1) {
+      const alpha = Math.max(0, 1 - progress);
+      const floatY = fd.y - progress * 30;
 
-    if (progress >= 1) {
-      floatingDamages.splice(i, 1);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const isHeal = fd.damage < 0;
+      ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2.5;
+      ctx.font = 'extrabold 14px Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+      ctx.strokeText(text, fd.x, floatY);
+      ctx.fillText(text, fd.x, floatY);
+      ctx.restore();
+
+      floatingDamages[writeIdx++] = fd;
     }
   }
+  floatingDamages.length = writeIdx;
 }
 
 export function renderMines(ctx: CanvasRenderingContext2D, mines: Landmine[] | undefined) {

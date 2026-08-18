@@ -11,7 +11,7 @@ interface BoardFuseTimerWidgetProps {
   onSetFuseTimer?: (seconds: number) => void;
 }
 
-export const BoardFuseTimerWidget: React.FC<BoardFuseTimerWidgetProps> = ({
+export const BoardFuseTimerWidget: React.FC<BoardFuseTimerWidgetProps> = React.memo(({
   activeSlug,
   activeWeapon,
   phase,
@@ -64,4 +64,14 @@ export const BoardFuseTimerWidget: React.FC<BoardFuseTimerWidgetProps> = ({
       </div>
     </div>
   );
-};
+}, (prev, next) => {
+  return (
+    prev.isMyTurn === next.isMyTurn &&
+    prev.phase === next.phase &&
+    prev.activeSlug?.id === next.activeSlug?.id &&
+    prev.activeSlug?.fuseTimerSec === next.activeSlug?.fuseTimerSec &&
+    prev.activeSlug?.selectedWeaponId === next.activeSlug?.selectedWeaponId &&
+    prev.activeWeapon?.id === next.activeWeapon?.id &&
+    prev.onSetFuseTimer === next.onSetFuseTimer
+  );
+});

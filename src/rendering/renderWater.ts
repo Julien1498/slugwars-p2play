@@ -156,16 +156,15 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   }
   ctx.stroke();
 
-  // 3. Render Rising Air Bubbles
-  for (let i = bubbles.length - 1; i >= 0; i--) {
+  // 3. Render Rising Air Bubbles (In-place compacting, 0 GC allocations)
+  let writeBubbleIdx = 0;
+  for (let i = 0; i < bubbles.length; i++) {
     const b = bubbles[i];
     b.x += b.vx + Math.sin(animTime * 6 + b.y * 0.1) * 0.4;
     b.y += b.vy;
     b.life -= 0.018;
 
-    if (b.life <= 0 || b.y <= waterY - 4) {
-      bubbles.splice(i, 1);
-    } else {
+    if (b.life > 0 && b.y > waterY - 4) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, b.life * 0.8);
       ctx.fillStyle = 'rgba(224, 242, 254, 0.85)';
@@ -176,18 +175,19 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
       ctx.fill();
       ctx.stroke();
       ctx.restore();
+      bubbles[writeBubbleIdx++] = b;
     }
   }
+  bubbles.length = writeBubbleIdx;
 
-  // 4. Render Surface Expanding Water Ripples
-  for (let i = ripples.length - 1; i >= 0; i--) {
+  // 4. Render Surface Expanding Water Ripples (In-place compacting, 0 GC allocations)
+  let writeRippleIdx = 0;
+  for (let i = 0; i < ripples.length; i++) {
     const rip = ripples[i];
     rip.radius += 0.85;
     rip.life -= 0.024;
 
-    if (rip.life <= 0) {
-      ripples.splice(i, 1);
-    } else {
+    if (rip.life > 0) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, rip.life * 0.90);
       ctx.strokeStyle = rip.color;
@@ -197,20 +197,21 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
       ctx.ellipse(rip.x, localWaveY, rip.radius * 1.45, rip.radius * 0.40, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+      ripples[writeRippleIdx++] = rip;
     }
   }
+  ripples.length = writeRippleIdx;
 
-  // 5. Render Water Splash Droplets
-  for (let i = splashes.length - 1; i >= 0; i--) {
+  // 5. Render Water Splash Droplets (In-place compacting, 0 GC allocations)
+  let writeSplashIdx = 0;
+  for (let i = 0; i < splashes.length; i++) {
     const sp = splashes[i];
     sp.x += sp.vx;
     sp.y += sp.vy;
     sp.vy += 0.26;
     sp.life -= 0.028;
 
-    if (sp.life <= 0) {
-      splashes.splice(i, 1);
-    } else {
+    if (sp.life > 0) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, sp.life * 0.95);
       ctx.fillStyle = sp.color;
@@ -218,6 +219,8 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
       ctx.arc(sp.x, sp.y, Math.max(1, sp.size * sp.life), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+      splashes[writeSplashIdx++] = sp;
     }
   }
+  splashes.length = writeSplashIdx;
 }
