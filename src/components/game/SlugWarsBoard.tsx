@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Profiler } from 'react';
+import React, { useState, useEffect, useCallback, Profiler } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { TurnHeader } from './TurnHeader';
@@ -80,7 +80,14 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
+  const [pendingPlacement, setPendingPlacement] = useState<Vector2D | null>(null);
   const isTouch = useIsTouchDevice();
+
+  useEffect(() => {
+    if (gameState.phase !== 'PLACEMENT') {
+      setPendingPlacement(null);
+    }
+  }, [gameState.phase, gameState.activeSlugId]);
 
   const handleOpenWeaponPicker = useCallback(() => setShowWeaponPicker(true), []);
   const handleCloseWeaponPicker = useCallback(() => setShowWeaponPicker(false), []);
@@ -162,6 +169,8 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             showHitboxes={showHitboxes}
             onFire={onFire}
             onPlaceSlug={onPlaceSlug}
+            onSelectPlacementPoint={isTouch ? setPendingPlacement : undefined}
+            pendingPlacementPoint={pendingPlacement}
             onStartCharge={onStartCharge}
             onReleaseCharge={onReleaseCharge}
             onUpdateAim={onUpdateAim}
@@ -212,6 +221,13 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         onStopSteer={onStopSteer}
         onDetonate={onDetonate}
         setShowWeaponPicker={setShowWeaponPicker}
+        pendingPlacement={pendingPlacement}
+        onConfirmPlacement={() => {
+          if (pendingPlacement) {
+            onPlaceSlug?.(pendingPlacement);
+            setPendingPlacement(null);
+          }
+        }}
       />
 
       <OrientationLockPrompt />
