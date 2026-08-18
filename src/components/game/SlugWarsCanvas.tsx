@@ -14,6 +14,7 @@ import { renderProjectiles } from '../../rendering/renderProjectiles';
 import { renderAimGuides } from '../../rendering/renderAimGuides';
 import { renderPlacementGhost } from '../../rendering/renderPlacementGhost';
 import { renderHitboxDebugOverlay } from '../../rendering/renderHitboxes';
+import { renderDecorItems } from '../../rendering/renderDecorItems';
 import {
   renderParticles,
   renderClientExplosions,
@@ -508,8 +509,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       // Water entry splash & bubble detectors
       if (curState && curState.slugs) {
         for (const slug of curState.slugs) {
-          const prev = prevSlugWaterStateRef.current.get(slug.id);
-          if (prev && prev.y < waterY && slug.y >= waterY && slug.isAlive) {
+          const prevState = prevSlugWaterStateRef.current.get(slug.id);
+          const isNowUnderwater = slug.y >= waterY - 4;
+          const wasAbove = !prevState || prevState.y < waterY - 4;
+          const wasAlive = !prevState || prevState.isAlive;
+
+          if (isNowUnderwater && (wasAbove || (wasAlive && !slug.isAlive))) {
             const nowMs = performance.now();
             const lastSplash = splashCooldownsRef.current.get(slug.id) || 0;
             if (nowMs - lastSplash > 400) {
@@ -597,20 +602,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ctx.drawImage(buffers.occlusionCanvas, 0, 0);
       }
 
-      // 5. Decor Items & Landmines & Helicopters
-      if (decorItems) {
-        for (const item of decorItems) {
-          if (item.destroyed) continue;
-          if (item.type === 'hanging_leaf') {
-            const topSolid = terrain.isSolid(item.x, item.y - 1) || terrain.isSolid(item.x, item.y - 2);
-            if (!topSolid) {
-              item.destroyed = true;
-              continue;
-            }
-          }
-        }
-      }
-
+      // 5. Decor Items (Butterflies & Hanging Leaf Roots) & Landmines & Helicopters
+      renderDecorItems(ctx, terrain, decorItems, animTime);
       renderMines(ctx, curState.mines);
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
       renderTombstones(ctx, curState.slugs, waterLevel);
