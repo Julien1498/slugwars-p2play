@@ -83,7 +83,7 @@ export class SlugWarsEngine {
     const rY = Math.round(y);
     const rR = Math.round(radius);
     const id = `c_${rX}_${rY}_${rR}_${this.state.craters.length}`;
-    this.state.craters.push({ id, x: rX, y: rY, radius: rR });
+    this.state.craters.push({ id, x: rX, y: rY, radius: rR, createdAt: Date.now() });
     const { destroyedOilDrums } = this.terrain.carveExplosion(x, y, radius);
     if (destroyedOilDrums && destroyedOilDrums.length > 0) {
       for (const drum of destroyedOilDrums) {

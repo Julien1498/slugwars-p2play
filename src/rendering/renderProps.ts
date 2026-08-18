@@ -767,23 +767,40 @@ export function renderHDDestructibleGirder(
 
   const girderRadius = Math.max(g.length, g.thickness) * 0.65;
 
-  const overlappingExplosions: { x: number; y: number; radius: number }[] = [];
+  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
+  if (craters) {
+    const minIndex = g.initialCraterCount !== undefined ? g.initialCraterCount : 0;
+    for (let i = 0; i < craters.length; i++) {
+      const c = craters[i];
+      // Ignore craters that existed before this girder was placed
+      if (g.initialCraterCount !== undefined) {
+        if (i < minIndex) continue;
+      } else if (g.createdAt && c.createdAt && c.createdAt < g.createdAt) {
+        continue;
+      }
+      const dist = Math.hypot(c.x - g.x, c.y - g.y);
+      if (dist <= c.radius + girderRadius) {
+        overlappingCraters.push(c);
+      }
+    }
+  }
+
   if (explosions) {
     for (const ex of explosions) {
       const dist = Math.hypot(ex.x - g.x, ex.y - g.y);
       if (dist <= ex.radius + girderRadius) {
-        overlappingExplosions.push(ex);
+        overlappingCraters.push(ex);
       }
     }
   }
 
   ctx.save();
 
-  if (overlappingExplosions.length > 0) {
-    for (const ex of overlappingExplosions) {
+  if (overlappingCraters.length > 0) {
+    for (const c of overlappingCraters) {
       const notCircle = new Path2D();
       notCircle.rect(g.x - 200, g.y - 200, 400, 400);
-      notCircle.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
+      notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
       ctx.clip(notCircle, 'evenodd');
     }
   }

@@ -469,21 +469,24 @@ export const ConnectionBackdropCanvas: React.FC = () => {
         ctx.save();
         ctx.scale(1.35, 1.35);
 
-        // 1. Cap Crown (Dôme vert militaire d'officier avec dégradé d'ombre)
-        const capGrad = ctx.createLinearGradient(0, -19, 8, -13);
+        // 1. Cap Crown (Dôme vert militaire d'officier au-dessus des yeux)
+        const capGrad = ctx.createLinearGradient(4, -37, 12, -25);
         capGrad.addColorStop(0, '#4d7c0f');
         capGrad.addColorStop(0.55, '#365314');
         capGrad.addColorStop(1, '#1a2e05');
         ctx.fillStyle = capGrad;
         ctx.strokeStyle = '#18181b';
-        ctx.lineWidth = 1.3;
+        ctx.lineWidth = 1.6;
 
         ctx.beginPath();
-        ctx.moveTo(-3.5, -13);
-        ctx.quadraticCurveTo(5, -14, 13, -12.5);
-        ctx.lineTo(13.5, -14.5);
-        ctx.quadraticCurveTo(9, -19.5, 4, -19);
-        ctx.quadraticCurveTo(-2, -18.5, -4, -13.5);
+        // Base line along top of brow (parfaitement au-dessus des yeux)
+        ctx.moveTo(-3, -25.5);
+        ctx.quadraticCurveTo(9, -27, 21, -23.5);
+        // Front upward peak
+        ctx.lineTo(22, -26.5);
+        ctx.quadraticCurveTo(15, -38, 7, -37);
+        // Back downward slope
+        ctx.quadraticCurveTo(-1, -35, -3.5, -26);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -491,32 +494,32 @@ export const ConnectionBackdropCanvas: React.FC = () => {
         // 2. Leather Finished Base Rim
         ctx.fillStyle = '#0f172a';
         ctx.strokeStyle = '#020617';
-        ctx.lineWidth = 0.9;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(-3.5, -13);
-        ctx.quadraticCurveTo(5, -14, 13, -12.5);
-        ctx.lineTo(13.2, -11.7);
-        ctx.quadraticCurveTo(5, -13.1, -3.8, -12.2);
+        ctx.moveTo(-3, -25.5);
+        ctx.quadraticCurveTo(9, -27, 21, -23.5);
+        ctx.lineTo(21.2, -22.3);
+        ctx.quadraticCurveTo(9, -25.8, -3.3, -24.3);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         // 3. Golden Braid Cord
         ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 1.1;
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
-        ctx.moveTo(-2, -13.3);
-        ctx.quadraticCurveTo(5, -14.2, 12.5, -12.8);
+        ctx.moveTo(-1.5, -26);
+        ctx.quadraticCurveTo(9, -27.2, 20.5, -24);
         ctx.stroke();
 
-        // 4. Subtle Glossy Visor
+        // 4. Subtle Glossy Visor (Visière profilée noire vers l'avant)
         ctx.fillStyle = '#09090b';
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 0.9;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(6, -13.2);
-        ctx.quadraticCurveTo(10, -13.5, 14.5, -12.2);
-        ctx.quadraticCurveTo(10, -12.4, 6, -12.5);
+        ctx.moveTo(8, -25.5);
+        ctx.quadraticCurveTo(17, -26.5, 25, -23.5);
+        ctx.quadraticCurveTo(17, -24, 8, -24.5);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -524,14 +527,14 @@ export const ConnectionBackdropCanvas: React.FC = () => {
         // 5. Golden Corporal Insignia
         ctx.fillStyle = '#fde047';
         ctx.strokeStyle = '#ca8a04';
-        ctx.lineWidth = 0.6;
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.arc(5, -16.2, 1.7, 0, Math.PI * 2);
+        ctx.arc(9, -32.5, 2.8, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = '#dc2626';
         ctx.beginPath();
-        ctx.arc(5, -16.2, 0.6, 0, Math.PI * 2);
+        ctx.arc(9, -32.5, 1.1, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
