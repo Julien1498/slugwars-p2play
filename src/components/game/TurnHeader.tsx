@@ -82,55 +82,50 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   if (isTouch) {
     return (
       <>
-        <header className="h-10 min-h-[40px] max-h-[40px] bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/80 px-2.5 flex items-center justify-between gap-2 shadow-xl shrink-0 z-30 select-none">
+        <header className="h-10 min-h-[40px] max-h-[40px] bg-transparent border-b border-transparent px-2 flex items-center justify-between gap-2 shrink-0 z-30 select-none pointer-events-none">
           {/* Left: Active Slug + Turn Indicator */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
             <div
-              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-900 shadow"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-950/60 backdrop-blur-md shadow-lg"
               style={{ borderColor: activeTeam ? `${activeTeam.color}70` : '#3f3f46' }}
             >
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTeam?.color || '#a855f7' }} />
-              <span className="font-black text-xs text-zinc-100 truncate max-w-[100px]">
+              <span className="font-black text-xs text-zinc-100 truncate max-w-[90px]">
                 {activeSlug?.name || 'Tour de jeu'}
               </span>
             </div>
 
             {/* Big glowing Turn Timer */}
             {gameState.phase === 'RETREAT' ? (
-              <div className="flex items-center gap-1 bg-orange-950/90 border border-orange-500/80 px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow animate-pulse">
-                <Clock className="w-3 h-3 text-orange-400" />
-                <span>FUITE: {Math.max(0, Math.ceil(gameState.retreatTimer ?? 4))}s</span>
+              <div className="flex items-center gap-1 bg-orange-950/80 border border-orange-500/80 px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow-lg backdrop-blur-md animate-pulse">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{turnTime}s (Repli)</span>
               </div>
-            ) : gameState.phase === 'PLACEMENT' ? (
-              <div className="flex items-center gap-1 bg-amber-950/90 border border-amber-500/80 px-2 py-1 rounded-xl text-xs font-black text-amber-300 shadow animate-pulse">
-                <span>📍 PLACEMENT</span>
+            ) : isTimeUrgent ? (
+              <div className="flex items-center gap-1 bg-red-950/80 border border-red-500 px-2 py-1 rounded-xl text-xs font-black text-red-300 shadow-[0_0_12px_#ef4444] backdrop-blur-md animate-ping">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{turnTime}s</span>
               </div>
             ) : (
-              <div
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border font-mono text-xs font-black shadow transition-all ${
-                  isTimeUrgent
-                    ? 'bg-red-950/90 border-red-500 text-red-300 animate-pulse shadow-[0_0_8px_#ef4444]'
-                    : 'bg-zinc-900 border-zinc-700 text-amber-300'
-                }`}
-              >
-                <Clock className="w-3 h-3 text-amber-400" />
+              <div className="flex items-center gap-1 bg-zinc-950/60 border border-zinc-700/80 px-2 py-1 rounded-xl text-xs font-black text-amber-400 shadow-lg backdrop-blur-md">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
                 <span>{turnTime}s</span>
               </div>
             )}
           </div>
 
           {/* Right: Wind + Scoreboard Toggle + Menu */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
             <WindIndicator wind={gameState.wind} />
 
             {/* Scoreboard Popover Toggle */}
             <div className="relative">
               <button
                 onClick={() => setShowScorePopover(!showScorePopover)}
-                className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm ${
+                className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-md ${
                   showScorePopover
                     ? 'bg-amber-950/80 border-amber-500 text-amber-300'
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-300 active:scale-95'
+                    : 'bg-zinc-950/60 border-zinc-700/80 text-zinc-300 active:scale-95'
                 }`}
                 title="Scores des équipes"
               >

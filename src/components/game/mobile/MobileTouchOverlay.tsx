@@ -104,6 +104,17 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     }
   };
 
+  const lastDirectFireTimeRef = useRef<number>(0);
+  const handleDirectFire = useCallback(() => {
+    if (!isMyTurn || isRetreat) return;
+    const now = Date.now();
+    if (now - lastDirectFireTimeRef.current < 400) return;
+    lastDirectFireTimeRef.current = now;
+    triggerHaptic(30);
+    const target = activeSlug?.currentTargetPoint;
+    onFire?.(target);
+  }, [isMyTurn, isRetreat, triggerHaptic, activeSlug?.currentTargetPoint, onFire]);
+
   const handleFirePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -475,20 +486,17 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   onPointerUp={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
+                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
+                      handleDirectFire();
+                      return;
+                    }
                     handleFirePointerUp(e);
                   }}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
-                      triggerHaptic(30);
-                      const target = activeSlug?.currentTargetPoint;
-                      if (currentWeapon?.behavior === 'AIR_STRIKE' || currentWeapon?.behavior === 'TELEPORT' || currentWeapon?.behavior === 'HEAVY_FALL') {
-                        onFire?.(target);
-                      } else {
-                        onReleaseCharge?.(target);
-                      }
+                      handleDirectFire();
                     }
                   }}
                 >
