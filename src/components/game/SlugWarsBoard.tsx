@@ -30,7 +30,7 @@ interface SlugWarsBoardProps {
   isHost: boolean;
   onFire: (targetPoint?: Vector2D) => void;
   onPlaceSlug?: (point: Vector2D) => void;
-  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right') => void;
+  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
   onSelectWeapon: (weaponId: string) => void;
   onSetFuseTimer?: (seconds: number) => void;
   onStartMove: (dir: 'left' | 'right') => void;
@@ -211,6 +211,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         onStopMove={onStopMove}
         onJump={onJump}
         onUpdateAim={onUpdateAim}
+        onFire={onFire}
         onStartCharge={onStartCharge}
         onReleaseCharge={onReleaseCharge}
         onSetFuseTimer={onSetFuseTimer}

@@ -41,7 +41,7 @@ export interface SlugWarsCanvasProps {
   pendingPlacementPoint?: Vector2D | null;
   onStartCharge?: (target: Vector2D) => void;
   onReleaseCharge?: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
-  onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
+  onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
 }
 
 export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
@@ -528,6 +528,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               if (weapon.requiresTarget || weapon.id === 'girder') {
                 lockedTargetRef.current = pos;
                 sfx.play('tick');
+                onUpdateAimRef.current?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
               }
             }
           }
