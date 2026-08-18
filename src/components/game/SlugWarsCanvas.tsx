@@ -84,6 +84,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const isDraggingCameraRef = useRef<boolean>(false);
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
+  const targetCameraPanRef = useRef<Vector2D | null>(null);
 
   const clientParticlesRef = useRef<ClientParticle[]>([]);
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
@@ -274,6 +275,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         terrain.data.width,
         terrain.data.height
       );
+      targetCameraPanRef.current = null;
       zoomRef.current = newZoom;
       panRef.current = clamped;
       setZoomLevel(newZoom);
@@ -309,16 +311,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               terrain.data.width,
               terrain.data.height
             );
-            panRef.current = clamped;
-            setPanOffset(clamped);
+            targetCameraPanRef.current = clamped;
           }
         }
       }
     } else if (gameState.phase === 'PLACEMENT') {
-      // In placement phase, keep battlefield center fixed at 0, 0
+      // In placement phase, do not reset camera
       lastCenteredSlugIdRef.current = null;
-      panRef.current = { x: 0, y: 0 };
-      setPanOffset({ x: 0, y: 0 });
+      targetCameraPanRef.current = null;
     }
   }, [gameState.activeSlugId, gameState.phase, terrain.data.width, terrain.data.height]);
 
@@ -353,6 +353,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
     const onTouchStart = (e: TouchEvent) => {
       lastTouchTimeRef.current = Date.now();
+      targetCameraPanRef.current = null;
 
       if (e.touches.length >= 2) {
         e.preventDefault();
@@ -613,6 +614,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
+      targetCameraPanRef.current = null;
       if (Date.now() - lastTouchTimeRef.current < 450) return;
 
       if (e.button === 1 || e.button === 2) {
@@ -754,6 +756,19 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#09090b';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Smooth camera glide transition (LERP interpolation)
+      if (targetCameraPanRef.current) {
+        const dx = targetCameraPanRef.current.x - panRef.current.x;
+        const dy = targetCameraPanRef.current.y - panRef.current.y;
+        if (Math.hypot(dx, dy) < 0.6) {
+          panRef.current = { ...targetCameraPanRef.current };
+          targetCameraPanRef.current = null;
+        } else {
+          panRef.current.x += dx * 0.12;
+          panRef.current.y += dy * 0.12;
+        }
+      }
 
       ctx.scale(dpr, dpr);
       const fitScale = Math.min(cRect.width / width, cRect.height / height);
