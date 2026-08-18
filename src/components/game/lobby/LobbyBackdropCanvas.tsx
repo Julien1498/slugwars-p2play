@@ -160,71 +160,71 @@ export const LobbyBackdropCanvas: React.FC = () => {
         c.arc(13, -13, 2.6, 0, Math.PI * 2);
         c.fill();
       } else if (gear === 'RADIO_COMM') {
-        // 1. Back/Left Tactical Earcup (Oreillette gauche à l'arrière du cou)
+        // 1. Left/Rear Tactical Earcup (oreillette gauche à l'extérieur de l'œil gauche)
         c.fillStyle = '#0f172a';
         c.strokeStyle = '#18181b';
-        c.lineWidth = 1.6;
-        drawSafeEllipse(c, -9, -6, 5, 7, 0.25);
+        c.lineWidth = 1.4;
+        drawSafeEllipse(c, -3, -15, 3.5, 6.5, 0.1);
         c.fill();
         c.stroke();
         c.fillStyle = '#38bdf8';
-        drawSafeEllipse(c, -9, -6, 2.5, 4, 0.25);
+        drawSafeEllipse(c, -3, -15, 1.8, 3.8, 0.1);
         c.fill();
 
-        // 2. Heavy Padded Headband Arch (Arceau supérieur passant au-dessus des yeux)
+        // 2. Tactical Headband Arch (arceau passant au-dessus des pédoncules oculaires)
         c.strokeStyle = '#0f172a';
-        c.lineWidth = 4.5;
+        c.lineWidth = 3.8;
         c.beginPath();
-        c.moveTo(-9, -8);
-        c.quadraticCurveTo(6, -26, 21, -6);
+        c.moveTo(-3, -17);
+        c.quadraticCurveTo(7, -26, 18, -15);
         c.stroke();
 
         c.strokeStyle = '#38bdf8';
-        c.lineWidth = 1.6;
+        c.lineWidth = 1.4;
         c.beginPath();
-        c.moveTo(-8, -9);
-        c.quadraticCurveTo(6, -25, 20, -7);
+        c.moveTo(-2, -18);
+        c.quadraticCurveTo(7, -25, 17, -16);
         c.stroke();
 
-        // 3. Front/Right Tactical Earcup (Oreillette droite sur la tempe avant)
+        // 3. Right/Front Tactical Earcup (oreillette droite à l'extérieur de l'œil droit)
         c.fillStyle = '#0f172a';
         c.strokeStyle = '#18181b';
-        c.lineWidth = 1.6;
-        drawSafeEllipse(c, 21, -4, 5, 7, -0.2);
+        c.lineWidth = 1.4;
+        drawSafeEllipse(c, 18, -13, 3.5, 6.5, 0.1);
         c.fill();
         c.stroke();
         c.fillStyle = '#38bdf8';
-        drawSafeEllipse(c, 21, -4, 2.5, 4, -0.2);
+        drawSafeEllipse(c, 18, -13, 1.8, 3.8, 0.1);
         c.fill();
 
-        // 4. Flexible Boom Microphone (Micro articulé orienté vers la bouche)
+        // 4. Flexible Boom Microphone (micro-tige délicat orienté vers la bouche)
         c.strokeStyle = '#64748b';
-        c.lineWidth = 2;
+        c.lineWidth = 1.6;
         c.beginPath();
-        c.moveTo(21, -3);
-        c.quadraticCurveTo(25, 2, 16, 4);
+        c.moveTo(18, -10);
+        c.quadraticCurveTo(20, -3, 13, 0);
         c.stroke();
 
         // Foam Mic Windscreen
         c.fillStyle = '#09090b';
         c.strokeStyle = '#18181b';
-        c.lineWidth = 1.2;
+        c.lineWidth = 1.0;
         c.beginPath();
-        c.arc(16, 4, 2.5, 0, Math.PI * 2);
+        c.arc(13, 0, 2.0, 0, Math.PI * 2);
         c.fill();
         c.stroke();
 
-        // 5. Tactical Back Antenna with Flashing Radio LED
+        // 5. Tactical Antenna with Flashing Radio LED
         c.strokeStyle = '#94a3b8';
-        c.lineWidth = 2.2;
+        c.lineWidth = 1.8;
         c.beginPath();
-        c.moveTo(-9, -8);
-        c.lineTo(-22, -34);
+        c.moveTo(-3, -18);
+        c.lineTo(-14, -36);
         c.stroke();
 
         c.fillStyle = Math.sin(t * 7) > 0 ? '#ef4444' : '#7f1d1d';
         c.beginPath();
-        c.arc(-22, -34, 3.2, 0, Math.PI * 2);
+        c.arc(-14, -36, 2.8, 0, Math.PI * 2);
         c.fill();
       }
 
