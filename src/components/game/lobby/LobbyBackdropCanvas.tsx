@@ -373,16 +373,56 @@ export const LobbyBackdropCanvas: React.FC = () => {
         const searchlightY = leftBastionY - 14;
         const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.9) * 0.55;
 
+        // Solid Mechanical Support Mast & Mounting Bracket down to Bunker Deck
         ctx.save();
         ctx.translate(searchlightX, searchlightY);
+
+        // 1. Heavy Steel Lattice Mast & Base Platform
+        ctx.strokeStyle = '#71717a';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        // Left & Right Support Legs extending down to bunker roof (+28px)
+        ctx.moveTo(-7, 28);
+        ctx.lineTo(-4, 4);
+        ctx.moveTo(7, 28);
+        ctx.lineTo(4, 4);
+        // Cross-bracing struts
+        ctx.moveTo(-6, 22);
+        ctx.lineTo(5, 12);
+        ctx.moveTo(6, 22);
+        ctx.lineTo(-5, 12);
+        ctx.stroke();
+
+        // 2. Bolted Concrete Base Collar on Roof
+        ctx.fillStyle = '#27272a';
+        ctx.strokeStyle = '#09090b';
+        ctx.lineWidth = 1.5;
+        drawRoundRect(ctx, -10, 24, 20, 6, 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 3. Swiveling Turret Yoke Bracket
         ctx.fillStyle = '#3f3f46';
         ctx.strokeStyle = '#18181b';
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 4, 5, 0, Math.PI);
+        ctx.fill();
+        ctx.stroke();
+
+        // 4. Searchlight Housing Sphere
         ctx.beginPath();
         ctx.arc(0, 0, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
+        // Pivot Hub Bolt
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Volumetric Beam
         ctx.rotate(sweepAngle);
         const beamGrad = ctx.createRadialGradient(0, 0, 5, 0, -height * 0.85, height * 0.65);
         beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
@@ -415,19 +455,46 @@ export const LobbyBackdropCanvas: React.FC = () => {
 
         ctx.save();
         ctx.translate(radarX, radarY);
+
+        // 1. Reinforced Communication Tripod Legs extending down to Bunker Deck (+28px)
         ctx.strokeStyle = '#71717a';
         ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.moveTo(-6, 12);
+        ctx.moveTo(-10, 28);
         ctx.lineTo(0, 0);
-        ctx.lineTo(6, 12);
+        ctx.lineTo(10, 28);
+        // Horizontal stabilization ring
+        ctx.moveTo(-6, 16);
+        ctx.lineTo(6, 16);
         ctx.stroke();
+
+        // 2. Bolted Anchor Base Pads
+        ctx.fillStyle = '#27272a';
+        ctx.strokeStyle = '#09090b';
+        ctx.lineWidth = 1.5;
+        drawRoundRect(ctx, -12, 24, 24, 6, 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 3. Rotating Motor Gearbox
+        ctx.fillStyle = '#3f3f46';
+        ctx.fillRect(-4, -2, 8, 6);
+
+        // Pulsing Blue Data Link LED
+        ctx.fillStyle = Math.sin(t * 8) > 0 ? '#38bdf8' : '#0369a1';
+        ctx.beginPath();
+        ctx.arc(0, 1, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 4. Rotating Dish Ellipse
         ctx.fillStyle = '#38bdf8';
         ctx.strokeStyle = '#18181b';
         ctx.lineWidth = 2;
         drawSafeEllipse(ctx, 0, -4, 14 * Math.abs(Math.cos(radarAngle)), 14);
         ctx.fill();
         ctx.stroke();
+
+        // Center Spike
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
         ctx.arc(0, -4, 2.5, 0, Math.PI * 2);
