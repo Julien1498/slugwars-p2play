@@ -13,7 +13,7 @@ interface BoardBottomDockProps {
   chatMessageCount: number;
 }
 
-export const BoardBottomDock: React.FC<BoardBottomDockProps> = ({
+export const BoardBottomDock: React.FC<BoardBottomDockProps> = React.memo(({
   activeSlug,
   activeSheep,
   isMyTurn,
@@ -153,4 +153,17 @@ export const BoardBottomDock: React.FC<BoardBottomDockProps> = ({
       </div>
     </footer>
   );
-};
+}, (prev, next) => {
+  return (
+    prev.isMyTurn === next.isMyTurn &&
+    prev.showDrawer === next.showDrawer &&
+    prev.chatMessageCount === next.chatMessageCount &&
+    prev.activeSlug?.id === next.activeSlug?.id &&
+    prev.activeSlug?.inVehicleId === next.activeSlug?.inVehicleId &&
+    prev.activeSlug?.selectedWeaponId === next.activeSlug?.selectedWeaponId &&
+    prev.activeSheep?.id === next.activeSheep?.id &&
+    prev.onToggleDrawer === next.onToggleDrawer &&
+    prev.onOpenWeaponPicker === next.onOpenWeaponPicker &&
+    prev.onExitVehicle === next.onExitVehicle
+  );
+});

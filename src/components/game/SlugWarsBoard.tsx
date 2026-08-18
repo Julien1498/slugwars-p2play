@@ -84,6 +84,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const handleCloseRules = useCallback(() => setShowRules(false), []);
   const handleOpenMetrics = useCallback(() => setShowMetrics(true), []);
   const handleCloseMetrics = useCallback(() => setShowMetrics(false), []);
+  const handleToggleHitboxes = useCallback(() => setShowHitboxes((prev) => !prev), []);
 
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
@@ -122,7 +123,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           isMyTurn={isMyTurn}
           isHost={isHost}
           showHitboxes={showHitboxes}
-          onToggleHitboxes={() => setShowHitboxes(!showHitboxes)}
+          onToggleHitboxes={handleToggleHitboxes}
           onOpenWeaponPicker={handleOpenWeaponPicker}
           onSetFuseTimer={onSetFuseTimer}
           onOpenRules={handleOpenRules}
