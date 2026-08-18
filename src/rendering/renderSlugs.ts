@@ -268,19 +268,83 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       }
     }
 
-    // Team Hat
+    // Team Hat 0: Military Corporal Peaked Cap (Casquette de Caporal à visière)
     if (teamIndex % 4 === 0) {
-      ctx.fillStyle = '#3f6212';
+      ctx.save();
+
+      // 1. Cap Crown (Dôme vert militaire biseauté vers l'avant)
+      const capGrad = ctx.createLinearGradient(0, -21, 10, -11);
+      capGrad.addColorStop(0, '#4d7c0f');
+      capGrad.addColorStop(0.6, '#365314');
+      capGrad.addColorStop(1, '#1a2e05');
+      ctx.fillStyle = capGrad;
       ctx.strokeStyle = '#18181b';
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.ellipse(5, -13, 9, 5, 0.1, Math.PI, 0);
+      ctx.moveTo(-3, -12);
+      ctx.lineTo(-4, -17);
+      ctx.quadraticCurveTo(2, -21, 11, -18);
+      ctx.lineTo(13, -13);
+      ctx.quadraticCurveTo(5, -11, -3, -12);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = '#facc15';
+
+      // 2. Leather Base Band (Bandeau de base noir/olive)
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#020617';
+      ctx.lineWidth = 1.0;
       ctx.beginPath();
-      ctx.arc(5, -15, 1.8, 0, Math.PI * 2);
+      ctx.moveTo(-3, -12);
+      ctx.quadraticCurveTo(5, -10.5, 13, -13);
+      ctx.lineTo(13.5, -11.5);
+      ctx.quadraticCurveTo(5, -9, -3.5, -10.5);
+      ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+
+      // 3. Golden Chin-strap Braided Cord (Galon doré au-dessus de la visière)
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-1, -11.5);
+      ctx.quadraticCurveTo(6, -10, 13, -12);
+      ctx.stroke();
+
+      // 4. Black Glossy Visor / Peaked Brim (Visière noire incurvée avec reflet)
+      ctx.fillStyle = '#09090b';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(3, -10.5);
+      ctx.quadraticCurveTo(10, -10, 16, -9);
+      ctx.quadraticCurveTo(11, -7.5, 3, -9.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Visor Highlight (Reflet brillant sur la visière)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(6, -9.8);
+      ctx.quadraticCurveTo(11, -9.3, 14.5, -8.6);
+      ctx.stroke();
+
+      // 5. Golden Corporal Insignia / Cockade (Étoile / Insigne de caporal)
+      ctx.fillStyle = '#fde047';
+      ctx.strokeStyle = '#ca8a04';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.arc(4.5, -15, 2.0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(4.5, -15, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
     } else if (teamIndex % 4 === 1) {
       ctx.fillStyle = '#dc2626';
       ctx.strokeStyle = '#18181b';
