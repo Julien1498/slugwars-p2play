@@ -28,14 +28,20 @@ export function useHostActionHandler(
         switch (msg.actionName) {
           case 'JOIN_GAME': {
             const trusted = peerManager.getTrustedUsername?.(playerId) || msg.payload?.name || `Limace ${playerId.slice(0, 4)}`;
-            const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
-            engine.addTeam(
-              playerId,
-              trusted,
-              msg.payload?.color || TEAM_COLORS[colorIdx],
-              msg.payload?.avatar || '🐌',
-              playerId === hostId
-            );
+            const existing = engine.state.teams.find((t) => t.id === playerId);
+            if (existing) {
+              if (msg.payload?.name) existing.name = trusted;
+              if (msg.payload?.avatar) existing.avatar = msg.payload.avatar;
+            } else {
+              const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
+              engine.addTeam(
+                playerId,
+                trusted,
+                msg.payload?.color || TEAM_COLORS[colorIdx],
+                msg.payload?.avatar || '🐌',
+                playerId === hostId
+              );
+            }
             broadcastState(engine.state);
             break;
           }
@@ -156,14 +162,21 @@ export function useHostActionHandler(
             }
             break;
           case 'REQUEST_FULL_STATE': {
-            const conn = peerManager.connections?.get(playerId);
-            const sanitized = sanitizeGameState(engine.state);
-            if (conn && conn.open) {
-              const resMsg = { type: 'STATE_UPDATE', state: sanitized };
-              conn.send(resMsg);
-              netMetrics.recordUpload(resMsg);
-            } else {
+            if (engine.state.phase === 'LOBBY' && !engine.state.teams.some((t) => t.id === playerId)) {
+              const trusted = peerManager.getTrustedUsername?.(playerId) || `Limace ${playerId.slice(0, 4)}`;
+              const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
+              engine.addTeam(playerId, trusted, TEAM_COLORS[colorIdx], '🐌', playerId === hostId);
               broadcastState(engine.state);
+            } else {
+              const conn = peerManager.connections?.get(playerId);
+              const sanitized = sanitizeGameState(engine.state);
+              if (conn && conn.open) {
+                const resMsg = { type: 'STATE_UPDATE', state: sanitized };
+                conn.send(resMsg);
+                netMetrics.recordUpload(resMsg);
+              } else {
+                broadcastState(engine.state);
+              }
             }
             break;
           }

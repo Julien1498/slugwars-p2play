@@ -134,44 +134,96 @@ export function useGame(options?: {
     [joinGame, peerManager]
   );
 
-  // Embedded mode lobby initialization
+  // Host: Dynamic lobby sync for newly connected players while in LOBBY phase
   useEffect(() => {
-    if (options?.isEmbedded && isHost && engineRef.current.state.phase === 'LOBBY' && myPeerId) {
-      const hostName = options.playerName || peerManager.getTrustedUsername?.(myPeerId) || 'Hôte';
-      const hostAvatar = options.playerAvatar || '🐌';
-      engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true);
+    if (!isHost) return;
 
+    const syncLobbyTeams = () => {
+      if (engineRef.current.state.phase !== 'LOBBY') return;
+      let changed = false;
+
+      // Ensure host is present
+      if (myPeerId && !engineRef.current.state.teams.some((t) => t.id === myPeerId)) {
+        const hostName = options?.playerName || peerManager.getTrustedUsername?.(myPeerId) || 'Hôte';
+        const hostAvatar = options?.playerAvatar || '🐌';
+        engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true);
+        changed = true;
+      }
+
+      // Check all lobby players from peerManager
       if (peerManager.lobbyPlayers) {
         peerManager.lobbyPlayers.forEach((p) => {
-          if (p.peerId && p.peerId !== myPeerId) {
+          if (p.peerId && !engineRef.current.state.teams.some((t) => t.id === p.peerId)) {
             const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
             engineRef.current.addTeam(
               p.peerId,
               p.username || `Joueur ${p.peerId.slice(0, 4)}`,
               TEAM_COLORS[colorIdx],
               p.avatar || '🐌',
-              false
+              p.peerId === myPeerId
             );
+            changed = true;
           }
         });
       }
 
-      syncState();
-      broadcastState(engineRef.current.state);
-    }
-  }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastState]);
+      // Check all connected peer IDs from peerManager
+      peerManager.connections?.forEach((conn, peerId) => {
+        if (conn.open && !engineRef.current.state.teams.some((t) => t.id === peerId)) {
+          const trusted = peerManager.getTrustedUsername?.(peerId) || `Joueur ${peerId.slice(0, 4)}`;
+          const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
+          engineRef.current.addTeam(peerId, trusted, TEAM_COLORS[colorIdx], '🐌', false);
+          changed = true;
+        }
+      });
 
-  // Guest Embedded Mount: Request state from host on mount
+      if (changed) {
+        syncState();
+        broadcastState(engineRef.current.state);
+      }
+    };
+
+    syncLobbyTeams();
+
+    const origPeerStatusChange = peerManager.onPeerStatusChange;
+    peerManager.onPeerStatusChange = (peerId, st) => {
+      origPeerStatusChange?.(peerId, st);
+      if (st === 'CONNECTED') {
+        syncLobbyTeams();
+      }
+    };
+
+    const origPlayersUpdate = (peerManager as any).onPlayersUpdate;
+    (peerManager as any).onPlayersUpdate = () => {
+      origPlayersUpdate?.();
+      syncLobbyTeams();
+    };
+
+    return () => {
+      peerManager.onPeerStatusChange = origPeerStatusChange;
+      (peerManager as any).onPlayersUpdate = origPlayersUpdate;
+    };
+  }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager, syncState, broadcastState]);
+
+  // Guest Embedded Mount: Send JOIN_GAME & request state from host on mount
   useEffect(() => {
-    if (options?.isEmbedded && !isHost && peerManager) {
-      const req = () => {
+    if (options?.isEmbedded && !isHost && peerManager && myPeerId) {
+      const sendJoinAndSync = () => {
+        peerManager.sendToHost('ACTION', {
+          actionName: 'JOIN_GAME',
+          playerId: myPeerId,
+          payload: {
+            name: options.playerName || peerManager.getTrustedUsername?.(myPeerId),
+            avatar: options.playerAvatar || '🐌',
+          },
+        });
         peerManager.sendToHost('ACTION', {
           actionName: 'REQUEST_FULL_STATE',
         });
       };
-      [100, 500, 1500].forEach((ms) => setTimeout(req, ms));
+      [100, 400, 1000, 2500].forEach((ms) => setTimeout(sendJoinAndSync, ms));
     }
-  }, [options?.isEmbedded, isHost, peerManager]);
+  }, [options?.isEmbedded, isHost, peerManager, myPeerId, options?.playerName, options?.playerAvatar]);
 
   // Host Physics Loop (Web Worker 50ms / 20 Hz delta broadcasting during gameplay - unthrottled in background tabs!)
   useEffect(() => {
