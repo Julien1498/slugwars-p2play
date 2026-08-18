@@ -147,13 +147,13 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
       ) : (
         <>
           {/* 1. LEFT THUMB CLUSTER (Movement, D-Pad, Jump, Vehicle / Sheep Controls) - Frameless */}
-          <div className="pointer-events-auto flex items-end gap-2.5">
+          <div className="pointer-events-auto flex items-end gap-2 sm:gap-3">
             {activeSheep ? (
               // Super Sheep flight controls
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="w-18 h-18 rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-5xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
                   onPointerDown={(e) => {
                     e.preventDefault();
                     triggerHaptic();
@@ -169,7 +169,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="w-18 h-18 rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-5xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
                   onPointerDown={(e) => {
                     e.preventDefault();
                     triggerHaptic();
@@ -185,7 +185,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="w-18 h-18 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic(40);
                     onDetonate?.();
@@ -199,7 +199,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   type="button"
-                  className="w-16 h-13 rounded-xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-2xl flex items-center justify-center shadow-xl backdrop-blur-md"
+                  className="w-20 h-15 sm:w-24 sm:h-18 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-3xl flex items-center justify-center shadow-xl backdrop-blur-md"
                   onClick={() => {
                     triggerHaptic();
                     onSteerVehicle?.('up');
@@ -210,7 +210,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    className="w-16 h-13 rounded-xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-2xl flex items-center justify-center shadow-xl backdrop-blur-md"
+                    className="w-20 h-15 sm:w-24 sm:h-18 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-3xl flex items-center justify-center shadow-xl backdrop-blur-md"
                     onClick={() => {
                       triggerHaptic();
                       onSteerVehicle?.('left');
@@ -220,17 +220,17 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   </button>
                   <button
                     type="button"
-                    className="w-16 h-13 rounded-xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xs flex items-center justify-center shadow-xl"
+                    className="w-22 h-15 sm:w-26 sm:h-18 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xs sm:text-sm flex items-center justify-center shadow-xl uppercase tracking-tight"
                     onClick={() => {
                       triggerHaptic(30);
                       onExitVehicle?.();
                     }}
                   >
-                    Sortir
+                    Sortir 🚪
                   </button>
                   <button
                     type="button"
-                    className="w-16 h-13 rounded-xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-2xl flex items-center justify-center shadow-xl backdrop-blur-md"
+                    className="w-20 h-15 sm:w-24 sm:h-18 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-3xl flex items-center justify-center shadow-xl backdrop-blur-md"
                     onClick={() => {
                       triggerHaptic();
                       onSteerVehicle?.('right');
@@ -241,7 +241,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </div>
                 <button
                   type="button"
-                  className="w-16 h-13 rounded-xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-2xl flex items-center justify-center shadow-xl backdrop-blur-md"
+                  className="w-20 h-15 sm:w-24 sm:h-18 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 text-white text-3xl flex items-center justify-center shadow-xl backdrop-blur-md"
                   onClick={() => {
                     triggerHaptic();
                     onSteerVehicle?.('down');
@@ -251,12 +251,12 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
               </div>
             ) : (
-              // Standard Slug D-Pad (Walk & Jump) - Clean floating buttons without dark backing
-              <div className="flex items-center gap-2">
+              // Standard Slug D-Pad (Walk & Jump) - Generous, comfortable touch targets
+              <div className="flex items-center gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   disabled={!isMyTurn}
-                  className="w-18 h-18 rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-5xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
                   onPointerDown={(e) => {
                     e.preventDefault();
                     if (!isMyTurn) return;
@@ -275,7 +275,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 <button
                   type="button"
                   disabled={!isMyTurn}
-                  className="w-18 h-18 rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-5xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
                   onPointerDown={(e) => {
                     e.preventDefault();
                     if (!isMyTurn) return;
@@ -294,7 +294,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 <button
                   type="button"
                   disabled={!isMyTurn}
-                  className="w-18 h-18 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 active:from-emerald-700 active:to-teal-600 border-2 border-emerald-400 text-white font-black text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-40"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-emerald-600 to-teal-500 active:from-emerald-700 active:to-teal-600 border-2 border-emerald-400 text-white font-black text-4xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-40"
                   onClick={() => {
                     if (!isMyTurn) return;
                     triggerHaptic(20);
@@ -307,11 +307,12 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 {nearbyHeli && (
                   <button
                     type="button"
-                    className="w-18 h-18 rounded-2xl bg-amber-600 active:bg-amber-500 border-2 border-amber-400 text-white font-black text-sm flex items-center justify-center shadow-2xl active:scale-95 transition-transform animate-pulse"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-amber-600 active:bg-amber-500 border-2 border-amber-400 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform animate-pulse"
                     onClick={() => {
                       triggerHaptic(30);
                       onEnterVehicle?.();
                     }}
+                    title="Monter dans l'hélicoptère"
                   >
                     🚁
                   </button>

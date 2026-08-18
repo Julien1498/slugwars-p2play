@@ -29,34 +29,34 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-3 sm:p-5 space-y-2.5 sm:space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col h-[560px] max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl max-w-4xl w-full p-2.5 sm:p-5 space-y-2 sm:space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col h-[90vh] sm:h-[560px] max-h-[95vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
-              <Sparkles className="w-5 h-5 animate-pulse" />
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2 sm:pb-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-violet-200 tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-violet-200 tracking-tight flex items-center gap-1.5 sm:gap-2">
                 <span>Arsenal Tactique</span>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-violet-950 border border-violet-500/60 rounded-full text-violet-300">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.2 sm:px-2 sm:py-0.5 bg-violet-950 border border-violet-500/60 rounded-full text-violet-300">
                   W.M.D
                 </span>
               </h2>
-              <p className="text-xs text-zinc-400">Choisissez votre arme pour le tour en cours</p>
+              <p className="text-[11px] text-zinc-400 hidden sm:block">Choisissez votre arme pour le tour en cours</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition"
+            className="p-1.5 sm:p-2 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Categories Tabs - Grid 5 columns, fixed height tabs, zero resizing */}
-        <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
+        {/* Categories Tabs - Scrollable on mobile, 5 cols on desktop */}
+        <div className="flex overflow-x-auto no-scrollbar gap-1.5 sm:grid sm:grid-cols-5 sm:gap-2 border-b border-zinc-800/80 pb-2 sm:pb-3 shrink-0">
           {CATEGORIES.map((cat) => {
             const count = allWeapons.filter((w) => w.category === cat.id).length;
             const isActive = activeCategory === cat.id;
@@ -64,14 +64,14 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-1.5 sm:py-2 px-2.5 sm:px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 sm:shrink ${
                   isActive
                     ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
                     : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
                 {cat.icon}
-                <span className="truncate">{cat.label}</span>
+                <span className="whitespace-nowrap">{cat.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full shrink-0 ${isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
                   {count}
                 </span>
@@ -81,7 +81,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
         </div>
 
         {/* Weapons Grid - Fixed container with content-start so layout never shifts */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0 content-start">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 overflow-y-auto p-0.5 sm:p-1 flex-1 min-h-0 content-start">
           {filtered.map((w) => {
             const ammo = inventory[w.id] ?? w.defaultAmmo;
             const isDisabled = ammo === 0;
@@ -95,7 +95,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                   onSelectWeapon(w.id);
                   onClose();
                 }}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all relative overflow-hidden ${
+                className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left flex flex-col justify-between gap-1.5 sm:gap-2.5 transition-all relative overflow-hidden ${
                   isSelected
                     ? 'bg-gradient-to-br from-violet-950/90 to-purple-950/80 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)] scale-[1.02]'
                     : isDisabled
@@ -104,17 +104,17 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                 }`}
               >
                 {isSelected && (
-                  <div className="absolute top-2 right-2 p-1 bg-violet-600 text-white rounded-full shadow">
-                    <Check className="w-3 h-3" />
+                  <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 p-1 bg-violet-600 text-white rounded-full shadow">
+                    <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
                     {w.icon}
                   </div>
                   <span
-                    className={`text-xs font-black px-2.5 py-1 rounded-lg ${
+                    className={`text-[11px] sm:text-xs font-black px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg ${
                       w.id === 'blowtorch'
                         ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
                         : ammo === -1
@@ -129,20 +129,20 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                 </div>
 
                 <div>
-                  <div className="font-bold text-sm text-zinc-100 flex items-center gap-1.5">
-                    <span>{w.name}</span>
+                  <div className="font-bold text-xs sm:text-sm text-zinc-100 flex items-center gap-1">
+                    <span className="truncate">{w.name}</span>
                     {w.craftable && (
-                      <span className="text-[9px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1.5 py-0.2 rounded">
-                        W.M.D
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded">
+                        WMD
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
+                  <div className="text-[10px] sm:text-[11px] text-zinc-400 line-clamp-1 sm:line-clamp-2 mt-0.5 sm:mt-1 leading-tight sm:leading-snug">
                     {w.description}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-2 border-t border-zinc-800/80">
+                <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-zinc-400 pt-1.5 sm:pt-2 border-t border-zinc-800/80">
                   <span className="flex items-center gap-1 text-red-400 font-bold">
                     <Zap className="w-3 h-3 text-red-400" /> {w.damage} Dgt
                   </span>
