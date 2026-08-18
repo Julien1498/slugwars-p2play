@@ -268,76 +268,76 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       }
     }
 
-    // Team Hat 0: Fitted Military Corporal Cap (Casquette / Calot de Caporal militaire ajusté sur la tête)
+    // Team Hat 0: Military Corporal Peaked Cap (Casquette de Caporal à visière profilée)
     if (teamIndex % 4 === 0) {
       ctx.save();
-      // Ancrage naturel épousant la courbure du crâne
-      ctx.translate(1, -7);
-      ctx.rotate(-0.12);
 
-      // 1. Cap Crown (Tissu vert olive militaire épousant le crâne)
-      const capGrad = ctx.createLinearGradient(-6, -14, 8, -2);
+      // 1. Cap Crown (Dôme vert militaire d'officier avec dégradé d'ombre)
+      const capGrad = ctx.createLinearGradient(0, -19, 8, -13);
       capGrad.addColorStop(0, '#4d7c0f');
-      capGrad.addColorStop(0.5, '#365314');
-      capGrad.addColorStop(1, '#1e3a06');
+      capGrad.addColorStop(0.55, '#365314');
+      capGrad.addColorStop(1, '#1a2e05');
       ctx.fillStyle = capGrad;
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 1.3;
 
       ctx.beginPath();
-      ctx.moveTo(-6, -2);
-      ctx.quadraticCurveTo(1, -4.5, 8, -2.5);
-      ctx.lineTo(8.5, -6.5);
-      ctx.quadraticCurveTo(4, -12, -2, -12.5);
-      ctx.quadraticCurveTo(-6, -10, -6.5, -4.5);
+      // Base line along top of brow (laisse les yeux totalement dégagés)
+      ctx.moveTo(-3.5, -13);
+      ctx.quadraticCurveTo(5, -14, 13, -12.5);
+      // Front upward peak
+      ctx.lineTo(13.5, -14.5);
+      ctx.quadraticCurveTo(9, -19.5, 4, -19);
+      // Back downward slope
+      ctx.quadraticCurveTo(-2, -18.5, -4, -13.5);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      // 2. Leather Headband Base (Bandeau de finition bas qui s'intègre au crâne)
-      ctx.fillStyle = '#1c1917';
-      ctx.strokeStyle = '#0c0a09';
-      ctx.lineWidth = 1.0;
+      // 2. Leather Finished Base Rim (Bandeau de finition bas propre)
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#020617';
+      ctx.lineWidth = 0.9;
       ctx.beginPath();
-      ctx.moveTo(-6, -2);
-      ctx.quadraticCurveTo(1, -4.5, 8, -2.5);
-      ctx.lineTo(8.2, -1.2);
-      ctx.quadraticCurveTo(1, -3.2, -5.8, -0.8);
+      ctx.moveTo(-3.5, -13);
+      ctx.quadraticCurveTo(5, -14, 13, -12.5);
+      ctx.lineTo(13.2, -11.7);
+      ctx.quadraticCurveTo(5, -13.1, -3.8, -12.2);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      // 3. Golden Braid Trim (Galon doré discret de caporal)
+      // 3. Golden Braid Cord (Galon doré au-dessus de la visière)
       ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
-      ctx.moveTo(-4.5, -2.8);
-      ctx.quadraticCurveTo(1, -4.8, 7.5, -3.2);
+      ctx.moveTo(-2, -13.3);
+      ctx.quadraticCurveTo(5, -14.2, 12.5, -12.8);
       ctx.stroke();
 
-      // 4. Compact Black Visor (Visière courte profilée sur le front)
+      // 4. Subtle Glossy Visor (Visière noire fine pointant vers l'avant au front)
       ctx.fillStyle = '#09090b';
       ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 1.0;
+      ctx.lineWidth = 0.9;
       ctx.beginPath();
-      ctx.moveTo(2, -3.2);
-      ctx.quadraticCurveTo(7, -3.5, 11.5, -2.2);
-      ctx.quadraticCurveTo(7.5, -1.5, 2, -2.2);
+      ctx.moveTo(6, -13.2);
+      ctx.quadraticCurveTo(10, -13.5, 14.5, -12.2);
+      ctx.quadraticCurveTo(10, -12.4, 6, -12.5);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      // 5. Golden Corporal Insignia (Petite étoile / insigne de caporal)
+      // 5. Golden Corporal Insignia (Étoile / Cocarde dorée de caporal)
       ctx.fillStyle = '#fde047';
       ctx.strokeStyle = '#ca8a04';
       ctx.lineWidth = 0.6;
       ctx.beginPath();
-      ctx.arc(1.5, -8, 1.6, 0, Math.PI * 2);
+      ctx.arc(5, -16.2, 1.7, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
-      ctx.arc(1.5, -8, 0.6, 0, Math.PI * 2);
+      ctx.arc(5, -16.2, 0.6, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
