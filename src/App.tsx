@@ -12,6 +12,11 @@ export interface AppProps {
   onExit?: () => void;
   playerName?: string;
   playerAvatar?: string;
+  isHost?: boolean;
+  lateJoin?: boolean;
+  gameConfig?: any;
+  hubPhase?: string;
+  enableTextChat?: boolean;
 }
 
 export const App: React.FC<AppProps> = ({
@@ -20,6 +25,7 @@ export const App: React.FC<AppProps> = ({
   onExit,
   playerName: propName,
   playerAvatar: propAvatar,
+  isHost: propIsHost,
 }) => {
   const savedProfile = loadProfile();
   const playerName = propName || savedProfile?.username;
@@ -44,6 +50,7 @@ export const App: React.FC<AppProps> = ({
     externalPeerManager,
     playerName,
     playerAvatar,
+    isHost: propIsHost,
   });
 
   const isConnected = status === 'CONNECTED' || (status as string) === 'connected';

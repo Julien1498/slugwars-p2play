@@ -19,10 +19,11 @@ export function useGame(options?: {
   externalPeerManager?: PeerManagerLike;
   playerName?: string;
   playerAvatar?: string;
+  isHost?: boolean;
 }) {
   const p2p = usePeer({ externalPeerManager: options?.externalPeerManager });
+  const isHost = options?.isHost !== undefined ? options.isHost : p2p.isHost;
   const {
-    isHost,
     myPeerId,
     hostPeerId,
     peerManager,
@@ -159,6 +160,18 @@ export function useGame(options?: {
       broadcastState(engineRef.current.state);
     }
   }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager.lobbyPlayers, syncState, broadcastState]);
+
+  // Guest Embedded Mount: Request state from host on mount
+  useEffect(() => {
+    if (options?.isEmbedded && !isHost && peerManager) {
+      const req = () => {
+        peerManager.sendToHost('ACTION', {
+          actionName: 'REQUEST_FULL_STATE',
+        });
+      };
+      [100, 500, 1500].forEach((ms) => setTimeout(req, ms));
+    }
+  }, [options?.isEmbedded, isHost, peerManager]);
 
   // Host Physics Loop (Web Worker 50ms / 20 Hz delta broadcasting during gameplay - unthrottled in background tabs!)
   useEffect(() => {
