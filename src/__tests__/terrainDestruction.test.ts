@@ -14,10 +14,15 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
 
     // Verify deterministic grid output
     let solidCountA = 0;
+    let matches = true;
     for (let i = 0; i < terrainDataA.grid.length; i++) {
       if (terrainDataA.grid[i] > 0) solidCountA++;
-      expect(terrainDataA.grid[i]).toBe(terrainDataB.grid[i]);
+      if (terrainDataA.grid[i] !== terrainDataB.grid[i]) {
+        matches = false;
+        break;
+      }
     }
+    expect(matches).toBe(true);
     expect(solidCountA).toBeGreaterThan(100);
   });
 
