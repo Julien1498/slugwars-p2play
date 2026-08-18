@@ -4,6 +4,7 @@ import { DestructibleTerrain } from '../../core/terrain';
 import { getWeapon } from '../../core/weapons/registry';
 import { sfx } from '../../core/audio';
 import { perfTracker } from '../../core/perfTracker';
+import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 import { screenToWorldCoords, clampPanOffset } from '../../rendering/cameraUtils';
 import { renderHDDestructibleGirder, renderHDDestructibleProp } from '../../rendering/renderProps';
 import { renderSkyAndAtmosphere } from '../../rendering/renderSky';
@@ -75,6 +76,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   isMyTurnRef.current = isMyTurn;
   const showHitboxesRef = useRef(showHitboxes);
   showHitboxesRef.current = showHitboxes;
+
+  const isTouch = useIsTouchDevice();
 
   // Smooth Camera Pan & Cursor-Centered Zoom State
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
@@ -1083,36 +1086,38 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       <canvas ref={canvasRef} className="block w-full h-full" />
 
-      {/* Floating Zoom & Pan Controls Widget in Bottom Right */}
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg"
-      >
-        <button
-          type="button"
-          onClick={handleZoomOut}
-          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
-          title="Dézoomer (- / Molette Bas)"
+      {/* Floating Zoom & Pan Controls Widget in Bottom Right (Desktop Only) */}
+      {!isTouch && (
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg"
         >
-          -
-        </button>
-        <button
-          type="button"
-          onClick={handleCenterCamera}
-          className="px-2 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-bold text-[10px] flex items-center justify-center transition active:scale-95"
-          title="Recentrer la vue & Zoom 100% (Touche C)"
-        >
-          {Math.round(zoomLevel * 100)}%
-        </button>
-        <button
-          type="button"
-          onClick={handleZoomIn}
-          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
-          title="Zoomer (+ / Molette Haut)"
-        >
-          +
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
+            title="Dézoomer (- / Molette Bas)"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={handleCenterCamera}
+            className="px-2 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-bold text-[10px] flex items-center justify-center transition active:scale-95"
+            title="Recentrer la vue & Zoom 100% (Touche C)"
+          >
+            {Math.round(zoomLevel * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
+            title="Zoomer (+ / Molette Haut)"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 });
