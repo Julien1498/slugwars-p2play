@@ -322,6 +322,16 @@ export function renderHelicopters(
     ctx.fillStyle = '#475569';
     ctx.fillRect(-2, -16, 4, 6);
 
+    // High-speed rotor blur disc when flying
+    if (isPiloted) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(203, 213, 225, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(0, -16, 45, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     const mainRotorSpeed = isPiloted ? 35 : isAirborne ? 16 : 4;
     const currentRotorAngle = animTime * mainRotorSpeed;
     const bladeWidth = Math.cos(currentRotorAngle) * 45;
@@ -337,6 +347,56 @@ export function renderHelicopters(
     ctx.beginPath();
     ctx.arc(0, -16, 2.5, 0, Math.PI * 2);
     ctx.fill();
+
+    // Blinking LED Nav Lights
+    // Red LED on Tail
+    const redBlink = Math.floor(Date.now() / 400) % 2 === 0;
+    ctx.fillStyle = redBlink ? '#ef4444' : '#7f1d1d';
+    ctx.beginPath();
+    ctx.arc(-35, -3, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Green LED on Main Rotor Tip
+    const greenBlink = Math.floor(Date.now() / 200) % 2 === 0;
+    ctx.fillStyle = greenBlink ? '#22c55e' : '#14532d';
+    ctx.beginPath();
+    ctx.arc(bladeWidth, -16, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Searchlight Spotlight Cone (Golden Beam from Nose)
+    ctx.save();
+    const lightOriginX = 14;
+    const lightOriginY = 4;
+
+    const lightGrad = ctx.createLinearGradient(lightOriginX, lightOriginY, lightOriginX + 60, lightOriginY + 120);
+    lightGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+    lightGrad.addColorStop(0.6, 'rgba(245, 158, 11, 0.15)');
+    lightGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+    ctx.fillStyle = lightGrad;
+    ctx.beginPath();
+    ctx.moveTo(lightOriginX, lightOriginY);
+    ctx.lineTo(lightOriginX - 35, lightOriginY + 130);
+    ctx.lineTo(lightOriginX + 75, lightOriginY + 130);
+    ctx.closePath();
+    ctx.fill();
+
+    // Floating Light Dust Motes in Cone
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.8)';
+    for (let m = 0; m < 5; m++) {
+      const mx = lightOriginX + Math.sin(Date.now() * 0.002 + m) * 20;
+      const my = lightOriginY + 20 + ((Date.now() * 0.03 + m * 25) % 100);
+      ctx.beginPath();
+      ctx.arc(mx, my, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Side Rocket Pod
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(-6, 4, 14, 5);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(8, 5, 2, 3);
 
     ctx.restore();
 

@@ -194,6 +194,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
       c.save();
       c.translate(x, y);
 
+      // Heavy Concrete Bunker Base with armored bevels
       c.fillStyle = '#1e1e24';
       c.strokeStyle = '#09090b';
       c.lineWidth = 3;
@@ -206,10 +207,50 @@ export const LobbyBackdropCanvas: React.FC = () => {
       c.fill();
       c.stroke();
 
+      // Concrete Wall Armor Panel Seams & Rivets
+      c.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.moveTo(-w / 2 + 15, 12);
+      c.lineTo(-w / 2 + 5, h - 10);
+      c.moveTo(w / 2 - 15, 12);
+      c.lineTo(w / 2 - 5, h - 10);
+      c.stroke();
+
+      // Steel Rivets
+      c.fillStyle = '#71717a';
+      for (let r = 0; r < 4; r++) {
+        const ry = 18 + r * 18;
+        c.beginPath();
+        c.arc(-w / 2 + 8, ry, 1.8, 0, Math.PI * 2);
+        c.arc(w / 2 - 8, ry, 1.8, 0, Math.PI * 2);
+        c.fill();
+      }
+
+      // Glowing Slit Observation / Radar Window with Pulsing Screen
       c.fillStyle = accentColor;
-      drawRoundRect(c, -w * 0.25, 18, w * 0.5, 6, 2);
+      c.shadowColor = accentColor;
+      c.shadowBlur = 10;
+      drawRoundRect(c, -w * 0.28, 16, w * 0.56, 8, 2);
+      c.fill();
+      c.shadowBlur = 0;
+
+      // Interior Radar Waveform / Scope Glint inside Window
+      c.fillStyle = '#ffffff';
+      c.fillRect(-w * 0.15 + Math.sin(t * 4) * w * 0.1, 18, 4, 4);
+
+      // Flashing Alert Indicator LEDs on Bunker Wall
+      const ledBlink = Math.sin(t * 6) > 0;
+      c.fillStyle = ledBlink ? '#ef4444' : '#7f1d1d';
+      c.beginPath();
+      c.arc(-w * 0.35, 10, 2.5, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = ledBlink ? '#22c55e' : '#14532d';
+      c.beginPath();
+      c.arc(-w * 0.35 + 8, 10, 2.5, 0, Math.PI * 2);
       c.fill();
 
+      // Platform Top Deck (Grass / Camo Grid)
       c.fillStyle = '#15803d';
       drawRoundRect(c, -w / 2 - 6, -6, w + 12, 12, 5);
       c.fill();
@@ -217,13 +258,29 @@ export const LobbyBackdropCanvas: React.FC = () => {
       drawRoundRect(c, -w / 2 - 4, -6, w + 8, 6, 3);
       c.fill();
 
+      // Barbed Wire Protection Strand along Platform Edge
+      c.strokeStyle = '#a1a1aa';
+      c.lineWidth = 1.2;
+      c.beginPath();
+      for (let bx = -w / 2 - 4; bx <= w / 2 + 4; bx += 10) {
+        c.moveTo(bx, -6);
+        c.lineTo(bx + 5, -11);
+        c.lineTo(bx + 10, -6);
+      }
+      c.stroke();
+
+      // Heavy Metal Nameplate with Glowing Tactical Border
       c.fillStyle = 'rgba(0, 0, 0, 0.85)';
-      drawRoundRect(c, -38, h - 10, 76, 15, 4);
+      c.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      c.lineWidth = 1;
+      drawRoundRect(c, -44, h - 14, 88, 18, 4);
       c.fill();
-      c.fillStyle = '#a1a1aa';
-      c.font = 'bold 9px monospace';
+      c.stroke();
+
+      c.fillStyle = '#e4e4e7';
+      c.font = 'bold 10px monospace';
       c.textAlign = 'center';
-      c.fillText(title, 0, h + 1);
+      c.fillText(title, 0, h - 1);
 
       c.restore();
     };
