@@ -138,7 +138,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       </Profiler>
 
       <div className="relative flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden my-0.5">
-        {gameState.phase === 'PLACEMENT' && (
+        {!isTouch && gameState.phase === 'PLACEMENT' && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-4 py-1 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-xl backdrop-blur-md animate-pulse">
             📍 Cliquez sur le terrain pour placer votre limace ({activeSlug?.name})
           </div>

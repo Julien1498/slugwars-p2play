@@ -262,7 +262,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const newPanX = mouseRelX - (mouseRelX - panRef.current.x) * scaleChange;
       const newPanY = mouseRelY - (mouseRelY - panRef.current.y) * scaleChange;
 
-      const clamped = clampPanOffset({ x: newPanX, y: newPanY }, newZoom, rect.width, rect.height);
+      const clamped = clampPanOffset(
+        { x: newPanX, y: newPanY },
+        newZoom,
+        rect.width,
+        rect.height,
+        terrain.data.width,
+        terrain.data.height
+      );
       zoomRef.current = newZoom;
       panRef.current = clamped;
       setZoomLevel(newZoom);
@@ -275,28 +282,39 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   const lastTouchTimeRef = useRef<number>(0);
   const lastPlacementTimeRef = useRef<number>(0);
+  const lastCenteredSlugIdRef = useRef<string | null>(null);
 
-  // Auto-center camera on active slug when turn starts
+  // Auto-center camera only when active slug actually changes to a newly placed slug
   useEffect(() => {
-    if (gameState.phase === 'AIMING' || gameState.phase === 'RETREAT' || gameState.phase === 'TURN_START') {
+    if (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT') {
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-      if (activeSlug && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
-        const totalScale = fitScale * zoomRef.current;
-        const targetPanX = -(activeSlug.x - terrain.data.width / 2) * totalScale;
-        const targetPanY = -(activeSlug.y - terrain.data.height / 2) * totalScale;
-        const clamped = clampPanOffset(
-          { x: targetPanX, y: targetPanY },
-          zoomRef.current,
-          rect.width,
-          rect.height,
-          terrain.data.width,
-          terrain.data.height
-        );
-        panRef.current = clamped;
-        setPanOffset(clamped);
+      if (activeSlug && activeSlug.isPlaced && activeSlug.x > 0 && activeSlug.y > 0) {
+        if (lastCenteredSlugIdRef.current !== activeSlug.id) {
+          lastCenteredSlugIdRef.current = activeSlug.id;
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
+            const totalScale = fitScale * zoomRef.current;
+            const targetPanX = -(activeSlug.x - terrain.data.width / 2) * totalScale;
+            const targetPanY = -(activeSlug.y - terrain.data.height / 2) * totalScale;
+            const clamped = clampPanOffset(
+              { x: targetPanX, y: targetPanY },
+              zoomRef.current,
+              rect.width,
+              rect.height,
+              terrain.data.width,
+              terrain.data.height
+            );
+            panRef.current = clamped;
+            setPanOffset(clamped);
+          }
+        }
       }
+    } else if (gameState.phase === 'PLACEMENT') {
+      // In placement phase, keep battlefield center fixed at 0, 0
+      lastCenteredSlugIdRef.current = null;
+      panRef.current = { x: 0, y: 0 };
+      setPanOffset({ x: 0, y: 0 });
     }
   }, [gameState.activeSlugId, gameState.phase, terrain.data.width, terrain.data.height]);
 
@@ -525,7 +543,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           { x: dragStartPanRef.current.x + dx, y: dragStartPanRef.current.y + dy },
           zoomRef.current,
           rect.width,
-          rect.height
+          rect.height,
+          terrain.data.width,
+          terrain.data.height
         );
         panRef.current = clamped;
         setPanOffset(clamped);
