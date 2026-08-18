@@ -37,16 +37,23 @@ export function screenToWorldCoords(
 }
 
 /**
- * Clamps pan offset so camera cannot be dragged infinitely outside viewport.
+ * Clamps pan offset so camera can smoothly navigate the entire terrain on mobile and desktop.
  */
 export function clampPanOffset(
   pan: Vector2D,
   zoom: number,
   viewportWidth: number,
-  viewportHeight: number
+  viewportHeight: number,
+  terrainWidth = 1400,
+  terrainHeight = 700
 ): Vector2D {
-  const maxPanX = Math.max(0, (viewportWidth * (zoom - 0.5)) / 2);
-  const maxPanY = Math.max(0, (viewportHeight * (zoom - 0.5)) / 2);
+  const fitScale = Math.min(viewportWidth / terrainWidth, viewportHeight / terrainHeight);
+  const totalScale = fitScale * zoom;
+  const renderedW = terrainWidth * totalScale;
+  const renderedH = terrainHeight * totalScale;
+
+  const maxPanX = Math.max(viewportWidth * 0.5, (renderedW / 2) + viewportWidth * 0.25);
+  const maxPanY = Math.max(viewportHeight * 0.5, (renderedH / 2) + viewportHeight * 0.25);
 
   return {
     x: Math.max(-maxPanX, Math.min(maxPanX, pan.x)),
