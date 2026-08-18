@@ -120,6 +120,7 @@ export function useHostActionHandler(
                 if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
                 if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
                 if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
+                if (msg.payload?.targetPoint) activeSlug.currentTargetPoint = msg.payload.targetPoint;
               }
             }
             break;

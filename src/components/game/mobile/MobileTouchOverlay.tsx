@@ -16,7 +16,8 @@ interface MobileTouchOverlayProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
-  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right') => void;
+  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
+  onFire?: (targetPoint?: Vector2D) => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   onSetFuseTimer?: (seconds: number) => void;
@@ -43,6 +44,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
   onStopMove,
   onJump,
   onUpdateAim,
+  onFire,
   onStartCharge,
   onReleaseCharge,
   onSetFuseTimer,
@@ -104,18 +106,20 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
 
   const handleFirePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!isMyTurn || isRetreat) return;
     triggerHaptic(20);
     isHoldingFireRef.current = true;
-    onStartCharge?.();
+    onStartCharge?.(activeSlug?.currentTargetPoint);
   };
 
   const handleFirePointerUp = (e: React.PointerEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!isHoldingFireRef.current) return;
     isHoldingFireRef.current = false;
     triggerHaptic(25);
-    onReleaseCharge?.();
+    onReleaseCharge?.(activeSlug?.currentTargetPoint);
   };
 
   const isPlacementPhase = gameState.phase === 'PLACEMENT';
@@ -396,25 +400,27 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
               </div>
             )}
 
-            {/* Main Actions Row (Weapon Card + Angle Nudges + Balanced Fire Button) */}
+            {/* Main Actions Row (Weapon Card + Angle Nudges + Action/Fire Button) */}
             <div className="flex items-center gap-2">
               {/* Equipped Weapon Card (Tap to open Arsenal) */}
               {currentWeapon && isMyTurn && !isRetreat && (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     triggerHaptic(20);
                     setShowWeaponPicker((prev) => !prev);
                   }}
-                  className="px-3.5 py-2 min-h-[64px] rounded-2xl bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-2 border-violet-500/80 active:border-violet-400 text-left flex items-center gap-2.5 shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="px-3 py-2 min-h-[64px] max-w-[110px] rounded-2xl bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-2 border-violet-500/80 active:border-violet-400 text-left flex items-center gap-2 shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
                   title="Toucher pour ouvrir l'Arsenal"
                 >
-                  <span className="text-3xl leading-none">{currentWeapon.icon}</span>
-                  <div className="flex flex-col leading-none">
-                    <span className="text-xs font-black text-violet-200 truncate max-w-[80px]">
+                  <span className="text-3xl leading-none shrink-0">{currentWeapon.icon}</span>
+                  <div className="flex flex-col leading-none min-w-0">
+                    <span className="text-xs font-black text-violet-200 truncate">
                       {currentWeapon.name}
                     </span>
-                    <span className="text-[10px] font-bold text-violet-400 mt-1">
+                    <span className="text-[10px] font-bold text-violet-400 mt-1 truncate">
                       {ammoLabel} • 🎒
                     </span>
                   </div>
@@ -427,31 +433,71 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   <button
                     type="button"
                     className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                    onClick={() => handleAngleChange(3)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAngleChange(3);
+                    }}
                   >
                     ▲
                   </button>
                   <button
                     type="button"
                     className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                    onClick={() => handleAngleChange(-3)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAngleChange(-3);
+                    }}
                   >
                     ▼
                   </button>
                 </div>
               )}
 
-              {/* Main Fire / Hold-to-Charge Button */}
+              {/* Main Fire / Action Button */}
               {isMyTurn && isAimingPhase && (
                 <button
                   type="button"
-                  className="w-[74px] h-[74px] rounded-2xl bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-2 border-amber-300 text-white font-black flex flex-col items-center justify-center shadow-2xl shadow-red-600/50 active:scale-95 transition-transform"
-                  onPointerDown={handleFirePointerDown}
-                  onPointerUp={handleFirePointerUp}
-                  onPointerCancel={handleFirePointerUp}
+                  className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-transform ${
+                    currentWeapon?.id === 'girder'
+                      ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50'
+                      : currentWeapon?.requiresTarget
+                      ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50'
+                      : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50'
+                  }`}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
+                    handleFirePointerDown(e);
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
+                    handleFirePointerUp(e);
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
+                      triggerHaptic(30);
+                      const target = activeSlug?.currentTargetPoint;
+                      if (currentWeapon?.behavior === 'AIR_STRIKE' || currentWeapon?.behavior === 'TELEPORT' || currentWeapon?.behavior === 'HEAVY_FALL') {
+                        onFire?.(target);
+                      } else {
+                        onReleaseCharge?.(target);
+                      }
+                    }
+                  }}
                 >
-                  <span className="text-3xl leading-none">🔥</span>
-                  <span className="text-[10px] font-black uppercase tracking-tighter mt-0.5">TIR</span>
+                  <span className="text-3xl leading-none">
+                    {currentWeapon?.id === 'girder' ? '🪜' : currentWeapon?.requiresTarget ? '🎯' : '🔥'}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-tighter mt-0.5">
+                    {currentWeapon?.id === 'girder' ? 'POSER' : currentWeapon?.requiresTarget ? 'CIBLER' : 'TIR'}
+                  </span>
                 </button>
               )}
             </div>
