@@ -767,31 +767,23 @@ export function renderHDDestructibleGirder(
 
   const girderRadius = Math.max(g.length, g.thickness) * 0.65;
 
-  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
-  if (craters) {
-    for (const c of craters) {
-      const dist = Math.hypot(c.x - g.x, c.y - g.y);
-      if (dist <= c.radius + girderRadius) {
-        overlappingCraters.push(c);
-      }
-    }
-  }
+  const overlappingExplosions: { x: number; y: number; radius: number }[] = [];
   if (explosions) {
     for (const ex of explosions) {
       const dist = Math.hypot(ex.x - g.x, ex.y - g.y);
       if (dist <= ex.radius + girderRadius) {
-        overlappingCraters.push(ex);
+        overlappingExplosions.push(ex);
       }
     }
   }
 
   ctx.save();
 
-  if (overlappingCraters.length > 0) {
-    for (const c of overlappingCraters) {
+  if (overlappingExplosions.length > 0) {
+    for (const ex of overlappingExplosions) {
       const notCircle = new Path2D();
       notCircle.rect(g.x - 200, g.y - 200, 400, 400);
-      notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+      notCircle.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
       ctx.clip(notCircle, 'evenodd');
     }
   }
