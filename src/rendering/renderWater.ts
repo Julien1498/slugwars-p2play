@@ -42,6 +42,67 @@ export interface WaterRenderContext {
   splashes: WaterSplash[];
 }
 
+// Pre-allocated typed arrays for wave points to avoid any memory allocations per frame
+let _waveX = new Float32Array(1024);
+let _waveY = new Float32Array(1024);
+
+// Cached gradient to avoid re-instantiating CanvasGradient every frame
+let _cachedGrad: CanvasGradient | null = null;
+let _cachedWaterY = -99999;
+let _cachedHeight = -99999;
+let _cachedTheme: MapTheme | null = null;
+let _cachedIsDay = true;
+
+function getCachedFgWaterGradient(
+  ctx: CanvasRenderingContext2D,
+  waterY: number,
+  height: number,
+  theme: MapTheme,
+  isDay: boolean
+): CanvasGradient {
+  if (
+    _cachedGrad &&
+    _cachedWaterY === waterY &&
+    _cachedHeight === height &&
+    _cachedTheme === theme &&
+    _cachedIsDay === isDay
+  ) {
+    return _cachedGrad;
+  }
+
+  const grad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
+  if (isDay) {
+    if (theme === 'CAVERN') {
+      grad.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
+      grad.addColorStop(0.12, 'rgba(249, 115, 22, 0.88)');
+      grad.addColorStop(0.45, 'rgba(220, 38, 38, 0.94)');
+      grad.addColorStop(1, 'rgba(23, 6, 2, 0.99)');
+    } else {
+      grad.addColorStop(0, 'rgba(6, 182, 212, 0.65)');
+      grad.addColorStop(0.15, 'rgba(2, 132, 199, 0.78)');
+      grad.addColorStop(0.45, 'rgba(3, 105, 161, 0.90)');
+      grad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
+    }
+  } else {
+    if (theme === 'CAVERN') {
+      grad.addColorStop(0, 'rgba(239, 68, 68, 0.85)');
+      grad.addColorStop(0.35, 'rgba(153, 27, 27, 0.94)');
+      grad.addColorStop(1, 'rgba(3, 1, 2, 0.99)');
+    } else {
+      grad.addColorStop(0, 'rgba(14, 165, 233, 0.60)');
+      grad.addColorStop(0.3, 'rgba(15, 23, 42, 0.88)');
+      grad.addColorStop(1, 'rgba(2, 4, 10, 0.99)');
+    }
+  }
+
+  _cachedGrad = grad;
+  _cachedWaterY = waterY;
+  _cachedHeight = height;
+  _cachedTheme = theme;
+  _cachedIsDay = isDay;
+  return grad;
+}
+
 export function renderForegroundOcean(rc: WaterRenderContext) {
   const {
     ctx,
@@ -75,42 +136,37 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   ctx.closePath();
   ctx.fill();
 
-  // Layer 2: Front Main Ocean Body (Smooth gradient following wave surface)
-  const fgWaterGrad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
-  if (isDay) {
-    if (theme === 'CAVERN') {
-      fgWaterGrad.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
-      fgWaterGrad.addColorStop(0.12, 'rgba(249, 115, 22, 0.88)');
-      fgWaterGrad.addColorStop(0.45, 'rgba(220, 38, 38, 0.94)');
-      fgWaterGrad.addColorStop(1, 'rgba(23, 6, 2, 0.99)');
-    } else {
-      fgWaterGrad.addColorStop(0, 'rgba(6, 182, 212, 0.65)');
-      fgWaterGrad.addColorStop(0.15, 'rgba(2, 132, 199, 0.78)');
-      fgWaterGrad.addColorStop(0.45, 'rgba(3, 105, 161, 0.90)');
-      fgWaterGrad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
-    }
-  } else {
-    if (theme === 'CAVERN') {
-      fgWaterGrad.addColorStop(0, 'rgba(239, 68, 68, 0.85)');
-      fgWaterGrad.addColorStop(0.35, 'rgba(153, 27, 27, 0.94)');
-      fgWaterGrad.addColorStop(1, 'rgba(3, 1, 2, 0.99)');
-    } else {
-      fgWaterGrad.addColorStop(0, 'rgba(14, 165, 233, 0.60)');
-      fgWaterGrad.addColorStop(0.3, 'rgba(15, 23, 42, 0.88)');
-      fgWaterGrad.addColorStop(1, 'rgba(2, 4, 10, 0.99)');
-    }
+  // Single-pass computation of the main surface wave points (used by Layers 2, 3, and 4)
+  const neededCapacity = Math.ceil((worldRight - worldLeft) / 12) + 2;
+  if (_waveX.length < neededCapacity) {
+    _waveX = new Float32Array(neededCapacity + 64);
+    _waveY = new Float32Array(neededCapacity + 64);
   }
 
-  ctx.fillStyle = fgWaterGrad;
+  let ptCount = 0;
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    _waveX[ptCount] = x;
+    _waveY[ptCount] = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+    ptCount++;
+  }
+
+  // Layer 2: Front Main Ocean Body (Smooth cached gradient following wave surface)
+  ctx.fillStyle = getCachedFgWaterGradient(ctx, waterY, height, theme, isDay);
   ctx.beginPath();
   ctx.moveTo(worldLeft, worldBottom);
-  for (let x = worldLeft; x <= worldRight; x += 12) {
-    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
-    ctx.lineTo(x, wy3);
+  for (let i = 0; i < ptCount; i++) {
+    ctx.lineTo(_waveX[i], _waveY[i]);
   }
   ctx.lineTo(worldRight, worldBottom);
   ctx.closePath();
   ctx.fill();
+
+  // Layer 3 & 4: Wave Crest Strokes (Combined single path construction)
+  ctx.beginPath();
+  ctx.moveTo(_waveX[0], _waveY[0]);
+  for (let i = 1; i < ptCount; i++) {
+    ctx.lineTo(_waveX[i], _waveY[i]);
+  }
 
   // Layer 3: Glowing Outer Aqua Rim
   ctx.strokeStyle = isDay
@@ -121,42 +177,22 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   ctx.lineWidth = 5.0;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.beginPath();
-  let firstFgPt = true;
-  for (let x = worldLeft; x <= worldRight; x += 12) {
-    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
-    if (firstFgPt) {
-      ctx.moveTo(x, wy3);
-      firstFgPt = false;
-    } else {
-      ctx.lineTo(x, wy3);
-    }
-  }
   ctx.stroke();
 
-  // Layer 4: Ultra-Crisp Pure White Foam Crest Line
+  // Layer 4: Ultra-Crisp Pure White Foam Crest Line (stroking the same active path)
   ctx.strokeStyle = isDay
     ? theme === 'CAVERN'
       ? '#ffffff'
       : '#ffffff'
     : '#e0f2fe';
   ctx.lineWidth = 2.8;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  firstFgPt = true;
-  for (let x = worldLeft; x <= worldRight; x += 12) {
-    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
-    if (firstFgPt) {
-      ctx.moveTo(x, wy3);
-      firstFgPt = false;
-    } else {
-      ctx.lineTo(x, wy3);
-    }
-  }
   ctx.stroke();
 
-  // 3. Render Rising Air Bubbles (In-place compacting, 0 GC allocations)
+  // 3. Render Rising Air Bubbles (Direct alpha assignment, 0 save/restore, 0 GC allocations)
+  ctx.fillStyle = 'rgba(224, 242, 254, 0.85)';
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+  ctx.lineWidth = 0.8;
+
   let writeBubbleIdx = 0;
   for (let i = 0; i < bubbles.length; i++) {
     const b = bubbles[i];
@@ -165,22 +201,19 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
     b.life -= 0.018;
 
     if (b.life > 0 && b.y > waterY - 4) {
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, b.life * 0.8);
-      ctx.fillStyle = 'rgba(224, 242, 254, 0.85)';
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
+      if (b.x >= worldLeft - 10 && b.x <= worldRight + 10) {
+        ctx.globalAlpha = Math.max(0, b.life * 0.8);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
       bubbles[writeBubbleIdx++] = b;
     }
   }
   bubbles.length = writeBubbleIdx;
 
-  // 4. Render Surface Expanding Water Ripples (In-place compacting, 0 GC allocations)
+  // 4. Render Surface Expanding Water Ripples (Direct alpha assignment, 0 save/restore, 0 GC allocations)
   let writeRippleIdx = 0;
   for (let i = 0; i < ripples.length; i++) {
     const rip = ripples[i];
@@ -188,21 +221,21 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
     rip.life -= 0.024;
 
     if (rip.life > 0) {
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, rip.life * 0.90);
-      ctx.strokeStyle = rip.color;
-      ctx.lineWidth = Math.max(0.7, 2.2 * rip.life);
-      ctx.beginPath();
-      const localWaveY = waterY + Math.sin(rip.x * 0.010 + slowTime * 1.8) * 9 + Math.cos(rip.x * 0.020 - slowTime * 1.2) * 4;
-      ctx.ellipse(rip.x, localWaveY, rip.radius * 1.45, rip.radius * 0.40, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
+      if (rip.x >= worldLeft - rip.radius * 2 && rip.x <= worldRight + rip.radius * 2) {
+        ctx.globalAlpha = Math.max(0, rip.life * 0.90);
+        ctx.strokeStyle = rip.color;
+        ctx.lineWidth = Math.max(0.7, 2.2 * rip.life);
+        ctx.beginPath();
+        const localWaveY = waterY + Math.sin(rip.x * 0.010 + slowTime * 1.8) * 9 + Math.cos(rip.x * 0.020 - slowTime * 1.2) * 4;
+        ctx.ellipse(rip.x, localWaveY, rip.radius * 1.45, rip.radius * 0.40, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ripples[writeRippleIdx++] = rip;
     }
   }
   ripples.length = writeRippleIdx;
 
-  // 5. Render Water Splash Droplets (In-place compacting, 0 GC allocations)
+  // 5. Render Water Splash Droplets (Direct alpha assignment, 0 save/restore, 0 GC allocations)
   let writeSplashIdx = 0;
   for (let i = 0; i < splashes.length; i++) {
     const sp = splashes[i];
@@ -212,15 +245,18 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
     sp.life -= 0.028;
 
     if (sp.life > 0) {
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, sp.life * 0.95);
-      ctx.fillStyle = sp.color;
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, Math.max(1, sp.size * sp.life), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      if (sp.x >= worldLeft - 10 && sp.x <= worldRight + 10) {
+        ctx.globalAlpha = Math.max(0, sp.life * 0.95);
+        ctx.fillStyle = sp.color;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, Math.max(1, sp.size * sp.life), 0, Math.PI * 2);
+        ctx.fill();
+      }
       splashes[writeSplashIdx++] = sp;
     }
   }
   splashes.length = writeSplashIdx;
+
+  // Restore canvas global alpha to default
+  ctx.globalAlpha = 1.0;
 }

@@ -309,34 +309,71 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     ctx.stroke();
   }
 
-  // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
-  const bgWaterGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
+// Pre-allocated typed arrays for background wave points
+let _bgWaveX = new Float32Array(1024);
+let _bgWaveY = new Float32Array(1024);
+
+// Cached background water gradient
+let _cachedBgWaterGrad: CanvasGradient | null = null;
+let _cachedBgWaterY = -99999;
+let _cachedBgWorldBottom = -99999;
+let _cachedBgTheme: MapTheme | null = null;
+let _cachedBgIsDay = true;
+
+function getCachedBgWaterGradient(
+  ctx: CanvasRenderingContext2D,
+  waterY: number,
+  worldBottom: number,
+  theme: MapTheme,
+  isDay: boolean
+): CanvasGradient {
+  if (
+    _cachedBgWaterGrad &&
+    _cachedBgWaterY === waterY &&
+    _cachedBgWorldBottom === worldBottom &&
+    _cachedBgTheme === theme &&
+    _cachedBgIsDay === isDay
+  ) {
+    return _cachedBgWaterGrad;
+  }
+
+  const grad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
   if (isDay) {
     if (theme === 'CAVERN') {
-      bgWaterGrad.addColorStop(0, '#d97706');
-      bgWaterGrad.addColorStop(0.3, '#9a3412');
-      bgWaterGrad.addColorStop(0.7, '#431407');
-      bgWaterGrad.addColorStop(1, '#170602');
+      grad.addColorStop(0, '#d97706');
+      grad.addColorStop(0.3, '#9a3412');
+      grad.addColorStop(0.7, '#431407');
+      grad.addColorStop(1, '#170602');
     } else {
-      bgWaterGrad.addColorStop(0, '#0284c7');
-      bgWaterGrad.addColorStop(0.25, '#0369a1');
-      bgWaterGrad.addColorStop(0.65, '#082f49');
-      bgWaterGrad.addColorStop(1, '#020617');
+      grad.addColorStop(0, '#0284c7');
+      grad.addColorStop(0.25, '#0369a1');
+      grad.addColorStop(0.65, '#082f49');
+      grad.addColorStop(1, '#020617');
     }
   } else {
     if (theme === 'CAVERN') {
-      bgWaterGrad.addColorStop(0, '#dc2626');
-      bgWaterGrad.addColorStop(0.35, '#7f1d1d');
-      bgWaterGrad.addColorStop(1, '#170602');
+      grad.addColorStop(0, '#dc2626');
+      grad.addColorStop(0.35, '#7f1d1d');
+      grad.addColorStop(1, '#170602');
     } else {
-      bgWaterGrad.addColorStop(0, '#0ea5e9');
-      bgWaterGrad.addColorStop(0.3, '#0f172a');
-      bgWaterGrad.addColorStop(1, '#020617');
+      grad.addColorStop(0, '#0ea5e9');
+      grad.addColorStop(0.3, '#0f172a');
+      grad.addColorStop(1, '#020617');
     }
   }
 
+  _cachedBgWaterGrad = grad;
+  _cachedBgWaterY = waterY;
+  _cachedBgWorldBottom = worldBottom;
+  _cachedBgTheme = theme;
+  _cachedBgIsDay = isDay;
+  return grad;
+}
+
+  // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
+  ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
+
   // Layer 1: Back Ocean Deep Body Polygon
-  ctx.fillStyle = bgWaterGrad;
   ctx.beginPath();
   ctx.moveTo(worldLeft, worldBottom);
   for (let x = worldLeft; x <= worldRight; x += 12) {
@@ -363,7 +400,21 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   ctx.closePath();
   ctx.fill();
 
-  // Layer 3: Front Horizon Wave with Clean White Foam Edge
+  // Layer 3 & 4: Single-pass Horizon Surface Wave Computation
+  const neededBgCap = Math.ceil((worldRight - worldLeft) / 12) + 2;
+  if (_bgWaveX.length < neededBgCap) {
+    _bgWaveX = new Float32Array(neededBgCap + 64);
+    _bgWaveY = new Float32Array(neededBgCap + 64);
+  }
+
+  let bgPtCount = 0;
+  for (let x = worldLeft; x <= worldRight; x += 12) {
+    _bgWaveX[bgPtCount] = x;
+    _bgWaveY[bgPtCount] = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
+    bgPtCount++;
+  }
+
+  // Layer 3: Front Horizon Wave
   ctx.fillStyle = isDay
     ? theme === 'CAVERN'
       ? 'rgba(220, 38, 38, 0.80)'
@@ -371,27 +422,20 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     : 'rgba(15, 23, 42, 0.80)';
   ctx.beginPath();
   ctx.moveTo(worldLeft, worldBottom);
-  for (let x = worldLeft; x <= worldRight; x += 12) {
-    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
-    ctx.lineTo(x, wy3);
+  for (let i = 0; i < bgPtCount; i++) {
+    ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
   ctx.lineTo(worldRight, worldBottom);
   ctx.closePath();
   ctx.fill();
 
-  // Smooth White Foam Crest Line
+  // Layer 4: Smooth White Foam Crest Line (reusing same computed points)
   ctx.strokeStyle = isDay ? '#ffffff' : '#94a3b8';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  let firstPt = true;
-  for (let x = worldLeft; x <= worldRight; x += 12) {
-    const wy3 = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
-    if (firstPt) {
-      ctx.moveTo(x, wy3);
-      firstPt = false;
-    } else {
-      ctx.lineTo(x, wy3);
-    }
+  ctx.moveTo(_bgWaveX[0], _bgWaveY[0]);
+  for (let i = 1; i < bgPtCount; i++) {
+    ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
   ctx.stroke();
 }
