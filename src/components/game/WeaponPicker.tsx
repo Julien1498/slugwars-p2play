@@ -29,8 +29,8 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-5 space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col h-[560px] max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-3xl max-w-4xl w-full p-3 sm:p-5 space-y-2.5 sm:space-y-4 shadow-[0_0_50px_rgba(124,58,237,0.25)] flex flex-col h-[560px] max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 shrink-0">
           <div className="flex items-center gap-2.5">

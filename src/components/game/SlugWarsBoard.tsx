@@ -11,6 +11,8 @@ import { BoardFuseTimerWidget } from './board/BoardFuseTimerWidget';
 import { BoardBottomDock } from './board/BoardBottomDock';
 import { BoardChatDrawer } from './board/BoardChatDrawer';
 import { useBoardKeyboardControls } from './board/useBoardKeyboardControls';
+import { MobileTouchOverlay } from './mobile/MobileTouchOverlay';
+import { OrientationLockPrompt } from './mobile/OrientationLockPrompt';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
 import { sfx } from '../../core/audio';
 import { perfTracker } from '../../core/perfTracker';
@@ -181,6 +183,29 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         chatMessages={chatMessages}
         sendChat={sendChat}
       />
+
+      <MobileTouchOverlay
+        isMyTurn={isMyTurn}
+        gameState={gameState}
+        activeSlug={activeSlug}
+        activeSheep={activeSheep}
+        onStartMove={onStartMove}
+        onStopMove={onStopMove}
+        onJump={onJump}
+        onUpdateAim={onUpdateAim}
+        onStartCharge={onStartCharge}
+        onReleaseCharge={onReleaseCharge}
+        onSetFuseTimer={onSetFuseTimer}
+        onSteerVehicle={onSteerVehicle}
+        onExitVehicle={onExitVehicle}
+        onEnterVehicle={onEnterVehicle}
+        onStartSteer={onStartSteer}
+        onStopSteer={onStopSteer}
+        onDetonate={onDetonate}
+        setShowWeaponPicker={setShowWeaponPicker}
+      />
+
+      <OrientationLockPrompt />
 
       {gameState.phase === 'GAME_OVER' && (
         <Profiler id="GameOverStatsModal" onRender={perfTracker.onReactRender}>
