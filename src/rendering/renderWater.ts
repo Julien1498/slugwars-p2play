@@ -182,19 +182,19 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   // 4. Render Surface Expanding Water Ripples
   for (let i = ripples.length - 1; i >= 0; i--) {
     const rip = ripples[i];
-    rip.radius += 1.4;
-    rip.life -= 0.020;
+    rip.radius += 0.65;
+    rip.life -= 0.030;
 
     if (rip.life <= 0) {
       ripples.splice(i, 1);
     } else {
       ctx.save();
-      ctx.globalAlpha = Math.max(0, rip.life * 0.95);
+      ctx.globalAlpha = Math.max(0, rip.life * 0.85);
       ctx.strokeStyle = rip.color;
-      ctx.lineWidth = Math.max(1.2, 3.2 * rip.life);
+      ctx.lineWidth = Math.max(0.6, 1.8 * rip.life);
       ctx.beginPath();
       const localWaveY = waterY + Math.sin(rip.x * 0.010 + slowTime * 1.8) * 9 + Math.cos(rip.x * 0.020 - slowTime * 1.2) * 4;
-      ctx.ellipse(rip.x, localWaveY, rip.radius * 1.8, rip.radius * 0.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(rip.x, localWaveY, rip.radius * 1.2, rip.radius * 0.35, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
