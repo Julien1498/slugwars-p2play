@@ -83,8 +83,8 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           })}
         </div>
 
-        {/* Weapons Grid - 2 cols on mobile, 3 cols on desktop, fixed height horizontal cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto p-0.5 flex-1 min-h-0 content-start">
+        {/* Weapons Grid - 2 cols on mobile, 3/4 cols on desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 overflow-y-auto p-0.5 sm:p-1 flex-1 min-h-0 content-start">
           {filtered.map((w) => {
             const ammo = inventory[w.id] ?? w.defaultAmmo;
             const isDisabled = ammo === 0;
@@ -98,52 +98,61 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                   onSelectWeapon(w.id);
                   onClose();
                 }}
-                className={`p-2 sm:p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all relative overflow-hidden ${
+                className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl border text-left flex flex-col justify-between gap-1.5 sm:gap-2 transition-all relative overflow-hidden ${
                   isSelected
-                    ? 'bg-gradient-to-br from-violet-950 to-purple-950/90 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)]'
+                    ? 'bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)] scale-[1.01]'
                     : isDisabled
                     ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-40 cursor-not-allowed'
                     : 'bg-zinc-900/80 border-zinc-800/80 hover:border-violet-500/50 hover:bg-zinc-800/90 text-zinc-200'
                 }`}
               >
                 {isSelected && (
-                  <div className="absolute top-1 right-1 p-0.5 bg-violet-600 text-white rounded-full shadow">
-                    <Check className="w-2.5 h-2.5" />
+                  <div className="absolute top-1 right-1 sm:top-2 sm:right-2 p-0.5 sm:p-1 bg-violet-600 text-white rounded-full shadow">
+                    <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </div>
                 )}
 
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
-                  {w.icon}
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
+                    {w.icon}
+                  </div>
+                  <span
+                    className={`text-[10px] sm:text-xs font-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg ${
+                      w.id === 'blowtorch'
+                        ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
+                        : ammo === -1
+                        ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
+                        : ammo > 0
+                        ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
+                        : 'bg-zinc-900 text-zinc-600'
+                    }`}
+                  >
+                    {w.id === 'blowtorch' ? `${Math.round(ammo)}%` : ammo === -1 ? '∞' : `x${ammo}`}
+                  </span>
                 </div>
 
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="font-bold text-xs sm:text-sm text-zinc-100 truncate">
-                      {w.name}
-                    </span>
-                    <span
-                      className={`text-[10px] font-black px-1.5 py-0.2 rounded shrink-0 ${
-                        w.id === 'blowtorch'
-                          ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
-                          : ammo === -1
-                          ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
-                          : ammo > 0
-                          ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
-                          : 'bg-zinc-900 text-zinc-600'
-                      }`}
-                    >
-                      {w.id === 'blowtorch' ? `${Math.round(ammo)}%` : ammo === -1 ? '∞' : `x${ammo}`}
-                    </span>
+                <div>
+                  <div className="font-bold text-xs sm:text-sm text-zinc-100 flex items-center gap-1">
+                    <span className="truncate">{w.name}</span>
+                    {w.craftable && (
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded">
+                        WMD
+                      </span>
+                    )}
                   </div>
+                  {/* Description: ONLY on PC desktop (hidden on mobile) */}
+                  <div className="hidden sm:block text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
+                    {w.description}
+                  </div>
+                </div>
 
-                  <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px] text-zinc-400">
-                    <span className="text-red-400 font-bold flex items-center gap-0.5">
-                      <Zap className="w-2.5 h-2.5 text-red-400" /> {w.damage} Dgt
-                    </span>
-                    <span className="text-zinc-500 text-[9px] truncate">
-                      {w.windAffected ? '💨 Vent' : 'Direct'}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-zinc-400 pt-1.5 sm:pt-2 border-t border-zinc-800/80">
+                  <span className="text-red-400 font-bold flex items-center gap-1">
+                    <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-400" /> {w.damage} Dgt
+                  </span>
+                  <span className="text-zinc-500 text-[9px] sm:text-[10px] truncate">
+                    {w.windAffected ? '💨 Vent' : 'Direct'}
+                  </span>
                 </div>
               </button>
             );
