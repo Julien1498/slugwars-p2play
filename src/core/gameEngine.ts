@@ -750,6 +750,19 @@ export class SlugWarsEngine {
                 ownerSlugId: proj.ownerSlugId,
               });
             }
+          } else if (proj.weaponId === 'concrete_donkey') {
+            const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
+            const curWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
+            if (bouncesLeft > 0 && pt.y < curWaterY + 30) {
+              proj.x = pt.x + (Math.random() - 0.5) * 4;
+              proj.y = pt.y - 14;
+              proj.vx = (Math.random() - 0.5) * 2;
+              proj.vy = -7.5;
+              proj.behaviorData = { ...proj.behaviorData, bouncesLeft };
+              sfx.play('donkey');
+              this.addLog(`🫏 L'Âne de Béton pilonne et rebondit à travers le terrain ! (${bouncesLeft} impacts restants)`, 'combat');
+              remaining.push(proj);
+            }
           }
         } else {
           remaining.push(proj);

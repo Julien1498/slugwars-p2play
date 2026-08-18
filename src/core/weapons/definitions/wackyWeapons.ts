@@ -14,7 +14,7 @@ export const concreteDonkeyWeapon: WeaponDefinition = {
   bounces: true,
   craftable: true,
   requiresTarget: true,
-  customSoundKey: 'donkey_bray',
+  customSoundKey: 'donkey',
   createProjectiles: (ctx) => {
     const targetX = ctx.targetPoint ? ctx.targetPoint.x : ctx.originX;
     return [

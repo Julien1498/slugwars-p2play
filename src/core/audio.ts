@@ -268,6 +268,21 @@ class SoundEffects {
           osc.start(startTime);
           osc.stop(startTime + 0.3);
         });
+      } else if (type === 'donkey') {
+        // Hee-Haw donkey braying two-tone brass oscillator
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(240, now + 0.15);
+        osc.frequency.setValueAtTime(460, now + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(190, now + 0.4);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
       } else if (type === 'ouch') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
