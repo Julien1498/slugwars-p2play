@@ -148,7 +148,8 @@ export function renderAimGuides(rc: AimGuidesContext) {
 
   // 3. Girder Hologram
   if (isMyTurn && weapon.id === 'girder') {
-    const targetPt = lockedTarget || mousePos;
+    const defaultPt = { x: activeSlug.x + (activeSlug.facing === 'right' ? 80 : -80), y: activeSlug.y - 20 };
+    const targetPt = lockedTarget || (mousePos.x !== 0 || mousePos.y !== 0 ? mousePos : defaultPt);
     const length = 110;
     const thickness = 14;
     const angleDeg = activeSlug.aimAngle || 0;
@@ -210,7 +211,8 @@ export function renderAimGuides(rc: AimGuidesContext) {
 
   // 5. Tactical Target Reticle
   if (isMyTurn && weapon.requiresTarget) {
-    const targetPt = lockedTarget || mousePos;
+    const defaultPt = { x: activeSlug.x + (activeSlug.facing === 'right' ? 80 : -80), y: activeSlug.y - 20 };
+    const targetPt = lockedTarget || (mousePos.x !== 0 || mousePos.y !== 0 ? mousePos : defaultPt);
     const isLocked = !!lockedTarget;
 
     ctx.save();

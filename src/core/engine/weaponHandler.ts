@@ -118,14 +118,19 @@ export function fireWeapon(
     }
   }
 
+  const defaultTarget: Vector2D = {
+    x: Math.max(30, Math.min(terrain.data.width - 30, activeSlug.x + (activeSlug.facing === 'right' ? 80 : -80))),
+    y: Math.max(30, Math.min(terrain.data.waterLevel - 30, activeSlug.y - 20)),
+  };
+
+  const effectiveTargetPoint: Vector2D = targetPoint || activeSlug.currentTargetPoint || defaultTarget;
+
   if (targetPoint) {
     activeSlug.currentTargetPoint = targetPoint;
-  } else if (activeSlug.currentTargetPoint) {
-    targetPoint = activeSlug.currentTargetPoint;
   }
 
-  if (weapon.behavior === 'TELEPORT' && targetPoint) {
-    const safePt = findSafeTeleportPoint(terrain, targetPoint.x, targetPoint.y, state.slugs);
+  if (weapon.behavior === 'TELEPORT') {
+    const safePt = findSafeTeleportPoint(terrain, effectiveTargetPoint.x, effectiveTargetPoint.y, state.slugs);
     activeSlug.x = safePt.x;
     activeSlug.y = safePt.y;
     activeSlug.vx = 0;
@@ -191,7 +196,7 @@ export function fireWeapon(
     return true;
   }
 
-  if (weapon.id === 'girder' && targetPoint) {
+  if (weapon.id === 'girder') {
     const length = 110;
     const thickness = 14;
     const angleDeg = activeSlug.aimAngle || 0;
@@ -201,8 +206,8 @@ export function fireWeapon(
 
     const halfL = length / 2;
     const halfT = thickness / 2;
-    const gx = targetPoint.x;
-    const gy = targetPoint.y;
+    const gx = effectiveTargetPoint.x;
+    const gy = effectiveTargetPoint.y;
     const w = terrain.data.width;
     const h = terrain.data.height;
 
@@ -236,11 +241,11 @@ export function fireWeapon(
     return true;
   }
 
-  if (weapon.behavior === 'AIRDROP' && targetPoint) {
+  if (weapon.behavior === 'AIRDROP') {
     if (!state.supplyCrates) state.supplyCrates = [];
     state.supplyCrates.push({
       id: `crate_${Date.now()}_${Math.random()}`,
-      x: targetPoint.x,
+      x: effectiveTargetPoint.x,
       y: -30,
       vy: 2.2,
       isLanded: false,
