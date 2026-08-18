@@ -13,6 +13,7 @@ import { BoardChatDrawer } from './board/BoardChatDrawer';
 import { useBoardKeyboardControls } from './board/useBoardKeyboardControls';
 import { MobileTouchOverlay } from './mobile/MobileTouchOverlay';
 import { OrientationLockPrompt } from './mobile/OrientationLockPrompt';
+import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 import type { ChatMessage, PeerManagerLike } from 'p2play-core';
 import { sfx } from '../../core/audio';
 import { perfTracker } from '../../core/perfTracker';
@@ -79,6 +80,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
+  const isTouch = useIsTouchDevice();
 
   const handleOpenWeaponPicker = useCallback(() => setShowWeaponPicker(true), []);
   const handleCloseWeaponPicker = useCallback(() => setShowWeaponPicker(false), []);
@@ -142,13 +144,15 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           </div>
         )}
 
-        <BoardFuseTimerWidget
-          activeSlug={activeSlug}
-          activeWeapon={activeWeapon}
-          phase={gameState.phase}
-          isMyTurn={isMyTurn}
-          onSetFuseTimer={onSetFuseTimer}
-        />
+        {!isTouch && (
+          <BoardFuseTimerWidget
+            activeSlug={activeSlug}
+            activeWeapon={activeWeapon}
+            phase={gameState.phase}
+            isMyTurn={isMyTurn}
+            onSetFuseTimer={onSetFuseTimer}
+          />
+        )}
 
         <Profiler id="SlugWarsCanvas" onRender={perfTracker.onReactRender}>
           <SlugWarsCanvas
@@ -165,16 +169,18 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </Profiler>
       </div>
 
-      <BoardBottomDock
-        activeSlug={activeSlug}
-        activeSheep={activeSheep}
-        isMyTurn={isMyTurn}
-        showDrawer={showDrawer}
-        onToggleDrawer={() => setShowDrawer(!showDrawer)}
-        onOpenWeaponPicker={handleOpenWeaponPicker}
-        onExitVehicle={onExitVehicle}
-        chatMessageCount={chatMessages.length}
-      />
+      {!isTouch && (
+        <BoardBottomDock
+          activeSlug={activeSlug}
+          activeSheep={activeSheep}
+          isMyTurn={isMyTurn}
+          showDrawer={showDrawer}
+          onToggleDrawer={() => setShowDrawer(!showDrawer)}
+          onOpenWeaponPicker={handleOpenWeaponPicker}
+          onExitVehicle={onExitVehicle}
+          chatMessageCount={chatMessages.length}
+        />
+      )}
 
       <BoardChatDrawer
         showDrawer={showDrawer}
@@ -189,6 +195,9 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         gameState={gameState}
         activeSlug={activeSlug}
         activeSheep={activeSheep}
+        showDrawer={showDrawer}
+        onToggleDrawer={() => setShowDrawer(!showDrawer)}
+        chatMessageCount={chatMessages.length}
         onStartMove={onStartMove}
         onStopMove={onStopMove}
         onJump={onJump}
