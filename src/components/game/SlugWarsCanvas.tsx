@@ -36,6 +36,8 @@ export interface SlugWarsCanvasProps {
   showHitboxes?: boolean;
   onFire: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
   onPlaceSlug?: (pos: Vector2D) => void;
+  onSelectPlacementPoint?: (pos: Vector2D) => void;
+  pendingPlacementPoint?: Vector2D | null;
   onStartCharge?: (target: Vector2D) => void;
   onReleaseCharge?: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right') => void;
@@ -48,6 +50,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   showHitboxes = false,
   onFire,
   onPlaceSlug,
+  onSelectPlacementPoint,
+  pendingPlacementPoint,
   onStartCharge,
   onReleaseCharge,
   onUpdateAim,
@@ -318,23 +322,32 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, [gameState.activeSlugId, gameState.phase, terrain.data.width, terrain.data.height]);
 
+  const onPlaceSlugRef = useRef(onPlaceSlug);
+  onPlaceSlugRef.current = onPlaceSlug;
+  const onSelectPlacementPointRef = useRef(onSelectPlacementPoint);
+  onSelectPlacementPointRef.current = onSelectPlacementPoint;
+  const onUpdateAimRef = useRef(onUpdateAim);
+  onUpdateAimRef.current = onUpdateAim;
+
+  const touchGestureRef = useRef({
+    gestureInitialDist: 0,
+    gestureInitialMid: { x: 0, y: 0 } as Vector2D,
+    gestureInitialZoom: 1.0,
+    gestureInitialPan: { x: 0, y: 0 } as Vector2D,
+    isPinching: false,
+    singleTouchStart: { x: 0, y: 0 } as Vector2D,
+    singleTouchPanStart: { x: 0, y: 0 } as Vector2D,
+    singleTouchMoved: false,
+    singleTouchStartTime: 0,
+    touchIsAiming: false,
+  });
+
   // Native Multi-Touch Gestures (Pinch-to-zoom, 2-finger Pan, 1-finger drag/aim/pan/placement)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let gestureInitialDist = 0;
-    let gestureInitialMid: Vector2D = { x: 0, y: 0 };
-    let gestureInitialZoom = 1.0;
-    let gestureInitialPan: Vector2D = { x: 0, y: 0 };
-    let isPinching = false;
-
-    let singleTouchStart: Vector2D = { x: 0, y: 0 };
-    let singleTouchPanStart: Vector2D = { x: 0, y: 0 };
-    let singleTouchMoved = false;
-    let singleTouchStartTime = 0;
-    let touchIsAiming = false;
-
+    const g = touchGestureRef.current;
     const getDist = (t1: Touch, t2: Touch) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
     const getMid = (t1: Touch, t2: Touch) => ({ x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 });
 
@@ -343,22 +356,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       if (e.touches.length >= 2) {
         e.preventDefault();
-        isPinching = true;
-        touchIsAiming = false;
-        gestureInitialDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
-        gestureInitialMid = getMid(e.touches[0], e.touches[1]);
-        gestureInitialZoom = zoomRef.current;
-        gestureInitialPan = { ...panRef.current };
+        g.isPinching = true;
+        g.touchIsAiming = false;
+        g.gestureInitialDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
+        g.gestureInitialMid = getMid(e.touches[0], e.touches[1]);
+        g.gestureInitialZoom = zoomRef.current;
+        g.gestureInitialPan = { ...panRef.current };
         return;
       }
 
       if (e.touches.length === 1) {
-        isPinching = false;
+        g.isPinching = false;
         const touch = e.touches[0];
-        singleTouchStart = { x: touch.clientX, y: touch.clientY };
-        singleTouchPanStart = { ...panRef.current };
-        singleTouchMoved = false;
-        singleTouchStartTime = Date.now();
+        g.singleTouchStart = { x: touch.clientX, y: touch.clientY };
+        g.singleTouchPanStart = { ...panRef.current };
+        g.singleTouchMoved = false;
+        g.singleTouchStartTime = Date.now();
 
         const rect = container.getBoundingClientRect();
         const pos = screenToWorldCoords(
@@ -373,25 +386,26 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         mousePosRef.current = pos;
 
         // Check if touch is near active slug to start direct aiming
-        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-        if (isMyTurn && gameState.phase === 'AIMING' && activeSlug) {
+        const curGameState = gameStateRef.current;
+        const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
+        if (isMyTurnRef.current && curGameState.phase === 'AIMING' && activeSlug) {
           const distToSlug = Math.hypot(pos.x - activeSlug.x, pos.y - activeSlug.y);
           const weapon = getWeapon(activeSlug.selectedWeaponId);
           if (distToSlug < 90 && !weapon.requiresTarget && weapon.id !== 'girder') {
-            touchIsAiming = true;
+            g.touchIsAiming = true;
             const dx = pos.x - activeSlug.x;
             const dy = pos.y - activeSlug.y;
             let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
             angle = Math.max(-85, Math.min(85, angle));
             const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
-              onUpdateAim?.(angle, activeSlug.aimPower, facing);
+              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
           } else {
-            touchIsAiming = false;
+            g.touchIsAiming = false;
           }
         } else {
-          touchIsAiming = false;
+          g.touchIsAiming = false;
         }
       }
     };
@@ -400,17 +414,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       lastTouchTimeRef.current = Date.now();
       const rect = container.getBoundingClientRect();
 
-      if (e.touches.length >= 2 && isPinching && gestureInitialDist > 0) {
+      if (e.touches.length >= 2 && g.isPinching && g.gestureInitialDist > 0) {
         e.preventDefault();
         const currDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
         const currMid = getMid(e.touches[0], e.touches[1]);
-        const scale = currDist / gestureInitialDist;
-        const newZoom = Math.max(0.5, Math.min(3.0, gestureInitialZoom * scale));
+        const scale = currDist / g.gestureInitialDist;
+        const newZoom = Math.max(0.5, Math.min(3.0, g.gestureInitialZoom * scale));
 
-        const dx = currMid.x - gestureInitialMid.x;
-        const dy = currMid.y - gestureInitialMid.y;
+        const dx = currMid.x - g.gestureInitialMid.x;
+        const dy = currMid.y - g.gestureInitialMid.y;
         const clamped = clampPanOffset(
-          { x: gestureInitialPan.x + dx, y: gestureInitialPan.y + dy },
+          { x: g.gestureInitialPan.x + dx, y: g.gestureInitialPan.y + dy },
           newZoom,
           rect.width,
           rect.height,
@@ -425,12 +439,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         return;
       }
 
-      if (e.touches.length === 1 && !isPinching) {
+      if (e.touches.length === 1 && !g.isPinching) {
         const touch = e.touches[0];
-        const dx = touch.clientX - singleTouchStart.x;
-        const dy = touch.clientY - singleTouchStart.y;
+        const dx = touch.clientX - g.singleTouchStart.x;
+        const dy = touch.clientY - g.singleTouchStart.y;
         if (Math.hypot(dx, dy) > 8) {
-          singleTouchMoved = true;
+          g.singleTouchMoved = true;
         }
 
         const pos = screenToWorldCoords(
@@ -444,8 +458,9 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         );
         mousePosRef.current = pos;
 
-        if (touchIsAiming && isMyTurn && gameState.phase === 'AIMING') {
-          const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+        const curGameState = gameStateRef.current;
+        if (g.touchIsAiming && isMyTurnRef.current && curGameState.phase === 'AIMING') {
+          const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
           if (activeSlug) {
             const slugDx = pos.x - activeSlug.x;
             const slugDy = pos.y - activeSlug.y;
@@ -453,13 +468,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             angle = Math.max(-85, Math.min(85, angle));
             const facing: 'left' | 'right' = slugDx >= 0 ? 'right' : 'left';
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
-              onUpdateAim?.(angle, activeSlug.aimPower, facing);
+              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
           }
         } else {
-          // Smooth 1-finger camera drag!
+          // Smooth 1-finger camera drag - completely stable and accurate!
           const clamped = clampPanOffset(
-            { x: singleTouchPanStart.x + dx, y: singleTouchPanStart.y + dy },
+            { x: g.singleTouchPanStart.x + dx, y: g.singleTouchPanStart.y + dy },
             zoomRef.current,
             rect.width,
             rect.height,
@@ -476,11 +491,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       lastTouchTimeRef.current = Date.now();
 
       if (e.touches.length === 0) {
-        if (!isPinching && !singleTouchMoved && Date.now() - singleTouchStartTime < 350) {
+        if (!g.isPinching && !g.singleTouchMoved && Date.now() - g.singleTouchStartTime < 350) {
           const rect = container.getBoundingClientRect();
           const pos = screenToWorldCoords(
-            singleTouchStart.x,
-            singleTouchStart.y,
+            g.singleTouchStart.x,
+            g.singleTouchStart.y,
             rect,
             terrain.data.width,
             terrain.data.height,
@@ -488,15 +503,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             panRef.current
           );
 
-          if (gameState.phase === 'PLACEMENT' && isMyTurn) {
-            if (Date.now() - lastPlacementTimeRef.current > 350) {
+          const curGameState = gameStateRef.current;
+          if (curGameState.phase === 'PLACEMENT' && isMyTurnRef.current) {
+            if (Date.now() - lastPlacementTimeRef.current > 200) {
               lastPlacementTimeRef.current = Date.now();
               const clampedX = Math.max(20, Math.min(terrain.data.width - 20, pos.x));
               const clampedY = Math.max(20, Math.min(terrain.data.waterLevel - 15, pos.y));
-              onPlaceSlug?.({ x: clampedX, y: clampedY });
+              const targetPoint = { x: clampedX, y: clampedY };
+              mousePosRef.current = targetPoint;
+              if (onSelectPlacementPointRef.current) {
+                onSelectPlacementPointRef.current(targetPoint);
+              } else {
+                onPlaceSlugRef.current?.(targetPoint);
+              }
             }
-          } else if (isMyTurn && gameState.phase === 'AIMING') {
-            const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+          } else if (isMyTurnRef.current && curGameState.phase === 'AIMING') {
+            const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
             if (activeSlug) {
               const weapon = getWeapon(activeSlug.selectedWeaponId);
               if (weapon.requiresTarget || weapon.id === 'girder') {
@@ -506,16 +528,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             }
           }
         }
-        isPinching = false;
-        touchIsAiming = false;
+        g.isPinching = false;
+        g.touchIsAiming = false;
       } else if (e.touches.length === 1) {
-        isPinching = false;
-        touchIsAiming = false;
+        g.isPinching = false;
+        g.touchIsAiming = false;
         const touch = e.touches[0];
-        singleTouchStart = { x: touch.clientX, y: touch.clientY };
-        singleTouchPanStart = { ...panRef.current };
-        singleTouchMoved = false;
-        singleTouchStartTime = Date.now();
+        g.singleTouchStart = { x: touch.clientX, y: touch.clientY };
+        g.singleTouchPanStart = { ...panRef.current };
+        g.singleTouchMoved = false;
+        g.singleTouchStartTime = Date.now();
       }
     };
 
@@ -530,7 +552,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       container.removeEventListener('touchend', onTouchEnd);
       container.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, [terrain.data.width, terrain.data.height, terrain.data.waterLevel, isMyTurn, gameState, onPlaceSlug, onUpdateAim]);
+  }, [terrain.data.width, terrain.data.height, terrain.data.waterLevel]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
@@ -924,7 +946,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         });
       }
 
-      renderPlacementGhost(ctx, curState, terrain, mousePosRef.current, isMyTurnRef.current, animTime);
+      renderPlacementGhost(
+        ctx,
+        curState,
+        terrain,
+        pendingPlacementPoint || mousePosRef.current,
+        isMyTurnRef.current,
+        animTime
+      );
 
       // 8. Foreground Ocean & Rolling Water Waves
       renderForegroundOcean({
