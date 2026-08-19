@@ -35,6 +35,7 @@ import {
   updateMines,
   updateSupplyCrates,
 } from './engine/supplyDropManager';
+import { PhaseManager } from './engine/phaseManager';
 
 export class SlugWarsEngine {
   public state: GameState;
@@ -203,13 +204,14 @@ export class SlugWarsEngine {
       this.state.helicopters = [];
     }
 
-    this.state.phase = 'PLACEMENT';
-    this.state.activeTeamId = this.state.teams[0].id;
-    const firstSlug = this.state.slugs.find((s) => s.teamId === this.state.activeTeamId && !s.isPlaced);
-    this.state.activeSlugId = firstSlug ? firstSlug.id : this.state.slugs[0].id;
-    this.state.turnTimer = 30;
+    PhaseManager.startPlacement(this.state);
     this.addLog('Phase de Placement ! Placez vos limaces à tour de rôle sur le terrain.', 'info');
     return true;
+  }
+
+  public restartGame(): void {
+    PhaseManager.startLobby(this.state);
+    this.addLog('Retour au salon d\'attente.', 'info');
   }
 
   public enterVehicle(): boolean {
@@ -238,11 +240,10 @@ export class SlugWarsEngine {
 
     const unplaced = this.state.slugs.filter((s) => !s.isPlaced);
     if (unplaced.length === 0) {
-      this.state.phase = 'AIMING';
       this.state.activeTeamId = this.state.teams[0].id;
       this.state.activeSlugId = this.getNextSlugForTeam(this.state.activeTeamId) || this.state.slugs[0].id;
-      this.state.turnTimer = this.state.config.turnDuration;
       this.randomizeWind();
+      PhaseManager.startAiming(this.state);
       this.addLog('Toutes les limaces sont en place ! Le combat commence !', 'info');
       sfx.play('victory');
       return true;
@@ -459,73 +460,12 @@ export class SlugWarsEngine {
       }
     }
 
-    if (this.state.phase === 'TURN_START') {
-      if (this.state.phaseTimer !== undefined) {
-        this.state.phaseTimer -= 0.05;
-        if (this.state.phaseTimer <= 0) {
-          this.state.phase = 'AIMING';
-          this.state.phaseTimer = undefined;
-        }
-      }
-    }
-
-    if (this.state.phase === 'RETREAT') {
-      if (this.state.retreatTimer !== undefined) {
-        const prevSec = Math.ceil(this.state.retreatTimer);
-        this.state.retreatTimer -= 0.05;
-        const newSec = Math.ceil(this.state.retreatTimer);
-        if (newSec < prevSec && newSec > 0) {
-          sfx.play('tick');
-        }
-        if (this.state.retreatTimer <= 0) {
-          this.state.retreatTimer = undefined;
-          if (this.state.projectiles.length > 0) {
-            this.state.phase = 'PROJECTILE_ACTIVE';
-          } else {
-            this.state.phase = 'RESOLVING';
-            this.state.phaseTimer = 5.0;
-            this.state.settleTimer = 0.8;
-          }
-        }
-      }
-    }
-
-    if (this.state.phase === 'RESOLVING') {
-      for (const slug of this.state.slugs) {
-        if (slug.ropeState) slug.ropeState = null;
-      }
-
-      if (this.state.phaseTimer === undefined) {
-        this.state.phaseTimer = 8.0;
-        this.state.settleTimer = 1.0;
-      } else {
-        this.state.phaseTimer -= 0.05;
-        if (this.state.settleTimer !== undefined) {
-          this.state.settleTimer -= 0.05;
-        }
-      }
-
-      const isMinTimeElapsed = (this.state.settleTimer ?? 0) <= 0;
-      const atRest = isMinTimeElapsed && this.isWorldAtRest();
-      const timedOut = this.state.phaseTimer <= 0;
-
-      // If timed out but slugs are still airborne in flight, give an extra grace period
-      if (timedOut && !this.isWorldAtRest() && this.state.phaseTimer > -4.0) {
-        return;
-      }
-
-      if (atRest || timedOut) {
-        this.state.phaseTimer = undefined;
-        this.state.settleTimer = undefined;
-        this.endTurn();
-        return;
-      }
-    }
-
-    if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')) {
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 5.0;
-      this.state.settleTimer = 1.2;
+    if (
+      activeSlug &&
+      !activeSlug.isAlive &&
+      (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')
+    ) {
+      PhaseManager.startResolving(this.state, { settleTimer: 1.2, phaseTimeout: 8.0 });
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
@@ -700,10 +640,12 @@ export class SlugWarsEngine {
       activeSlug.hp < activeSlugHpBefore &&
       this.state.phase === 'AIMING'
     ) {
-      this.addLog(`⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`, 'combat');
-      this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 5.0;
-      this.state.settleTimer = 1.2;
+      PhaseManager.startResolving(this.state, {
+        settleTimer: 1.2,
+        phaseTimeout: 8.0,
+        reason: `⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`,
+        addLog: (msg, type) => this.addLog(msg, type),
+      });
       return;
     }
 
@@ -822,124 +764,19 @@ export class SlugWarsEngine {
       (fd) => currentTime - fd.createdAt < 1000
     );
 
-    if (this.state.phase === 'AIMING') {
-      this.state.turnTimer -= 0.05;
-      if (this.state.turnTimer <= 0) {
-        this.state.turnTimer = 0;
-        this.state.phase = 'RESOLVING';
-        this.state.phaseTimer = 8.0;
-        this.state.settleTimer = 0.5;
-      }
-    }
+    PhaseManager.updatePhaseTick(this.state, this.terrain, 0.05, {
+      addLog: (msg, type) => this.addLog(msg, type),
+      advanceToNextTurn: () => this.endTurn(),
+    });
   }
 
   public endTurn(): void {
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (activeSlug) {
-      activeSlug.movingDir = null;
-      activeSlug.steeringDir = null;
-      activeSlug.isChargingPower = false;
-      activeSlug.isBlowtorching = false;
-      activeSlug.ropeState = null;
-      activeSlug.currentTargetPoint = undefined;
-    }
-
-    for (const slug of this.state.slugs) {
-      slug.isChargingPower = false;
-      slug.aimPower = 5;
-      slug.movingDir = null;
-      slug.vx = 0;
-      if (slug.hp <= 0) {
-        slug.hp = 0;
-        slug.isAlive = false;
-      }
-    }
-
-    this.checkWinner();
-    if (this.state.phase === 'GAME_OVER') return;
-
-    const aliveTeams = this.state.teams.filter((t) =>
-      this.state.slugs.some((s) => s.teamId === t.id && s.isAlive && s.hp > 0)
-    );
-    if (aliveTeams.length <= 1) {
-      this.checkWinner();
-      return;
-    }
-
-    const currentIdx = aliveTeams.findIndex((t) => t.id === this.state.activeTeamId);
-    const nextIdx = (currentIdx + 1) % aliveTeams.length;
-    const isRoundCycleCompleted = nextIdx === 0;
-    const nextTeam = aliveTeams[nextIdx];
-    this.state.activeTeamId = nextTeam.id;
-
-    const nextSlugId = this.getNextSlugForTeam(nextTeam.id);
-    if (!nextSlugId) {
-      const fallbackSlug = this.state.slugs.find((s) => s.isAlive && s.hp > 0 && s.isPlaced);
-      if (fallbackSlug) {
-        this.state.activeTeamId = fallbackSlug.teamId;
-        this.state.activeSlugId = fallbackSlug.id;
-      } else {
-        this.checkWinner();
-        return;
-      }
-    } else {
-      this.state.activeSlugId = nextSlugId;
-    }
-
-    const currentActiveSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    if (currentActiveSlug) {
-      const currentTeam = this.state.teams.find((t) => t.id === currentActiveSlug.teamId);
-      if (currentTeam) {
-        const ammo = currentTeam.inventory[currentActiveSlug.selectedWeaponId] ?? -1;
-        if (ammo === 0) {
-          currentActiveSlug.selectedWeaponId = 'bazooka';
-        }
-      }
-    }
-
-    // Montée des Eaux (Rising Water) Mechanic
-    const waterSpeed = this.state.config.waterRiseSpeed;
-    const waterFreq = this.state.config.waterRiseFreq || 'EVERY_TURN';
-    const shouldRise = waterSpeed && waterSpeed !== 'OFF' && (waterFreq === 'EVERY_TURN' || isRoundCycleCompleted);
-
-    if (shouldRise) {
-      let risePx = 0;
-      if (waterFreq === 'EVERY_TURN') {
-        const perTurnMap: Record<string, number> = { SLOW: 5, NORMAL: 12, FAST: 24 };
-        risePx = perTurnMap[waterSpeed] || 12;
-      } else {
-        const perRoundMap: Record<string, number> = { SLOW: 16, NORMAL: 36, FAST: 68 };
-        risePx = perRoundMap[waterSpeed] || 36;
-      }
-
-      const minWaterY = Math.max(120, Math.floor(this.terrain.data.height * 0.18));
-      const currentWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
-      const newWaterY = Math.max(minWaterY, currentWaterY - risePx);
-
-      if (newWaterY !== currentWaterY) {
-        this.state.waterLevel = newWaterY;
-        this.terrain.data.waterLevel = newWaterY;
-        const roundPrefix = waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
-        this.addLog(`🌊 ${roundPrefix}Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
-
-        for (const s of this.state.slugs) {
-          if (s.isAlive && s.y >= newWaterY) {
-            s.hp = 0;
-            s.isAlive = false;
-            const victimTeam = this.state.teams.find((t) => t.id === s.teamId);
-            if (victimTeam) {
-              if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-              victimTeam.stats.deaths++;
-            }
-            this.addLog(`🌊 ${s.name} a été englouti par les flots montants !`, 'death');
-          }
-        }
-      }
-    }
-
-    this.state.turnTimer = this.state.config.turnDuration;
-    this.state.phase = 'AIMING';
-    this.randomizeWind();
+    PhaseManager.advanceToNextTurn(this.state, this.terrain, {
+      addLog: (msg, type) => this.addLog(msg, type),
+      randomizeWind: (state) => randomizeWind(state),
+      getNextSlugForTeam: (teamId) => this.getNextSlugForTeam(teamId),
+      checkWinner: () => this.checkWinner(),
+    });
   }
 
   public checkWinner(): void {

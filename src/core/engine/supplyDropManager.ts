@@ -1,6 +1,7 @@
 import { GameState, Landmine, JournalEntry } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { applyExplosionToSlugs } from '../physics';
+import { PhaseManager } from './phaseManager';
 import { sfx } from '../audio';
 
 export function updateMines(
@@ -70,10 +71,12 @@ export function updateMines(
       );
       if (activeSlugTookDamage && state.phase === 'AIMING') {
         const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
-        addLog(`💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`, 'combat');
-        state.phase = 'RESOLVING';
-        state.phaseTimer = 5.0;
-        state.settleTimer = 1.2;
+        PhaseManager.startResolving(state, {
+          settleTimer: 1.2,
+          phaseTimeout: 8.0,
+          reason: `💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`,
+          addLog,
+        });
       }
     } else {
       remainingMines.push(mine);

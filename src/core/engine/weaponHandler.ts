@@ -4,6 +4,7 @@ import { getWeapon } from '../weapons/registry';
 import { applyExplosionToSlugs } from '../physics';
 import { sfx } from '../audio';
 import { findSafeTeleportPoint } from './turnManager';
+import { PhaseManager } from './phaseManager';
 
 export function selectWeapon(state: GameState, weaponId: string): boolean {
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
@@ -137,9 +138,7 @@ export function fireWeapon(
     activeSlug.vy = 0;
     sfx.play('teleport');
     addLog(`${activeSlug.name} s'est téléporté !`, 'weapon');
-    state.phase = 'RESOLVING';
-    state.phaseTimer = 5.0;
-    state.settleTimer = 0.6;
+    PhaseManager.startResolving(state, { settleTimer: 0.6, phaseTimeout: 8.0 });
     return true;
   }
 
@@ -237,9 +236,7 @@ export function fireWeapon(
 
     sfx.play('girder');
     addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
-    state.phase = 'RESOLVING';
-    state.phaseTimer = 5.0;
-    state.settleTimer = 0.5;
+    PhaseManager.startResolving(state, { settleTimer: 0.5, phaseTimeout: 8.0 });
     return true;
   }
 
@@ -256,9 +253,7 @@ export function fireWeapon(
     });
 
     sfx.play('airdrop');
-    addLog(`✈️ Largage aérien d'une Caisse de Ravitaillement en cours ! 📦`, 'weapon');
-    state.phase = 'RETREAT';
-    state.retreatTimer = 4.0;
+    PhaseManager.startRetreat(state, 4.0, addLog);
     return true;
   }
 
@@ -291,9 +286,7 @@ export function fireWeapon(
       addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
     }
     sfx.play('melee');
-    state.phase = 'RESOLVING';
-    state.phaseTimer = 5.0;
-    state.settleTimer = 1.2;
+    PhaseManager.startResolving(state, { settleTimer: 1.2, phaseTimeout: 8.0 });
     return true;
   }
 
@@ -309,7 +302,6 @@ export function fireWeapon(
   });
 
   state.projectiles.push(...projs);
-  state.phase = 'PROJECTILE_ACTIVE';
 
   if (
     weapon.id === 'dynamite' ||
@@ -317,9 +309,9 @@ export function fireWeapon(
     weapon.id === 'banana_bomb' ||
     weapon.behavior === 'BOUNCING_TIMER'
   ) {
-    state.phase = 'RETREAT';
-    state.retreatTimer = 4.0;
-    addLog(`🏃 TEMPS DE FUITE (RETREAT) ! 4s pour vous mettre à l'abri !`, 'info');
+    PhaseManager.startRetreat(state, 4.0, addLog);
+  } else {
+    PhaseManager.startProjectileActive(state);
   }
 
   sfx.play('fire');

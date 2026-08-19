@@ -158,7 +158,7 @@ export function useHostActionHandler(
             break;
           case 'RESTART_GAME':
             if (playerId === hostId) {
-              engine.state.phase = 'LOBBY';
+              engine.restartGame();
               broadcastState(engine.state);
             }
             break;
