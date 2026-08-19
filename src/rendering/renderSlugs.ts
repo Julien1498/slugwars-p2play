@@ -146,7 +146,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.restore();
     }
 
-    const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1;
+    const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1 || slug.movingDir !== null;
     const squishX = isAirbornePanic ? Math.min(0.35, speed * 0.035) : (isMoving ? Math.sin(animTime * 14) * 0.12 : 0);
     const squishY = isAirbornePanic ? -Math.min(0.2, speed * 0.02) : (isMoving ? -Math.sin(animTime * 14) * 0.12 : 0);
     const slugScale = 0.72;
