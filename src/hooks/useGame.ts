@@ -11,7 +11,6 @@ import { perfTracker } from '../core/perfTracker';
 import { useGameBroadcast } from './game/useGameBroadcast';
 import { useHostActionHandler } from './game/useHostActionHandler';
 import { useGuestStateReceiver } from './game/useGuestStateReceiver';
-import { updateSlugPhysics, isSlugGrounded } from '../core/physics/slugPhysics';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -110,29 +109,13 @@ export function useGame(options?: {
         }
       }
 
-      // Guest Local Movement & Jump Physics Prediction
-      const isMyTurn = myPeerId && state.activeTeamId === myPeerId && (state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT');
-      const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
-      if (activeSlug && activeSlug.isAlive && !activeSlug.inVehicleId && !activeSlug.ropeState) {
-        const isMoving = activeSlug.movingDir !== null || Math.abs(activeSlug.vx) > 0.05 || Math.abs(activeSlug.vy) > 0.05;
-        const isAirborne = !isSlugGrounded(activeSlug, engineRef.current.terrain, state.slugs);
-        if (isMoving || isAirborne) {
-          if (activeSlug.movingDir) {
-            activeSlug.vx = activeSlug.movingDir === 'left' ? -3.2 : 3.2;
-            activeSlug.facing = activeSlug.movingDir;
-          }
-          updateSlugPhysics(activeSlug, engineRef.current.terrain, state.slugs);
-          changed = true;
-        }
-      }
-
       if (changed) {
         setGameState({ ...state });
       }
     }, 50);
 
     return () => stopWorker();
-  }, [isHost, gameState.phase, myPeerId]);
+  }, [isHost, gameState.phase]);
 
   // Host room creation wrapper
   const hostRoom = useCallback(
@@ -322,26 +305,6 @@ export function useGame(options?: {
             if (payload?.seconds !== undefined) {
               activeSlug.fuseTimerSec = payload.seconds;
               setGameState({ ...state });
-            }
-          } else if (actionName === 'START_MOVE') {
-            if (payload?.dir && !activeSlug.inVehicleId) {
-              activeSlug.movingDir = payload.dir;
-              activeSlug.facing = payload.dir;
-              activeSlug.vx = payload.dir === 'left' ? -3.2 : 3.2;
-              setGameState({ ...state });
-            }
-          } else if (actionName === 'STOP_MOVE') {
-            activeSlug.movingDir = null;
-            activeSlug.vx = 0;
-            setGameState({ ...state });
-          } else if (actionName === 'JUMP') {
-            if (activeSlug.isAlive && !activeSlug.inVehicleId && !activeSlug.ropeState) {
-              const grounded = isSlugGrounded(activeSlug, engineRef.current.terrain, state.slugs);
-              if (grounded) {
-                activeSlug.vy = -6.5;
-                activeSlug.vx = activeSlug.facing === 'right' ? 2.5 : -2.5;
-                setGameState({ ...state });
-              }
             }
           }
         }

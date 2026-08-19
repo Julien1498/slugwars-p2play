@@ -6,7 +6,6 @@ import { decodeBinaryDelta } from '../../network/netBinarySerializer';
 import { sfx } from '../../core/audio';
 import { netMetrics } from '../../core/networkMetrics';
 import { PeerManagerLike } from 'p2play-core';
-import { isSlugGrounded } from '../../core/physics/slugPhysics';
 
 export function useGuestStateReceiver(
   engineRef: MutableRefObject<SlugWarsEngine>,
@@ -136,20 +135,11 @@ export function useGuestStateReceiver(
           prevPhaseRef.current = delta.phase;
         }
 
-        // Before applying delta, if this guest is the currently active player, preserve active aim, weapon, and movement prediction
+        // Before applying delta, if this guest is the currently active player, preserve active aim & weapon selection to avoid rubberbanding
         const isMyActiveTurn = myPeerId && engine.state.activeTeamId === myPeerId && (engine.state.phase === 'AIMING' || engine.state.phase === 'TURN_TIME' || engine.state.phase === 'RETREAT');
         const myActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
-        const isLocallyMoving = myActiveSlug
-          ? (myActiveSlug.movingDir !== null || Math.abs(myActiveSlug.vx) > 0.1 || Math.abs(myActiveSlug.vy) > 0.1 || !isSlugGrounded(myActiveSlug, engine.terrain, engine.state.slugs))
-          : false;
-
-        const preservedSlug = myActiveSlug
+        const preservedAim = myActiveSlug
           ? {
-              x: myActiveSlug.x,
-              y: myActiveSlug.y,
-              vx: myActiveSlug.vx,
-              vy: myActiveSlug.vy,
-              movingDir: myActiveSlug.movingDir,
               aimAngle: myActiveSlug.aimAngle,
               aimPower: myActiveSlug.aimPower,
               facing: myActiveSlug.facing,
@@ -161,34 +151,13 @@ export function useGuestStateReceiver(
 
         applyStateDelta(engine.state, delta);
 
-        if (preservedSlug && myActiveSlug) {
-          myActiveSlug.aimAngle = preservedSlug.aimAngle;
-          myActiveSlug.aimPower = preservedSlug.aimPower;
-          myActiveSlug.facing = preservedSlug.facing;
-          myActiveSlug.selectedWeaponId = preservedSlug.selectedWeaponId;
-          myActiveSlug.currentTargetPoint = preservedSlug.currentTargetPoint;
-          myActiveSlug.fuseTimerSec = preservedSlug.fuseTimerSec;
-
-          const hostX = myActiveSlug.x;
-          const hostY = myActiveSlug.y;
-          const dist = Math.hypot(hostX - preservedSlug.x, hostY - preservedSlug.y);
-
-          if (dist > 32) {
-            // Major external force / explosion knockback / teleport: accept host position directly
-          } else if (isLocallyMoving) {
-            // Actively walking or jumping in midair: preserve smooth local prediction
-            myActiveSlug.x = preservedSlug.x;
-            myActiveSlug.y = preservedSlug.y;
-            myActiveSlug.vx = preservedSlug.vx;
-            myActiveSlug.vy = preservedSlug.vy;
-            myActiveSlug.movingDir = preservedSlug.movingDir;
-          } else {
-            // Stopped at rest: soft convergence to host position
-            myActiveSlug.x = preservedSlug.x + (hostX - preservedSlug.x) * 0.45;
-            myActiveSlug.y = preservedSlug.y + (hostY - preservedSlug.y) * 0.45;
-            myActiveSlug.vx = 0;
-            myActiveSlug.movingDir = null;
-          }
+        if (preservedAim && myActiveSlug) {
+          myActiveSlug.aimAngle = preservedAim.aimAngle;
+          myActiveSlug.aimPower = preservedAim.aimPower;
+          myActiveSlug.facing = preservedAim.facing;
+          myActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
+          myActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
+          myActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
         }
 
         if (engine.state.girders && engine.state.girders.length > 0) {
@@ -238,17 +207,8 @@ export function useGuestStateReceiver(
 
         const isMyActiveTurn = myPeerId && newState.activeTeamId === myPeerId && (newState.phase === 'AIMING' || newState.phase === 'TURN_TIME' || newState.phase === 'RETREAT');
         const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
-        const isLocallyMoving = prevActiveSlug
-          ? (prevActiveSlug.movingDir !== null || Math.abs(prevActiveSlug.vx) > 0.1 || Math.abs(prevActiveSlug.vy) > 0.1 || !isSlugGrounded(prevActiveSlug, engine.terrain, engine.state.slugs))
-          : false;
-
-        const preservedSlug = prevActiveSlug
+        const preservedAim = prevActiveSlug
           ? {
-              x: prevActiveSlug.x,
-              y: prevActiveSlug.y,
-              vx: prevActiveSlug.vx,
-              vy: prevActiveSlug.vy,
-              movingDir: prevActiveSlug.movingDir,
               aimAngle: prevActiveSlug.aimAngle,
               aimPower: prevActiveSlug.aimPower,
               facing: prevActiveSlug.facing,
@@ -259,34 +219,15 @@ export function useGuestStateReceiver(
           : null;
 
         engine.state = newState;
-        if (preservedSlug) {
+        if (preservedAim) {
           const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
           if (newActiveSlug) {
-            newActiveSlug.aimAngle = preservedSlug.aimAngle;
-            newActiveSlug.aimPower = preservedSlug.aimPower;
-            newActiveSlug.facing = preservedSlug.facing;
-            newActiveSlug.selectedWeaponId = preservedSlug.selectedWeaponId;
-            newActiveSlug.currentTargetPoint = preservedSlug.currentTargetPoint;
-            newActiveSlug.fuseTimerSec = preservedSlug.fuseTimerSec;
-
-            const hostX = newActiveSlug.x;
-            const hostY = newActiveSlug.y;
-            const dist = Math.hypot(hostX - preservedSlug.x, hostY - preservedSlug.y);
-
-            if (dist > 32) {
-              // Snap to host
-            } else if (isLocallyMoving) {
-              newActiveSlug.x = preservedSlug.x;
-              newActiveSlug.y = preservedSlug.y;
-              newActiveSlug.vx = preservedSlug.vx;
-              newActiveSlug.vy = preservedSlug.vy;
-              newActiveSlug.movingDir = preservedSlug.movingDir;
-            } else {
-              newActiveSlug.x = preservedSlug.x + (hostX - preservedSlug.x) * 0.45;
-              newActiveSlug.y = preservedSlug.y + (hostY - preservedSlug.y) * 0.45;
-              newActiveSlug.vx = 0;
-              newActiveSlug.movingDir = null;
-            }
+            newActiveSlug.aimAngle = preservedAim.aimAngle;
+            newActiveSlug.aimPower = preservedAim.aimPower;
+            newActiveSlug.facing = preservedAim.facing;
+            newActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
+            newActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
+            newActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
           }
         }
 
