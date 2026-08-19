@@ -8,15 +8,19 @@ export function isSlugGrounded(slug: Slug, terrain: DestructibleTerrain, slugs: 
   // A slug moving upwards is airborne and cannot be grounded
   if (slug.vy < -0.1) return false;
 
-  const feetY = Math.floor(slug.y + 1);
+  const feetY1 = Math.floor(slug.y + 1);
+  const feetY2 = Math.floor(slug.y + 2);
   const leftX = Math.floor(slug.x - 4);
   const centerX = Math.floor(slug.x);
   const rightX = Math.floor(slug.x + 4);
 
   if (
-    terrain.isSolid(centerX, feetY) ||
-    terrain.isSolid(leftX, feetY) ||
-    terrain.isSolid(rightX, feetY)
+    terrain.isSolid(centerX, feetY1) ||
+    terrain.isSolid(leftX, feetY1) ||
+    terrain.isSolid(rightX, feetY1) ||
+    terrain.isSolid(centerX, feetY2) ||
+    terrain.isSolid(leftX, feetY2) ||
+    terrain.isSolid(rightX, feetY2)
   ) {
     return true;
   }

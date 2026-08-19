@@ -337,7 +337,7 @@ export class PhaseManager {
 
       case 'RESOLVING': {
         if (state.phaseTimer === undefined) {
-          state.phaseTimer = 8.0;
+          state.phaseTimer = 25.0;
           state.settleTimer = 1.0;
         } else {
           state.phaseTimer -= dt;
@@ -348,15 +348,23 @@ export class PhaseManager {
 
         const isMinTimeElapsed = (state.settleTimer ?? 0) <= 0;
         const atRest = isMinTimeElapsed && isWorldAtRest(state, terrain);
-        const timedOut = state.phaseTimer <= 0;
 
-        // If timed out but slugs are still airborne in flight, give an extra grace period
-        if (timedOut && !isWorldAtRest(state, terrain) && state.phaseTimer > -4.0) {
-          return;
+        // Standard exit: world is completely at rest and minimum settle delay elapsed
+        if (atRest) {
+          callbacks.advanceToNextTurn();
+          break;
         }
 
-        if (atRest || timedOut) {
-          callbacks.advanceToNextTurn();
+        // Emergency timeout: only trigger if stuck for >25s AND no living slugs are moving or airborne
+        if (state.phaseTimer <= 0) {
+          const hasAirborneSlugs = state.slugs.some(
+            (s) => s.isAlive && s.isPlaced !== false && !s.inVehicleId && (s.y < 0 || Math.abs(s.vx) > 0.05 || Math.abs(s.vy) > 0.05)
+          );
+          if (!hasAirborneSlugs) {
+            state.projectiles = [];
+            state.explosions = [];
+            callbacks.advanceToNextTurn();
+          }
         }
         break;
       }
