@@ -99,6 +99,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const clientWaterSplashesRef = useRef<WaterSplash[]>([]);
   const clientWaterRipplesRef = useRef<WaterRipple[]>([]);
   const clientWaterBubblesRef = useRef<WaterBubble[]>([]);
+  const visualSlugPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const lastRenderTimeRef = useRef<number>(0);
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
@@ -933,9 +935,43 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
       renderTombstones(ctx, curState.slugs, waterLevel);
 
+      // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering
+      const now = performance.now();
+      const lastTime = lastRenderTimeRef.current || now;
+      const dtSec = Math.min(0.1, (now - lastTime) / 1000);
+      lastRenderTimeRef.current = now;
+      const alpha = 1 - Math.exp(-24.0 * dtSec);
+
+      const renderedSlugs = curState.slugs.map((slug) => {
+        let visualPos = visualSlugPositionsRef.current.get(slug.id);
+        if (!visualPos) {
+          visualPos = { x: slug.x, y: slug.y };
+          visualSlugPositionsRef.current.set(slug.id, visualPos);
+        } else {
+          const dist = Math.hypot(slug.x - visualPos.x, slug.y - visualPos.y);
+          if (dist > 64) {
+            visualPos.x = slug.x;
+            visualPos.y = slug.y;
+          } else {
+            visualPos.x += (slug.x - visualPos.x) * alpha;
+            visualPos.y += (slug.y - visualPos.y) * alpha;
+          }
+        }
+        return {
+          ...slug,
+          x: visualPos.x,
+          y: visualPos.y,
+        };
+      });
+
+      const visualState = {
+        ...curState,
+        slugs: renderedSlugs,
+      };
+
       // 6. Slugs, Ropes, Crates, Projectiles & Particles
-      renderNinjaRopes(ctx, curState.slugs);
-      renderAllSlugs({ ctx, gameState: curState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
+      renderNinjaRopes(ctx, renderedSlugs);
+      renderAllSlugs({ ctx, gameState: visualState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
       renderSupplyCrates(ctx, curState.supplyCrates);
       renderProjectiles({ ctx, projectiles: curState.projectiles || [], animTime });
 
@@ -961,7 +997,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       renderFloatingDamages(ctx, clientFloatingDamagesRef.current);
 
       // 7. Aim Guides, Holograms & Placement Preview
-      const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
+      const activeSlug = renderedSlugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         renderAimGuides({
           ctx,
