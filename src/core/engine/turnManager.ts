@@ -113,9 +113,9 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
   // 1. Any active flying projectiles?
   if (state.projectiles && state.projectiles.length > 0) return false;
 
-  // 2. Any active explosions or airstrikes/helicopters?
+  // 2. Any active explosions or flying/piloted helicopters?
   if (state.explosions && state.explosions.length > 0) return false;
-  if (state.helicopters && state.helicopters.length > 0) return false;
+  if (state.helicopters && state.helicopters.some((h) => h.pilotSlugId !== null || Math.hypot(h.vx, h.vy) > 0.1)) return false;
 
   // 3. Any floating damage numbers still displaying?
   if (state.floatingDamages && state.floatingDamages.length > 0) return false;
@@ -131,12 +131,14 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
   // 5. Any unlanded supply crates falling?
   if (state.supplyCrates && state.supplyCrates.some((c) => !c.isLanded)) return false;
 
-  // 6. Any slugs flying / bouncing / sliding / falling / roping in the air?
+  // 6. Any slugs flying / bouncing / sliding / falling / roping in the air / off-map?
   for (const slug of state.slugs) {
     if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
     if (slug.ropeState) return false;
-    // Check velocity threshold: any velocity > 0.08 px/tick means slug is still moving
-    if (Math.abs(slug.vx) > 0.08 || Math.abs(slug.vy) > 0.08) return false;
+    // Slugs projected above map ceiling are in high-altitude flight and not at rest
+    if (slug.y < 0) return false;
+    // Check velocity threshold: any velocity > 0.05 px/tick means slug is still moving
+    if (Math.abs(slug.vx) > 0.05 || Math.abs(slug.vy) > 0.05) return false;
     // Check if grounded on solid terrain or on another slug
     if (!isSlugGrounded(slug, terrain, state.slugs)) return false;
   }
