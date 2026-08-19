@@ -150,13 +150,13 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                     {w.icon}
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5 h-10">
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-bold text-xs text-zinc-100 truncate">
                         {w.name}
                       </span>
                       <span
-                        className={`text-[10px] font-black px-1.5 py-0.2 rounded shrink-0 ${
+                        className={`text-[10px] font-black px-1.5 py-0.5 rounded shrink-0 leading-none ${
                           w.id === 'blowtorch'
                             ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
                             : ammo === -1
@@ -170,11 +170,11 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px] text-zinc-400">
-                      <span className="text-red-400 font-bold flex items-center gap-0.5">
+                    <div className="flex items-center justify-between gap-1 text-[10px] text-zinc-400">
+                      <span className="text-red-400 font-bold flex items-center gap-0.5 shrink-0">
                         <Zap className="w-2.5 h-2.5 text-red-400" /> {w.damage} Dgt
                       </span>
-                      <span className="text-zinc-500 text-[9px] truncate">
+                      <span className="text-zinc-400 text-[9px] font-medium truncate">
                         {w.windAffected ? '💨 Vent' : 'Direct'}
                       </span>
                     </div>
