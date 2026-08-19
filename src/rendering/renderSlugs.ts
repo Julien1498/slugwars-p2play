@@ -130,11 +130,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.stroke();
     }
 
-    const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1 || slug.movingDir !== null;
-    const isAirbornePanic = speed > 0.4 || isMoving;
+    const isAirbornePanic = Math.abs(slug.vy) > 1.6 || speed > 2.5;
+    const isWalking = !isAirbornePanic && (slug.movingDir !== null || Math.abs(slug.vx) > 0.6);
 
-    // Airborne Speed Trails
-    if (isAirbornePanic && speed > 1.2) {
+    // Airborne Speed Trails (only during high-speed air flight/falling)
+    if (isAirbornePanic && speed > 2.5) {
       ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = 1.5;
@@ -147,8 +147,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.restore();
     }
 
-    const stretchX = isAirbornePanic ? Math.min(0.28, Math.max(0.04, speed * 0.035)) : 0;
-    const stretchY = isAirbornePanic ? -Math.min(0.16, Math.max(0.02, speed * 0.02)) : 0;
+    const stretchX = isAirbornePanic ? Math.min(0.28, Math.max(0.04, speed * 0.035)) : isWalking ? 0.08 : 0;
+    const stretchY = isAirbornePanic ? -Math.min(0.16, Math.max(0.02, speed * 0.02)) : isWalking ? -0.04 : 0;
     const slugScale = 0.72;
 
     ctx.save();
@@ -157,6 +157,9 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     if (isAirbornePanic) {
       const tilt = Math.atan2(slug.vy, Math.abs(slug.vx) * (slug.facing === 'left' ? -1 : 1)) * 0.25;
       ctx.rotate(tilt);
+    } else if (isWalking) {
+      const walkTilt = slug.facing === 'left' ? -0.1 : 0.1;
+      ctx.rotate(walkTilt);
     }
 
     if (slug.facing === 'left') {
