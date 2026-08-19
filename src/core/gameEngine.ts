@@ -423,6 +423,42 @@ export class SlugWarsEngine {
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     const activeSlugHpBefore = activeSlug && activeSlug.isAlive ? activeSlug.hp : 0;
 
+    // 1. Slugs physics, water & fall damage update (runs every tick unconditionally)
+    const effectiveWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
+    for (const slug of this.state.slugs) {
+      if (slug.y >= effectiveWaterY) {
+        if (slug.isAlive) {
+          const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
+          if (victimTeam) {
+            if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+            victimTeam.stats.deaths++;
+          }
+        }
+        slug.hp = 0;
+        slug.isAlive = false;
+      }
+
+      const phys = updateSlugPhysics(slug, this.terrain, this.state.slugs);
+      if (phys.fallDamage) {
+        this.addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');
+        sfx.play('ouch');
+        this.state.floatingDamages.push({
+          id: `fd_${Date.now()}_${Math.random()}`,
+          x: slug.x,
+          y: slug.y - 24,
+          damage: phys.fallDamage,
+          createdAt: Date.now(),
+        });
+
+        const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
+        if (victimTeam) {
+          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+          victimTeam.stats.damageTaken += phys.fallDamage;
+          if (slug.hp === 0) victimTeam.stats.deaths++;
+        }
+      }
+    }
+
     if (this.state.phase === 'TURN_START') {
       if (this.state.phaseTimer !== undefined) {
         this.state.phaseTimer -= 0.05;
@@ -657,41 +693,6 @@ export class SlugWarsEngine {
     }
 
     updateHelicopters(this.state, this.terrain, (msg, type) => this.addLog(msg, type));
-
-    const effectiveWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
-    for (const slug of this.state.slugs) {
-      if (slug.y >= effectiveWaterY) {
-        if (slug.isAlive) {
-          const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
-          if (victimTeam) {
-            if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-            victimTeam.stats.deaths++;
-          }
-        }
-        slug.hp = 0;
-        slug.isAlive = false;
-      }
-
-      const phys = updateSlugPhysics(slug, this.terrain, this.state.slugs);
-      if (phys.fallDamage) {
-        this.addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');
-        sfx.play('ouch');
-        this.state.floatingDamages.push({
-          id: `fd_${Date.now()}_${Math.random()}`,
-          x: slug.x,
-          y: slug.y - 24,
-          damage: phys.fallDamage,
-          createdAt: Date.now(),
-        });
-
-        const victimTeam = this.state.teams.find((t) => t.id === slug.teamId);
-        if (victimTeam) {
-          if (!victimTeam.stats) victimTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
-          victimTeam.stats.damageTaken += phys.fallDamage;
-          if (slug.hp === 0) victimTeam.stats.deaths++;
-        }
-      }
-    }
 
     if (
       activeSlug &&
