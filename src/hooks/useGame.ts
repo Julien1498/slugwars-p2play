@@ -109,6 +109,14 @@ export function useGame(options?: {
         }
       }
 
+      // Smooth charge power filling on guest (2.5% per 50ms)
+      const isMyTurn = myPeerId && state.activeTeamId === myPeerId && state.phase === 'AIMING';
+      const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
+      if (activeSlug && activeSlug.isChargingPower) {
+        activeSlug.aimPower = Math.min(100, (activeSlug.aimPower || 0) + 2.5);
+        changed = true;
+      }
+
       if (changed) {
         setGameState({ ...state });
       }
@@ -306,6 +314,14 @@ export function useGame(options?: {
               activeSlug.fuseTimerSec = payload.seconds;
               setGameState({ ...state });
             }
+          } else if (actionName === 'START_CHARGE') {
+            activeSlug.isChargingPower = true;
+            activeSlug.aimPower = 5;
+            if (payload?.targetPoint) activeSlug.currentTargetPoint = payload.targetPoint;
+            setGameState({ ...state });
+          } else if (actionName === 'RELEASE_CHARGE' || actionName === 'FIRE') {
+            activeSlug.isChargingPower = false;
+            setGameState({ ...state });
           }
         }
 
