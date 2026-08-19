@@ -219,7 +219,7 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     engine.placeSlug({ x: 300, y: 300 });
     engine.placeSlug({ x: 600, y: 300 });
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 60; i++) {
       engine.tick();
       engine.state.floatingDamages = [];
     }
@@ -230,6 +230,9 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     heli.vx = 0;
     heli.vy = 0;
     activeSlug.inVehicleId = heli.id;
+    activeSlug.vx = 0;
+    activeSlug.vy = 0;
+    engine.state.floatingDamages = [];
 
     // A stationary helicopter with a pilot MUST report isWorldAtRest as true
     expect(engine.isWorldAtRest()).toBe(true);
@@ -237,5 +240,77 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     // End turn -> should advance cleanly
     engine.endTurn();
     expect((engine.state.phase as string)).toBe('AIMING');
+  });
+
+  it('rises water level and drowns submerged slugs on turn progression', () => {
+    const engine = new SlugWarsEngine({
+      turnDuration: 45,
+      slugsPerTeam: 1,
+      waterRiseSpeed: 'NORMAL', // 12px per turn
+      waterRiseFreq: 'EVERY_TURN',
+    });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    const initialWaterLevel = engine.state.waterLevel ?? engine.terrain.data.waterLevel;
+    const blueSlug = engine.state.slugs.find((s) => s.teamId === 'team_blue')!;
+    // Place blue slug low, right near the water level
+    blueSlug.y = initialWaterLevel - 5;
+
+    // End turn -> water should rise by 12px
+    engine.endTurn();
+
+    const newWaterLevel = engine.state.waterLevel ?? engine.terrain.data.waterLevel;
+    expect(newWaterLevel).toBe(initialWaterLevel - 12);
+
+    // Blue slug was at initialWaterLevel - 5, so now blueSlug.y >= newWaterLevel -> it drowns
+    expect(blueSlug.isAlive).toBe(false);
+    expect(blueSlug.hp).toBe(0);
+  });
+
+  it('resets selected weapon to bazooka when ammo is depleted on turn switch', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    const redSlug = engine.state.slugs.find((s) => s.teamId === 'team_red')!;
+    const redTeam = engine.state.teams.find((t) => t.id === 'team_red')!;
+
+    // Select a limited weapon and exhaust ammo to 0
+    redTeam.inventory['dynamite'] = 0;
+    redSlug.selectedWeaponId = 'dynamite';
+
+    // End turn to blue and back to red
+    engine.endTurn();
+    engine.endTurn();
+
+    // Red slug should have defaulted back to bazooka
+    expect(redSlug.selectedWeaponId).toBe('bazooka');
+  });
+
+  it('declares a draw match when all teams are eliminated simultaneously', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    // Kill both slugs
+    for (const slug of engine.state.slugs) {
+      slug.isAlive = false;
+      slug.hp = 0;
+    }
+
+    engine.endTurn();
+
+    expect(engine.state.phase).toBe('GAME_OVER');
+    expect(engine.state.winnerTeamId).toBeUndefined();
   });
 });

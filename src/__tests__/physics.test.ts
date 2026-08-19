@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { updateSlugPhysics, updateProjectilePhysics, isSlugGrounded, applyExplosionToSlugs } from '../core/physics';
+import { updateSlugPhysics, updateProjectilePhysics, isSlugGrounded, applyExplosionToSlugs, updateHelicopterPhysics } from '../core/physics';
 import { DestructibleTerrain } from '../core/terrain';
-import { Slug, ActiveProjectile, Team } from '../core/types';
+import { Slug, ActiveProjectile, Team, HelicopterVehicle } from '../core/types';
 
 function createFlatTerrain(width = 400, height = 300, groundY = 200): DestructibleTerrain {
   const grid = new Uint8Array(width * height);
@@ -164,5 +164,51 @@ describe('Physics: Explosions & Impulse', () => {
 
     expect(slug.hp).toBeLessThan(100);
     expect(dummyTeam.stats?.damageTaken).toBeGreaterThan(0);
+  });
+});
+
+describe('Physics: Helicopter Vehicles & Piloting', () => {
+  it('updates helicopter flight mechanics and dampens velocity', () => {
+    const terrain = createFlatTerrain(600, 400, 300);
+    const heli: HelicopterVehicle = {
+      id: 'heli_1',
+      x: 300,
+      y: 150,
+      vx: 4.5,
+      vy: -3.0,
+      hp: 150,
+      maxHp: 150,
+      facing: 'right',
+      pilotSlugId: 'slug_1',
+      rotorAngle: 0,
+    };
+    const pilotSlug = createDummySlug({ id: 'slug_1', x: 300, y: 150, inVehicleId: 'heli_1' });
+
+    const res = updateHelicopterPhysics(heli, terrain, pilotSlug);
+    expect(res.crashed).toBeFalsy();
+    expect(heli.x).toBeGreaterThan(300);
+    expect(heli.y).toBeLessThan(150);
+    expect(pilotSlug.x).toBe(heli.x);
+    expect(pilotSlug.y).toBe(heli.y);
+  });
+
+  it('triggers crash when helicopter hits ground at high vertical speed', () => {
+    const terrain = createFlatTerrain(600, 400, 300);
+    const heli: HelicopterVehicle = {
+      id: 'heli_1',
+      x: 300,
+      y: 280, // 20px above ground at y=300
+      vx: 0,
+      vy: 14.0, // High crash speed (> 10)
+      hp: 150,
+      maxHp: 150,
+      facing: 'right',
+      pilotSlugId: 'slug_1',
+      rotorAngle: 0,
+    };
+    const pilotSlug = createDummySlug({ id: 'slug_1', x: 300, y: 280, inVehicleId: 'heli_1' });
+
+    const res = updateHelicopterPhysics(heli, terrain, pilotSlug);
+    expect(res.crashed).toBe(true);
   });
 });
