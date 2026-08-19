@@ -39,7 +39,8 @@ export class PhaseManager {
   public static startPlacement(state: GameState): void {
     this.onExitPhase(state, state.phase);
     state.phase = 'PLACEMENT';
-    state.activeTeamId = state.teams[0]?.id || '';
+    const randomTeamIdx = state.teams.length > 0 ? Math.floor(Math.random() * state.teams.length) : 0;
+    state.activeTeamId = state.teams[randomTeamIdx]?.id || state.teams[0]?.id || '';
     const firstSlug = state.slugs.find((s) => s.teamId === state.activeTeamId && !s.isPlaced);
     state.activeSlugId = firstSlug ? firstSlug.id : (state.slugs[0]?.id || '');
     state.turnTimer = 30;

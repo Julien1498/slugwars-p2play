@@ -152,34 +152,38 @@ export function useBoardKeyboardControls({
           if (activeSlug?.ropeState) {
             onStartSteer?.('right');
           }
-        } else if (key === 'arrowup' && gameState.phase !== 'RETREAT') {
+        } else if (key === 'arrowup') {
           if (activeSlug) {
             if (activeSlug.ropeState) {
               onStartSteer?.('left');
-            } else if (activeSlug.selectedWeaponId === 'girder') {
-              const angles = [0, 45, 90, 135];
-              const curIdx = angles.indexOf(activeSlug.aimAngle);
-              const nextAngle = angles[(curIdx + 1) % angles.length];
-              onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
-              sfx.play('tick');
-            } else {
-              const newAngle = Math.min(85, activeSlug.aimAngle + 5);
-              onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            } else if (gameState.phase !== 'RETREAT') {
+              if (activeSlug.selectedWeaponId === 'girder') {
+                const angles = [0, 45, 90, 135];
+                const curIdx = angles.indexOf(activeSlug.aimAngle);
+                const nextAngle = angles[(curIdx + 1) % angles.length];
+                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+                sfx.play('tick');
+              } else {
+                const newAngle = Math.min(85, activeSlug.aimAngle + 5);
+                onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+              }
             }
           }
-        } else if (key === 'arrowdown' && gameState.phase !== 'RETREAT') {
+        } else if (key === 'arrowdown') {
           if (activeSlug) {
             if (activeSlug.ropeState) {
               onStartSteer?.('right');
-            } else if (activeSlug.selectedWeaponId === 'girder') {
-              const angles = [0, 45, 90, 135];
-              const curIdx = angles.indexOf(activeSlug.aimAngle);
-              const nextAngle = angles[(curIdx - 1 + angles.length) % angles.length];
-              onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
-              sfx.play('tick');
-            } else {
-              const newAngle = Math.max(-85, activeSlug.aimAngle - 5);
-              onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+            } else if (gameState.phase !== 'RETREAT') {
+              if (activeSlug.selectedWeaponId === 'girder') {
+                const angles = [0, 45, 90, 135];
+                const curIdx = angles.indexOf(activeSlug.aimAngle);
+                const nextAngle = angles[(curIdx - 1 + angles.length) % angles.length];
+                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+                sfx.play('tick');
+              } else {
+                const newAngle = Math.max(-85, activeSlug.aimAngle - 5);
+                onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+              }
             }
           }
         } else if (key === 'enter' && gameState.phase !== 'RETREAT') {

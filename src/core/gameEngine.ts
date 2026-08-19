@@ -240,7 +240,8 @@ export class SlugWarsEngine {
 
     const unplaced = this.state.slugs.filter((s) => !s.isPlaced);
     if (unplaced.length === 0) {
-      this.state.activeTeamId = this.state.teams[0].id;
+      const randomTeamIdx = this.state.teams.length > 0 ? Math.floor(Math.random() * this.state.teams.length) : 0;
+      this.state.activeTeamId = this.state.teams[randomTeamIdx]?.id || this.state.teams[0].id;
       this.state.activeSlugId = this.getNextSlugForTeam(this.state.activeTeamId) || this.state.slugs[0].id;
       this.randomizeWind();
       PhaseManager.startAiming(this.state);
@@ -468,7 +469,11 @@ export class SlugWarsEngine {
       PhaseManager.startResolving(this.state, { settleTimer: 1.2, phaseTimeout: 30.0 });
     }
 
-    if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
+    if (
+      activeSlug &&
+      activeSlug.isAlive &&
+      (this.state.phase === 'AIMING' || this.state.phase === 'TURN_TIME' || this.state.phase === 'RETREAT')
+    ) {
       if (activeSlug.ropeState) {
         const rope = activeSlug.ropeState;
         const isHookSolid =
