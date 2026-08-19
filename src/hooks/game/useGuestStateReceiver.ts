@@ -11,7 +11,8 @@ export function useGuestStateReceiver(
   engineRef: MutableRefObject<SlugWarsEngine>,
   isHost: boolean,
   peerManager: PeerManagerLike,
-  setGameState: (state: GameState) => void
+  setGameState: (state: GameState) => void,
+  myPeerId?: string
 ) {
   const knownProjIdsRef = useRef<Set<string>>(new Set());
   const knownExplosionIdsRef = useRef<Set<string>>(new Set());
@@ -134,7 +135,30 @@ export function useGuestStateReceiver(
           prevPhaseRef.current = delta.phase;
         }
 
+        // Before applying delta, if this guest is the currently active player, preserve their active aim & weapon selection to avoid rubberbanding
+        const isMyActiveTurn = myPeerId && engine.state.activeTeamId === myPeerId && (engine.state.phase === 'AIMING' || engine.state.phase === 'TURN_TIME' || engine.state.phase === 'RETREAT');
+        const myActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
+        const preservedAim = myActiveSlug
+          ? {
+              aimAngle: myActiveSlug.aimAngle,
+              aimPower: myActiveSlug.aimPower,
+              facing: myActiveSlug.facing,
+              selectedWeaponId: myActiveSlug.selectedWeaponId,
+              currentTargetPoint: myActiveSlug.currentTargetPoint,
+              fuseTimerSec: myActiveSlug.fuseTimerSec,
+            }
+          : null;
+
         applyStateDelta(engine.state, delta);
+
+        if (preservedAim && myActiveSlug) {
+          myActiveSlug.aimAngle = preservedAim.aimAngle;
+          myActiveSlug.aimPower = preservedAim.aimPower;
+          myActiveSlug.facing = preservedAim.facing;
+          myActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
+          myActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
+          myActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
+        }
 
         if (engine.state.girders && engine.state.girders.length > 0) {
           for (const g of engine.state.girders) {
@@ -180,7 +204,32 @@ export function useGuestStateReceiver(
         setGameState({ ...engine.state });
       } else if (payload.config) {
         const newState = payload as GameState;
+
+        const isMyActiveTurn = myPeerId && newState.activeTeamId === myPeerId && (newState.phase === 'AIMING' || newState.phase === 'TURN_TIME' || newState.phase === 'RETREAT');
+        const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
+        const preservedAim = prevActiveSlug
+          ? {
+              aimAngle: prevActiveSlug.aimAngle,
+              aimPower: prevActiveSlug.aimPower,
+              facing: prevActiveSlug.facing,
+              selectedWeaponId: prevActiveSlug.selectedWeaponId,
+              currentTargetPoint: prevActiveSlug.currentTargetPoint,
+              fuseTimerSec: prevActiveSlug.fuseTimerSec,
+            }
+          : null;
+
         engine.state = newState;
+        if (preservedAim) {
+          const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+          if (newActiveSlug) {
+            newActiveSlug.aimAngle = preservedAim.aimAngle;
+            newActiveSlug.aimPower = preservedAim.aimPower;
+            newActiveSlug.facing = preservedAim.facing;
+            newActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
+            newActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
+            newActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
+          }
+        }
 
         const isNewMatch = (newState.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') ||
           prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
@@ -234,8 +283,8 @@ export function useGuestStateReceiver(
           }
         }
 
-        setGameState(newState);
+        setGameState({ ...engine.state });
       }
     };
-  }, [isHost, peerManager, engineRef, setGameState]);
+  }, [isHost, peerManager, engineRef, setGameState, myPeerId]);
 }
