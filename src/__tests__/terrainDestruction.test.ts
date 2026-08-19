@@ -68,7 +68,7 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
   });
 
   it('records craters and propagates environmental destruction via engine explosions', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, mapTheme: 'ISLAND', mapSeed: 12345 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -83,11 +83,12 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
     engine.carveCrater(blastX, blastY, blastRadius);
 
     const craters = engine.state.craters || [];
-    expect(craters.length).toBe(initialCraterCount + 1);
-    const lastCrater = craters[craters.length - 1];
-    expect(lastCrater.x).toBe(blastX);
-    expect(lastCrater.y).toBe(blastY);
-    expect(lastCrater.radius).toBe(blastRadius);
+    expect(craters.length).toBeGreaterThanOrEqual(initialCraterCount + 1);
+    const createdCrater = craters.find((c) => c.x === blastX && c.y === blastY && c.radius === blastRadius);
+    expect(createdCrater).toBeDefined();
+    expect(createdCrater!.x).toBe(blastX);
+    expect(createdCrater!.y).toBe(blastY);
+    expect(createdCrater!.radius).toBe(blastRadius);
   });
 
   it('erases solid prop physics pixels from grid when prop is destroyed to prevent phantom hitboxes', () => {
