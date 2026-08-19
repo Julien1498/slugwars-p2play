@@ -141,7 +141,6 @@ export function useGuestStateReceiver(
         const preservedAim = myActiveSlug
           ? {
               aimAngle: myActiveSlug.aimAngle,
-              aimPower: myActiveSlug.aimPower,
               facing: myActiveSlug.facing,
               selectedWeaponId: myActiveSlug.selectedWeaponId,
               currentTargetPoint: myActiveSlug.currentTargetPoint,
@@ -153,7 +152,6 @@ export function useGuestStateReceiver(
 
         if (preservedAim && myActiveSlug) {
           myActiveSlug.aimAngle = preservedAim.aimAngle;
-          myActiveSlug.aimPower = preservedAim.aimPower;
           myActiveSlug.facing = preservedAim.facing;
           myActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
           myActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
@@ -210,7 +208,6 @@ export function useGuestStateReceiver(
         const preservedAim = prevActiveSlug
           ? {
               aimAngle: prevActiveSlug.aimAngle,
-              aimPower: prevActiveSlug.aimPower,
               facing: prevActiveSlug.facing,
               selectedWeaponId: prevActiveSlug.selectedWeaponId,
               currentTargetPoint: prevActiveSlug.currentTargetPoint,
@@ -223,7 +220,6 @@ export function useGuestStateReceiver(
           const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
           if (newActiveSlug) {
             newActiveSlug.aimAngle = preservedAim.aimAngle;
-            newActiveSlug.aimPower = preservedAim.aimPower;
             newActiveSlug.facing = preservedAim.facing;
             newActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
             newActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;

@@ -100,7 +100,7 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
   });
 
   it('resolves turn only after high airborne slug falls back down and stabilizes on ground', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, slugHp: 250, mapTheme: 'ISLAND' });
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, slugHp: 250, mapTheme: 'ISLAND', mapSeed: 12345 });
     engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
