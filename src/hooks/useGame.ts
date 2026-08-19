@@ -320,8 +320,17 @@ export function useGame(options?: {
             activeSlug.aimPower = 5;
             if (payload?.targetPoint) activeSlug.currentTargetPoint = payload.targetPoint;
             setGameState({ ...state });
-          } else if (actionName === 'RELEASE_CHARGE' || actionName === 'FIRE') {
+          } else if (actionName === 'FIRE') {
             activeSlug.isChargingPower = false;
+            if (activeSlug.selectedWeaponId === 'blowtorch') {
+              activeSlug.isBlowtorching = true;
+            }
+            setGameState({ ...state });
+          } else if (actionName === 'RELEASE_CHARGE') {
+            activeSlug.isChargingPower = false;
+            if (activeSlug.isBlowtorching) {
+              activeSlug.isBlowtorching = false;
+            }
             setGameState({ ...state });
           } else if (actionName === 'START_MOVE') {
             if (payload?.dir) {

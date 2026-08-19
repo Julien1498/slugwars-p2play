@@ -129,6 +129,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
     onStartMove,
     onStopMove,
     onJump,
+    onFire,
     onStartCharge,
     onReleaseCharge,
     setShowWeaponPicker,

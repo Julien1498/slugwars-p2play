@@ -19,6 +19,7 @@ interface KeyboardControlsProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
+  onFire?: (targetPoint?: Vector2D) => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   setShowWeaponPicker: React.Dispatch<React.SetStateAction<boolean>>;
@@ -40,6 +41,7 @@ export function useBoardKeyboardControls({
   onStartMove,
   onStopMove,
   onJump,
+  onFire,
   onStartCharge,
   onReleaseCharge,
   setShowWeaponPicker,
@@ -181,7 +183,11 @@ export function useBoardKeyboardControls({
             }
           }
         } else if (key === 'enter' && gameState.phase !== 'RETREAT') {
-          onStartCharge?.();
+          if (activeSlug?.selectedWeaponId === 'blowtorch') {
+            if (!activeSlug.isBlowtorching) onFire?.();
+          } else {
+            onStartCharge?.();
+          }
         }
       }
     };
@@ -210,5 +216,5 @@ export function useBoardKeyboardControls({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isMyTurn, gameState.phase, activeSlug, activeSheep, onStartMove, onStopMove, onJump, onStartSteer, onStopSteer, onStartCharge, onReleaseCharge, onDetonate, onUpdateAim, onSetFuseTimer, onSteerVehicle, onExitVehicle, onEnterVehicle, setShowWeaponPicker]);
+  }, [isMyTurn, gameState.phase, activeSlug, activeSheep, onStartMove, onStopMove, onJump, onFire, onStartSteer, onStopSteer, onStartCharge, onReleaseCharge, onDetonate, onUpdateAim, onSetFuseTimer, onSteerVehicle, onExitVehicle, onEnterVehicle, setShowWeaponPicker]);
 }
