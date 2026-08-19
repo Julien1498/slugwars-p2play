@@ -113,7 +113,11 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
   // 1. Any active flying projectiles?
   if (state.projectiles && state.projectiles.length > 0) return false;
 
-  // 2. Any triggered mines counting down?
+  // 2. Any active explosions or airstrikes/helicopters?
+  if (state.explosions && state.explosions.length > 0) return false;
+  if (state.helicopters && state.helicopters.length > 0) return false;
+
+  // 3. Any triggered mines counting down?
   if (
     state.mines &&
     state.mines.some((m) => m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0)
@@ -121,13 +125,15 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
     return false;
   }
 
-  // 3. Any unlanded supply crates falling?
+  // 4. Any unlanded supply crates falling?
   if (state.supplyCrates && state.supplyCrates.some((c) => !c.isLanded)) return false;
 
-  // 4. Any slugs flying / bouncing / falling in the air?
+  // 5. Any slugs flying / bouncing / sliding / falling in the air?
   for (const slug of state.slugs) {
     if (!slug.isAlive || slug.isPlaced === false || slug.inVehicleId) continue;
-    if (Math.abs(slug.vx) > 0.25 || Math.abs(slug.vy) > 0.25) return false;
+    // Check velocity threshold: any velocity > 0.15 px/tick means slug is still moving
+    if (Math.abs(slug.vx) > 0.15 || Math.abs(slug.vy) > 0.15) return false;
+    // Check if grounded on solid terrain or on another slug
     if (!isSlugGrounded(slug, terrain, state.slugs)) return false;
   }
 

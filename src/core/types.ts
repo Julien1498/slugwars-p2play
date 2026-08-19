@@ -253,6 +253,7 @@ export interface GameState {
   turnTimer: number;
   retreatTimer?: number;
   phaseTimer?: number;
+  settleTimer?: number;
   wind: number;
   waterLevel?: number;
   projectiles: ActiveProjectile[];

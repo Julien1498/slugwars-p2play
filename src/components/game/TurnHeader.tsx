@@ -428,6 +428,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           {/* Consolidated Menu Dropdown Button (Cleans up the HUD!) */}
           <div className="relative" ref={menuRef}>
             <button
+              type="button"
               onClick={() => setShowMenuPopover(!showMenuPopover)}
               className={`px-2.5 py-1 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                 showMenuPopover

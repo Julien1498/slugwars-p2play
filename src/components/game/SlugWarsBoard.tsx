@@ -148,7 +148,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
           className={
             isTouch
               ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]'
-              : ''
+              : 'relative z-30 shrink-0'
           }
         >
           <TurnHeader

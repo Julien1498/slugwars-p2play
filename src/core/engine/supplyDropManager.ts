@@ -72,7 +72,8 @@ export function updateMines(
         const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
         addLog(`💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`, 'combat');
         state.phase = 'RESOLVING';
-        state.phaseTimer = 0.8;
+        state.phaseTimer = 5.0;
+        state.settleTimer = 1.2;
       }
     } else {
       remainingMines.push(mine);
