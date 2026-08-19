@@ -73,7 +73,7 @@ export function updateMines(
         const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
         PhaseManager.startResolving(state, {
           settleTimer: 1.2,
-          phaseTimeout: 8.0,
+          phaseTimeout: 30.0,
           reason: `💥 ${activeSlug?.name || 'La limace'} s'est fait sauter sur une mine ! Fin du tour !`,
           addLog,
         });

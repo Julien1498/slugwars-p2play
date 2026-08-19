@@ -42,6 +42,9 @@ export function useGame(options?: {
   }
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const lastSentStateRef = useRef<GameState | null>(null);
+  const lastAimSendTimeRef = useRef<number>(0);
+  const pendingAimPayloadRef = useRef<any>(null);
+  const aimThrottleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const syncState = useCallback(() => {
     if (engineRef.current) {
@@ -55,7 +58,7 @@ export function useGame(options?: {
 
   const { broadcastState, broadcastDeltaState } = useGameBroadcast(peerManager, myPeerId || '', lastSentStateRef);
   const { handleHostAction } = useHostActionHandler(engineRef, isHost, myPeerId || '', peerManager, syncState, broadcastState);
-  useGuestStateReceiver(engineRef, isHost, peerManager, setGameState);
+  useGuestStateReceiver(engineRef, isHost, peerManager, setGameState, myPeerId || '');
 
   // Presence / Reconnect Handlers
   useEffect(() => {
@@ -95,6 +98,17 @@ export function useGame(options?: {
           changed = true;
         }
       }
+
+      // Smooth guest-side countdown for triggered landmines (2.0s -> 0.0s)
+      if (state.mines && state.mines.length > 0) {
+        for (const m of state.mines) {
+          if (m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0) {
+            m.fuseTimerMs = Math.max(0, m.fuseTimerMs - 50);
+            changed = true;
+          }
+        }
+      }
+
       if (changed) {
         setGameState({ ...state });
       }
@@ -270,6 +284,60 @@ export function useGame(options?: {
       if (isHost) {
         if (myPeerId) handleHostAction(myPeerId, msg);
       } else {
+        // Optimistic local state update for instantaneous 0ms client responsiveness
+        const state = engineRef.current.state;
+        const isMyTurn = myPeerId && state.activeTeamId === myPeerId && (state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT');
+        const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
+
+        if (activeSlug) {
+          if (actionName === 'AIM') {
+            if (payload?.aimAngle !== undefined) activeSlug.aimAngle = payload.aimAngle;
+            if (payload?.aimPower !== undefined) activeSlug.aimPower = payload.aimPower;
+            if (payload?.facing !== undefined) activeSlug.facing = payload.facing;
+            if (payload?.targetPoint !== undefined) activeSlug.currentTargetPoint = payload.targetPoint;
+            setGameState({ ...state });
+          } else if (actionName === 'SELECT_WEAPON') {
+            if (payload?.weaponId) {
+              activeSlug.selectedWeaponId = payload.weaponId;
+              setGameState({ ...state });
+            }
+          } else if (actionName === 'SET_FUSE_TIMER') {
+            if (payload?.seconds !== undefined) {
+              activeSlug.fuseTimerSec = payload.seconds;
+              setGameState({ ...state });
+            }
+          }
+        }
+
+        // Throttle high-frequency AIM network packets over WebRTC (approx 30Hz / 33ms) to prevent network congestion
+        if (actionName === 'AIM') {
+          pendingAimPayloadRef.current = payload;
+          const now = performance.now();
+          if (now - lastAimSendTimeRef.current >= 33) {
+            lastAimSendTimeRef.current = now;
+            peerManager.sendToHost('ACTION', { actionName, payload });
+            netMetrics.recordUpload(msg);
+          } else if (!aimThrottleTimerRef.current) {
+            aimThrottleTimerRef.current = setTimeout(() => {
+              aimThrottleTimerRef.current = null;
+              if (pendingAimPayloadRef.current) {
+                lastAimSendTimeRef.current = performance.now();
+                peerManager.sendToHost('ACTION', { actionName: 'AIM', payload: pendingAimPayloadRef.current });
+                netMetrics.recordUpload({ type: 'ACTION', actionName: 'AIM', payload: pendingAimPayloadRef.current });
+                pendingAimPayloadRef.current = null;
+              }
+            }, 33);
+          }
+          return;
+        }
+
+        // If firing or charging, flush any pending throttled aim packet immediately
+        if (aimThrottleTimerRef.current) {
+          clearTimeout(aimThrottleTimerRef.current);
+          aimThrottleTimerRef.current = null;
+          pendingAimPayloadRef.current = null;
+        }
+
         peerManager.sendToHost('ACTION', { actionName, payload });
         netMetrics.recordUpload(msg);
       }

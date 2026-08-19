@@ -294,25 +294,30 @@ describe('Weapons Arsenal & Mechanics', () => {
     const activeTeam = engine.state.teams.find((t) => t.id === activeSlug.teamId)!;
     activeTeam.inventory['blowtorch'] = 100;
     engine.selectWeapon('blowtorch');
+    activeSlug.facing = 'right';
+    activeSlug.aimAngle = 0;
+
+    const wallX = Math.floor(activeSlug.x + 18);
+    const wallY = Math.floor(activeSlug.y - 8);
 
     // Create a solid wall directly in front of the slug
-    for (let y = 280; y <= 320; y++) {
-      for (let x = 310; x <= 340; x++) {
-        engine.terrain.data.grid[y * engine.terrain.data.width + x] = 1;
+    for (let dy = -6; dy <= 6; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        engine.terrain.data.grid[(wallY + dy) * engine.terrain.data.width + (wallX + dx)] = 1;
       }
     }
-    expect(engine.terrain.isSolid(320, 300)).toBe(true);
+    expect(engine.terrain.isSolid(wallX, wallY)).toBe(true);
 
     // Fire blowtorch
     engine.fireWeapon();
     expect(activeSlug.isBlowtorching).toBe(true);
 
     // Run ticks to carve tunnel
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 5; i++) {
       engine.tick();
     }
 
     // Wall right ahead should now be hollowed out by the blowtorch
-    expect(engine.terrain.isSolid(315, 300)).toBe(false);
+    expect(engine.terrain.isSolid(wallX, wallY)).toBe(false);
   });
 });

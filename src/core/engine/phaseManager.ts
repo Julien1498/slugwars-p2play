@@ -1,6 +1,7 @@
 import { GameState, JournalEntry, GamePhase } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { isWorldAtRest } from './turnManager';
+import { isSlugGrounded } from '../physics';
 import { sfx } from '../audio';
 
 export class PhaseManager {
@@ -130,7 +131,7 @@ export class PhaseManager {
     this.onExitPhase(state, state.phase);
     state.phase = 'RESOLVING';
     state.settleTimer = options.settleTimer ?? 1.0;
-    state.phaseTimer = options.phaseTimeout ?? 8.0;
+    state.phaseTimer = options.phaseTimeout ?? 30.0;
     state.retreatTimer = undefined;
 
     // Disconnect active ropes
@@ -299,10 +300,11 @@ export class PhaseManager {
         state.turnTimer -= dt;
         if (state.turnTimer <= 0) {
           state.turnTimer = 0;
+          const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
           this.startResolving(state, {
-            settleTimer: 0.5,
-            phaseTimeout: 8.0,
-            reason: '⏱️ Temps écoulé ! Fin du tour !',
+            settleTimer: 1.0,
+            phaseTimeout: 30.0,
+            reason: `⏱️ Temps écoulé pour ${activeSlug?.name || 'la limace'} !`,
             addLog: callbacks.addLog,
           });
         }
@@ -318,10 +320,16 @@ export class PhaseManager {
             sfx.play('tick');
           }
           if (state.retreatTimer <= 0) {
+            state.retreatTimer = 0;
+            const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+            if (activeSlug) {
+              activeSlug.movingDir = null;
+              activeSlug.vx = 0;
+            }
             if (state.projectiles && state.projectiles.length > 0) {
               this.startProjectileActive(state);
             } else {
-              this.startResolving(state, { settleTimer: 0.8, phaseTimeout: 8.0 });
+              this.startResolving(state, { settleTimer: 0.8, phaseTimeout: 30.0 });
             }
           }
         }
@@ -330,14 +338,14 @@ export class PhaseManager {
 
       case 'PROJECTILE_ACTIVE': {
         if (!state.projectiles || state.projectiles.length === 0) {
-          this.startResolving(state, { settleTimer: 1.0, phaseTimeout: 8.0 });
+          this.startResolving(state, { settleTimer: 1.0, phaseTimeout: 30.0 });
         }
         break;
       }
 
       case 'RESOLVING': {
         if (state.phaseTimer === undefined) {
-          state.phaseTimer = 25.0;
+          state.phaseTimer = 30.0;
           state.settleTimer = 1.0;
         } else {
           state.phaseTimer -= dt;
@@ -355,10 +363,17 @@ export class PhaseManager {
           break;
         }
 
-        // Emergency timeout: only trigger if stuck for >25s AND no living slugs are moving or airborne
+        // Emergency timeout: only trigger if stuck for >30s AND no living slugs are moving or airborne
         if (state.phaseTimer <= 0) {
           const hasAirborneSlugs = state.slugs.some(
-            (s) => s.isAlive && s.isPlaced !== false && !s.inVehicleId && (s.y < 0 || Math.abs(s.vx) > 0.05 || Math.abs(s.vy) > 0.05)
+            (s) =>
+              s.isAlive &&
+              s.isPlaced !== false &&
+              !s.inVehicleId &&
+              (s.y < 0 ||
+                Math.abs(s.vx) > 0.05 ||
+                Math.abs(s.vy) > 0.05 ||
+                !isSlugGrounded(s, terrain, state.slugs))
           );
           if (!hasAirborneSlugs) {
             state.projectiles = [];

@@ -403,6 +403,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             angle = Math.max(-85, Math.min(85, angle));
             const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+              activeSlug.aimAngle = angle;
+              activeSlug.facing = facing;
               onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
           } else {
@@ -472,6 +474,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             angle = Math.max(-85, Math.min(85, angle));
             const facing: 'left' | 'right' = slugDx >= 0 ? 'right' : 'left';
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+              activeSlug.aimAngle = angle;
+              activeSlug.facing = facing;
               onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
           }
@@ -527,6 +531,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               const weapon = getWeapon(activeSlug.selectedWeaponId);
               if (weapon.requiresTarget || weapon.id === 'girder') {
                 lockedTargetRef.current = pos;
+                activeSlug.currentTargetPoint = pos;
                 sfx.play('tick');
                 onUpdateAimRef.current?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
               }
@@ -593,6 +598,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
 
       if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
+        activeSlug.aimAngle = angle;
+        activeSlug.facing = facing;
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
       }
     },
@@ -611,9 +618,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
       const pos = getCanvasMousePos(e);
       lockedTargetRef.current = pos;
+      activeSlug.currentTargetPoint = pos;
       sfx.play('tick');
+      onUpdateAim?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
     },
-    [isMyTurn, gameState, getCanvasMousePos]
+    [isMyTurn, gameState, getCanvasMousePos, onUpdateAim]
   );
 
   const handleMouseDown = useCallback(

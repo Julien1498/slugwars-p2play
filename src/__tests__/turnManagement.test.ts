@@ -67,12 +67,13 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
   });
 
   it('prevents turn resolution and remains in RESOLVING while a slug is airborne high above map (y < 0)', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, mapTheme: 'ISLAND' });
     engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
-    engine.placeSlug({ x: 300, y: 300 });
-    engine.placeSlug({ x: 600, y: 300 });
+    engine.placeSlug(engine.terrain.data.spawnPoints[0]);
+    engine.placeSlug(engine.terrain.data.spawnPoints[1]);
+    engine.state.mines = [];
 
     const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
     const initialActiveTeamId = engine.state.activeTeamId;
@@ -99,15 +100,16 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
   });
 
   it('resolves turn only after high airborne slug falls back down and stabilizes on ground', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, slugHp: 250 });
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, slugHp: 250, mapTheme: 'ISLAND' });
     engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
-    engine.placeSlug({ x: 300, y: 300 });
-    engine.placeSlug({ x: 600, y: 300 });
+    engine.placeSlug(engine.terrain.data.spawnPoints[0]);
+    engine.placeSlug(engine.terrain.data.spawnPoints[1]);
+    engine.state.mines = [];
 
     // Allow initial placement to settle on terrain
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) {
       engine.tick();
       engine.state.floatingDamages = [];
     }
@@ -118,17 +120,18 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
 
     // Launch high above map into negative Y (stratosphere)
     activeSlug.y = -100;
+    activeSlug.fallStartY = -100;
     activeSlug.vy = 5; // Falling back down
     activeSlug.vx = 0;
 
-    PhaseManager.startResolving(engine.state, { settleTimer: 0, phaseTimeout: 25.0 });
+    PhaseManager.startResolving(engine.state, { settleTimer: 0, phaseTimeout: 30.0 });
 
     // While in the air, world is NOT at rest and phase stays RESOLVING
     expect(engine.isWorldAtRest()).toBe(false);
 
     // Simulate falling and landing
     let landed = false;
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 200; i++) {
       engine.tick();
       // Clear floating damages so they don't block test resolution
       engine.state.floatingDamages = [];
@@ -216,8 +219,9 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
-    engine.placeSlug({ x: 300, y: 300 });
-    engine.placeSlug({ x: 600, y: 300 });
+    engine.placeSlug(engine.terrain.data.spawnPoints[0]);
+    engine.placeSlug(engine.terrain.data.spawnPoints[1]);
+    engine.state.mines = [];
 
     for (let i = 0; i < 60; i++) {
       engine.tick();
@@ -312,5 +316,56 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
 
     expect(engine.state.phase).toBe('GAME_OVER');
     expect(engine.state.winnerTeamId).toBeUndefined();
+  });
+
+  it('ensures resolving waits for high altitude fall damage so the next player turn is not instantly skipped', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1, mapTheme: 'ISLAND', mapSeed: 424242 });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug(engine.terrain.data.spawnPoints[0]);
+    engine.placeSlug(engine.terrain.data.spawnPoints[1]);
+    engine.state.mines = [];
+
+    for (let i = 0; i < 50; i++) {
+      engine.tick();
+      engine.state.floatingDamages = [];
+    }
+
+    // Identify current active team and opponent team
+    const activeTeamId = engine.state.activeTeamId;
+    const opponentTeamId = activeTeamId === 'team_red' ? 'team_blue' : 'team_red';
+    const opponentSlug = engine.state.slugs.find((s) => s.teamId === opponentTeamId)!;
+    opponentSlug.hp = 100;
+    // Simulate opponent slug taking blast damage and being blown high into the air
+    opponentSlug.hp = 65;
+    opponentSlug.y = -150;
+    opponentSlug.vy = 8;
+    opponentSlug.fallStartY = -150;
+
+    // Active turn enters RESOLVING
+    PhaseManager.startResolving(engine.state, { settleTimer: 1.0, phaseTimeout: 30.0 });
+    expect(engine.state.phase).toBe('RESOLVING');
+
+    // While opponent slug is airborne high above the map, world is not at rest
+    expect(engine.isWorldAtRest()).toBe(false);
+
+    // Tick for 5 ticks: Opponent slug is still in midair falling
+    for (let i = 0; i < 5; i++) {
+      engine.tick();
+    }
+    expect(engine.state.phase).toBe('RESOLVING');
+
+    // Tick until opponent slug falls from sky, hits ground, takes fall damage, settles, and enters AIMING
+    for (let i = 0; i < 80; i++) {
+      engine.tick();
+      engine.state.floatingDamages = [];
+      if (engine.state.phase === 'AIMING') break;
+    }
+
+    // Opponent team is now in control with their turn ready and full player control
+    expect(engine.state.phase).toBe('AIMING');
+    expect(engine.state.activeTeamId).toBe(opponentTeamId);
+    expect(opponentSlug.hp).toBeLessThanOrEqual(65);
   });
 });

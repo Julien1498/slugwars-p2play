@@ -138,7 +138,7 @@ export function fireWeapon(
     activeSlug.vy = 0;
     sfx.play('teleport');
     addLog(`${activeSlug.name} s'est téléporté !`, 'weapon');
-    PhaseManager.startResolving(state, { settleTimer: 0.6, phaseTimeout: 8.0 });
+    PhaseManager.startResolving(state, { settleTimer: 0.6, phaseTimeout: 30.0 });
     return true;
   }
 
@@ -236,7 +236,7 @@ export function fireWeapon(
 
     sfx.play('girder');
     addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
-    PhaseManager.startResolving(state, { settleTimer: 0.5, phaseTimeout: 8.0 });
+    PhaseManager.startResolving(state, { settleTimer: 0.5, phaseTimeout: 30.0 });
     return true;
   }
 
@@ -286,7 +286,7 @@ export function fireWeapon(
       addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
     }
     sfx.play('melee');
-    PhaseManager.startResolving(state, { settleTimer: 1.2, phaseTimeout: 8.0 });
+    PhaseManager.startResolving(state, { settleTimer: 1.2, phaseTimeout: 30.0 });
     return true;
   }
 

@@ -465,7 +465,7 @@ export class SlugWarsEngine {
       !activeSlug.isAlive &&
       (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')
     ) {
-      PhaseManager.startResolving(this.state, { settleTimer: 1.2, phaseTimeout: 8.0 });
+      PhaseManager.startResolving(this.state, { settleTimer: 1.2, phaseTimeout: 30.0 });
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
@@ -642,7 +642,7 @@ export class SlugWarsEngine {
     ) {
       PhaseManager.startResolving(this.state, {
         settleTimer: 1.2,
-        phaseTimeout: 8.0,
+        phaseTimeout: 30.0,
         reason: `⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`,
         addLog: (msg, type) => this.addLog(msg, type),
       });
