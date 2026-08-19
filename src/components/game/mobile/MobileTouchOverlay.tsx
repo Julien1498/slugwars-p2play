@@ -106,14 +106,15 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
 
   const lastDirectFireTimeRef = useRef<number>(0);
   const handleDirectFire = useCallback(() => {
-    if (!isMyTurn || isRetreat) return;
+    if (!isMyTurn || isRetreat || gameState.phase !== 'AIMING') return;
     const now = Date.now();
     if (now - lastDirectFireTimeRef.current < 400) return;
     lastDirectFireTimeRef.current = now;
+    setShowWeaponPicker(false);
     triggerHaptic(30);
     const target = activeSlug?.currentTargetPoint;
     onFire?.(target);
-  }, [isMyTurn, isRetreat, triggerHaptic, activeSlug?.currentTargetPoint, onFire]);
+  }, [isMyTurn, isRetreat, gameState.phase, triggerHaptic, activeSlug?.currentTargetPoint, onFire, setShowWeaponPicker]);
 
   const handleFirePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -421,7 +422,8 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (Date.now() - lastDirectFireTimeRef.current < 650) return; // Prevent ghost click on unmount!
+                    if (gameState.phase !== 'AIMING' || !isMyTurn || isRetreat) return;
+                    if (Date.now() - lastDirectFireTimeRef.current < 1000) return; // Prevent ghost click on unmount!
                     triggerHaptic(20);
                     setShowWeaponPicker((prev) => !prev);
                   }}
