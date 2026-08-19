@@ -237,11 +237,15 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.girders = curGirders;
   }
 
-  // Point 4: Supply Crates Sync - ONLY while falling, or when crates count changes
+  // Point 4: Supply Crates Sync - while falling, when landing state changes, or when crates count changes
   const curCrates = currentState.supplyCrates || [];
   const prevCrates = prevState?.supplyCrates || [];
   const hasFallingCrate = curCrates.some((c) => !c.isLanded);
-  if (curCrates.length !== prevCrates.length || hasFallingCrate) {
+  const anyLandingStateChanged = curCrates.some((c) => {
+    const pc = prevCrates.find((p) => p.id === c.id);
+    return !pc || pc.isLanded !== c.isLanded || Math.abs(pc.y - c.y) > 0.5;
+  });
+  if (curCrates.length !== prevCrates.length || hasFallingCrate || anyLandingStateChanged) {
     if (curCrates.length > 0) {
       delta.supplyCrates = curCrates.map((c) => ({
         id: c.id,
@@ -263,20 +267,17 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   const minesCountChanged = curMines.length !== prevMines.length;
   const anyMineChanged = curMines.some((m) => {
     const pm = prevMines.find((p) => p.id === m.id);
-    return !pm || pm.isTriggered !== m.isTriggered || (m.isTriggered && Math.abs((pm.fuseTimerMs || 0) - (m.fuseTimerMs || 0)) > 150);
+    return !pm || pm.isTriggered !== m.isTriggered || pm.fuseTimerMs !== m.fuseTimerMs;
   });
+
   if (minesCountChanged || anyMineChanged) {
-    if (curMines.length > 0) {
-      delta.mines = curMines.map((m) => ({
-        id: m.id,
-        x: m.x,
-        y: m.y,
-        isTriggered: m.isTriggered,
-        fuseTimerMs: m.fuseTimerMs,
-      }));
-    } else {
-      delta.mines = [];
-    }
+    delta.mines = curMines.map((m) => ({
+      id: m.id,
+      x: quantizeFloat(m.x, 2),
+      y: quantizeFloat(m.y, 2),
+      isTriggered: m.isTriggered,
+      fuseTimerMs: m.fuseTimerMs !== undefined ? Math.round(m.fuseTimerMs) : undefined,
+    }));
   }
 
   // Point 5: Explosions Sync (compact - animations & debris are 100% client-side)
@@ -308,7 +309,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     const prevH = prevHelis.find((p) => p.id === h.id);
     const threshold = h.pilotSlugId ? 0.2 : 0.8;
     const hasMoved = !prevH || Math.abs(prevH.x - h.x) > threshold || Math.abs(prevH.y - h.y) > threshold;
-    const hasStatusChanged = !prevH || prevH.hp !== h.hp || prevH.pilotSlugId !== h.pilotSlugId || prevH.facing !== h.facing;
+    const hasStatusChanged = !prevH || prevH.hp !== h.hp || prevH.pilotSlugId !== h.pilotSlugId || prevH.facing !== h.facing || Math.abs((prevH.vx || 0) - (h.vx || 0)) > 0.05;
 
     if (hasMoved || hasStatusChanged) {
       changedHelis.push(h);
@@ -321,6 +322,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       const hDelta: Partial<HelicopterVehicle> = { id: h.id };
       if (!prevH || Math.abs(prevH.x - h.x) > 0.1) hDelta.x = quantizeFloat(h.x, 2);
       if (!prevH || Math.abs(prevH.y - h.y) > 0.1) hDelta.y = quantizeFloat(h.y, 2);
+      if (!prevH || Math.abs((prevH.vx || 0) - (h.vx || 0)) > 0.05) hDelta.vx = quantizeFloat(h.vx || 0, 2);
+      if (!prevH || Math.abs((prevH.vy || 0) - (h.vy || 0)) > 0.05) hDelta.vy = quantizeFloat(h.vy || 0, 2);
       if (!prevH || prevH.hp !== h.hp) hDelta.hp = h.hp;
       if (!prevH || prevH.facing !== h.facing) hDelta.facing = h.facing;
       if (!prevH || prevH.pilotSlugId !== h.pilotSlugId) hDelta.pilotSlugId = h.pilotSlugId;
@@ -436,6 +439,8 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
       if (heli) {
         if (dHeli.x !== undefined) heli.x = dHeli.x;
         if (dHeli.y !== undefined) heli.y = dHeli.y;
+        if (dHeli.vx !== undefined) heli.vx = dHeli.vx;
+        if (dHeli.vy !== undefined) heli.vy = dHeli.vy;
         if (dHeli.hp !== undefined) heli.hp = dHeli.hp;
         if (dHeli.facing !== undefined) heli.facing = dHeli.facing;
         if (dHeli.pilotSlugId !== undefined) heli.pilotSlugId = dHeli.pilotSlugId;
