@@ -8,6 +8,7 @@ import { syncRoomUrlToAddressBar, type PeerManagerLike } from 'p2play-core';
 import { createWorkerInterval } from '../core/workerTimer';
 import { netMetrics } from '../core/networkMetrics';
 import { perfTracker } from '../core/perfTracker';
+import { sfx } from '../core/audio';
 import { useGameBroadcast } from './game/useGameBroadcast';
 import { useHostActionHandler } from './game/useHostActionHandler';
 import { useGuestStateReceiver } from './game/useGuestStateReceiver';
@@ -322,6 +323,17 @@ export function useGame(options?: {
           } else if (actionName === 'RELEASE_CHARGE' || actionName === 'FIRE') {
             activeSlug.isChargingPower = false;
             setGameState({ ...state });
+          } else if (actionName === 'START_MOVE') {
+            if (payload?.dir) {
+              activeSlug.movingDir = payload.dir;
+              activeSlug.facing = payload.dir;
+              setGameState({ ...state });
+            }
+          } else if (actionName === 'STOP_MOVE') {
+            activeSlug.movingDir = null;
+            setGameState({ ...state });
+          } else if (actionName === 'JUMP') {
+            sfx.play('jump');
           }
         }
 
