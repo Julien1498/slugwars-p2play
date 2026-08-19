@@ -379,7 +379,8 @@ export class SlugWarsEngine {
 
     applyExplosionToSlugs(sheep.x, sheep.y, weapon.radius, weapon.damage, this.state.slugs, this.terrain, this.state.teams, sheep.ownerSlugId);
     this.state.phase = 'RESOLVING';
-    this.state.phaseTimer = 0.8;
+    this.state.phaseTimer = 5.0;
+    this.state.settleTimer = 1.2;
     return true;
   }
 
@@ -446,7 +447,8 @@ export class SlugWarsEngine {
             this.state.phase = 'PROJECTILE_ACTIVE';
           } else {
             this.state.phase = 'RESOLVING';
-            this.state.phaseTimer = 0.6;
+            this.state.phaseTimer = 5.0;
+            this.state.settleTimer = 0.8;
           }
         }
       }
@@ -458,13 +460,22 @@ export class SlugWarsEngine {
       }
 
       if (this.state.phaseTimer === undefined) {
-        this.state.phaseTimer = 2.5;
+        this.state.phaseTimer = 5.0;
+        this.state.settleTimer = 1.0;
       } else {
         this.state.phaseTimer -= 0.05;
+        if (this.state.settleTimer !== undefined) {
+          this.state.settleTimer -= 0.05;
+        }
       }
 
-      if (this.isWorldAtRest() || this.state.phaseTimer <= 0) {
+      const isMinTimeElapsed = (this.state.settleTimer ?? 0) <= 0;
+      const atRest = isMinTimeElapsed && this.isWorldAtRest();
+      const timedOut = this.state.phaseTimer <= 0;
+
+      if (atRest || timedOut) {
         this.state.phaseTimer = undefined;
+        this.state.settleTimer = undefined;
         this.endTurn();
         return;
       }
@@ -472,7 +483,8 @@ export class SlugWarsEngine {
 
     if (activeSlug && !activeSlug.isAlive && (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')) {
       this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.6;
+      this.state.phaseTimer = 5.0;
+      this.state.settleTimer = 1.2;
     }
 
     if (activeSlug && activeSlug.isAlive && this.state.phase === 'AIMING') {
@@ -684,7 +696,8 @@ export class SlugWarsEngine {
     ) {
       this.addLog(`⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`, 'combat');
       this.state.phase = 'RESOLVING';
-      this.state.phaseTimer = 0.8;
+      this.state.phaseTimer = 5.0;
+      this.state.settleTimer = 1.2;
       return;
     }
 
@@ -771,7 +784,8 @@ export class SlugWarsEngine {
       this.state.projectiles = remaining;
       if (this.state.projectiles.length === 0 && this.state.phase === 'PROJECTILE_ACTIVE') {
         this.state.phase = 'RESOLVING';
-        this.state.phaseTimer = 0.6;
+        this.state.phaseTimer = 5.0;
+        this.state.settleTimer = 1.2;
       }
     }
 

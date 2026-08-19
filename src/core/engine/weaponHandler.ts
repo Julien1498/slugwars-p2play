@@ -138,7 +138,8 @@ export function fireWeapon(
     sfx.play('teleport');
     addLog(`${activeSlug.name} s'est téléporté !`, 'weapon');
     state.phase = 'RESOLVING';
-    state.phaseTimer = 0.5;
+    state.phaseTimer = 5.0;
+    state.settleTimer = 0.6;
     return true;
   }
 
@@ -237,7 +238,8 @@ export function fireWeapon(
     sfx.play('girder');
     addLog(`${activeSlug.name} a posé une Poutre Métallique ! 🪜`, 'weapon');
     state.phase = 'RESOLVING';
-    state.phaseTimer = 0.5;
+    state.phaseTimer = 5.0;
+    state.settleTimer = 0.5;
     return true;
   }
 
@@ -290,7 +292,8 @@ export function fireWeapon(
     }
     sfx.play('melee');
     state.phase = 'RESOLVING';
-    state.phaseTimer = 0.8;
+    state.phaseTimer = 5.0;
+    state.settleTimer = 1.2;
     return true;
   }
 
