@@ -5,6 +5,9 @@ export const GRAVITY = 0.4;
 export const FRICTION = 0.85;
 
 export function isSlugGrounded(slug: Slug, terrain: DestructibleTerrain, slugs: Slug[] = []): boolean {
+  // A slug moving upwards is airborne and cannot be grounded
+  if (slug.vy < -0.1) return false;
+
   const feetY = Math.floor(slug.y + 1);
   const leftX = Math.floor(slug.x - 4);
   const centerX = Math.floor(slug.x);

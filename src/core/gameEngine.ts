@@ -460,7 +460,7 @@ export class SlugWarsEngine {
       }
 
       if (this.state.phaseTimer === undefined) {
-        this.state.phaseTimer = 5.0;
+        this.state.phaseTimer = 8.0;
         this.state.settleTimer = 1.0;
       } else {
         this.state.phaseTimer -= 0.05;
@@ -472,6 +472,11 @@ export class SlugWarsEngine {
       const isMinTimeElapsed = (this.state.settleTimer ?? 0) <= 0;
       const atRest = isMinTimeElapsed && this.isWorldAtRest();
       const timedOut = this.state.phaseTimer <= 0;
+
+      // If timed out but slugs are still airborne in flight, give an extra grace period
+      if (timedOut && !this.isWorldAtRest() && this.state.phaseTimer > -4.0) {
+        return;
+      }
 
       if (atRest || timedOut) {
         this.state.phaseTimer = undefined;
@@ -819,7 +824,10 @@ export class SlugWarsEngine {
     if (this.state.phase === 'AIMING') {
       this.state.turnTimer -= 0.05;
       if (this.state.turnTimer <= 0) {
-        this.endTurn();
+        this.state.turnTimer = 0;
+        this.state.phase = 'RESOLVING';
+        this.state.phaseTimer = 8.0;
+        this.state.settleTimer = 0.5;
       }
     }
   }
