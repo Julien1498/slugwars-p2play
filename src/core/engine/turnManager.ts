@@ -113,9 +113,9 @@ export function isWorldAtRest(state: GameState, terrain: DestructibleTerrain): b
   // 1. Any active flying projectiles?
   if (state.projectiles && state.projectiles.length > 0) return false;
 
-  // 2. Any active explosions or flying/piloted helicopters?
+  // 2. Any active explosions or moving helicopters?
   if (state.explosions && state.explosions.length > 0) return false;
-  if (state.helicopters && state.helicopters.some((h) => h.pilotSlugId !== null || Math.hypot(h.vx, h.vy) > 0.1)) return false;
+  if (state.helicopters && state.helicopters.some((h) => Math.hypot(h.vx, h.vy) > 0.15)) return false;
 
   // 3. Any floating damage numbers still displaying?
   if (state.floatingDamages && state.floatingDamages.length > 0) return false;

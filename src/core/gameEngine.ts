@@ -219,7 +219,7 @@ export class SlugWarsEngine {
   }
 
   public exitVehicle(): boolean {
-    return exitVehicle(this.state, (msg, type) => this.addLog(msg, type));
+    return exitVehicle(this.state, (msg, type) => this.addLog(msg, type), this.terrain);
   }
 
   public steerVehicle(dir: 'left' | 'right' | 'up' | 'down'): void {

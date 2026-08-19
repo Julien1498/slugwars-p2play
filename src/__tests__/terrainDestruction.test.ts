@@ -89,4 +89,63 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
     expect(lastCrater.y).toBe(blastY);
     expect(lastCrater.radius).toBe(blastRadius);
   });
+
+  it('erases solid prop physics pixels from grid when prop is destroyed to prevent phantom hitboxes', () => {
+    const terrainData = generateProceduralTerrain(123, 'ISLAND', 600, 400);
+    const dt = new DestructibleTerrain(terrainData);
+
+    // If no solidProps naturally spawned at test coords, manually insert one
+    const propX = 300;
+    const propY = 200;
+    const propW = 20;
+    const propH = 30;
+
+    // Stamp prop pixels (2) into grid
+    for (let y = propY - propH; y <= propY; y++) {
+      for (let x = propX - 10; x <= propX + 10; x++) {
+        terrainData.grid[y * 600 + x] = 2;
+      }
+    }
+    // Solid ground below prop
+    for (let x = propX - 10; x <= propX + 10; x++) {
+      terrainData.grid[(propY + 1) * 600 + x] = 1;
+    }
+
+    terrainData.solidProps = [
+      {
+        id: 'sprop_test_1',
+        type: 'oil_drum',
+        x: propX,
+        y: propY,
+        width: propW,
+        height: propH,
+      },
+    ];
+
+    // Verify prop pixel is initially solid
+    expect(dt.isSolid(propX, propY - 10)).toBe(true);
+
+    // Blow up ground underneath prop so it loses foundation and explodes
+    dt.carveExplosion(propX, propY + 10, 25);
+
+    // The prop is now destroyed and its stamped pixels are erased from grid
+    expect(terrainData.solidProps[0].destroyed).toBe(true);
+    expect(dt.isSolid(propX, propY - 10)).toBe(false);
+  });
+
+  it('enforces indestructible bedrock ceiling for CAVERN theme maps', () => {
+    const terrainData = generateProceduralTerrain(555, 'CAVERN', 600, 400);
+    const dt = new DestructibleTerrain(terrainData);
+
+    // Cavern ceiling is solid
+    expect(dt.isSolid(300, 10)).toBe(true);
+    // Air above cavern ceiling is also impenetrable
+    expect(dt.isSolid(300, -5)).toBe(true);
+
+    // Try blasting the ceiling
+    dt.carveExplosion(300, 15, 30);
+
+    // Bedrock ceiling at y <= 16 remains intact and solid
+    expect(dt.isSolid(300, 10)).toBe(true);
+  });
 });

@@ -169,6 +169,16 @@ export function generateProceduralTerrain(
     }
   }
 
+  // 3.5 Enforce Solid Bedrock Ceiling for CAVERN Maps
+  if (theme === 'CAVERN') {
+    for (let y = 0; y <= 16; y++) {
+      const rowOffset = y * width;
+      for (let x = 0; x < width; x++) {
+        grid[rowOffset + x] = 1;
+      }
+    }
+  }
+
   // 4. Safe Spawn Points Generator
   const spawnPoints: Vector2D[] = [];
   const step = Math.floor((width - 240) / 14);

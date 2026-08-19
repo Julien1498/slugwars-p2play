@@ -177,4 +177,65 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     expect(engine.state.settleTimer).toBe(0.5);
     expect(engine.state.phaseTimer).toBe(10.0);
   });
+
+  it('safely places slug outside solid walls when exiting helicopter near terrain', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+
+    // Create helicopter close to a solid wall on its right
+    const heli = engine.state.helicopters[0];
+    heli.x = 400;
+    heli.y = 200;
+    heli.facing = 'right';
+    heli.pilotSlugId = activeSlug.id;
+    activeSlug.inVehicleId = heli.id;
+
+    // Make the right side of the helicopter solid rock
+    for (let y = 180; y <= 220; y++) {
+      for (let x = 420; x <= 450; x++) {
+        engine.terrain.data.grid[y * engine.terrain.data.width + x] = 1;
+      }
+    }
+
+    // Exit vehicle
+    engine.exitVehicle();
+
+    // Slug should NOT be placed inside the solid wall
+    expect(activeSlug.inVehicleId).toBeNull();
+    expect(engine.terrain.isSolid(activeSlug.x, activeSlug.y)).toBe(false);
+  });
+
+  it('resolves turn promptly when active slug is piloting a stationary helicopter', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    for (let i = 0; i < 20; i++) {
+      engine.tick();
+      engine.state.floatingDamages = [];
+    }
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    const heli = engine.state.helicopters[0];
+    heli.pilotSlugId = activeSlug.id;
+    heli.vx = 0;
+    heli.vy = 0;
+    activeSlug.inVehicleId = heli.id;
+
+    // A stationary helicopter with a pilot MUST report isWorldAtRest as true
+    expect(engine.isWorldAtRest()).toBe(true);
+
+    // End turn -> should advance cleanly
+    engine.endTurn();
+    expect((engine.state.phase as string)).toBe('AIMING');
+  });
 });
