@@ -301,7 +301,7 @@ export function useGame(options?: {
         if (activeSlug) {
           if (actionName === 'AIM') {
             if (payload?.aimAngle !== undefined) activeSlug.aimAngle = payload.aimAngle;
-            if (payload?.aimPower !== undefined) activeSlug.aimPower = payload.aimPower;
+            if (payload?.aimPower !== undefined && !activeSlug.isChargingPower) activeSlug.aimPower = payload.aimPower;
             if (payload?.facing !== undefined) activeSlug.facing = payload.facing;
             if (payload?.targetPoint !== undefined) activeSlug.currentTargetPoint = payload.targetPoint;
             setGameState({ ...state });

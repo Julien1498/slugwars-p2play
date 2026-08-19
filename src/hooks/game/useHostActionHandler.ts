@@ -118,7 +118,9 @@ export function useHostActionHandler(
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
               if (activeSlug && activeSlug.teamId === playerId) {
                 if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
-                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+                if (msg.payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
+                  activeSlug.aimPower = msg.payload.aimPower;
+                }
                 if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
                 if (msg.payload?.targetPoint) activeSlug.currentTargetPoint = msg.payload.targetPoint;
               }
