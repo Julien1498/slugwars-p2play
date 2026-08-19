@@ -664,12 +664,20 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
       const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
+      const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: mouseX, y: mouseY };
+
+      if (weapon.id === 'blowtorch') {
+        if (!activeSlug.isBlowtorching) {
+          onFire({ ...targetPt, aimAngle: angle, aimPower: 5, facing });
+        }
+        return;
+      }
+
       if (!isInstantTarget) {
-        const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: mouseX, y: mouseY };
         onStartCharge?.(targetPt);
       }
     },
-    [isMyTurn, gameState, getCanvasMousePos, onPlaceSlug, onStartCharge, onUpdateAim]
+    [isMyTurn, gameState, getCanvasMousePos, onPlaceSlug, onStartCharge, onUpdateAim, onFire]
   );
 
   const handleMouseUp = useCallback(
@@ -689,6 +697,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
       const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: clickX, y: clickY };
+
+      if (weapon.id === 'blowtorch') {
+        if (activeSlug.isBlowtorching) {
+          onReleaseCharge?.({ ...targetPt, aimAngle: activeSlug.aimAngle, aimPower: activeSlug.aimPower, facing: activeSlug.facing });
+        }
+        return;
+      }
+
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
 
       if (isInstantTarget) {
