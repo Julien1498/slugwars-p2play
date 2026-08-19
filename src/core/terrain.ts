@@ -13,7 +13,13 @@ export class DestructibleTerrain {
     const ix = Math.floor(x);
     const iy = Math.floor(y);
     if (ix < 0 || ix >= this.data.width) return false;
-    if (iy < 0) return false; // Above ceiling is air
+    // Cavern / subterranean map has an impenetrable ceiling border at top
+    if (this.data.theme === 'CAVERN') {
+      if (iy <= 16) return true;
+      if (iy < 0) return true;
+    } else {
+      if (iy < 0) return false; // Above ceiling is air in open sky themes
+    }
     if (iy >= this.data.height) return false; // Below floor is water/void
     return this.data.grid[iy * this.data.width + ix] > 0;
   }
@@ -36,6 +42,9 @@ export class DestructibleTerrain {
     const maxY = Math.min(this.data.height - 1, Math.ceil(icy + radius));
 
     for (let y = minY; y <= maxY; y++) {
+      // In cavern maps, the bedrock ceiling (y <= 16) is indestructible
+      if (this.data.theme === 'CAVERN' && y <= 16) continue;
+
       const dy = y - icy;
       const dySq = dy * dy;
       const rowOffset = y * this.data.width;
@@ -52,16 +61,66 @@ export class DestructibleTerrain {
       }
     }
 
-    // Collect exploding oil drums when blast hits barrel core
+    // Collect exploding oil drums and remove physics hitboxes of destroyed props
     if (this.data.solidProps) {
       for (const sprop of this.data.solidProps) {
         if (sprop.destroyed) continue;
+
+        // Check if oil drum exploded directly
         if (sprop.type === 'oil_drum') {
           const propRadius = Math.max(sprop.width, sprop.height) * 0.5;
           const dist = Math.hypot(cx - sprop.x, cy - (sprop.y - sprop.height / 2));
           if (dist <= radius + propRadius) {
             sprop.destroyed = true;
             destroyedOilDrums.push(sprop);
+          }
+        }
+
+        // Check if the prop lost its ground foundation
+        const halfW = Math.max(4, Math.floor(sprop.width / 2));
+        let solidFoundationCount = 0;
+        for (let ox = -halfW; ox <= halfW; ox += Math.max(1, Math.floor(halfW / 2))) {
+          const gx = Math.floor(sprop.x + ox);
+          const gy = Math.floor(sprop.y + 1);
+          if (gx >= 0 && gx < this.data.width && gy >= 0 && gy < this.data.height) {
+            const idx = gy * this.data.width + gx;
+            if (this.data.grid[idx] > 0) {
+              solidFoundationCount++;
+            }
+          }
+        }
+
+        if (solidFoundationCount === 0) {
+          sprop.destroyed = true;
+        }
+
+        // If the prop is now destroyed, erase ALL its physics pixels from the grid so no phantom hitbox remains!
+        if (sprop.destroyed) {
+          const pWidth = sprop.width;
+          const pHeight = sprop.height;
+          const angleRad = sprop.angleRad || 0;
+          const cosA = Math.cos(angleRad);
+          const sinA = Math.sin(angleRad);
+          const pMaxDim = Math.ceil(Math.hypot(pWidth / 2, pHeight)) + 4;
+
+          const pMinX = Math.max(0, Math.floor(sprop.x - pMaxDim));
+          const pMaxX = Math.min(this.data.width - 1, Math.ceil(sprop.x + pMaxDim));
+          const pMinY = Math.max(0, Math.floor(sprop.y - pMaxDim));
+          const pMaxY = Math.min(this.data.height - 1, Math.ceil(sprop.y + pMaxDim));
+
+          for (let py = pMinY; py <= pMaxY; py++) {
+            const pdy = py - sprop.y;
+            const pRow = py * this.data.width;
+            for (let px = pMinX; px <= pMaxX; px++) {
+              const pdx = px - sprop.x;
+              const localX = pdx * cosA + pdy * sinA;
+              const localY = -pdx * sinA + pdy * cosA;
+              if (Math.abs(localX) <= pWidth / 2 + 1 && localY >= -pHeight - 1 && localY <= 1) {
+                if (this.data.grid[pRow + px] === 2) {
+                  this.data.grid[pRow + px] = 0;
+                }
+              }
+            }
           }
         }
       }

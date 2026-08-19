@@ -22,7 +22,11 @@ export function enterVehicle(state: GameState, addLog: (msg: string, type?: Jour
   return false;
 }
 
-export function exitVehicle(state: GameState, addLog: (msg: string, type?: JournalEntry['type']) => void): boolean {
+export function exitVehicle(
+  state: GameState,
+  addLog: (msg: string, type?: JournalEntry['type']) => void,
+  terrain?: DestructibleTerrain
+): boolean {
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (!activeSlug || !activeSlug.inVehicleId) return false;
 
@@ -30,9 +34,61 @@ export function exitVehicle(state: GameState, addLog: (msg: string, type?: Journ
   if (heli) {
     heli.pilotSlugId = null;
     activeSlug.inVehicleId = null;
-    activeSlug.x = heli.x + (heli.facing === 'right' ? 25 : -25);
-    activeSlug.y = heli.y - 10;
-    activeSlug.vy = -4;
+
+    // Search for a safe candidate exit position around the helicopter that is not inside solid terrain
+    let exitX = heli.x + (heli.facing === 'right' ? 26 : -26);
+    let exitY = heli.y - 8;
+
+    if (terrain) {
+      const candidates = [
+        { x: heli.x + (heli.facing === 'right' ? 26 : -26), y: heli.y - 8 },
+        { x: heli.x + (heli.facing === 'right' ? -26 : 26), y: heli.y - 8 },
+        { x: heli.x, y: heli.y + 16 },
+        { x: heli.x, y: heli.y - 20 },
+        { x: heli.x, y: heli.y },
+      ];
+
+      let foundSafe = false;
+      for (const cand of candidates) {
+        const cx = Math.floor(cand.x);
+        const cy = Math.floor(cand.y);
+        const isFree =
+          !terrain.isSolid(cx, cy) &&
+          !terrain.isSolid(cx, cy - 8) &&
+          !terrain.isSolid(cx - 5, cy) &&
+          !terrain.isSolid(cx + 5, cy);
+
+        if (isFree) {
+          exitX = cand.x;
+          exitY = cand.y;
+          foundSafe = true;
+          break;
+        }
+      }
+
+      // If all candidate offsets touch rock, search in expanding circles for nearest air pixel
+      if (!foundSafe) {
+        let bestDist = Infinity;
+        for (let r = 8; r <= 36; r += 6) {
+          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+            const testX = Math.floor(heli.x + Math.cos(angle) * r);
+            const testY = Math.floor(heli.y + Math.sin(angle) * r);
+            if (!terrain.isSolid(testX, testY) && !terrain.isSolid(testX, testY - 8)) {
+              exitX = testX;
+              exitY = testY;
+              foundSafe = true;
+              break;
+            }
+          }
+          if (foundSafe) break;
+        }
+      }
+    }
+
+    activeSlug.x = exitX;
+    activeSlug.y = exitY;
+    activeSlug.vy = -3.5;
+    activeSlug.fallStartY = exitY;
     addLog(`${activeSlug.name} est sorti de l'hélicoptère.`, 'info');
     return true;
   }
