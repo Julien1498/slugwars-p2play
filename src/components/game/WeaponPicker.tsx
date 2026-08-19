@@ -56,112 +56,209 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           </button>
         </div>
 
-        {/* Categories Tabs - Scrollable horizontal pills */}
-        <div className="flex overflow-x-auto no-scrollbar gap-1.5 border-b border-zinc-800/80 pb-2 shrink-0">
-          {CATEGORIES.map((cat) => {
-            const count = allWeapons.filter((w) => w.category === cat.id).length;
-            const isActive = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
-                    : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                }`}
-              >
-                {cat.icon}
-                <span className="whitespace-nowrap">{cat.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full shrink-0 ${
-                    isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'
+        {/* Categories Tabs */}
+        {isTouch ? (
+          <div className="flex overflow-x-auto no-scrollbar gap-1.5 border-b border-zinc-800/80 pb-2 shrink-0">
+            {CATEGORIES.map((cat) => {
+              const count = allWeapons.filter((w) => w.category === cat.id).length;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
+                      : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                   }`}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Weapons Grid - 2 cols on mobile, 3/4 cols on desktop */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 overflow-y-auto p-0.5 sm:p-1 flex-1 min-h-0 content-start">
-          {filtered.map((w) => {
-            const ammo = inventory[w.id] ?? w.defaultAmmo;
-            const isDisabled = ammo === 0;
-            const isSelected = selectedWeaponId === w.id;
-
-            return (
-              <button
-                key={w.id}
-                disabled={isDisabled}
-                onClick={() => {
-                  onSelectWeapon(w.id);
-                  onClose();
-                }}
-                className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl border text-left flex flex-col justify-between gap-1.5 sm:gap-2 transition-all relative overflow-hidden ${
-                  isSelected
-                    ? 'bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)] scale-[1.01]'
-                    : isDisabled
-                    ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-40 cursor-not-allowed'
-                    : 'bg-zinc-900/80 border-zinc-800/80 hover:border-violet-500/50 hover:bg-zinc-800/90 text-zinc-200'
-                }`}
-              >
-                {isSelected && (
-                  <div className="absolute top-1 right-1 sm:top-2 sm:right-2 p-0.5 sm:p-1 bg-violet-600 text-white rounded-full shadow">
-                    <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
-                    {w.icon}
-                  </div>
+                  {cat.icon}
+                  <span className="whitespace-nowrap">{cat.label}</span>
                   <span
-                    className={`text-[10px] sm:text-xs font-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg ${
-                      w.id === 'blowtorch'
-                        ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
-                        : ammo === -1
-                        ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
-                        : ammo > 0
-                        ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
-                        : 'bg-zinc-900 text-zinc-600'
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full shrink-0 ${
+                      isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'
                     }`}
                   >
-                    {w.id === 'blowtorch' ? `${Math.round(ammo)}%` : ammo === -1 ? '∞' : `x${ammo}`}
+                    {count}
                   </span>
-                </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
+            {CATEGORIES.map((cat) => {
+              const count = allWeapons.filter((w) => w.category === cat.id).length;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
+                      : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat.icon}
+                  <span className="truncate">{cat.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full shrink-0 ${
+                      isActive ? 'bg-black/30 text-white' : 'bg-zinc-800 text-zinc-500'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-                <div>
-                  <div className="font-bold text-xs sm:text-sm text-zinc-100 flex items-center gap-1">
-                    <span className="truncate">{w.name}</span>
-                    {w.craftable && (
-                      <span className="text-[8px] sm:text-[9px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded">
-                        WMD
-                      </span>
-                    )}
+        {/* Weapons Grid: Mobile Horizontal Cards vs Desktop Vertical Cards */}
+        {isTouch ? (
+          /* Mobile Horizontal Layout (icon left, name+ammo+stats right) */
+          <div className="grid grid-cols-2 gap-2 overflow-y-auto p-0.5 flex-1 min-h-0 content-start">
+            {filtered.map((w) => {
+              const ammo = inventory[w.id] ?? w.defaultAmmo;
+              const isDisabled = ammo === 0;
+              const isSelected = selectedWeaponId === w.id;
+
+              return (
+                <button
+                  key={w.id}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    onSelectWeapon(w.id);
+                    onClose();
+                  }}
+                  className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-violet-950 to-purple-950/90 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)]'
+                      : isDisabled
+                      ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-40 cursor-not-allowed'
+                      : 'bg-zinc-900/80 border-zinc-800/80 hover:border-violet-500/50 hover:bg-zinc-800/90 text-zinc-200'
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 p-0.5 bg-violet-600 text-white rounded-full shadow">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+
+                  <div className="w-10 h-10 rounded-lg bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                    {w.icon}
                   </div>
-                  {/* Description: ONLY on PC desktop (never on mobile) */}
-                  {!isTouch && (
+
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-xs text-zinc-100 truncate">
+                        {w.name}
+                      </span>
+                      <span
+                        className={`text-[10px] font-black px-1.5 py-0.2 rounded shrink-0 ${
+                          w.id === 'blowtorch'
+                            ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
+                            : ammo === -1
+                            ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
+                            : ammo > 0
+                            ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
+                            : 'bg-zinc-900 text-zinc-600'
+                        }`}
+                      >
+                        {w.id === 'blowtorch' ? `${Math.round(ammo)}%` : ammo === -1 ? '∞' : `x${ammo}`}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px] text-zinc-400">
+                      <span className="text-red-400 font-bold flex items-center gap-0.5">
+                        <Zap className="w-2.5 h-2.5 text-red-400" /> {w.damage} Dgt
+                      </span>
+                      <span className="text-zinc-500 text-[9px] truncate">
+                        {w.windAffected ? '💨 Vent' : 'Direct'}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          /* PC Desktop Layout (Original rich vertical cards with descriptions) */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0 content-start">
+            {filtered.map((w) => {
+              const ammo = inventory[w.id] ?? w.defaultAmmo;
+              const isDisabled = ammo === 0;
+              const isSelected = selectedWeaponId === w.id;
+
+              return (
+                <button
+                  key={w.id}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    onSelectWeapon(w.id);
+                    onClose();
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2.5 transition-all relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-violet-950/90 to-purple-950/80 border-violet-400 ring-2 ring-violet-500/60 shadow-[0_0_20px_rgba(139,92,246,0.35)] scale-[1.02]'
+                      : isDisabled
+                      ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-40 cursor-not-allowed'
+                      : 'bg-zinc-900/70 border-zinc-800/80 hover:border-violet-500/50 hover:bg-zinc-800/90 text-zinc-200 hover:shadow-lg'
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 p-1 bg-violet-600 text-white rounded-full shadow">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="w-11 h-11 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner">
+                      {w.icon}
+                    </div>
+                    <span
+                      className={`text-xs font-black px-2.5 py-1 rounded-lg ${
+                        w.id === 'blowtorch'
+                          ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
+                          : ammo === -1
+                          ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
+                          : ammo > 0
+                          ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
+                          : 'bg-zinc-900 text-zinc-600'
+                      }`}
+                    >
+                      {w.id === 'blowtorch' ? `${Math.round(ammo)}% ⛽` : ammo === -1 ? '∞' : `x${ammo}`}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="font-bold text-sm text-zinc-100 flex items-center gap-1.5">
+                      <span>{w.name}</span>
+                      {w.craftable && (
+                        <span className="text-[9px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1.5 py-0.2 rounded">
+                          W.M.D
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[11px] text-zinc-400 line-clamp-2 mt-1 leading-snug">
                       {w.description}
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-zinc-400 pt-1.5 sm:pt-2 border-t border-zinc-800/80">
-                  <span className="text-red-400 font-bold flex items-center gap-1">
-                    <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-400" /> {w.damage} Dgt
-                  </span>
-                  <span className="text-zinc-500 text-[9px] sm:text-[10px] truncate">
-                    {w.windAffected ? '💨 Vent' : 'Direct'}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-2 border-t border-zinc-800/80">
+                    <span className="flex items-center gap-1 text-red-400 font-bold">
+                      <Zap className="w-3 h-3 text-red-400" /> {w.damage} Dgt
+                    </span>
+                    <span className="font-semibold text-zinc-400">
+                      {w.windAffected ? 'Vent 💨' : 'Sans vent'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

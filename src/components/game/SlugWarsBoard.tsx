@@ -89,7 +89,16 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
     }
   }, [gameState.phase, gameState.activeSlugId]);
 
-  const handleOpenWeaponPicker = useCallback(() => setShowWeaponPicker(true), []);
+  useEffect(() => {
+    if (gameState.phase !== 'AIMING') {
+      setShowWeaponPicker(false);
+    }
+  }, [gameState.phase]);
+
+  const handleOpenWeaponPicker = useCallback(() => {
+    if (gameState.phase !== 'AIMING') return;
+    setShowWeaponPicker(true);
+  }, [gameState.phase]);
   const handleCloseWeaponPicker = useCallback(() => setShowWeaponPicker(false), []);
   const handleOpenRules = useCallback(() => setShowRules(true), []);
   const handleCloseRules = useCallback(() => setShowRules(false), []);

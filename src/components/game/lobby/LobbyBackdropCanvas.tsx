@@ -406,153 +406,159 @@ export const LobbyBackdropCanvas: React.FC = () => {
         }
         ctx.stroke();
 
-        // 5. LEFT FLANKING FORTIFIED BASTION & SENTRY SLUG
-        const leftBastionX = Math.max(90, Math.min(width * 0.12, 220));
-        const leftBastionY = Math.max(260, height * 0.52);
+        // 5. & 6. FORTIFIED BASTIONS & WATCHTOWERS (Desktop Wide Screens Only: width >= 1024)
+        if (width >= 1024) {
+          // 5. LEFT FLANKING FORTIFIED BASTION & SENTRY SLUG
+          const leftBastionX = Math.max(90, Math.min(width * 0.12, 220));
+          const leftBastionY = Math.max(260, height * 0.52);
 
-        drawFortifiedBastion(ctx, leftBastionX, leftBastionY + 20, 150, 95, 'POSTE OBSERV.', '#10b981');
+          drawFortifiedBastion(ctx, leftBastionX, leftBastionY + 20, 150, 95, 'POSTE OBSERV.', '#10b981');
 
-        ctx.save();
-        ctx.translate(leftBastionX - 15, leftBastionY);
-        drawTacticalSlug(ctx, 1.25, 'NIGHT_VISION', true);
-        ctx.restore();
+          ctx.save();
+          ctx.translate(leftBastionX - 15, leftBastionY);
+          drawTacticalSlug(ctx, 1.25, 'NIGHT_VISION', true);
+          ctx.restore();
 
-        // Searchlight Mounted on Left Watchtower
-        const searchlightX = leftBastionX + 35;
-        const searchlightY = leftBastionY - 14;
-        const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.9) * 0.55;
+          // Searchlight Mounted on Left Watchtower
+          const searchlightX = leftBastionX + 35;
+          const searchlightY = leftBastionY - 14;
+          const sweepAngle = -Math.PI * 0.35 + Math.sin(t * 0.9) * 0.55;
 
-        // Solid Mechanical Support Mast & Mounting Bracket down to Bunker Deck
-        ctx.save();
-        ctx.translate(searchlightX, searchlightY);
+          // Solid Mechanical Support Mast & Mounting Bracket down to Bunker Deck
+          ctx.save();
+          ctx.translate(searchlightX, searchlightY);
 
-        // 1. Heavy Steel Lattice Mast & Base Platform
-        ctx.strokeStyle = '#71717a';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        // Left & Right Support Legs extending down to bunker roof (+28px)
-        ctx.moveTo(-7, 28);
-        ctx.lineTo(-4, 4);
-        ctx.moveTo(7, 28);
-        ctx.lineTo(4, 4);
-        // Cross-bracing struts
-        ctx.moveTo(-6, 22);
-        ctx.lineTo(5, 12);
-        ctx.moveTo(6, 22);
-        ctx.lineTo(-5, 12);
-        ctx.stroke();
+          // 1. Heavy Steel Lattice Mast & Base Platform
+          ctx.strokeStyle = '#71717a';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-7, 28);
+          ctx.lineTo(-4, 4);
+          ctx.moveTo(7, 28);
+          ctx.lineTo(4, 4);
+          ctx.moveTo(-6, 22);
+          ctx.lineTo(5, 12);
+          ctx.moveTo(6, 22);
+          ctx.lineTo(-5, 12);
+          ctx.stroke();
 
-        // 2. Bolted Concrete Base Collar on Roof
-        ctx.fillStyle = '#27272a';
-        ctx.strokeStyle = '#09090b';
-        ctx.lineWidth = 1.5;
-        drawRoundRect(ctx, -10, 24, 20, 6, 2);
-        ctx.fill();
-        ctx.stroke();
+          // 2. Bolted Concrete Base Collar on Roof
+          ctx.fillStyle = '#27272a';
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.5;
+          drawRoundRect(ctx, -10, 24, 20, 6, 2);
+          ctx.fill();
+          ctx.stroke();
 
-        // 3. Swiveling Turret Yoke Bracket
-        ctx.fillStyle = '#3f3f46';
-        ctx.strokeStyle = '#18181b';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 4, 5, 0, Math.PI);
-        ctx.fill();
-        ctx.stroke();
+          // 3. Swiveling Turret Yoke Bracket
+          ctx.fillStyle = '#3f3f46';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 4, 5, 0, Math.PI);
+          ctx.fill();
+          ctx.stroke();
 
-        // 4. Searchlight Housing Sphere
-        ctx.beginPath();
-        ctx.arc(0, 0, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+          // 4. Searchlight Housing Sphere
+          ctx.beginPath();
+          ctx.arc(0, 0, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-        // Pivot Hub Bolt
-        ctx.fillStyle = '#fbbf24';
-        ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2);
-        ctx.fill();
+          // Pivot Hub Bolt
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(0, 0, 2, 0, Math.PI * 2);
+          ctx.fill();
 
-        // Volumetric Beam
-        ctx.rotate(sweepAngle);
-        const beamGrad = ctx.createRadialGradient(0, 0, 5, 0, -height * 0.85, height * 0.65);
-        beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
-        beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.22)');
-        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
-        ctx.fillStyle = beamGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-80, -height * 0.85);
-        ctx.lineTo(80, -height * 0.85);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
+          // Volumetric Beam
+          ctx.rotate(sweepAngle);
+          const beamGrad = ctx.createRadialGradient(0, 0, 5, 0, -height * 0.85, height * 0.65);
+          beamGrad.addColorStop(0, 'rgba(168, 85, 247, 0.6)');
+          beamGrad.addColorStop(0.3, 'rgba(192, 132, 252, 0.22)');
+          beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+          ctx.fillStyle = beamGrad;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(-80, -height * 0.85);
+          ctx.lineTo(80, -height * 0.85);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
 
-        // 6. RIGHT FLANKING COMMUNICATIONS OUTPOST & RADIO OPERATOR SLUG
-        const rightBastionX = Math.max(width - 220, width * 0.88);
-        const rightBastionY = Math.max(260, height * 0.52);
+          // 6. RIGHT FLANKING COMMUNICATIONS OUTPOST & RADIO OPERATOR SLUG
+          const rightBastionX = Math.max(width - 220, width * 0.88);
+          const rightBastionY = Math.max(260, height * 0.52);
 
-        drawFortifiedBastion(ctx, rightBastionX, rightBastionY + 20, 150, 95, 'TRANSMISSIONS', '#38bdf8');
+          drawFortifiedBastion(ctx, rightBastionX, rightBastionY + 20, 150, 95, 'TRANSMISSIONS', '#38bdf8');
 
-        ctx.save();
-        ctx.translate(rightBastionX + 15, rightBastionY);
-        drawTacticalSlug(ctx, 1.25, 'RADIO_COMM', false);
-        ctx.restore();
+          ctx.save();
+          ctx.translate(rightBastionX + 15, rightBastionY);
+          drawTacticalSlug(ctx, 1.25, 'RADIO_COMM', false);
+          ctx.restore();
 
-        // Spinning Tactical Radar Dish on Right Outpost
-        const radarX = rightBastionX - 35;
-        const radarY = rightBastionY - 14;
-        const radarAngle = t * 3;
+          // Spinning Tactical Radar Dish on Right Outpost
+          const radarX = rightBastionX - 35;
+          const radarY = rightBastionY - 14;
+          const radarAngle = t * 3;
 
-        ctx.save();
-        ctx.translate(radarX, radarY);
+          ctx.save();
+          ctx.translate(radarX, radarY);
 
-        // 1. Reinforced Communication Tripod Legs extending down to Bunker Deck (+28px)
-        ctx.strokeStyle = '#71717a';
-        ctx.lineWidth = 2.4;
-        ctx.beginPath();
-        ctx.moveTo(-10, 28);
-        ctx.lineTo(0, 0);
-        ctx.lineTo(10, 28);
-        // Horizontal stabilization ring
-        ctx.moveTo(-6, 16);
-        ctx.lineTo(6, 16);
-        ctx.stroke();
+          // 1. Reinforced Communication Tripod Legs extending down to Bunker Deck (+28px)
+          ctx.strokeStyle = '#71717a';
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          ctx.moveTo(-10, 28);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(10, 28);
+          ctx.moveTo(-6, 16);
+          ctx.lineTo(6, 16);
+          ctx.stroke();
 
-        // 2. Bolted Anchor Base Pads
-        ctx.fillStyle = '#27272a';
-        ctx.strokeStyle = '#09090b';
-        ctx.lineWidth = 1.5;
-        drawRoundRect(ctx, -12, 24, 24, 6, 2);
-        ctx.fill();
-        ctx.stroke();
+          // 2. Bolted Anchor Base Pads
+          ctx.fillStyle = '#27272a';
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 1.5;
+          drawRoundRect(ctx, -12, 24, 24, 6, 2);
+          ctx.fill();
+          ctx.stroke();
 
-        // 3. Rotating Motor Gearbox
-        ctx.fillStyle = '#3f3f46';
-        ctx.fillRect(-4, -2, 8, 6);
+          // 3. Rotating Motor Gearbox
+          ctx.fillStyle = '#3f3f46';
+          ctx.fillRect(-4, -2, 8, 6);
 
-        // Pulsing Blue Data Link LED
-        ctx.fillStyle = Math.sin(t * 8) > 0 ? '#38bdf8' : '#0369a1';
-        ctx.beginPath();
-        ctx.arc(0, 1, 1.8, 0, Math.PI * 2);
-        ctx.fill();
+          // Pulsing Blue Data Link LED
+          ctx.fillStyle = Math.sin(t * 8) > 0 ? '#38bdf8' : '#0369a1';
+          ctx.beginPath();
+          ctx.arc(0, 1, 1.8, 0, Math.PI * 2);
+          ctx.fill();
 
-        // 4. Rotating Dish Ellipse
-        ctx.fillStyle = '#38bdf8';
-        ctx.strokeStyle = '#18181b';
-        ctx.lineWidth = 2;
-        drawSafeEllipse(ctx, 0, -4, 14 * Math.abs(Math.cos(radarAngle)), 14);
-        ctx.fill();
-        ctx.stroke();
+          // 4. Rotating Dish Ellipse
+          ctx.fillStyle = '#38bdf8';
+          ctx.strokeStyle = '#18181b';
+          ctx.lineWidth = 2;
+          drawSafeEllipse(ctx, 0, -4, 14 * Math.abs(Math.cos(radarAngle)), 14);
+          ctx.fill();
+          ctx.stroke();
 
-        // Center Spike
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(0, -4, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+          // Center Spike
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(0, -4, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
 
         // 7. TOP SKY: TACTICAL RECON SURVEILLANCE DRONE 🛸
-        const droneX = Math.max(100, Math.min(width * 0.18, 280)) + Math.sin(t * 1.2) * 20;
-        const droneY = Math.max(80, height * 0.15) + Math.cos(t * 1.5) * 10;
+        const droneX =
+          width < 1024
+            ? width * 0.5 + Math.sin(t * 1.2) * 50
+            : Math.max(100, Math.min(width * 0.18, 280)) + Math.sin(t * 1.2) * 20;
+        const droneY =
+          width < 1024
+            ? Math.max(35, height * 0.08) + Math.cos(t * 1.5) * 8
+            : Math.max(80, height * 0.15) + Math.cos(t * 1.5) * 10;
 
         ctx.save();
         ctx.translate(droneX, droneY);
