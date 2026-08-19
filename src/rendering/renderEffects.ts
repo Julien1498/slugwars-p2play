@@ -249,6 +249,10 @@ export function renderHelicopters(
     ctx.translate(heli.x, heli.y);
     if (heli.facing === 'left') ctx.scale(-1, 1);
 
+    // Dynamic flight tilt
+    const tilt = Math.max(-0.25, Math.min(0.25, heli.vx * (heli.facing === 'left' ? -0.06 : 0.06)));
+    ctx.rotate(tilt);
+
     // Skids
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 2.5;

@@ -92,8 +92,6 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     const aimRad = (slug.aimAngle * Math.PI) / 180;
 
     const speed = Math.hypot(slug.vx, slug.vy);
-    const isAirbornePanic = speed > 2.0;
-
     let isDangerNear = slug.hp < 35;
     if (!isDangerNear && gameState.projectiles && gameState.projectiles.length > 0) {
       for (const p of gameState.projectiles) {
@@ -132,8 +130,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.stroke();
     }
 
+    const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1 || slug.movingDir !== null;
+    const isAirbornePanic = speed > 0.4 || isMoving;
+
     // Airborne Speed Trails
-    if (isAirbornePanic) {
+    if (isAirbornePanic && speed > 1.2) {
       ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = 1.5;
@@ -146,23 +147,22 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.restore();
     }
 
-    const isMoving = Math.abs(slug.vx) > 0.1 || Math.abs(slug.vy) > 0.1 || slug.movingDir !== null;
-    const squishX = isAirbornePanic ? Math.min(0.35, speed * 0.035) : (isMoving ? Math.sin(animTime * 14) * 0.12 : 0);
-    const squishY = isAirbornePanic ? -Math.min(0.2, speed * 0.02) : (isMoving ? -Math.sin(animTime * 14) * 0.12 : 0);
+    const stretchX = isAirbornePanic ? Math.min(0.28, Math.max(0.04, speed * 0.035)) : 0;
+    const stretchY = isAirbornePanic ? -Math.min(0.16, Math.max(0.02, speed * 0.02)) : 0;
     const slugScale = 0.72;
 
     ctx.save();
     ctx.translate(slug.x, slug.y - 2);
 
     if (isAirbornePanic) {
-      const tilt = Math.atan2(slug.vy, slug.vx * (slug.facing === 'left' ? -1 : 1)) * 0.25;
+      const tilt = Math.atan2(slug.vy, Math.abs(slug.vx) * (slug.facing === 'left' ? -1 : 1)) * 0.25;
       ctx.rotate(tilt);
     }
 
     if (slug.facing === 'left') {
-      ctx.scale(-1 * (1 + squishX) * slugScale, (1 + squishY) * slugScale);
+      ctx.scale(-1 * (1 + stretchX) * slugScale, (1 + stretchY) * slugScale);
     } else {
-      ctx.scale((1 + squishX) * slugScale, (1 + squishY) * slugScale);
+      ctx.scale((1 + stretchX) * slugScale, (1 + stretchY) * slugScale);
     }
 
     // Drop Shadow

@@ -853,10 +853,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
           if (!slug.isAlive) {
             if (!slugDeathTimestampsRef.current.has(slug.id)) {
-              slugDeathTimestampsRef.current.set(slug.id, Date.now());
+              slugDeathTimestampsRef.current.set(slug.id, performance.now());
             }
-            const deathTime = slugDeathTimestampsRef.current.get(slug.id) || Date.now();
-            const timeSinceDeath = Date.now() - deathTime;
+            const deathTime = slugDeathTimestampsRef.current.get(slug.id) || performance.now();
+            const timeSinceDeath = performance.now() - deathTime;
             if (slug.y >= waterY && timeSinceDeath < 2500 && Math.random() < 0.3 && clientWaterBubblesRef.current.length < 25) {
               clientWaterBubblesRef.current.push({
                 x: slug.x + (Math.random() - 0.5) * 12,
