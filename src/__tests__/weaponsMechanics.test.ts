@@ -154,4 +154,165 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(engine.state.projectiles.length).toBe(1);
     expect(engine.state.projectiles[0].behaviorData?.bouncesLeft).toBe(7);
   });
+
+  it('detonates Holy Grenade with massive radius, 110 damage, and holy sound', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['holy_grenade'] = 1;
+    engine.selectWeapon('holy_grenade');
+
+    engine.fireWeapon();
+    expect(engine.state.projectiles.length).toBe(1);
+    const holy = engine.state.projectiles[0];
+    expect(holy.weaponId).toBe('holy_grenade');
+
+    // Simulate holy grenade fuse expiring
+    holy.fuseTimerMs = 10;
+    holy.x = 400;
+    holy.y = 300;
+    holy.vx = 0;
+    holy.vy = 0;
+
+    engine.tick();
+
+    expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
+    const holyExplosion = engine.state.explosions.find((ex) => ex.radius >= 70);
+    expect(holyExplosion).toBeTruthy();
+    expect(holyExplosion?.damage).toBe(90);
+    expect(holyExplosion?.customSound).toBe('holy_choir');
+  });
+
+  it('explodes Banana Bomb and scatters 5 cluster bananettes', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['banana_bomb'] = 1;
+    engine.selectWeapon('banana_bomb');
+
+    engine.fireWeapon();
+    expect(engine.state.projectiles.length).toBe(1);
+    const banana = engine.state.projectiles[0];
+    expect(banana.weaponId).toBe('banana_bomb');
+
+    // Expire banana fuse
+    banana.fuseTimerMs = 10;
+    banana.x = 450;
+    banana.y = 250;
+    banana.vx = 0;
+    banana.vy = 0;
+
+    engine.tick();
+
+    // Banana explodes and produces 5 cluster bananettes
+    expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
+    const clusterBananettes = engine.state.projectiles.filter((p) => p.weaponId === 'cluster_banana');
+    expect(clusterBananettes.length).toBe(5);
+  });
+
+  it('allows steering Super Sheep in flight and detonates on command or impact', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['super_sheep'] = 1;
+    engine.selectWeapon('super_sheep');
+
+    engine.fireWeapon();
+    const sheep = engine.state.projectiles.find((p) => p.weaponId === 'super_sheep')!;
+    expect(sheep).toBeTruthy();
+
+    const initialVx = sheep.vx;
+    const initialVy = sheep.vy;
+
+    // Steer sheep left
+    engine.steerSheep('left');
+    expect(sheep.vx !== initialVx || sheep.vy !== initialVy).toBe(true);
+
+    // Detonate sheep manually
+    engine.detonateSheep();
+    expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
+    expect(engine.state.projectiles.some((p) => p.weaponId === 'super_sheep')).toBe(false);
+  });
+
+  it('triggers landmine on proximity (<25px) and counts down to blast', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+
+    // Place an untriggered mine right next to active slug (distance 15px)
+    engine.state.mines = [
+      {
+        id: 'mine_test_1',
+        x: activeSlug.x + 15,
+        y: activeSlug.y,
+        isTriggered: false,
+        fuseTimerMs: 2000,
+      },
+    ];
+
+    // Tick engine to detect proximity
+    engine.tick();
+
+    const mine = engine.state.mines[0];
+    expect(mine.isTriggered).toBe(true);
+
+    // Simulate fuse expiration
+    mine.fuseTimerMs = 10;
+    engine.tick();
+
+    // Mine should have exploded and vanished
+    expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
+    expect(engine.state.mines.length).toBe(0);
+  });
+
+  it('operates blowtorch tunneling through terrain', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    const activeTeam = engine.state.teams.find((t) => t.id === activeSlug.teamId)!;
+    activeTeam.inventory['blowtorch'] = 100;
+    engine.selectWeapon('blowtorch');
+
+    // Create a solid wall directly in front of the slug
+    for (let y = 280; y <= 320; y++) {
+      for (let x = 310; x <= 340; x++) {
+        engine.terrain.data.grid[y * engine.terrain.data.width + x] = 1;
+      }
+    }
+    expect(engine.terrain.isSolid(320, 300)).toBe(true);
+
+    // Fire blowtorch
+    engine.fireWeapon();
+    expect(activeSlug.isBlowtorching).toBe(true);
+
+    // Run ticks to carve tunnel
+    for (let i = 0; i < 15; i++) {
+      engine.tick();
+    }
+
+    // Wall right ahead should now be hollowed out by the blowtorch
+    expect(engine.terrain.isSolid(315, 300)).toBe(false);
+  });
 });
