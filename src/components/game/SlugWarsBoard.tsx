@@ -139,8 +139,8 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
     <div
       className={
         isTouch
-          ? 'fixed inset-0 overflow-hidden bg-zinc-950 text-zinc-100 select-none'
-          : 'flex flex-col h-screen max-h-screen overflow-hidden bg-zinc-950 p-1 md:p-1.5 text-zinc-100 relative'
+          ? 'fixed inset-0 h-[100dvh] w-screen overflow-hidden overscroll-none touch-none bg-zinc-950 text-zinc-100 select-none'
+          : 'flex flex-col h-screen max-h-screen overflow-hidden overscroll-none bg-zinc-950 p-1 md:p-1.5 text-zinc-100 relative'
       }
     >
       {/* Top Header - Floating transparent on mobile, standard flex row on PC */}

@@ -357,11 +357,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     const getMid = (t1: Touch, t2: Touch) => ({ x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 });
 
     const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
       lastTouchTimeRef.current = Date.now();
       targetCameraPanRef.current = null;
 
       if (e.touches.length >= 2) {
-        e.preventDefault();
         g.isPinching = true;
         g.touchIsAiming = false;
         g.gestureInitialDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
@@ -419,11 +419,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     };
 
     const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
       lastTouchTimeRef.current = Date.now();
       const rect = container.getBoundingClientRect();
 
       if (e.touches.length >= 2 && g.isPinching && g.gestureInitialDist > 0) {
-        e.preventDefault();
         const currDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
         const currMid = getMid(e.touches[0], e.touches[1]);
         const scale = currDist / g.gestureInitialDist;
