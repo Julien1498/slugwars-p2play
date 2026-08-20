@@ -4,6 +4,8 @@ import { RoomCodeBadge } from 'p2play-core';
 import { LobbyBackdropCanvas } from './lobby/LobbyBackdropCanvas';
 import { LobbyMapConfig } from './lobby/LobbyMapConfig';
 import { LobbyTeamList } from './lobby/LobbyTeamList';
+import { Maximize2, Minimize2 } from 'lucide-react';
+import { useFullscreen } from '../../hooks/useFullscreen';
 
 interface SlugWarsLobbyProps {
   isHost: boolean;
@@ -28,6 +30,8 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   onChangeConfig,
   onStartGame,
 }) => {
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+
   return (
     <div className="fixed inset-0 h-[100dvh] w-full bg-zinc-950 text-zinc-100 overflow-y-auto overflow-x-hidden p-3 md:p-5 touch-pan-y z-10 selection:bg-violet-500 selection:text-white">
       {/* Background Fixed HD Vector War Room Canvas */}
@@ -56,8 +60,20 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             </div>
           </div>
 
-          {/* Room Code Badge & Optional Hub Exit Button */}
-          <div className="flex items-center gap-2.5">
+          {/* Room Code Badge, Fullscreen & Optional Hub Exit Button */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 ${
+                isFullscreen
+                  ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+              }`}
+              title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+            </button>
             <div className="select-text selection:bg-violet-600 selection:text-white cursor-text">
               <RoomCodeBadge code={hostPeerId || myPeerId} label="Code Salon" accentClassName="text-violet-400" />
             </div>

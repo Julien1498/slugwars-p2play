@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { extractRoomCodeFromUrl, subscribeRoomUrlChanges } from 'p2play-core';
 import { loadProfile, saveProfile } from '../../core/profile';
-import { Sparkles, Swords, Zap, Rocket, AlertCircle } from 'lucide-react';
+import { Sparkles, Swords, Zap, Rocket, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 import { ConnectionBackdropCanvas } from './connection/ConnectionBackdropCanvas';
 import { PlayerProfileCard } from './connection/PlayerProfileCard';
 import { ConnectionActions } from './connection/ConnectionActions';
+import { useFullscreen } from '../../hooks/useFullscreen';
 
 interface SlugWarsConnectionScreenProps {
   status: string;
@@ -20,6 +21,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   onHost,
   onJoin,
 }) => {
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
   const initialCode = extractRoomCodeFromUrl() || '';
   const savedProfile = loadProfile();
   const [username, setUsername] = useState(() => {
@@ -100,6 +102,23 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       {/* Ambient Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-1/4 w-72 h-72 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Top Controls Bar */}
+      <div className="absolute top-3 right-3 z-20">
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className={`p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 ${
+            isFullscreen
+              ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
+              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300'
+          }`}
+          title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
+        >
+          {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+          <span className="text-[11px] hidden sm:inline">{isFullscreen ? "Réduire" : "Plein écran"}</span>
+        </button>
+      </div>
 
       {/* Main Foreground Container */}
       <div className="relative z-10 max-w-md w-full space-y-5 mx-auto my-auto py-6 pb-16 flex flex-col">

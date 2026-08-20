@@ -3,9 +3,10 @@ import { GameState } from '../../core/types';
 import { getWeapon } from '../../core/weapons/registry';
 import { WindIndicator } from './WindIndicator';
 import { RoomCodeBadge } from 'p2play-core';
-import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, Settings, Eye, Gauge, ChevronDown } from 'lucide-react';
+import { Clock, Crosshair, Heart, Activity, AlertTriangle, BookOpen, Home, LogOut, Settings, Eye, Gauge, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import { perfTracker } from '../../core/perfTracker';
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
+import { useFullscreen } from '../../hooks/useFullscreen';
 
 interface TurnHeaderProps {
   gameState: GameState;
@@ -42,6 +43,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
   const menuRef = useRef<HTMLDivElement>(null);
   const isTouch = useIsTouchDevice();
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   useEffect(() => {
     return perfTracker.onFpsHudToggle((enabled) => setFpsHudActive(enabled));
@@ -163,6 +165,20 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
               )}
             </div>
 
+            {/* Fullscreen Button on Mobile */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-md active:scale-95 ${
+                isFullscreen
+                  ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
+                  : 'bg-zinc-950/60 border-zinc-700/80 text-zinc-300'
+              }`}
+              title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+            </button>
+
             {/* Menu Dropdown Button */}
             <div className="relative" ref={menuRef}>
               <button
@@ -178,6 +194,23 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
               {/* Menu Popover Dropdown */}
               {showMenuPopover && (
                 <div className="absolute right-0 top-full mt-1.5 w-56 bg-zinc-950/95 border border-zinc-800/90 backdrop-blur-xl rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                  {/* Fullscreen Toggle */}
+                  <button
+                    onClick={() => {
+                      toggleFullscreen();
+                      setShowMenuPopover(false);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-violet-400" />}
+                      <span>Plein écran</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-violet-950 text-violet-300 border border-violet-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {isFullscreen ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
                   {/* Hitboxes Toggle */}
                   {onToggleHitboxes && (
                     <button
@@ -425,6 +458,20 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
 
           <RoomCodeBadge code={hostPeerId} label="Salon" accentClassName="text-violet-400" />
 
+          {/* Fullscreen Button on Desktop */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className={`p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 shadow-sm ${
+              isFullscreen
+                ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
+                : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95'
+            }`}
+            title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-300" />}
+          </button>
+
           {/* Consolidated Menu Dropdown Button (Cleans up the HUD!) */}
           <div className="relative" ref={menuRef}>
             <button
@@ -445,6 +492,22 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
             {/* Menu Popover Dropdown */}
             {showMenuPopover && (
               <div className="absolute right-0 top-full mt-1.5 w-56 bg-zinc-950/95 border border-zinc-800/90 backdrop-blur-xl rounded-2xl p-2 shadow-2xl z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+                {/* Fullscreen Toggle */}
+                <button
+                  onClick={() => {
+                    toggleFullscreen();
+                    setShowMenuPopover(false);
+                  }}
+                  className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                >
+                  <div className="flex items-center gap-2">
+                    {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-violet-400" />}
+                    <span>Plein écran</span>
+                  </div>
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-violet-950 text-violet-300 border border-violet-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                    {isFullscreen ? 'ON' : 'OFF'}
+                  </span>
+                </button>
                 {/* Hitboxes Toggle */}
                 {onToggleHitboxes && (
                   <button
