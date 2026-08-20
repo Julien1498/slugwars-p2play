@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { GameState, Slug, ActiveProjectile, Vector2D } from '../../../core/types';
 import { getWeapon } from '../../../core/weapons/registry';
 import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
@@ -120,20 +120,57 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (!isMyTurn || isRetreat) return;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignored if pointer capture not supported
+    }
     triggerHaptic(20);
     isHoldingFireRef.current = true;
-    onStartCharge?.(activeSlug?.currentTargetPoint);
+    if (currentWeapon?.id === 'blowtorch') {
+      onFire?.(activeSlug?.currentTargetPoint);
+    } else {
+      onStartCharge?.(activeSlug?.currentTargetPoint);
+    }
   };
 
-  const handleFirePointerUp = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleFirePointerUp = (e?: React.PointerEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        if (e.currentTarget?.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        // Ignored
+      }
+    }
     if (!isHoldingFireRef.current) return;
     isHoldingFireRef.current = false;
     lastDirectFireTimeRef.current = Date.now();
     triggerHaptic(25);
     onReleaseCharge?.(activeSlug?.currentTargetPoint);
   };
+
+  // Window-level safety fallback: guarantees shot release even if finger drifts off-screen
+  useEffect(() => {
+    const handleGlobalRelease = () => {
+      if (isHoldingFireRef.current) {
+        isHoldingFireRef.current = false;
+        triggerHaptic(25);
+        onReleaseCharge?.(activeSlug?.currentTargetPoint);
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalRelease);
+    window.addEventListener('touchend', handleGlobalRelease);
+    window.addEventListener('pointercancel', handleGlobalRelease);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalRelease);
+      window.removeEventListener('touchend', handleGlobalRelease);
+      window.removeEventListener('pointercancel', handleGlobalRelease);
+    };
+  }, [onReleaseCharge, activeSlug?.currentTargetPoint, triggerHaptic]);
 
   const isPlacementPhase = gameState.phase === 'PLACEMENT';
 
@@ -499,6 +536,11 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                       return;
                     }
                     handleFirePointerUp(e);
+                  }}
+                  onPointerCancel={(e) => {
+                    if (isAimingPhase && currentWeapon?.id !== 'girder' && !currentWeapon?.requiresTarget) {
+                      handleFirePointerUp(e);
+                    }
                   }}
                   onClick={(e) => {
                     e.preventDefault();
