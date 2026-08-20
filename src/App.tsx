@@ -92,7 +92,7 @@ export const App: React.FC<AppProps> = ({
 
   // Active Game Board
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="h-[100dvh] w-full overflow-hidden overscroll-none touch-none bg-zinc-950 text-zinc-100 fixed inset-0">
       <SlugWarsBoard
         gameState={gameState}
         terrain={engine.terrain}
