@@ -94,7 +94,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   }
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4 overflow-x-hidden selection:bg-violet-500 selection:text-white">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-zinc-950 text-zinc-100 p-4 touch-pan-y z-10 selection:bg-violet-500 selection:text-white">
       <ConnectionBackdropCanvas />
 
       {/* Ambient Glows */}
@@ -102,7 +102,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       <div className="absolute bottom-10 right-1/4 w-72 h-72 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Foreground Container */}
-      <div className="relative z-10 max-w-md w-full space-y-5 my-auto py-6">
+      <div className="relative z-10 max-w-md w-full space-y-5 mx-auto my-auto py-6 pb-16 flex flex-col">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-950/80 border border-violet-500/40 rounded-full text-xs font-bold text-violet-300 shadow-md backdrop-blur">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
