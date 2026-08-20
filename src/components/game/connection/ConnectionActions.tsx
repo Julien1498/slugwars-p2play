@@ -86,20 +86,20 @@ export const ConnectionActions: React.FC<ConnectionActionsProps> = ({
 
       <div className="space-y-1">
         <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Rejoindre un salon</label>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <input
             type="text"
             value={roomCode}
             onChange={(e) => onChangeRoomCode(e.target.value.toUpperCase())}
             placeholder="Code du salon..."
-            className="flex-1 bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-white placeholder-zinc-500 focus:outline-none transition uppercase tracking-wider"
+            className="flex-1 min-w-0 w-full bg-zinc-950/80 border border-zinc-700/80 focus:border-violet-500 rounded-xl px-3 py-2 text-sm font-mono font-bold text-white placeholder-zinc-500 focus:outline-none transition uppercase tracking-wider"
           />
           <button
             type="button"
             onClick={onJoin}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700 hover:border-zinc-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+            className="shrink-0 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] border border-zinc-700 hover:border-zinc-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <LogIn className="w-4 h-4 text-violet-400" />
+            <LogIn className="w-4 h-4 text-violet-400 shrink-0" />
             <span>Rejoindre</span>
           </button>
         </div>
