@@ -21,7 +21,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   onHost,
   onJoin,
 }) => {
-  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
   const initialCode = extractRoomCodeFromUrl() || '';
   const savedProfile = loadProfile();
   const [username, setUsername] = useState(() => {
@@ -43,49 +43,59 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     });
   }, []);
 
-  const handleHostClick = () => {
-    const trimmed = username.trim();
-    if (!trimmed) {
-      setValidationError('Veuillez entrer un pseudo');
-      return;
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.slice(0, 16);
+    setUsername(val);
+    if (validationError) setValidationError(null);
+  };
+
+  const handleAvatarSelect = (avatar: string) => {
+    setSelectedAvatar(avatar);
+  };
+
+  const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toUpperCase();
+    setRoomCode(val);
+    if (validationError) setValidationError(null);
+  };
+
+  const validateAndSave = (): string | null => {
+    const cleanUsername = username.trim();
+    if (!cleanUsername) {
+      return "Veuillez entrer un pseudo d'agent tactique";
     }
-    saveProfile({ username: trimmed, avatar: selectedAvatar });
-    setValidationError(null);
-    onHost(trimmed, selectedAvatar);
+    saveProfile({ username: cleanUsername, avatar: selectedAvatar });
+    return cleanUsername;
+  };
+
+  const handleHostClick = () => {
+    const cleanUsername = validateAndSave();
+    if (!cleanUsername) return;
+    onHost(cleanUsername, selectedAvatar);
   };
 
   const handleJoinClick = () => {
-    const trimmedUser = username.trim();
-    const trimmedCode = (invitationCode || roomCode).trim().toUpperCase();
-    if (!trimmedUser) {
-      setValidationError('Veuillez entrer un pseudo');
+    const cleanUsername = validateAndSave();
+    if (!cleanUsername) return;
+    const cleanCode = roomCode.trim().toUpperCase();
+    if (!cleanCode) {
+      setValidationError('Veuillez entrer un code de salon valide');
       return;
     }
-    if (!trimmedCode) {
-      setValidationError('Veuillez entrer un code de salon');
-      return;
-    }
-    saveProfile({ username: trimmedUser, avatar: selectedAvatar });
-    setValidationError(null);
-    onJoin(trimmedUser, selectedAvatar, trimmedCode);
+    onJoin(cleanUsername, selectedAvatar, cleanCode);
   };
 
   if (isConnecting) {
     return (
-      <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4 overflow-hidden">
+      <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4">
         <ConnectionBackdropCanvas />
-        <div className="relative z-10 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/50 p-8 rounded-2xl text-center space-y-4 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-          <div className="relative inline-block">
-            <div className="text-6xl animate-bounce">🐌</div>
-            <div className="absolute -top-1 -right-2 text-2xl animate-spin" style={{ animationDuration: '3s' }}>
-              🎯
-            </div>
+        <div className="relative z-10 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/40 rounded-2xl p-8 max-w-sm w-full text-center space-y-4 shadow-2xl animate-pulse">
+          <div className="w-16 h-16 rounded-full bg-violet-600/20 border-2 border-violet-500 mx-auto flex items-center justify-center text-3xl animate-bounce">
+            🐌
           </div>
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-300 to-amber-300">
-              Connexion en cours...
-            </h2>
-            <p className="text-xs text-zinc-400">Établissement du tunnel WebRTC P2P direct</p>
+          <div>
+            <h2 className="text-xl font-bold text-zinc-100">Déploiement en cours...</h2>
+            <p className="text-xs text-zinc-400 mt-1">Connexion sécurisée P2P WebRTC</p>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden border border-zinc-700">
             <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 h-full w-2/3 animate-pulse rounded-full" />
@@ -104,21 +114,23 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
       <div className="absolute bottom-10 right-1/4 w-72 h-72 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Controls Bar */}
-      <div className="absolute top-3 right-3 z-20">
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className={`p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 ${
-            isFullscreen
-              ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
-              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300'
-          }`}
-          title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
-          <span className="text-[11px] hidden sm:inline">{isFullscreen ? "Réduire" : "Plein écran"}</span>
-        </button>
-      </div>
+      {isFullscreenSupported && (
+        <div className="absolute top-3 right-3 z-20">
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className={`p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 ${
+              isFullscreen
+                ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
+                : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300'
+            }`}
+            title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+            <span className="text-[11px] hidden sm:inline">{isFullscreen ? "Réduire" : "Plein écran"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Foreground Container */}
       <div className="relative z-10 max-w-md w-full space-y-5 my-auto py-6">
