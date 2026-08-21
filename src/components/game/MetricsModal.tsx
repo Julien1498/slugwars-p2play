@@ -40,11 +40,18 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
 
   // In-Game Permanent Zero-Cost FPS HUD Toggle State
   const [isFpsHudActive, setIsFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
+  const [isFpsHudAdvancedActive, setIsFpsHudAdvancedActive] = useState<boolean>(() => perfTracker.getFpsHudAdvancedEnabled());
 
   const handleToggleFpsHud = () => {
     const nextVal = !isFpsHudActive;
     setIsFpsHudActive(nextVal);
     perfTracker.setFpsHudEnabled(nextVal);
+  };
+
+  const handleToggleFpsHudAdvanced = () => {
+    const nextVal = !isFpsHudAdvancedActive;
+    setIsFpsHudAdvancedActive(nextVal);
+    perfTracker.setFpsHudAdvancedEnabled(nextVal);
   };
 
   useEffect(() => {
@@ -232,6 +239,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
             gameState={gameState}
             isFpsHudActive={isFpsHudActive}
             onToggleFpsHud={handleToggleFpsHud}
+            isFpsHudAdvancedActive={isFpsHudAdvancedActive}
+            onToggleFpsHudAdvanced={handleToggleFpsHudAdvanced}
           />
         )}
 
