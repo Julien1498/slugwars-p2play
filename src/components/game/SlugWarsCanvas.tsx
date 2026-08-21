@@ -79,10 +79,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
   const isTouch = useIsTouchDevice();
 
-  // Smooth Camera Pan & Cursor-Centered Zoom State
-  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  // Smooth Camera Pan & Cursor-Centered Zoom Refs (0 React Re-renders)
   const zoomRef = useRef<number>(1.0);
-  const [, setPanOffset] = useState<Vector2D>({ x: 0, y: 0 });
   const panRef = useRef<Vector2D>({ x: 0, y: 0 });
   const isDraggingCameraRef = useRef<boolean>(false);
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
@@ -101,6 +99,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const clientWaterRipplesRef = useRef<WaterRipple[]>([]);
   const clientWaterBubblesRef = useRef<WaterBubble[]>([]);
   const visualSlugPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const renderedSlugsCacheRef = useRef<any[]>([]);
+  const visualStateRef = useRef<GameState | null>(null);
   const lastRenderTimeRef = useRef<number>(0);
 
   // Zero-Overhead In-Game Permanent FPS HUD Refs
@@ -286,8 +286,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       cameraModeRef.current = 'FREE_LOOK';
       zoomRef.current = newZoom;
       panRef.current = clamped;
-      setZoomLevel(newZoom);
-      setPanOffset(clamped);
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
@@ -486,8 +484,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
         zoomRef.current = newZoom;
         panRef.current = clamped;
-        setZoomLevel(newZoom);
-        setPanOffset(clamped);
         return;
       }
 
@@ -537,7 +533,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           );
           cameraModeRef.current = 'FREE_LOOK';
           panRef.current = clamped;
-          setPanOffset(clamped);
         }
       }
     };
@@ -638,7 +633,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         );
         cameraModeRef.current = 'FREE_LOOK';
         panRef.current = clamped;
-        setPanOffset(clamped);
         return;
       }
 
@@ -830,7 +824,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       const container = containerRef.current;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const cRect = container ? container.getBoundingClientRect() : { width, height };
 
       const targetW = Math.max(100, Math.round(cRect.width * dpr));
@@ -1080,14 +1074,17 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
       renderTombstones(ctx, curState.slugs, waterLevel);
 
-      // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering
+      // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering (0 GC allocations)
       const now = performance.now();
       const lastTime = lastRenderTimeRef.current || now;
       const dtSec = Math.min(0.1, (now - lastTime) / 1000);
       lastRenderTimeRef.current = now;
       const alpha = 1 - Math.exp(-24.0 * dtSec);
 
-      const renderedSlugs = curState.slugs.map((slug) => {
+      const renderedSlugs = renderedSlugsCacheRef.current;
+      renderedSlugs.length = curState.slugs.length;
+      for (let i = 0; i < curState.slugs.length; i++) {
+        const slug = curState.slugs[i];
         let visualPos = visualSlugPositionsRef.current.get(slug.id);
         if (!visualPos) {
           visualPos = { x: slug.x, y: slug.y };
@@ -1102,17 +1099,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             visualPos.y += (slug.y - visualPos.y) * alpha;
           }
         }
-        return {
+        renderedSlugs[i] = {
           ...slug,
           x: visualPos.x,
           y: visualPos.y,
         };
-      });
+      }
 
-      const visualState = {
+      visualStateRef.current = {
         ...curState,
         slugs: renderedSlugs,
       };
+      const visualState = visualStateRef.current;
 
       // 6. Slugs, Ropes, Crates, Projectiles & Particles
       renderNinjaRopes(ctx, renderedSlugs);
@@ -1164,7 +1162,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         animTime
       );
 
-      // 8. Foreground Ocean & Rolling Water Waves
+      // 8. Foreground Ocean & Rolling Water Waves (With visible screen culling)
+      const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
+      const viewRight = viewLeft + cRect.width / totalScale;
+
       renderForegroundOcean({
         ctx,
         height,
@@ -1176,6 +1177,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         worldLeft,
         worldRight,
         worldBottom,
+        viewLeft,
+        viewRight,
         bubbles: clientWaterBubblesRef.current,
         ripples: clientWaterRipplesRef.current,
         splashes: clientWaterSplashesRef.current,
@@ -1239,20 +1242,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const handleCenterCamera = () => {
     zoomRef.current = 1.0;
     panRef.current = { x: 0, y: 0 };
-    setZoomLevel(1.0);
-    setPanOffset({ x: 0, y: 0 });
   };
 
   const handleZoomIn = () => {
-    const newZoom = Math.min(3.0, zoomRef.current * 1.25);
-    zoomRef.current = newZoom;
-    setZoomLevel(newZoom);
+    zoomRef.current = Math.min(3.0, zoomRef.current * 1.25);
   };
 
   const handleZoomOut = () => {
-    const newZoom = Math.max(0.5, zoomRef.current / 1.25);
-    zoomRef.current = newZoom;
-    setZoomLevel(newZoom);
+    zoomRef.current = Math.max(0.5, zoomRef.current / 1.25);
   };
 
   return (

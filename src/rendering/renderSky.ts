@@ -15,11 +15,29 @@ export interface SkyRenderContext {
   worldBottom: number;
 }
 
-export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
-  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
+let _cachedSkyGrad: CanvasGradient | null = null;
+let _cachedSkyGradTop = -99999;
+let _cachedSkyWaterY = -99999;
+let _cachedSkyTheme: MapTheme | null = null;
+let _cachedSkyIsDay = true;
 
-  // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
-  const skyGradTop = Math.min(-650, -height * 0.9);
+function getCachedSkyGradient(
+  ctx: CanvasRenderingContext2D,
+  skyGradTop: number,
+  waterY: number,
+  theme: MapTheme,
+  isDay: boolean
+): CanvasGradient {
+  if (
+    _cachedSkyGrad &&
+    _cachedSkyGradTop === skyGradTop &&
+    _cachedSkyWaterY === waterY &&
+    _cachedSkyTheme === theme &&
+    _cachedSkyIsDay === isDay
+  ) {
+    return _cachedSkyGrad;
+  }
+
   const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
   if (isDay) {
     if (theme === 'CAVERN') {
@@ -68,7 +86,21 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       skyGrad.addColorStop(1, '#1e1b4b');
     }
   }
-  ctx.fillStyle = skyGrad;
+
+  _cachedSkyGrad = skyGrad;
+  _cachedSkyGradTop = skyGradTop;
+  _cachedSkyWaterY = waterY;
+  _cachedSkyTheme = theme;
+  _cachedSkyIsDay = isDay;
+  return skyGrad;
+}
+
+export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
+  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
+
+  // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
+  const skyGradTop = Math.min(-650, -height * 0.9);
+  ctx.fillStyle = getCachedSkyGradient(ctx, skyGradTop, waterY, theme, isDay);
   ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
 
   // 2. Day & Night Atmospheric Particles & Clouds
