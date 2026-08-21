@@ -262,7 +262,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-      const newZoom = Math.max(0.5, Math.min(3.0, zoomRef.current * zoomFactor));
+      const minZoom = isTouch ? 0.75 : 0.5;
+      const newZoom = Math.max(minZoom, Math.min(3.0, zoomRef.current * zoomFactor));
 
       const rect = container.getBoundingClientRect();
       const mouseRelX = e.clientX - rect.left - rect.width / 2;
@@ -427,7 +428,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         const currDist = Math.max(10, getDist(e.touches[0], e.touches[1]));
         const currMid = getMid(e.touches[0], e.touches[1]);
         const scale = currDist / g.gestureInitialDist;
-        const newZoom = Math.max(0.5, Math.min(3.0, g.gestureInitialZoom * scale));
+        const newZoom = Math.max(0.75, Math.min(3.0, g.gestureInitialZoom * scale));
 
         const dx = currMid.x - g.gestureInitialMid.x;
         const dy = currMid.y - g.gestureInitialMid.y;
