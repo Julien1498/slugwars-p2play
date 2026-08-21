@@ -50,6 +50,7 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
   }, [showDrawer, activeTab, gameState.journal, chatMessages]);
 
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const chatTimestampsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -82,13 +83,17 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
       (t) => t.id === c.senderPeerId || t.name === c.sender || t.id === c.sender
     );
     const senderDisplayName = senderTeam?.name || (c.sender.startsWith('Joueur-') ? `Limace (${c.sender.slice(7)})` : c.sender);
-    const timeMs = c.time ? new Date(c.time).getTime() || Date.now() : Date.now();
+    const msgKey = `${c.sender}_${c.text}_${c.time || ''}_${idx}`;
+    if (!chatTimestampsRef.current.has(msgKey)) {
+      chatTimestampsRef.current.set(msgKey, Date.now());
+    }
+    const timestamp = chatTimestampsRef.current.get(msgKey)!;
     return {
-      id: `c_${idx}_${c.time || idx}`,
+      id: `c_${msgKey}`,
       text: `${senderDisplayName}: ${c.text}`,
       type: 'chat',
       isSystem: false,
-      timestamp: isNaN(timeMs) ? Date.now() : timeMs,
+      timestamp,
     };
   });
 
