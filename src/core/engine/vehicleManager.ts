@@ -68,12 +68,11 @@ export function exitVehicle(
 
       // If all candidate offsets touch rock, search in expanding circles for nearest air pixel
       if (!foundSafe) {
-        let bestDist = Infinity;
-        for (let r = 8; r <= 36; r += 6) {
-          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+        for (let r = 8; r <= 96; r += 4) {
+          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
             const testX = Math.floor(heli.x + Math.cos(angle) * r);
             const testY = Math.floor(heli.y + Math.sin(angle) * r);
-            if (!terrain.isSolid(testX, testY) && !terrain.isSolid(testX, testY - 8)) {
+            if (!terrain.isSolid(testX, testY)) {
               exitX = testX;
               exitY = testY;
               foundSafe = true;
@@ -82,6 +81,11 @@ export function exitVehicle(
           }
           if (foundSafe) break;
         }
+      }
+
+      if (!foundSafe) {
+        exitX = heli.x;
+        exitY = heli.y;
       }
     }
 
