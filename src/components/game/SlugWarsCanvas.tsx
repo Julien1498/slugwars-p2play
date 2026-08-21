@@ -391,14 +391,12 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         );
         mousePosRef.current = pos;
 
-        // Check if touch is near active slug to start direct aiming
+        // Direct touch-to-aim across the entire screen for ballistic weapons (Bazooka, Grenades, etc.)
         const curGameState = gameStateRef.current;
         const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
         if (isMyTurnRef.current && curGameState.phase === 'AIMING' && activeSlug) {
-          const distToSlug = Math.hypot(pos.x - activeSlug.x, pos.y - activeSlug.y);
           const weapon = getWeapon(activeSlug.selectedWeaponId);
-          if (distToSlug < 90 && !weapon.requiresTarget && weapon.id !== 'girder') {
-            g.touchIsAiming = true;
+          if (!weapon.requiresTarget && weapon.id !== 'girder') {
             const dx = pos.x - activeSlug.x;
             const dy = pos.y - activeSlug.y;
             let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
@@ -409,6 +407,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               activeSlug.facing = facing;
               onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
+            g.touchIsAiming = true;
           } else {
             g.touchIsAiming = false;
           }
@@ -536,6 +535,16 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
                 activeSlug.currentTargetPoint = pos;
                 sfx.play('tick');
                 onUpdateAimRef.current?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
+              } else {
+                const dx = pos.x - activeSlug.x;
+                const dy = pos.y - activeSlug.y;
+                let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+                angle = Math.max(-85, Math.min(85, angle));
+                const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
+                activeSlug.aimAngle = angle;
+                activeSlug.facing = facing;
+                sfx.play('tick');
+                onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
               }
             }
           }
