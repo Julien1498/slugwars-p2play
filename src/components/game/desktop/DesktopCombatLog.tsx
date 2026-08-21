@@ -49,6 +49,15 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     }
   }, [showDrawer, activeTab, gameState.journal, chatMessages]);
 
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     const text = inputText.trim();
@@ -56,6 +65,8 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     sendChat?.(text);
     setInputText('');
   };
+
+  const FADE_DURATION_MS = 6000;
 
   // Extract recent logs & messages for the floating feed (newest are at index 0 of gameState.journal)
   const recentJournal = (gameState.journal || []).slice(0, 4).map((j: JournalEntry) => ({
@@ -66,15 +77,23 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     timestamp: j.timestamp,
   }));
 
-  const recentChat = chatMessages.slice(-3).map((c, idx) => ({
-    id: `c_${idx}_${c.time}`,
-    text: `${c.sender}: ${c.text}`,
-    type: 'chat',
-    isSystem: false,
-    timestamp: Date.now(),
-  }));
+  const recentChat = chatMessages.slice(-3).map((c, idx) => {
+    const senderTeam = gameState.teams.find(
+      (t) => t.id === c.senderPeerId || t.name === c.sender || t.id === c.sender
+    );
+    const senderDisplayName = senderTeam?.name || (c.sender.startsWith('Joueur-') ? `Limace (${c.sender.slice(7)})` : c.sender);
+    const timeMs = c.time ? new Date(c.time).getTime() || Date.now() : Date.now();
+    return {
+      id: `c_${idx}_${c.time || idx}`,
+      text: `${senderDisplayName}: ${c.text}`,
+      type: 'chat',
+      isSystem: false,
+      timestamp: isNaN(timeMs) ? Date.now() : timeMs,
+    };
+  });
 
   const recentEvents = [...recentJournal, ...recentChat]
+    .filter((e) => currentTime - e.timestamp < FADE_DURATION_MS)
     .sort((a, b) => a.timestamp - b.timestamp)
     .slice(-3);
 
@@ -220,23 +239,32 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
                 className="flex-1 overflow-y-auto pr-1.5 space-y-2 text-xs select-text scrollbar-thin scrollbar-thumb-zinc-700/80 scrollbar-track-zinc-900/40"
               >
                 {chatMessages.length > 0 ? (
-                  chatMessages.map((c, i) => (
-                    <div
-                      key={i}
-                      className="p-2.5 rounded-2xl bg-zinc-900/80 border border-zinc-800/90 text-zinc-200 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between gap-2 text-[10px] font-mono mb-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_#a78bfa]" />
-                          <span className="font-black text-violet-300">{c.sender}</span>
+                  chatMessages.map((c, i) => {
+                    const senderTeam = gameState.teams.find(
+                      (t) => t.id === c.senderPeerId || t.name === c.sender || t.id === c.sender
+                    );
+                    const displayName = senderTeam?.name || (c.sender.startsWith('Joueur-') ? `Limace (${c.sender.slice(7)})` : c.sender);
+                    const teamColor = senderTeam?.color || '#a78bfa';
+                    const teamAvatar = senderTeam?.avatar || '💬';
+                    return (
+                      <div
+                        key={i}
+                        className="p-2.5 rounded-2xl bg-zinc-900/80 border border-zinc-800/90 text-zinc-200 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full shadow-[0_0_6px]" style={{ backgroundColor: teamColor }} />
+                            <span>{teamAvatar}</span>
+                            <span className="font-black" style={{ color: teamColor }}>{displayName}</span>
+                          </div>
+                          <span className="text-zinc-500">{c.time}</span>
                         </div>
-                        <span className="text-zinc-500">{c.time}</span>
+                        <div className="text-xs font-medium text-zinc-100 break-words pl-3">
+                          {c.text}
+                        </div>
                       </div>
-                      <div className="text-xs font-medium text-zinc-100 break-words pl-3">
-                        {c.text}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-xs italic gap-2">
                     <MessageSquare className="w-8 h-8 text-zinc-700" />
@@ -275,10 +303,14 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
         <div className="flex flex-col gap-1 w-full animate-in fade-in duration-200">
           {recentEvents.map((item) => {
             const meta = getLogMeta(item.type);
+            const ageMs = currentTime - item.timestamp;
+            const isFading = ageMs > FADE_DURATION_MS - 1500;
+            const opacity = isFading ? Math.max(0.1, 1 - (ageMs - (FADE_DURATION_MS - 1500)) / 1500) : 1;
             return (
               <div
                 key={item.id}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-xl border shadow-lg truncate max-w-full flex items-center gap-2 ${
+                style={{ opacity }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-xl border shadow-lg truncate max-w-full flex items-center gap-2 transition-opacity duration-300 ${
                   item.isSystem
                     ? item.type === 'death'
                       ? 'bg-red-950/85 border-red-500/50 text-red-200'
