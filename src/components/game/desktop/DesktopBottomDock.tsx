@@ -56,11 +56,11 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
   };
 
   return (
-    <footer className="w-full flex items-end justify-between gap-4 pointer-events-none select-none px-4 pb-3">
+    <footer className="relative w-full flex items-end justify-between pointer-events-none select-none px-4 pb-3">
       {/* ========================================================================= */}
       {/* 1. BOTTOM-LEFT: COMBAT LOG & FLOATING CHAT                                */}
       {/* ========================================================================= */}
-      <div className="pointer-events-auto">
+      <div className="pointer-events-auto z-10 max-w-[380px]">
         <DesktopCombatLog
           gameState={gameState}
           chatMessages={chatMessages}
@@ -71,9 +71,9 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. BOTTOM-CENTER: THE TACTICAL ARSENAL DOCK                               */}
+      {/* 2. BOTTOM-CENTER: THE TACTICAL ARSENAL DOCK (Anchored, never shifts!)     */}
       {/* ========================================================================= */}
-      <div className="pointer-events-auto flex flex-col items-center gap-2">
+      <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 bottom-3 z-10 flex flex-col items-center gap-2">
         {activeSlug?.inVehicleId ? (
           /* Vehicle Control Bay */
           <div className="flex items-center gap-3 bg-amber-950/90 border border-amber-500/80 px-4 py-2 rounded-2xl text-amber-200 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95">
@@ -187,7 +187,7 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
               </div>
             )}
 
-            {/* Prominent Arsenal W.M.D Button */}
+            {/* Prominent Arsenal Button */}
             <button
               type="button"
               onClick={onOpenWeaponPicker}
@@ -197,10 +197,10 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
                   ? 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white border-violet-400 shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:scale-105 active:scale-95 cursor-pointer'
                   : 'bg-zinc-900/60 border-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'
               }`}
-              title="Ouvrir l'Arsenal W.M.D (Touche I ou Tab)"
+              title="Ouvrir l'Arsenal (Touche I ou Tab)"
             >
               <Crosshair className="w-4 h-4 text-violet-200" />
-              <span>ARSENAL W.M.D</span>
+              <span>ARSENAL</span>
               <span className="font-mono text-[10px] bg-black/40 px-1.5 py-0.5 rounded-md border border-white/20">
                 [I / TAB]
               </span>
