@@ -28,6 +28,7 @@ export interface FrameLogEntry {
   renderDurationMs: number;
   physicsDurationMs: number;
   reactRenderDurationMs: number;
+  browserWaitMs: number;
   fpsInstant: number;
   isJank: boolean;
   isCriticalJank: boolean;
@@ -52,6 +53,22 @@ export interface ReactComponentPerf {
   maxDurationMs: number;
 }
 
+export interface EnvironmentMetrics {
+  dpr: number;
+  screenWidth: number;
+  screenHeight: number;
+  windowInnerWidth: number;
+  windowInnerHeight: number;
+  isWindowFocused: boolean;
+  isTabVisible: boolean;
+  hardwareConcurrency: number;
+  deviceMemoryGB: number | null;
+  avgEventLoopLagMs: number;
+  maxEventLoopLagMs: number;
+  longTasksCount: number;
+  longTasksTotalMs: number;
+}
+
 export interface PerfCaptureReport {
   durationMs: number;
   totalFrames: number;
@@ -68,6 +85,10 @@ export interface PerfCaptureReport {
   totalReactRenders: number;
   avgReactRenderMs: number;
   maxReactRenderMs: number;
+  avgBrowserWaitMs: number;
+  browserWaitPercent: number;
+  environment: EnvironmentMetrics;
+  diagnosticVerdict: string;
   reactComponents: ReactComponentPerf[];
   renderPasses: RenderPassMetric[];
   topBottleneckPass: RenderPassMetric | null;
@@ -91,6 +112,13 @@ class PerformanceTracker {
   private captureListeners: ((report: PerfCaptureReport | null, remainingSeconds: number) => void)[] = [];
   private lastReport: PerfCaptureReport | null = null;
   private memoryStartMB: number | null = null;
+
+  // Environment & Diagnostic Tracking
+  private longTasksCount = 0;
+  private longTasksTotalMs = 0;
+  private longTaskObserver: PerformanceObserver | null = null;
+  private eventLoopLags: number[] = [];
+  private eventLoopTimerId: any = null;
 
   // Physics Profiling
   private lastPhysicsDurationMs = 0;
@@ -224,6 +252,11 @@ class PerformanceTracker {
       memoryMB = Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
     }
 
+    const browserWaitMs = Math.max(
+      0,
+      Math.round((frameIntervalMs - (renderDurationMs + this.lastPhysicsDurationMs + reactDuration)) * 100) / 100
+    );
+
     const frameEntry: FrameLogEntry = {
       frameId: this.nextFrameId++,
       timeOffsetMs,
@@ -231,6 +264,7 @@ class PerformanceTracker {
       renderDurationMs: Math.round(renderDurationMs * 100) / 100,
       physicsDurationMs: this.lastPhysicsDurationMs,
       reactRenderDurationMs: reactDuration,
+      browserWaitMs,
       fpsInstant,
       isJank,
       isCriticalJank,
@@ -254,6 +288,36 @@ class PerformanceTracker {
     this.capturedFrames = [];
     this.nextFrameId = 1;
     this.lastReport = null;
+
+    this.longTasksCount = 0;
+    this.longTasksTotalMs = 0;
+    this.eventLoopLags = [];
+
+    // Long Tasks Observer
+    try {
+      if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
+        this.longTaskObserver = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            this.longTasksCount++;
+            this.longTasksTotalMs += entry.duration;
+          }
+        });
+        this.longTaskObserver.observe({ entryTypes: ['longtask'] });
+      }
+    } catch {
+      this.longTaskObserver = null;
+    }
+
+    // Event Loop Lag Sampler (Measures main thread queue congestion)
+    let lastLagCheck = performance.now();
+    this.eventLoopTimerId = setInterval(() => {
+      const nowLag = performance.now();
+      const delay = nowLag - lastLagCheck - 50; // Expected 50ms interval
+      if (delay > 0) {
+        this.eventLoopLags.push(delay);
+      }
+      lastLagCheck = nowLag;
+    }, 50);
 
     this.physicsTickCount = 0;
     this.sumPhysicsDurationMs = 0;
@@ -292,6 +356,18 @@ class PerformanceTracker {
   private finishCapture(): void {
     if (!this.isCapturing) return;
     this.isCapturing = false;
+
+    if (this.eventLoopTimerId) {
+      clearInterval(this.eventLoopTimerId);
+      this.eventLoopTimerId = null;
+    }
+    if (this.longTaskObserver) {
+      try {
+        this.longTaskObserver.disconnect();
+      } catch {}
+      this.longTaskObserver = null;
+    }
+
     const actualDurationMs = Math.round(performance.now() - this.captureStartTime);
 
     const frames = [...this.capturedFrames];
@@ -303,6 +379,7 @@ class PerformanceTracker {
     let sumInterval = 0;
     let sumRender = 0;
     let maxRender = 0;
+    let sumBrowserWait = 0;
     let jankCount = 0;
     let criticalJankCount = 0;
 
@@ -315,6 +392,7 @@ class PerformanceTracker {
       sumInterval += f.frameIntervalMs;
       sumRender += f.renderDurationMs;
       maxRender = Math.max(maxRender, f.renderDurationMs);
+      sumBrowserWait += f.browserWaitMs;
       if (f.isJank) jankCount++;
       if (f.isCriticalJank) criticalJankCount++;
       fpsList.push(f.fpsInstant);
@@ -348,6 +426,11 @@ class PerformanceTracker {
         ? Math.round((this.sumReactDurationMs / this.totalReactRendersCount) * 100) / 100
         : 0;
 
+    const avgRenderDurationMs = totalFrames > 0 ? Math.round((sumRender / totalFrames) * 100) / 100 : 0;
+    const avgFrameIntervalMs = totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0;
+    const avgBrowserWaitMs = totalFrames > 0 ? Math.round((sumBrowserWait / totalFrames) * 10) / 10 : 0;
+    const browserWaitPercent = sumInterval > 0 ? Math.round((sumBrowserWait / sumInterval) * 1000) / 10 : 0;
+
     const reactComponents: ReactComponentPerf[] = [];
     this.reactStatsMap.forEach((val, key) => {
       reactComponents.push({
@@ -380,6 +463,40 @@ class PerformanceTracker {
     renderPasses.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
     const topBottleneckPass = renderPasses.length > 0 ? renderPasses[0] : null;
 
+    const avgLag =
+      this.eventLoopLags.length > 0
+        ? Math.round((this.eventLoopLags.reduce((a, b) => a + b, 0) / this.eventLoopLags.length) * 10) / 10
+        : 0;
+    const maxLag =
+      this.eventLoopLags.length > 0 ? Math.round(Math.max(...this.eventLoopLags) * 10) / 10 : 0;
+
+    const environment: EnvironmentMetrics = {
+      dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+      screenWidth: typeof window !== 'undefined' ? window.screen?.width || 0 : 0,
+      screenHeight: typeof window !== 'undefined' ? window.screen?.height || 0 : 0,
+      windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth || 0 : 0,
+      windowInnerHeight: typeof window !== 'undefined' ? window.innerHeight || 0 : 0,
+      isWindowFocused: typeof document !== 'undefined' ? document.hasFocus() : true,
+      isTabVisible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
+      hardwareConcurrency: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4,
+      deviceMemoryGB: typeof (navigator as any)?.deviceMemory === 'number' ? (navigator as any).deviceMemory : null,
+      avgEventLoopLagMs: avgLag,
+      maxEventLoopLagMs: maxLag,
+      longTasksCount: this.longTasksCount,
+      longTasksTotalMs: Math.round(this.longTasksTotalMs * 10) / 10,
+    };
+
+    let diagnosticVerdict = '';
+    if (avgBrowserWaitMs >= 15 && avgRenderDurationMs <= 4.0) {
+      diagnosticVerdict = `Le moteur JavaScript et le Canvas sont ultra-rapides (${avgRenderDurationMs}ms / trame). Les ${avgBrowserWaitMs}ms restantes (${browserWaitPercent}% du temps) sont du temps d'attente VSync du navigateur (fréquence écran / composition Chromium).`;
+    } else if (avgRenderDurationMs > 8.0) {
+      diagnosticVerdict = `Le rendu Canvas est la cause principale de ralentissement (${avgRenderDurationMs}ms / trame). La passe la plus lourde est ${topBottleneckPass?.label || 'Inconnue'}.`;
+    } else if (avgLag > 20) {
+      diagnosticVerdict = `La file d'attente JavaScript (Event Loop) est ralentie (${avgLag}ms de latence) par des tâches d'arrière-plan.`;
+    } else {
+      diagnosticVerdict = `Performance équilibrée : Dessin ${avgRenderDurationMs}ms, Physique ${avgPhysicsDurationMs}ms, Attente Navigateur ${avgBrowserWaitMs}ms.`;
+    }
+
     const report: PerfCaptureReport = {
       durationMs: actualDurationMs,
       totalFrames,
@@ -387,8 +504,8 @@ class PerformanceTracker {
       minFps: minFps === 999 ? 0 : minFps,
       maxFps,
       p1LowFps,
-      avgFrameIntervalMs: totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0,
-      avgRenderDurationMs: totalFrames > 0 ? Math.round((sumRender / totalFrames) * 100) / 100 : 0,
+      avgFrameIntervalMs,
+      avgRenderDurationMs,
       maxRenderDurationMs: Math.round(maxRender * 100) / 100,
       avgPhysicsDurationMs,
       maxPhysicsDurationMs: Math.round(this.maxPhysicsDurationMs * 100) / 100,
@@ -396,6 +513,10 @@ class PerformanceTracker {
       totalReactRenders: this.totalReactRendersCount,
       avgReactRenderMs,
       maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
+      avgBrowserWaitMs,
+      browserWaitPercent,
+      environment,
+      diagnosticVerdict,
       reactComponents,
       renderPasses,
       topBottleneckPass,

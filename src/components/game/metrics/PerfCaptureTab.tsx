@@ -62,6 +62,31 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
       {/* Results Report View */}
       {perfReport ? (
         <div className="space-y-4">
+          {/* Automatic Diagnostic Verdict Banner */}
+          {perfReport.diagnosticVerdict && (
+            <div className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-cyan-950/40 border border-amber-500/40 rounded-xl p-3.5 flex items-start gap-3 text-xs">
+              <span className="text-xl shrink-0">🔬</span>
+              <div className="space-y-1">
+                <div className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">
+                  Diagnostic Automatique du Frametime
+                </div>
+                <div className="text-zinc-200 leading-relaxed font-sans font-medium">
+                  {perfReport.diagnosticVerdict}
+                </div>
+                {perfReport.environment && (
+                  <div className="text-[10px] text-zinc-400 font-mono pt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    <span>Fenêtre : {perfReport.environment.isWindowFocused ? '✅ Active / Focus' : '⚠️ Arrière-plan'}</span>
+                    <span>Onglet : {perfReport.environment.isTabVisible ? 'Visible' : 'Masqué'}</span>
+                    <span>DPR : {perfReport.environment.dpr}x</span>
+                    <span>Écran : {perfReport.environment.screenWidth}x{perfReport.environment.screenHeight}</span>
+                    <span>Latence Event Loop : {perfReport.environment.avgEventLoopLagMs}ms</span>
+                    <span>Tâches Longues (&gt;50ms) : {perfReport.environment.longTasksCount}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Summary Dashboard Cards */}
           <div className="grid grid-cols-5 gap-2.5">
             {/* FPS Moy & Min/Max */}
@@ -102,17 +127,14 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
               </div>
             </div>
 
-            {/* Saccades & Jank */}
+            {/* Browser VSync Wait vs JS */}
             <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
-              <div className="text-[10px] font-bold uppercase text-zinc-400">Saccades (&gt;20ms)</div>
-              <div className="text-xl font-black font-mono text-amber-400 mt-0.5">
-                {perfReport.jankFrameCount}{' '}
-                <span className="text-xs font-normal text-zinc-400">
-                  ({perfReport.jankPercent}%)
-                </span>
+              <div className="text-[10px] font-bold uppercase text-zinc-400">Attente Navigateur</div>
+              <div className="text-xl font-black font-mono text-indigo-400 mt-0.5">
+                {perfReport.avgBrowserWaitMs ?? 0} <span className="text-xs">ms</span>
               </div>
               <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                Critiques (&gt;33ms) : <strong className="text-red-400">{perfReport.criticalJankCount}</strong>
+                {perfReport.browserWaitPercent ?? 0}% du cycle VSync
               </div>
             </div>
 
