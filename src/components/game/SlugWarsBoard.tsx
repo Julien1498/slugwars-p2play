@@ -225,13 +225,15 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </div>
       )}
 
-      <BoardChatDrawer
-        showDrawer={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        gameState={gameState}
-        chatMessages={chatMessages}
-        sendChat={sendChat}
-      />
+      {isTouch && (
+        <BoardChatDrawer
+          showDrawer={showDrawer}
+          onClose={() => setShowDrawer(false)}
+          gameState={gameState}
+          chatMessages={chatMessages}
+          sendChat={sendChat}
+        />
+      )}
 
       <MobileTouchOverlay
         isMyTurn={isMyTurn}

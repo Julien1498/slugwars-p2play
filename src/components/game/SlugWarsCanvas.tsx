@@ -1183,46 +1183,13 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       <div
         ref={fpsBadgeRef}
         style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
-        className="absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-lg text-xs font-mono font-black text-emerald-400 shadow-lg flex items-center gap-2 select-none z-20"
+        className="absolute top-16 right-4 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-xl text-xs font-mono font-black text-emerald-400 shadow-xl flex items-center gap-2 select-none z-20"
       >
         <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
         <span ref={fpsTextRef}>60 FPS</span>
       </div>
 
       <canvas ref={canvasRef} className="block w-full h-full" />
-
-      {/* Floating Zoom & Pan Controls Widget in Bottom Right (Desktop Only) */}
-      {!isTouch && (
-        <div
-          onMouseDown={(e) => e.stopPropagation()}
-          className="absolute right-3 bottom-3 z-20 flex items-center gap-1.5 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2 py-1 rounded-xl shadow-lg"
-        >
-          <button
-            type="button"
-            onClick={handleZoomOut}
-            className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
-            title="Dézoomer (- / Molette Bas)"
-          >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={handleCenterCamera}
-            className="px-2 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-bold text-[10px] flex items-center justify-center transition active:scale-95"
-            title="Recentrer la vue & Zoom 100% (Touche C)"
-          >
-            {Math.round(zoomLevel * 100)}%
-          </button>
-          <button
-            type="button"
-            onClick={handleZoomIn}
-            className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 font-black text-xs flex items-center justify-center transition active:scale-95"
-            title="Zoomer (+ / Molette Haut)"
-          >
-            +
-          </button>
-        </div>
-      )}
     </div>
   );
 });
