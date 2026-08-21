@@ -49,8 +49,8 @@ export const GameOverStatsModal: React.FC<GameOverStatsModalProps> = ({
   const reaperTeam = [...teamSummaries].sort((a, b) => b.kills - a.kills)[0];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-zinc-900 border border-violet-500/60 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto pointer-events-auto select-none">
+      <div className="bg-zinc-900 border border-violet-500/60 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl animate-in fade-in zoom-in duration-300 pointer-events-auto">
         
         {/* Victory Banner Header */}
         <div className="text-center space-y-2">
