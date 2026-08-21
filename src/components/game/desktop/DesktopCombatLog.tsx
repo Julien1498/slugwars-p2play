@@ -23,13 +23,13 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Global hotkey 'T' or 'Enter' to open chat
+  // Global hotkey 'T' to open chat (never 'Enter' while playing!)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea') return;
 
-      if (e.key === 't' || e.key === 'T' || e.key === 'Enter') {
+      if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
         setActiveTab('chat');
         if (!showDrawer) {
@@ -41,6 +41,7 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showDrawer, onToggleDrawer]);
+
 
   // Auto-scroll to bottom when new logs or messages arrive
   useEffect(() => {

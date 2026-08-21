@@ -85,16 +85,21 @@ export class PhaseManager {
       activeSlug.isBlowtorching = false;
       activeSlug.aimPower = 5;
 
-      // Verify weapon ammo
+      // Verify weapon ammo for all slugs in the active team
       const team = state.teams.find((t) => t.id === activeSlug.teamId);
       if (team) {
-        const ammo = team.inventory[activeSlug.selectedWeaponId] ?? -1;
-        if (ammo === 0) {
-          activeSlug.selectedWeaponId = 'bazooka';
+        for (const s of state.slugs) {
+          if (s.teamId === team.id) {
+            const ammo = team.inventory[s.selectedWeaponId] ?? -1;
+            if (ammo === 0) {
+              s.selectedWeaponId = 'bazooka';
+            }
+          }
         }
       }
     }
   }
+
 
   /**
    * Transition to RETREAT (timed flee window after placing delay weapons)

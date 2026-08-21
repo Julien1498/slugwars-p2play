@@ -31,6 +31,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       ninja_rope: -1,
       girder: 3,
       airdrop: 2,
+      skip_turn: -1,
     },
   },
   WMD_CRAZY: {
@@ -55,6 +56,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       ninja_rope: -1,
       girder: 5,
       airdrop: 4,
+      skip_turn: -1,
     },
   },
   UNLIMITED_CHAOS: {

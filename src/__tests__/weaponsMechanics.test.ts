@@ -320,4 +320,49 @@ describe('Weapons Arsenal & Mechanics', () => {
     // Wall right ahead should now be hollowed out by the blowtorch
     expect(engine.terrain.isSolid(wallX, wallY)).toBe(false);
   });
+
+  it('executes skip_turn weapon and passes turn cleanly', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    engine.selectWeapon('skip_turn');
+    expect(activeSlug.selectedWeaponId).toBe('skip_turn');
+
+    engine.fireWeapon();
+    expect(engine.state.phase).toBe('RESOLVING');
+  });
+
+  it('resets selectedWeaponId to bazooka for all team slugs when ammo reaches 0', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 2 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    const teamSlugs = engine.state.slugs.filter((s) => s.teamId === activeSlug.teamId);
+    const activeTeam = engine.state.teams.find((t) => t.id === activeSlug.teamId)!;
+
+    // Both slugs in team have holy_grenade selected
+    activeTeam.inventory['holy_grenade'] = 1;
+    for (const s of teamSlugs) {
+      s.selectedWeaponId = 'holy_grenade';
+    }
+
+    // Fire the last holy_grenade
+    engine.fireWeapon({ x: 500, y: 300 });
+
+    // Inventory reaches 0
+    expect(activeTeam.inventory['holy_grenade']).toBe(0);
+
+    // All slugs in the team should be reset to bazooka
+    for (const s of teamSlugs) {
+      expect(s.selectedWeaponId).toBe('bazooka');
+    }
+  });
 });
+

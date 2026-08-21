@@ -19,7 +19,9 @@ export type WeaponId =
   | 'teleport'
   | 'ninja_rope'
   | 'girder'
-  | 'airdrop';
+  | 'airdrop'
+  | 'skip_turn';
+
 
 export type WeaponCategory =
   | 'EXPLOSIVE'
@@ -39,7 +41,9 @@ export type WeaponBehavior =
   | 'TELEPORT'
   | 'NINJA_ROPE'
   | 'GIRDER'
-  | 'AIRDROP';
+  | 'AIRDROP'
+  | 'SKIP_TURN';
+
 
 export interface FireContext {
   originX: number;
