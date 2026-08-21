@@ -1,3 +1,26 @@
+export const RENDER_PASS_LABELS: Record<string, string> = {
+  sky_atmosphere: '🌌 Ciel & Montagnes',
+  terrain_buffer: '🏜️ Terrain Destructible',
+  props_girders: '🏗️ Poutres & Objets HD',
+  occlusion_mask: '🕳️ Masque Occlusion',
+  decor_mines: '🦋 Décors & Mines',
+  slugs_ropes: '🐌 Limaces & Cordes',
+  projectiles_fx: '🚀 Projectiles & FX',
+  aim_placement: '🎯 Visée & Guides',
+  ocean_waves: '🌊 Océan & Vagues',
+  debug_hitboxes: '📐 Hitboxes Debug',
+};
+
+export interface RenderPassMetric {
+  passId: string;
+  label: string;
+  totalDurationMs: number;
+  avgDurationMs: number;
+  maxDurationMs: number;
+  percentOfRender: number;
+  callCount: number;
+}
+
 export interface FrameLogEntry {
   frameId: number;
   timeOffsetMs: number;
@@ -18,6 +41,7 @@ export interface FrameLogEntry {
     mines: number;
     crates: number;
   };
+  renderPasses?: Record<string, number>;
 }
 
 export interface ReactComponentPerf {
@@ -45,6 +69,8 @@ export interface PerfCaptureReport {
   avgReactRenderMs: number;
   maxReactRenderMs: number;
   reactComponents: ReactComponentPerf[];
+  renderPasses: RenderPassMetric[];
+  topBottleneckPass: RenderPassMetric | null;
   jankFrameCount: number;
   criticalJankCount: number;
   jankPercent: number;
@@ -79,6 +105,11 @@ class PerformanceTracker {
   private maxReactDurationMs = 0;
   private reactStatsMap = new Map<string, { count: number; totalMs: number; maxMs: number }>();
 
+  // Render Passes Profiling
+  private currentFramePasses: Record<string, number> = {};
+  private renderPassStatsMap = new Map<string, { count: number; totalMs: number; maxMs: number }>();
+  public liveTopPasses: { id: string; label: string; ms: number }[] = [];
+
   // In-Game Permanent Zero-Cost FPS HUD Toggle
   private isFpsHudEnabled: boolean = typeof window !== 'undefined' && localStorage.getItem('slugwars_fps_hud_enabled') === 'true';
   private fpsHudListeners: ((enabled: boolean) => void)[] = [];
@@ -98,6 +129,19 @@ class PerformanceTracker {
       this.physicsTickCount++;
       this.sumPhysicsDurationMs += durationMs;
       this.maxPhysicsDurationMs = Math.max(this.maxPhysicsDurationMs, durationMs);
+    }
+  }
+
+  public recordRenderPass(passId: string, durationMs: number): void {
+    const roundedMs = Math.round(durationMs * 1000) / 1000;
+    this.currentFramePasses[passId] = roundedMs;
+
+    if (this.isCapturing) {
+      const existing = this.renderPassStatsMap.get(passId) || { count: 0, totalMs: 0, maxMs: 0 };
+      existing.count++;
+      existing.totalMs += durationMs;
+      existing.maxMs = Math.max(existing.maxMs, durationMs);
+      this.renderPassStatsMap.set(passId, existing);
     }
   }
 
@@ -156,6 +200,18 @@ class PerformanceTracker {
     const reactDuration = Math.round(this.currentFrameReactDurationMs * 100) / 100;
     this.currentFrameReactDurationMs = 0; // reset for next frame
 
+    // Update real-time live top 3 slowest passes
+    const passEntries = Object.entries(this.currentFramePasses).map(([id, ms]) => ({
+      id,
+      label: RENDER_PASS_LABELS[id] || id,
+      ms,
+    }));
+    passEntries.sort((a, b) => b.ms - a.ms);
+    this.liveTopPasses = passEntries.slice(0, 3);
+
+    const framePasses = { ...this.currentFramePasses };
+    this.currentFramePasses = {}; // reset for next frame
+
     if (!this.isCapturing) return;
 
     const timeOffsetMs = Math.round(now - this.captureStartTime);
@@ -180,6 +236,7 @@ class PerformanceTracker {
       isCriticalJank,
       memoryMB,
       entities: { ...entities },
+      renderPasses: framePasses,
     };
 
     this.capturedFrames.push(frameEntry);
@@ -207,6 +264,9 @@ class PerformanceTracker {
     this.sumReactDurationMs = 0;
     this.maxReactDurationMs = 0;
     this.reactStatsMap.clear();
+
+    this.currentFramePasses = {};
+    this.renderPassStatsMap.clear();
 
     const mem = (performance as any)?.memory;
     this.memoryStartMB = mem?.usedJSHeapSize
@@ -300,6 +360,26 @@ class PerformanceTracker {
     });
     reactComponents.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
 
+    // Compute Render Passes breakdown
+    const totalRenderSum = sumRender > 0 ? sumRender : 1;
+    const renderPasses: RenderPassMetric[] = [];
+    this.renderPassStatsMap.forEach((val, key) => {
+      const avgMs = Math.round((val.totalMs / val.count) * 100) / 100;
+      const maxMs = Math.round(val.maxMs * 100) / 100;
+      const percentOfRender = Math.round((val.totalMs / totalRenderSum) * 1000) / 10;
+      renderPasses.push({
+        passId: key,
+        label: RENDER_PASS_LABELS[key] || key,
+        totalDurationMs: Math.round(val.totalMs * 100) / 100,
+        avgDurationMs: avgMs,
+        maxDurationMs: maxMs,
+        percentOfRender,
+        callCount: val.count,
+      });
+    });
+    renderPasses.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
+    const topBottleneckPass = renderPasses.length > 0 ? renderPasses[0] : null;
+
     const report: PerfCaptureReport = {
       durationMs: actualDurationMs,
       totalFrames,
@@ -317,6 +397,8 @@ class PerformanceTracker {
       avgReactRenderMs,
       maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
       reactComponents,
+      renderPasses,
+      topBottleneckPass,
       jankFrameCount: jankCount,
       criticalJankCount,
       jankPercent: totalFrames > 0 ? Math.round((jankCount / totalFrames) * 1000) / 10 : 0,
