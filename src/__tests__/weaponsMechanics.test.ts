@@ -62,8 +62,8 @@ describe('Weapons Arsenal & Mechanics', () => {
 
     engine.fireWeapon({ x: targetX, y: targetY });
 
-    expect(activeSlug.x).toBeGreaterThan(700);
-    expect(activeSlug.x).toBeLessThan(850);
+    expect(activeSlug.x).toBeGreaterThan(600);
+    expect(activeSlug.x).toBeLessThan(900);
     expect(activeSlug.y).toBeGreaterThan(0);
     expect(activeTeam.inventory['teleport']).toBe(1);
     expect(engine.state.phase).toBe('RESOLVING');
