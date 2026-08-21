@@ -58,6 +58,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   onUpdateAim,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const buffersRef = useRef<TerrainBuffers | null>(null);
 
@@ -83,6 +84,41 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     };
     return () => {
       delete (SlugWarsCanvas as any)._updateExternalState;
+    };
+  }, []);
+
+  // Zero-Reflow Container Resize Observer (Eliminates layout thrashing in 60 FPS RAF loop)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateRect = () => {
+      const r = container.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        containerRectRef.current = { width: r.width, height: r.height };
+      }
+    };
+
+    updateRect();
+
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver((entries) => {
+            for (const entry of entries) {
+              const cr = entry.contentRect;
+              if (cr.width > 0 && cr.height > 0) {
+                containerRectRef.current = { width: cr.width, height: cr.height };
+              }
+            }
+          })
+        : null;
+
+    if (ro) ro.observe(container);
+    window.addEventListener('resize', updateRect);
+
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', updateRect);
     };
   }, []);
 
@@ -804,7 +840,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = (canvas.getContext('2d', { alpha: false, desynchronized: true }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
     if (!ctx) return;
 
     let animId: number;
@@ -834,9 +870,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      const container = containerRef.current;
       const dpr = window.devicePixelRatio || 1;
-      const cRect = container ? container.getBoundingClientRect() : { width, height };
+      const cRect = containerRectRef.current;
 
       const targetW = Math.max(100, Math.round(cRect.width * dpr));
       const targetH = Math.max(100, Math.round(cRect.height * dpr));
