@@ -33,7 +33,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   return (
-    <div className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex flex-col items-center p-3 md:p-5 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
+    <div className="h-[100dvh] w-full bg-zinc-950 text-zinc-100 flex flex-col items-center p-3 md:p-5 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
       {/* Background Fixed HD Vector War Room Canvas */}
       <LobbyBackdropCanvas />
 
@@ -42,7 +42,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
       <div className="fixed bottom-10 right-1/4 w-80 h-80 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-5xl w-full space-y-3 my-auto py-2">
+      <div className="relative z-10 max-w-5xl w-full space-y-3 my-auto py-4">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between gap-3 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-4 py-2.5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
