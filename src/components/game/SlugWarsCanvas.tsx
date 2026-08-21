@@ -840,12 +840,16 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = (canvas.getContext('2d', { alpha: false, desynchronized: true }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
+    const ctx = (canvas.getContext('2d', { alpha: false }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
     if (!ctx) return;
 
     let animId: number;
 
     const render = () => {
+      // 1. Professional Game Engine Standard: Schedule next frame IMMEDIATELY at the start of RAF
+      // to latch onto Chromium's very next VSync cycle without missing the compositor deadline.
+      animId = requestAnimationFrame(render);
+
       const renderStart = performance.now();
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
@@ -1304,14 +1308,12 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             }`;
           }
           if (fpsBadgeRef.current) {
-            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border rounded-2xl text-xs font-mono shadow-2xl flex flex-col gap-0.5 select-none z-20 transition-all ${
+            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border rounded-2xl text-xs font-mono shadow-2xl flex flex-col gap-0.5 select-none z-20 ${
               instantFps >= 50 ? 'text-emerald-400 border-emerald-500/30' : instantFps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
             }`;
           }
         }
       }
-
-      animId = requestAnimationFrame(render);
     };
 
     animId = requestAnimationFrame(render);
@@ -1334,7 +1336,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none', contain: 'layout paint size' }}
       className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair select-none"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
@@ -1359,7 +1361,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         </div>
       </div>
 
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <canvas
+        ref={canvasRef}
+        style={{
+          contain: 'strict',
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+        }}
+        className="block w-full h-full"
+      />
     </div>
   );
 };
