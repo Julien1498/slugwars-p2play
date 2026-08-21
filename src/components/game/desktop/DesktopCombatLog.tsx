@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { GameState, JournalEntry } from '../../../core/types';
 import type { ChatMessage } from 'p2play-core';
 import { MessageSquare, Send, X, ScrollText, Skull, Zap, Rocket, Info, Sparkles, ShieldAlert } from 'lucide-react';
@@ -57,23 +57,31 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     setInputText('');
   };
 
-  // Recent floating feed events (last 3 items)
-  const recentEvents = [
-    ...(gameState.journal || []).slice(-4).map((j: JournalEntry) => ({
-      id: `j_${j.id || j.timestamp}_${j.message}`,
-      text: j.message,
-      type: j.type || 'info',
-      isSystem: true,
-      timestamp: j.timestamp,
-    })),
-    ...chatMessages.slice(-3).map((c, idx) => ({
-      id: `c_${idx}_${c.time}`,
-      text: `${c.sender}: ${c.text}`,
-      type: 'chat',
-      isSystem: false,
-      timestamp: Date.now(),
-    })),
-  ].slice(-3);
+  // Extract recent logs & messages for the floating feed (newest are at index 0 of gameState.journal)
+  const recentJournal = (gameState.journal || []).slice(0, 4).map((j: JournalEntry) => ({
+    id: `j_${j.id || j.timestamp}_${j.message}`,
+    text: j.message,
+    type: j.type || 'info',
+    isSystem: true,
+    timestamp: j.timestamp,
+  }));
+
+  const recentChat = chatMessages.slice(-3).map((c, idx) => ({
+    id: `c_${idx}_${c.time}`,
+    text: `${c.sender}: ${c.text}`,
+    type: 'chat',
+    isSystem: false,
+    timestamp: Date.now(),
+  }));
+
+  const recentEvents = [...recentJournal, ...recentChat]
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-3);
+
+  // Chronological journal order (oldest at top -> newest at bottom, for natural bottom scroll)
+  const chronologicalJournal = useMemo(() => {
+    return [...(gameState.journal || [])].reverse();
+  }, [gameState.journal]);
 
   const getLogMeta = (type?: string) => {
     switch (type) {
@@ -172,8 +180,8 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto pr-1.5 space-y-2 text-xs select-text scrollbar-thin scrollbar-thumb-zinc-700/80 scrollbar-track-zinc-900/40"
             >
-              {gameState.journal && gameState.journal.length > 0 ? (
-                gameState.journal.map((j) => {
+              {chronologicalJournal.length > 0 ? (
+                chronologicalJournal.map((j) => {
                   const meta = getLogMeta(j.type);
                   return (
                     <div
