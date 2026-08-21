@@ -282,18 +282,14 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
               <button
                 type="button"
                 onClick={() => setShowMenuPopover(!showMenuPopover)}
-                className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                className={`p-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-sm ${
                   showMenuPopover
                     ? 'bg-zinc-800 border-zinc-600 text-white shadow-md'
-                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95'
                 }`}
-                title="Options, règles et gestion de session"
+                title="Options, règles et métriques"
               >
                 <Settings className="w-4 h-4 text-zinc-300" />
-                <span className="hidden sm:inline">Menu</span>
-                <ChevronDown
-                  className={`w-3 h-3 text-zinc-400 transition-transform ${showMenuPopover ? 'rotate-180' : ''}`}
-                />
               </button>
 
               {/* Menu Popover Dropdown */}
