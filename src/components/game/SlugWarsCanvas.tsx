@@ -328,6 +328,38 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, [gameState.activeSlugId, gameState.phase, terrain.data.width, terrain.data.height]);
 
+  // Global shortcut 'c' or 'C' to instantly re-center camera on active slug
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+        if (activeSlug && activeSlug.isPlaced && containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
+          const totalScale = fitScale * zoomRef.current;
+          const targetPanX = -(activeSlug.x - terrain.data.width / 2) * totalScale;
+          const targetPanY = -(activeSlug.y - terrain.data.height / 2) * totalScale;
+          const clamped = clampPanOffset(
+            { x: targetPanX, y: targetPanY },
+            zoomRef.current,
+            rect.width,
+            rect.height,
+            terrain.data.width,
+            terrain.data.height
+          );
+          targetCameraPanRef.current = clamped;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.slugs, gameState.activeSlugId, terrain.data.width, terrain.data.height]);
+
   const onPlaceSlugRef = useRef(onPlaceSlug);
   onPlaceSlugRef.current = onPlaceSlug;
   const onSelectPlacementPointRef = useRef(onSelectPlacementPoint);

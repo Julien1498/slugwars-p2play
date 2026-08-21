@@ -3,16 +3,7 @@ import { GameState, Slug, ActiveProjectile } from '../../../core/types';
 import { getWeapon } from '../../../core/weapons/registry';
 import { DesktopCombatLog } from './DesktopCombatLog';
 import type { ChatMessage } from 'p2play-core';
-import {
-  Crosshair,
-  Zap,
-  Clock,
-  Compass,
-  ArrowUpRight,
-  Sparkles,
-  Shield,
-  Layers,
-} from 'lucide-react';
+import { Crosshair, Layers } from 'lucide-react';
 
 interface DesktopBottomDockProps {
   gameState: GameState;
@@ -132,19 +123,21 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
                     {currentWeapon.name}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span
-                      className={`text-[11px] font-black px-1.5 py-0.2 rounded-md ${
-                        currentWeapon.id === 'blowtorch'
-                          ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
-                          : ammo === -1
-                          ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
-                          : ammo > 0
-                          ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
-                          : 'bg-zinc-900 text-zinc-600'
-                      }`}
-                    >
-                      {ammoLabel}
-                    </span>
+                    {isMyTurn && (
+                      <span
+                        className={`text-[11px] font-black px-1.5 py-0.2 rounded-md ${
+                          currentWeapon.id === 'blowtorch'
+                            ? 'bg-amber-950/90 text-amber-300 border border-amber-500/60'
+                            : ammo === -1
+                            ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/60'
+                            : ammo > 0
+                            ? 'bg-violet-950/90 text-violet-300 border border-violet-500/60'
+                            : 'bg-zinc-900 text-zinc-600'
+                        }`}
+                      >
+                        {ammoLabel}
+                      </span>
+                    )}
                     <span className="text-[10px] text-zinc-400 font-semibold">
                       {currentWeapon.windAffected ? '💨 Vent' : '🎯 Direct'}
                     </span>
@@ -217,44 +210,11 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. BOTTOM-RIGHT: AIM COMPASS & KEYBOARD SHORTCUTS                          */}
+      {/* 3. BOTTOM-RIGHT: KEYBOARD SHORTCUTS REMINDER                              */}
       {/* ========================================================================= */}
       <div className="pointer-events-auto flex items-center gap-2">
-        {/* Aim & Power Live Compass Badge */}
-        {activeSlug && (
-          <div className="bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-3">
-            {/* Aim Angle */}
-            <div className="flex items-center gap-1.5">
-              <div className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-sky-400">
-                <Compass className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-[9px] font-bold text-zinc-500 uppercase">Angle</span>
-                <span className="font-mono text-xs font-black text-sky-300 mt-0.5">
-                  {activeSlug.aimAngle}° {activeSlug.facing === 'right' ? '↗️' : '↖️'}
-                </span>
-              </div>
-            </div>
-
-            <div className="w-px h-6 bg-zinc-800" />
-
-            {/* Aim Power */}
-            <div className="flex items-center gap-1.5">
-              <div className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-amber-400">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-[9px] font-bold text-zinc-500 uppercase">Puissance</span>
-                <span className="font-mono text-xs font-black text-amber-300 mt-0.5">
-                  {Math.round(activeSlug.aimPower || 0)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Compact Keybinds Reminder */}
-        <div className="hidden xl:flex items-center gap-1.5 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 px-3 py-2 rounded-2xl shadow-2xl text-[11px] text-zinc-400">
+        <div className="hidden lg:flex items-center gap-1.5 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 px-3 py-2 rounded-2xl shadow-2xl text-[11px] text-zinc-400">
           <span className="font-mono font-bold text-zinc-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
             Q / D
           </span>
@@ -269,6 +229,11 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
             ▲ / ▼
           </span>
           <span>Viser</span>
+          <span className="text-zinc-700">•</span>
+          <span className="font-mono font-bold text-zinc-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+            Clic-Droit
+          </span>
+          <span>Caméra</span>
           <span className="text-zinc-700">•</span>
           <span className="font-mono font-bold text-zinc-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
             C

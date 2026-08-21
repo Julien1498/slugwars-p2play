@@ -16,6 +16,8 @@ import {
   ChevronDown,
   AlertTriangle,
   Flame,
+  Activity,
+  Gauge,
 } from 'lucide-react';
 
 interface DesktopTopHeaderProps {
@@ -39,13 +41,19 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
   showHitboxes = false,
   onToggleHitboxes,
   onOpenRules,
+  onOpenMetrics,
   onRestartGame,
   onExit,
 }) => {
   const [showConfirmLobby, setShowConfirmLobby] = useState(false);
   const [showMenuPopover, setShowMenuPopover] = useState(false);
+  const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
   const menuRef = useRef<HTMLDivElement>(null);
   const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
+
+  useEffect(() => {
+    return perfTracker.onFpsHudToggle((enabled) => setFpsHudActive(enabled));
+  }, []);
 
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
@@ -82,7 +90,7 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
     });
   }, [gameState.teams, gameState.slugs, gameState.activeTeamId, gameState.config]);
 
-  const turnTime = gameState.turnTimer ?? 0;
+  const turnTime = Math.ceil(gameState.turnTimer ?? 0);
   const isTimeUrgent = turnTime <= 10 && turnTime > 0;
   const activeSlugMaxHp = gameState.config.slugHp || 100;
   const activeSlugHpPercent = activeSlug ? Math.max(0, Math.min(1, activeSlug.hp / activeSlugMaxHp)) : 0;
@@ -328,6 +336,41 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
                       <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${showHitboxes ? 'bg-cyan-950 text-cyan-300 border border-cyan-700' : 'bg-zinc-800 text-zinc-500'}`}>
                         {showHitboxes ? 'ON' : 'OFF'}
                       </span>
+                    </button>
+                  )}
+
+                  {/* In-Game FPS HUD Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !fpsHudActive;
+                      perfTracker.setFpsHudEnabled(next);
+                      setFpsHudActive(next);
+                      setShowMenuPopover(false);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Gauge className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Compteur FPS</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${fpsHudActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {fpsHudActive ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Metrics Monitor Modal Trigger */}
+                  {onOpenMetrics && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenMetrics();
+                        setShowMenuPopover(false);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center gap-2 text-emerald-300"
+                    >
+                      <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Métriques & Réseau P2P</span>
                     </button>
                   )}
 
