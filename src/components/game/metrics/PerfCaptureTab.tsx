@@ -66,23 +66,80 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
           {perfReport.diagnosticVerdict && (
             <div className="bg-gradient-to-r from-amber-950/40 via-zinc-900 to-cyan-950/40 border border-amber-500/40 rounded-xl p-3.5 flex items-start gap-3 text-xs">
               <span className="text-xl shrink-0">🔬</span>
-              <div className="space-y-1">
-                <div className="font-bold text-amber-300 uppercase tracking-wider text-[11px]">
-                  Diagnostic Automatique du Frametime
+              <div className="space-y-1.5 w-full">
+                <div className="font-bold text-amber-300 uppercase tracking-wider text-[11px] flex items-center justify-between">
+                  <span>Diagnostic Approfondi Matériel & Moteur</span>
+                  {perfReport.environment?.smoothnessScore !== undefined && (
+                    <span className="text-emerald-400 font-mono text-xs">
+                      Fluidité VSync : <strong>{perfReport.environment.smoothnessScore}%</strong> (Jitter: ±{perfReport.environment.framePacingJitterMs}ms)
+                    </span>
+                  )}
                 </div>
                 <div className="text-zinc-200 leading-relaxed font-sans font-medium">
                   {perfReport.diagnosticVerdict}
                 </div>
                 {perfReport.environment && (
-                  <div className="text-[10px] text-zinc-400 font-mono pt-1 flex flex-wrap gap-x-3 gap-y-1">
-                    <span>Fenêtre : {perfReport.environment.isWindowFocused ? '✅ Active / Focus' : '⚠️ Arrière-plan'}</span>
-                    <span>Onglet : {perfReport.environment.isTabVisible ? 'Visible' : 'Masqué'}</span>
-                    <span>DPR : {perfReport.environment.dpr}x</span>
-                    <span>Écran : {perfReport.environment.screenWidth}x{perfReport.environment.screenHeight}</span>
-                    <span>Latence Event Loop : {perfReport.environment.avgEventLoopLagMs}ms</span>
-                    <span>Tâches Longues (&gt;50ms) : {perfReport.environment.longTasksCount}</span>
+                  <div className="text-[10px] text-zinc-400 font-mono pt-1 flex flex-wrap gap-x-3 gap-y-1 border-t border-zinc-800/80">
+                    <span>GPU : <strong className="text-cyan-300">{perfReport.environment.gpuRenderer}</strong></span>
+                    <span>Écran : <strong className="text-white">{perfReport.environment.screenWidth}x{perfReport.environment.screenHeight} ({perfReport.environment.detectedRefreshRateHz} Hz)</strong></span>
+                    <span>DPR : <strong className="text-white">{perfReport.environment.dpr}x</strong></span>
+                    <span>CPU Cores : <strong className="text-white">{perfReport.environment.hardwareConcurrency}</strong></span>
+                    <span>RAM : <strong className="text-white">{perfReport.environment.deviceMemoryGB ? `${perfReport.environment.deviceMemoryGB} GB` : 'N/A'}</strong></span>
+                    {perfReport.environment.heapSizeLimitMB && (
+                      <span>Limite Heap : <strong className="text-violet-300">{perfReport.environment.heapSizeLimitMB} MB</strong></span>
+                    )}
+                    <span>Latence Event Loop : <strong className="text-emerald-300">{perfReport.environment.avgEventLoopLagMs}ms</strong></span>
+                    <span>Tâches Longues (&gt;50ms) : <strong className="text-emerald-300">{perfReport.environment.longTasksCount}</strong></span>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* FPS Distribution Breakdown Bar */}
+          {perfReport.fpsDistribution && (
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
+                <span>Distribution de la Cadence d'Images (FPS Buckets)</span>
+                <span className="text-emerald-400 font-mono">
+                  {perfReport.fpsDistribution.fps60PlusPercent}% ≥ 60 FPS
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-zinc-900 rounded-full overflow-hidden flex gap-0.5 p-0.5">
+                <div
+                  className="bg-emerald-400 h-full rounded-l-full transition-all"
+                  style={{ width: `${perfReport.fpsDistribution.fps60PlusPercent}%` }}
+                  title={`≥ 60 FPS : ${perfReport.fpsDistribution.fps60PlusCount} trames (${perfReport.fpsDistribution.fps60PlusPercent}%)`}
+                />
+                <div
+                  className="bg-teal-400 h-full transition-all"
+                  style={{ width: `${perfReport.fpsDistribution.fps50to59Percent}%` }}
+                  title={`50-59 FPS : ${perfReport.fpsDistribution.fps50to59Count} trames (${perfReport.fpsDistribution.fps50to59Percent}%)`}
+                />
+                <div
+                  className="bg-amber-400 h-full transition-all"
+                  style={{ width: `${perfReport.fpsDistribution.fps30to49Percent}%` }}
+                  title={`30-49 FPS : ${perfReport.fpsDistribution.fps30to49Count} trames (${perfReport.fpsDistribution.fps30to49Percent}%)`}
+                />
+                <div
+                  className="bg-red-400 h-full rounded-r-full transition-all"
+                  style={{ width: `${perfReport.fpsDistribution.fpsBelow30Percent}%` }}
+                  title={`< 30 FPS : ${perfReport.fpsDistribution.fpsBelow30Count} trames (${perfReport.fpsDistribution.fpsBelow30Percent}%)`}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-zinc-400 pt-0.5">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> ≥60 FPS: <strong className="text-white">{perfReport.fpsDistribution.fps60PlusPercent}%</strong> ({perfReport.fpsDistribution.fps60PlusCount})
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-teal-400 inline-block" /> 50-59 FPS: <strong className="text-white">{perfReport.fpsDistribution.fps50to59Percent}%</strong> ({perfReport.fpsDistribution.fps50to59Count})
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> 30-49 FPS: <strong className="text-white">{perfReport.fpsDistribution.fps30to49Percent}%</strong> ({perfReport.fpsDistribution.fps30to49Count})
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> &lt;30 FPS: <strong className="text-white">{perfReport.fpsDistribution.fpsBelow30Percent}%</strong> ({perfReport.fpsDistribution.fpsBelow30Count})
+                </span>
               </div>
             </div>
           )}

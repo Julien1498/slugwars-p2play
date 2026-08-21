@@ -53,6 +53,17 @@ export interface ReactComponentPerf {
   maxDurationMs: number;
 }
 
+export interface FpsDistribution {
+  fps60PlusCount: number;
+  fps60PlusPercent: number;
+  fps50to59Count: number;
+  fps50to59Percent: number;
+  fps30to49Count: number;
+  fps30to49Percent: number;
+  fpsBelow30Count: number;
+  fpsBelow30Percent: number;
+}
+
 export interface EnvironmentMetrics {
   dpr: number;
   screenWidth: number;
@@ -63,10 +74,16 @@ export interface EnvironmentMetrics {
   isTabVisible: boolean;
   hardwareConcurrency: number;
   deviceMemoryGB: number | null;
+  gpuRenderer: string;
+  gpuVendor: string;
+  detectedRefreshRateHz: number;
+  framePacingJitterMs: number;
+  smoothnessScore: number;
   avgEventLoopLagMs: number;
   maxEventLoopLagMs: number;
   longTasksCount: number;
   longTasksTotalMs: number;
+  heapSizeLimitMB: number | null;
 }
 
 export interface PerfCaptureReport {
@@ -87,6 +104,7 @@ export interface PerfCaptureReport {
   maxReactRenderMs: number;
   avgBrowserWaitMs: number;
   browserWaitPercent: number;
+  fpsDistribution: FpsDistribution;
   environment: EnvironmentMetrics;
   diagnosticVerdict: string;
   reactComponents: ReactComponentPerf[];
@@ -410,6 +428,9 @@ class PerformanceTracker {
       this.memoryStartMB !== null && memoryEndMB !== null
         ? Math.round((memoryEndMB - this.memoryStartMB) * 10) / 10
         : null;
+    const heapSizeLimitMB = mem?.jsHeapSizeLimit
+      ? Math.round((mem.jsHeapSizeLimit / (1024 * 1024)) * 10) / 10
+      : null;
 
     // Sort worst frames by frame interval
     const topWorstFrames = [...frames]
@@ -430,6 +451,52 @@ class PerformanceTracker {
     const avgFrameIntervalMs = totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0;
     const avgBrowserWaitMs = totalFrames > 0 ? Math.round((sumBrowserWait / totalFrames) * 10) / 10 : 0;
     const browserWaitPercent = sumInterval > 0 ? Math.round((sumBrowserWait / sumInterval) * 1000) / 10 : 0;
+
+    // Compute FPS Distribution Buckets
+    let fps60Plus = 0;
+    let fps50to59 = 0;
+    let fps30to49 = 0;
+    let fpsBelow30 = 0;
+    for (const f of frames) {
+      if (f.fpsInstant >= 58) fps60Plus++;
+      else if (f.fpsInstant >= 50) fps50to59++;
+      else if (f.fpsInstant >= 30) fps30to49++;
+      else fpsBelow30++;
+    }
+
+    const fpsDistribution: FpsDistribution = {
+      fps60PlusCount: fps60Plus,
+      fps60PlusPercent: totalFrames > 0 ? Math.round((fps60Plus / totalFrames) * 1000) / 10 : 0,
+      fps50to59Count: fps50to59,
+      fps50to59Percent: totalFrames > 0 ? Math.round((fps50to59 / totalFrames) * 1000) / 10 : 0,
+      fps30to49Count: fps30to49,
+      fps30to49Percent: totalFrames > 0 ? Math.round((fps30to49 / totalFrames) * 1000) / 10 : 0,
+      fpsBelow30Count: fpsBelow30,
+      fpsBelow30Percent: totalFrames > 0 ? Math.round((fpsBelow30 / totalFrames) * 1000) / 10 : 0,
+    };
+
+    // Calculate Frame Pacing Jitter (Standard Deviation of Frame Interval)
+    let varianceSum = 0;
+    let inTargetWindowCount = 0;
+    for (const f of frames) {
+      const diff = f.frameIntervalMs - avgFrameIntervalMs;
+      varianceSum += diff * diff;
+      if (Math.abs(diff) <= 3.5) {
+        inTargetWindowCount++;
+      }
+    }
+    const framePacingJitterMs = totalFrames > 0 ? Math.round(Math.sqrt(varianceSum / totalFrames) * 100) / 100 : 0;
+    const smoothnessScore = totalFrames > 0 ? Math.round((inTargetWindowCount / totalFrames) * 1000) / 10 : 100;
+
+    // Detect Screen Hardware Refresh Rate Mode
+    let detectedRefreshRateHz = 60;
+    if (avgFrameIntervalMs <= 7.5) detectedRefreshRateHz = 144;
+    else if (avgFrameIntervalMs <= 9.0) detectedRefreshRateHz = 120;
+    else if (avgFrameIntervalMs <= 14.0) detectedRefreshRateHz = 75;
+    else detectedRefreshRateHz = 60;
+
+    // Detect GPU Hardware via WebGL debug info
+    const gpuInfo = this.getGpuHardwareInfo();
 
     const reactComponents: ReactComponentPerf[] = [];
     this.reactStatsMap.forEach((val, key) => {
@@ -480,15 +547,21 @@ class PerformanceTracker {
       isTabVisible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
       hardwareConcurrency: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4,
       deviceMemoryGB: typeof (navigator as any)?.deviceMemory === 'number' ? (navigator as any).deviceMemory : null,
+      gpuRenderer: gpuInfo.renderer,
+      gpuVendor: gpuInfo.vendor,
+      detectedRefreshRateHz,
+      framePacingJitterMs,
+      smoothnessScore,
       avgEventLoopLagMs: avgLag,
       maxEventLoopLagMs: maxLag,
       longTasksCount: this.longTasksCount,
       longTasksTotalMs: Math.round(this.longTasksTotalMs * 10) / 10,
+      heapSizeLimitMB,
     };
 
     let diagnosticVerdict = '';
-    if (avgBrowserWaitMs >= 15 && avgRenderDurationMs <= 4.0) {
-      diagnosticVerdict = `Le moteur JavaScript et le Canvas sont ultra-rapides (${avgRenderDurationMs}ms / trame). Les ${avgBrowserWaitMs}ms restantes (${browserWaitPercent}% du temps) sont du temps d'attente VSync du navigateur (fréquence écran / composition Chromium).`;
+    if (avgBrowserWaitMs >= 12 && avgRenderDurationMs <= 3.0) {
+      diagnosticVerdict = `Performance optimale : Moteur JS ultra-rapide (${avgRenderDurationMs}ms / frame), fluidité à ${smoothnessScore}% (gigue VSync: ${framePacingJitterMs}ms). Les ${avgBrowserWaitMs}ms restantes sont la synchronisation VSync Chromium (${detectedRefreshRateHz} Hz).`;
     } else if (avgRenderDurationMs > 8.0) {
       diagnosticVerdict = `Le rendu Canvas est la cause principale de ralentissement (${avgRenderDurationMs}ms / trame). La passe la plus lourde est ${topBottleneckPass?.label || 'Inconnue'}.`;
     } else if (avgLag > 20) {
@@ -515,6 +588,7 @@ class PerformanceTracker {
       maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
       avgBrowserWaitMs,
       browserWaitPercent,
+      fpsDistribution,
       environment,
       diagnosticVerdict,
       reactComponents,
@@ -584,6 +658,28 @@ class PerformanceTracker {
     return () => {
       this.fpsHudListeners = this.fpsHudListeners.filter((l) => l !== listener);
     };
+  }
+
+  private getGpuHardwareInfo(): { renderer: string; vendor: string } {
+    if (typeof document === 'undefined') return { renderer: 'Inconnu (SSR)', vendor: 'Inconnu (SSR)' };
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || (canvas.getContext('experimental-webgl') as any);
+      if (!gl) return { renderer: 'Non disponible (Software)', vendor: 'Non disponible' };
+      const dbgRenderInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (dbgRenderInfo) {
+        return {
+          renderer: gl.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL) || 'Inconnu',
+          vendor: gl.getParameter(dbgRenderInfo.UNMASKED_VENDOR_WEBGL) || 'Inconnu',
+        };
+      }
+      return {
+        renderer: gl.getParameter(gl.RENDERER) || 'Inconnu',
+        vendor: gl.getParameter(gl.VENDOR) || 'Inconnu',
+      };
+    } catch {
+      return { renderer: 'Accès restreint par le navigateur', vendor: 'Inconnu' };
+    }
   }
 }
 
