@@ -44,7 +44,7 @@ export interface SlugWarsCanvasProps {
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
 }
 
-export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
+const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   gameState,
   terrain,
   isMyTurn,
@@ -76,6 +76,15 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   isMyTurnRef.current = isMyTurn;
   const showHitboxesRef = useRef(showHitboxes);
   showHitboxesRef.current = showHitboxes;
+
+  useEffect(() => {
+    (SlugWarsCanvas as any)._updateExternalState = (nextState: GameState) => {
+      gameStateRef.current = nextState;
+    };
+    return () => {
+      delete (SlugWarsCanvas as any)._updateExternalState;
+    };
+  }, []);
 
   const isTouch = useIsTouchDevice();
 
@@ -1317,5 +1326,25 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       <canvas ref={canvasRef} className="block w-full h-full" />
     </div>
+  );
+};
+
+export const SlugWarsCanvas = React.memo(SlugWarsCanvasComponent, (prev, next) => {
+  // Always update latest game state directly into canvas ref (0ms latency, zero JSX DOM overhead)
+  (SlugWarsCanvas as any)._updateExternalState?.(next.gameState);
+
+  // Skip React JSX re-rendering when canvas DOM container props haven't changed
+  return (
+    prev.terrain === next.terrain &&
+    prev.isMyTurn === next.isMyTurn &&
+    prev.showHitboxes === next.showHitboxes &&
+    prev.pendingPlacementPoint?.x === next.pendingPlacementPoint?.x &&
+    prev.pendingPlacementPoint?.y === next.pendingPlacementPoint?.y &&
+    prev.onFire === next.onFire &&
+    prev.onPlaceSlug === next.onPlaceSlug &&
+    prev.onSelectPlacementPoint === next.onSelectPlacementPoint &&
+    prev.onStartCharge === next.onStartCharge &&
+    prev.onReleaseCharge === next.onReleaseCharge &&
+    prev.onUpdateAim === next.onUpdateAim
   );
 });

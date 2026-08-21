@@ -11,7 +11,7 @@ export function useGuestStateReceiver(
   engineRef: MutableRefObject<SlugWarsEngine>,
   isHost: boolean,
   peerManager: PeerManagerLike,
-  setGameState: (state: GameState) => void,
+  setGameState: (state: GameState, force?: boolean) => void,
   myPeerId?: string
 ) {
   const knownProjIdsRef = useRef<Set<string>>(new Set());
@@ -199,7 +199,7 @@ export function useGuestStateReceiver(
           }
         }
 
-        setGameState({ ...engine.state });
+        setGameState(engine.state, false);
       } else if (payload.config) {
         const newState = payload as GameState;
 
@@ -279,7 +279,7 @@ export function useGuestStateReceiver(
           }
         }
 
-        setGameState({ ...engine.state });
+        setGameState(engine.state, true);
       }
     };
   }, [isHost, peerManager, engineRef, setGameState, myPeerId]);
