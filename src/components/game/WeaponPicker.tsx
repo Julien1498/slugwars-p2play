@@ -30,28 +30,34 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const allWeapons = getAllWeapons();
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
 
-  // Keyboard navigation for desktop: F1-F5 / 1-5 to switch categories, Esc/I/Tab to close
+  // Keyboard navigation for desktop: F1-F5 / 1-5 / &é"'( to switch categories, Esc/I/Tab to close
   React.useEffect(() => {
     if (isTouch) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Tab' || e.key === 'i' || e.key === 'I') {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+
+      const key = e.key.toLowerCase();
+
+      if (e.key === 'Escape' || e.key === 'Tab' || key === 'i') {
         e.preventDefault();
         onClose();
         return;
       }
-      if (e.key === 'F1' || e.key === '1') {
+
+      if (e.key === 'F1' || key === '1' || key === '&') {
         e.preventDefault();
         setActiveCategory('EXPLOSIVE');
-      } else if (e.key === 'F2' || e.key === '2') {
+      } else if (e.key === 'F2' || key === '2' || key === 'é') {
         e.preventDefault();
         setActiveCategory('MELEE');
-      } else if (e.key === 'F3' || e.key === '3') {
+      } else if (e.key === 'F3' || key === '3' || key === '"') {
         e.preventDefault();
         setActiveCategory('AIR_SUPPORT');
-      } else if (e.key === 'F4' || e.key === '4') {
+      } else if (e.key === 'F4' || key === '4' || key === "'") {
         e.preventDefault();
         setActiveCategory('SPECIAL');
-      } else if (e.key === 'F5' || e.key === '5') {
+      } else if (e.key === 'F5' || key === '5' || key === '(') {
         e.preventDefault();
         setActiveCategory('UTILITY');
       }
@@ -120,10 +126,12 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
             {CATEGORIES.map((cat, idx) => {
               const count = allWeapons.filter((w) => w.category === cat.id).length;
               const isActive = activeCategory === cat.id;
+              const azertyShortcuts = ['&', 'é', '"', "'", '('];
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
+                  title={`Onglet ${cat.label} (Touche ${idx + 1} ou ${azertyShortcuts[idx]})`}
                   className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     isActive
                       ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
