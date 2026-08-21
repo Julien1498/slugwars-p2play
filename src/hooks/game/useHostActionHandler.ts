@@ -27,10 +27,12 @@ export function useHostActionHandler(
       if (msg.type === 'ACTION') {
         switch (msg.actionName) {
           case 'JOIN_GAME': {
-            const trusted = peerManager.getTrustedUsername?.(playerId) || msg.payload?.name || `Limace ${playerId.slice(0, 4)}`;
+            const requestedName = msg.payload?.name?.trim();
+            const isGeneric = (n?: string) => !n || n.startsWith('Joueur-') || n.startsWith('Joueur ') || n.startsWith('Player-');
+            const trusted = (!isGeneric(requestedName) ? requestedName : null) || peerManager.getTrustedUsername?.(playerId) || requestedName || `Limace ${playerId.slice(0, 4)}`;
             const existing = engine.state.teams.find((t) => t.id === playerId);
             if (existing) {
-              if (msg.payload?.name) existing.name = trusted;
+              if (requestedName && !isGeneric(requestedName)) existing.name = requestedName;
               if (msg.payload?.avatar) existing.avatar = msg.payload.avatar;
             } else {
               const colorIdx = engine.state.teams.length % TEAM_COLORS.length;

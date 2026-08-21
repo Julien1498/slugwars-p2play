@@ -177,10 +177,12 @@ export function useGame(options?: {
       if (peerManager.lobbyPlayers) {
         peerManager.lobbyPlayers.forEach((p) => {
           if (p.peerId && !engineRef.current.state.teams.some((t) => t.id === p.peerId)) {
+            const isGeneric = !p.username || p.username.startsWith('Joueur-') || p.username.startsWith('Joueur ');
+            const resolvedName = !isGeneric ? p.username : (peerManager.getTrustedUsername?.(p.peerId) || `Limace ${p.peerId.slice(0, 4)}`);
             const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
             engineRef.current.addTeam(
               p.peerId,
-              p.username || `Joueur ${p.peerId.slice(0, 4)}`,
+              resolvedName,
               TEAM_COLORS[colorIdx],
               p.avatar || '🐌',
               p.peerId === myPeerId
@@ -193,9 +195,11 @@ export function useGame(options?: {
       // Check all connected peer IDs from peerManager
       peerManager.connections?.forEach((conn, peerId) => {
         if (conn.open && !engineRef.current.state.teams.some((t) => t.id === peerId)) {
-          const trusted = peerManager.getTrustedUsername?.(peerId) || `Joueur ${peerId.slice(0, 4)}`;
+          const trusted = peerManager.getTrustedUsername?.(peerId);
+          const isGeneric = !trusted || trusted.startsWith('Joueur-') || trusted.startsWith('Joueur ');
+          const resolvedName = !isGeneric ? trusted : `Limace ${peerId.slice(0, 4)}`;
           const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
-          engineRef.current.addTeam(peerId, trusted, TEAM_COLORS[colorIdx], '🐌', false);
+          engineRef.current.addTeam(peerId, resolvedName, TEAM_COLORS[colorIdx], '🐌', false);
           changed = true;
         }
       });

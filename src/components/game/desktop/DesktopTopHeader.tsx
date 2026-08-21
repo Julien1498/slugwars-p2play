@@ -100,26 +100,32 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
     <>
       <header className="w-full flex items-start justify-between gap-4 pointer-events-none select-none px-4 pt-3">
         {/* ========================================================================= */}
-        {/* 1. TOP-LEFT: SQUAD & ACTIVE OPERATIVE DOSSIER                             */}
+        {/* 1. TOP-LEFT: ACTIVE OPERATIVE & SQUAD DOSSIER CARD                        */}
         {/* ========================================================================= */}
         <div className="pointer-events-auto flex items-center gap-3">
-          {activeSlug && activeTeam && (
-            <div className="flex items-center gap-3 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 p-2.5 rounded-2xl shadow-2xl">
-              {/* Dynamic Slug Avatar with Team Glowing Ring */}
-              <div
-                className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0 border"
-                style={{
-                  backgroundColor: `${activeTeam.color}22`,
-                  borderColor: `${activeTeam.color}88`,
-                }}
-              >
-                <span>🐌</span>
-                {/* Active Player Halo Pulse */}
+          {activeTeam && activeSlug && (
+            <div
+              className="bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 transition-all"
+              style={{
+                boxShadow: `0 8px 32px -4px rgba(0,0,0,0.8), 0 0 16px -2px ${activeTeam.color}33`,
+                borderColor: `${activeTeam.color}55`,
+              }}
+            >
+              {/* Squad Avatar with Glow Ring */}
+              <div className="relative">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-lg border border-white/20"
+                  style={{ backgroundColor: activeTeam.color }}
+                >
+                  {activeTeam.avatar || '🐌'}
+                </div>
                 {isMyTurn && (
-                  <span
-                    className="absolute -inset-0.5 rounded-2xl animate-ping opacity-30 pointer-events-none"
-                    style={{ backgroundColor: activeTeam.color }}
-                  />
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border border-zinc-950 text-[8px] font-black text-slate-950 items-center justify-center">
+                      ⚡
+                    </span>
+                  </span>
                 )}
               </div>
 
@@ -207,29 +213,30 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
         {/* 3. TOP-RIGHT: SQUADS HEALTH BAROMETER & TOOL TRAY                          */}
         {/* ========================================================================= */}
         <div className="pointer-events-auto flex items-center gap-2">
-          {/* All-Teams Survival Barometer */}
+          {/* Multi-Team Scoreboard Barometer */}
           <div className="hidden lg:flex items-center gap-2 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 px-3 py-1.5 rounded-2xl shadow-2xl">
-            {teamStats.map(({ team, totalHp, aliveSlugs, totalSlugs, hpPercent, isActive }) => (
+            {teamStats.map(({ team, totalHp, hpPercent, isActive, aliveSlugs, totalSlugs }) => (
               <div
                 key={team.id}
-                className={`flex items-center gap-2 px-2 py-1 rounded-xl border transition-all ${
+                className={`flex items-center gap-2 px-2 py-1 rounded-xl transition-all ${
                   isActive
-                    ? 'bg-zinc-900/90 border-zinc-700 shadow-md scale-102'
-                    : 'bg-zinc-950/50 border-zinc-800/60 opacity-75'
+                    ? 'bg-zinc-900 border border-amber-500/60 shadow-md scale-105'
+                    : 'opacity-70 hover:opacity-100'
                 }`}
               >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
-                <div className="flex flex-col leading-none">
-                  <span className="text-[10px] font-black text-zinc-200 truncate max-w-[70px]">
-                    {team.name}
-                  </span>
-                  <span className="text-[8px] text-zinc-500 font-mono mt-0.5">
-                    {aliveSlugs}/{totalSlugs} 🐌
-                  </span>
-                  <div className="w-10 h-1 bg-zinc-900 rounded-full overflow-hidden mt-1 border border-zinc-800">
+                <div className="w-2.5 h-2.5 rounded-full shadow-sm shrink-0" style={{ backgroundColor: team.color }} />
+                <div className="flex flex-col min-w-[65px]">
+                  <div className="flex items-center justify-between gap-1 leading-none">
+                    <span className="text-[11px] font-bold text-zinc-200 truncate max-w-[55px]">{team.name}</span>
+                    <span className="text-[9px] font-mono text-zinc-400">({aliveSlugs}/{totalSlugs})</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mt-1 border border-zinc-800">
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${hpPercent * 100}%`, backgroundColor: team.color }}
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${hpPercent * 100}%`,
+                        backgroundColor: team.color,
+                      }}
                     />
                   </div>
                 </div>
