@@ -88,6 +88,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
   const targetCameraPanRef = useRef<Vector2D | null>(null);
+  const lastManualPanTimeRef = useRef<number>(0);
 
   const clientParticlesRef = useRef<ClientParticle[]>([]);
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
@@ -831,8 +832,72 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.fillStyle = '#09090b';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Smooth camera glide transition (LERP interpolation)
-      if (targetCameraPanRef.current) {
+      // Dynamic Action Camera Follow (Projectiles, Explosions, Supply Crates, Moving Slugs, Retreat)
+      const isUserManuallyPanning = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
+      if (isUserManuallyPanning) {
+        lastManualPanTimeRef.current = performance.now();
+      }
+
+      let actionTarget: { x: number; y: number } | null = null;
+      let followSpeed = 0.08;
+
+      // Priority 1: Flying Projectiles
+      if (curState && curState.projectiles && curState.projectiles.length > 0) {
+        const proj = curState.projectiles[0];
+        actionTarget = { x: proj.x, y: proj.y };
+        followSpeed = 0.16;
+        lastManualPanTimeRef.current = 0;
+      }
+      // Priority 2: Recent Explosions
+      else if (clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
+        const latestEx = clientExplosionsRef.current[clientExplosionsRef.current.length - 1];
+        const nowMs = performance.now();
+        if (nowMs - latestEx.startTime < 600) {
+          actionTarget = { x: latestEx.x, y: latestEx.y };
+          followSpeed = 0.12;
+          lastManualPanTimeRef.current = 0;
+        }
+      }
+      // Priority 3: Falling Supply Crates
+      else if (curState && curState.supplyCrates && curState.supplyCrates.some((c) => !c.isLanded || Math.abs(c.vy) > 0.4)) {
+        const fallingCrate = curState.supplyCrates.find((c) => !c.isLanded || Math.abs(c.vy) > 0.4);
+        if (fallingCrate) {
+          actionTarget = { x: fallingCrate.x, y: fallingCrate.y };
+          followSpeed = 0.09;
+        }
+      }
+      // Priority 4: Active Slug (Moving, Roping, Retreating, or Aiming)
+      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START' || curState.phase === 'TURN_TIME')) {
+        const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
+        if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
+          const isMoving = activeSlug.movingDir !== null || Math.abs(activeSlug.vx) > 0.2 || Math.abs(activeSlug.vy) > 0.2 || (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined) || curState.phase === 'RETREAT';
+          const timeSinceManualPan = performance.now() - (lastManualPanTimeRef.current || 0);
+
+          if (isMoving || timeSinceManualPan > 2000 || curState.phase === 'RETREAT' || curState.phase === 'TURN_START') {
+            actionTarget = { x: activeSlug.x, y: activeSlug.y };
+            followSpeed = curState.phase === 'RETREAT' ? 0.12 : isMoving ? 0.10 : 0.07;
+          }
+        }
+      }
+
+      // Smooth camera follow interpolation
+      if (actionTarget && !isUserManuallyPanning && cRect.width > 0 && cRect.height > 0) {
+        const fitScale = Math.min(cRect.width / width, cRect.height / height);
+        const totalScale = fitScale * zoomRef.current;
+        const targetPanX = -(actionTarget.x - width / 2) * totalScale;
+        const targetPanY = -(actionTarget.y - height / 2) * totalScale;
+        const clampedTarget = clampPanOffset(
+          { x: targetPanX, y: targetPanY },
+          zoomRef.current,
+          cRect.width,
+          cRect.height,
+          width,
+          height
+        );
+
+        panRef.current.x += (clampedTarget.x - panRef.current.x) * followSpeed;
+        panRef.current.y += (clampedTarget.y - panRef.current.y) * followSpeed;
+      } else if (targetCameraPanRef.current) {
         const dx = targetCameraPanRef.current.x - panRef.current.x;
         const dy = targetCameraPanRef.current.y - panRef.current.y;
         if (Math.hypot(dx, dy) < 0.6) {
