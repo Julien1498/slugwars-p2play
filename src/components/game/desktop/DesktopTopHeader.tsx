@@ -90,8 +90,9 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
     });
   }, [gameState.teams, gameState.slugs, gameState.activeTeamId, gameState.config]);
 
-  const turnTime = Math.ceil(gameState.turnTimer ?? 0);
-  const isTimeUrgent = turnTime <= 10 && turnTime > 0;
+  const turnTime = Math.max(0, Math.ceil(gameState.turnTimer ?? 0));
+  const retreatTime = Math.max(0, Math.ceil(gameState.retreatTimer ?? 0));
+  const isTimeUrgent = turnTime <= 10 && turnTime > 0 && gameState.phase === 'AIMING';
   const activeSlugMaxHp = gameState.config.slugHp || 100;
   const activeSlugHpPercent = activeSlug ? Math.max(0, Math.min(1, activeSlug.hp / activeSlugMaxHp)) : 0;
 
@@ -99,32 +100,26 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
     <>
       <header className="w-full flex items-start justify-between gap-4 pointer-events-none select-none px-4 pt-3">
         {/* ========================================================================= */}
-        {/* 1. TOP-LEFT: ACTIVE OPERATIVE & SQUAD DOSSIER CARD                        */}
+        {/* 1. TOP-LEFT: SQUAD & ACTIVE OPERATIVE DOSSIER                             */}
         {/* ========================================================================= */}
         <div className="pointer-events-auto flex items-center gap-3">
-          {activeTeam && activeSlug && (
-            <div
-              className="bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 transition-all"
-              style={{
-                boxShadow: `0 8px 32px -4px rgba(0,0,0,0.8), 0 0 16px -2px ${activeTeam.color}33`,
-                borderColor: `${activeTeam.color}55`,
-              }}
-            >
-              {/* Squad Avatar with Glow Ring */}
-              <div className="relative">
-                <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-lg border border-white/20"
-                  style={{ backgroundColor: activeTeam.color }}
-                >
-                  {activeTeam.avatar || '🐌'}
-                </div>
+          {activeSlug && activeTeam && (
+            <div className="flex items-center gap-3 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 p-2.5 rounded-2xl shadow-2xl">
+              {/* Dynamic Slug Avatar with Team Glowing Ring */}
+              <div
+                className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0 border"
+                style={{
+                  backgroundColor: `${activeTeam.color}22`,
+                  borderColor: `${activeTeam.color}88`,
+                }}
+              >
+                <span>🐌</span>
+                {/* Active Player Halo Pulse */}
                 {isMyTurn && (
-                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border border-zinc-950 text-[8px] font-black text-slate-950 items-center justify-center">
-                      ⚡
-                    </span>
-                  </span>
+                  <span
+                    className="absolute -inset-0.5 rounded-2xl animate-ping opacity-30 pointer-events-none"
+                    style={{ backgroundColor: activeTeam.color }}
+                  />
                 )}
               </div>
 
@@ -186,7 +181,7 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
               <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/90 border border-orange-500 rounded-xl text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.4)] animate-pulse">
                 <Flame className="w-4 h-4 text-orange-400 animate-spin" style={{ animationDuration: '4s' }} />
                 <span className="text-xs font-black uppercase tracking-wider">Repli</span>
-                <span className="font-mono text-sm font-black">{turnTime}s</span>
+                <span className="font-mono text-sm font-black">{retreatTime}s</span>
               </div>
             ) : isTimeUrgent ? (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-red-950/90 border border-red-500 rounded-xl text-red-300 shadow-[0_0_20px_#ef4444] animate-bounce">
@@ -212,30 +207,29 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
         {/* 3. TOP-RIGHT: SQUADS HEALTH BAROMETER & TOOL TRAY                          */}
         {/* ========================================================================= */}
         <div className="pointer-events-auto flex items-center gap-2">
-          {/* Multi-Team Scoreboard Barometer */}
+          {/* All-Teams Survival Barometer */}
           <div className="hidden lg:flex items-center gap-2 bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 px-3 py-1.5 rounded-2xl shadow-2xl">
-            {teamStats.map(({ team, totalHp, hpPercent, isActive, aliveSlugs, totalSlugs }) => (
+            {teamStats.map(({ team, totalHp, aliveSlugs, totalSlugs, hpPercent, isActive }) => (
               <div
                 key={team.id}
-                className={`flex items-center gap-2 px-2 py-1 rounded-xl transition-all ${
+                className={`flex items-center gap-2 px-2 py-1 rounded-xl border transition-all ${
                   isActive
-                    ? 'bg-zinc-900 border border-amber-500/60 shadow-md scale-105'
-                    : 'opacity-70 hover:opacity-100'
+                    ? 'bg-zinc-900/90 border-zinc-700 shadow-md scale-102'
+                    : 'bg-zinc-950/50 border-zinc-800/60 opacity-75'
                 }`}
               >
-                <div className="w-2.5 h-2.5 rounded-full shadow-sm shrink-0" style={{ backgroundColor: team.color }} />
-                <div className="flex flex-col min-w-[65px]">
-                  <div className="flex items-center justify-between gap-1 leading-none">
-                    <span className="text-[11px] font-bold text-zinc-200 truncate max-w-[55px]">{team.name}</span>
-                    <span className="text-[9px] font-mono text-zinc-400">({aliveSlugs}/{totalSlugs})</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mt-1 border border-zinc-800">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                <div className="flex flex-col leading-none">
+                  <span className="text-[10px] font-black text-zinc-200 truncate max-w-[70px]">
+                    {team.name}
+                  </span>
+                  <span className="text-[8px] text-zinc-500 font-mono mt-0.5">
+                    {aliveSlugs}/{totalSlugs} 🐌
+                  </span>
+                  <div className="w-10 h-1 bg-zinc-900 rounded-full overflow-hidden mt-1 border border-zinc-800">
                     <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${hpPercent * 100}%`,
-                        backgroundColor: team.color,
-                      }}
+                      className="h-full rounded-full"
+                      style={{ width: `${hpPercent * 100}%`, backgroundColor: team.color }}
                     />
                   </div>
                 </div>
@@ -255,14 +249,10 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className={`p-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-sm ${
-                  isFullscreen
-                    ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
-                    : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95'
-                }`}
+                className="p-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-sm bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95"
                 title={isFullscreen ? 'Quitter le plein écran (F11)' : 'Plein écran immersif (F11)'}
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+                {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
               </button>
             )}
 
