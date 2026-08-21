@@ -49,14 +49,20 @@ describe('Audio Engine & Performance Telemetry', () => {
       crates: 1,
     };
 
-    // Feed 30 simulated frames (16.6ms intervals, 2.5ms render)
+    // Feed 30 simulated frames (16.6ms intervals, 2.5ms render) with pass measurements
     for (let i = 0; i < 30; i++) {
+      perfTracker.recordRenderPass('sky_atmosphere', 0.8);
+      perfTracker.recordRenderPass('ocean_waves', 1.4);
+      perfTracker.recordRenderPass('terrain_buffer', 0.3);
       perfTracker.markFrame(2.5, dummyEntities);
     }
 
     // Record mock React Profiler renders
     perfTracker.recordReactRender('TurnHeader', 'update', 1.2);
     perfTracker.recordReactRender('SlugWarsCanvas', 'update', 0.4);
+
+    expect(perfTracker.liveTopPasses.length).toBeGreaterThan(0);
+    expect(perfTracker.liveTopPasses[0].id).toBe('ocean_waves');
 
     unsub();
   });

@@ -106,6 +106,8 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   // Zero-Overhead In-Game Permanent FPS HUD Refs
   const fpsBadgeRef = useRef<HTMLDivElement | null>(null);
   const fpsTextRef = useRef<HTMLSpanElement | null>(null);
+  const fpsDetailsRef = useRef<HTMLSpanElement | null>(null);
+  const fpsPassesRef = useRef<HTMLDivElement | null>(null);
   const fpsDotRef = useRef<HTMLSpanElement | null>(null);
   const fpsCounterFramesRef = useRef(0);
   const lastFpsHudUpdateRef = useRef(performance.now());
@@ -1024,6 +1026,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       // 1. Sky, Atmosphere & Deep Background Ocean Swell
+      const pSkyStart = performance.now();
       renderSkyAndAtmosphere({
         ctx,
         width,
@@ -1038,14 +1041,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         worldTop,
         worldBottom,
       });
+      perfTracker.recordRenderPass('sky_atmosphere', performance.now() - pSkyStart);
 
       // 2. Offscreen Terrain Buffer
+      const pTerrainStart = performance.now();
       const buffers = getBuffers();
       if (buffers.offscreenCanvas) {
         ctx.drawImage(buffers.offscreenCanvas, 0, 0);
       }
+      perfTracker.recordRenderPass('terrain_buffer', performance.now() - pTerrainStart);
 
       // 3. Destructible Girders & Solid Props
+      const pPropsStart = performance.now();
       const { grid, solidProps } = terrain.data;
       if (curState.girders) {
         for (const g of curState.girders) {
@@ -1061,17 +1068,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           }
         }
       }
+      perfTracker.recordRenderPass('props_girders', performance.now() - pPropsStart);
 
       // 4. Subterranean Occlusion Mask
+      const pOcclusionStart = performance.now();
       if (buffers.occlusionCanvas) {
         ctx.drawImage(buffers.occlusionCanvas, 0, 0);
       }
+      perfTracker.recordRenderPass('occlusion_mask', performance.now() - pOcclusionStart);
 
       // 5. Decor Items (Butterflies & Hanging Leaf Roots) & Landmines & Helicopters
+      const pDecorStart = performance.now();
       renderDecorItems(ctx, terrain, decorItems, animTime);
       renderMines(ctx, curState.mines);
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
       renderTombstones(ctx, curState.slugs, waterLevel);
+      perfTracker.recordRenderPass('decor_mines', performance.now() - pDecorStart);
 
       // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering (0 GC allocations)
       const now = performance.now();
@@ -1111,9 +1123,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       };
       const visualState = visualStateRef.current;
 
-      // 6. Slugs, Ropes, Crates, Projectiles & Particles
+      // 6. Slugs, Ropes
+      const pSlugsStart = performance.now();
       renderNinjaRopes(ctx, renderedSlugs);
       renderAllSlugs({ ctx, gameState: visualState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
+      perfTracker.recordRenderPass('slugs_ropes', performance.now() - pSlugsStart);
+
+      // 7. Supply Crates, Projectiles & Particles FX
+      const pFxStart = performance.now();
       renderSupplyCrates(ctx, curState.supplyCrates);
       renderProjectiles({ ctx, projectiles: curState.projectiles || [], animTime });
 
@@ -1137,8 +1154,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       renderParticles(ctx, clientParticlesRef.current);
       renderClientExplosions(ctx, clientExplosionsRef.current);
       renderFloatingDamages(ctx, clientFloatingDamagesRef.current);
+      perfTracker.recordRenderPass('projectiles_fx', performance.now() - pFxStart);
 
-      // 7. Aim Guides, Holograms & Placement Preview
+      // 8. Aim Guides, Holograms & Placement Preview
+      const pAimStart = performance.now();
       const activeSlug = renderedSlugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         renderAimGuides({
@@ -1160,8 +1179,10 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         isMyTurnRef.current,
         animTime
       );
+      perfTracker.recordRenderPass('aim_placement', performance.now() - pAimStart);
 
-      // 8. Foreground Ocean & Rolling Water Waves (With visible screen culling)
+      // 9. Foreground Ocean & Rolling Water Waves (With visible screen culling)
+      const pOceanStart = performance.now();
       const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
       const viewRight = viewLeft + cRect.width / totalScale;
 
@@ -1182,9 +1203,11 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         ripples: clientWaterRipplesRef.current,
         splashes: clientWaterSplashesRef.current,
       });
+      perfTracker.recordRenderPass('ocean_waves', performance.now() - pOceanStart);
 
-      // 9. Comprehensive Debug Hitboxes Overlay
+      // 10. Comprehensive Debug Hitboxes Overlay
       if (showHitboxesRef.current) {
+        const pHitboxStart = performance.now();
         renderHitboxDebugOverlay({
           ctx,
           gameState: curState,
@@ -1194,6 +1217,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           width,
           height,
         });
+        perfTracker.recordRenderPass('debug_hitboxes', performance.now() - pHitboxStart);
       }
 
       ctx.restore();
@@ -1213,18 +1237,30 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       if (fpsTextRef.current && perfTracker.getFpsHudEnabled()) {
         fpsCounterFramesRef.current++;
         const nowFps = performance.now();
-        if (nowFps - lastFpsHudUpdateRef.current >= 250) {
+        if (nowFps - lastFpsHudUpdateRef.current >= 200) {
           const instantFps = Math.round((fpsCounterFramesRef.current * 1000) / (nowFps - lastFpsHudUpdateRef.current));
           fpsCounterFramesRef.current = 0;
           lastFpsHudUpdateRef.current = nowFps;
           fpsTextRef.current.textContent = `${instantFps} FPS`;
+
+          if (fpsDetailsRef.current) {
+            fpsDetailsRef.current.textContent = `(${perfTracker.currentFrameTimeMs}ms) · Dessin: ${perfTracker.currentRenderDurationMs}ms · Phys: ${perfTracker.currentPhysicsDurationMs}ms`;
+          }
+
+          if (fpsPassesRef.current) {
+            const top = perfTracker.liveTopPasses;
+            if (top && top.length > 0) {
+              fpsPassesRef.current.textContent = top.map((p) => `${p.label.split(' ')[0]} ${p.ms}ms`).join(' · ');
+            }
+          }
+
           if (fpsDotRef.current) {
-            fpsDotRef.current.className = `w-2 h-2 rounded-full ${
+            fpsDotRef.current.className = `w-2 h-2 rounded-full shrink-0 ${
               instantFps >= 50 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : instantFps >= 30 ? 'bg-amber-400' : 'bg-red-400'
             }`;
           }
           if (fpsBadgeRef.current) {
-            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-xl text-xs font-mono font-black shadow-xl flex items-center gap-2 select-none z-20 ${
+            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border rounded-2xl text-xs font-mono shadow-2xl flex flex-col gap-0.5 select-none z-20 transition-all ${
               instantFps >= 50 ? 'text-emerald-400 border-emerald-500/30' : instantFps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
             }`;
           }
@@ -1261,14 +1297,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       onMouseMove={handleMouseMove}
       onContextMenu={handleContextMenu}
     >
-      {/* Zero-Overhead In-Game Permanent FPS Counter HUD */}
+      {/* Zero-Overhead In-Game Hardware Profiler & FPS Counter HUD */}
       <div
         ref={fpsBadgeRef}
         style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
-        className="absolute top-16 right-4 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border border-emerald-500/30 rounded-xl text-xs font-mono font-black text-emerald-400 shadow-xl flex items-center gap-2 select-none z-20"
+        className="absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl text-xs font-mono text-emerald-400 shadow-2xl flex flex-col gap-0.5 select-none z-20"
       >
-        <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-        <span ref={fpsTextRef}>60 FPS</span>
+        <div className="flex items-center gap-2">
+          <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0" />
+          <span ref={fpsTextRef} className="font-black text-white">60 FPS</span>
+          <span ref={fpsDetailsRef} className="text-[10px] text-zinc-400 font-normal">
+            (16.6ms) · Dessin: 1.0ms
+          </span>
+        </div>
+        <div ref={fpsPassesRef} className="text-[10px] text-cyan-300/90 font-mono tracking-tight">
+          Chargement des passes...
+        </div>
       </div>
 
       <canvas ref={canvasRef} className="block w-full h-full" />
