@@ -844,23 +844,25 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       let actionTarget: { x: number; y: number } | null = null;
       let followSpeed = 0.08;
 
-      // Priority 1: Flying Projectiles (Always tracked, automatically resets manual camera mode)
+      // 1. Flying Projectiles (Highest Priority - follows the missile in flight)
       if (curState && curState.projectiles && curState.projectiles.length > 0) {
-        isManualCameraModeRef.current = false;
-        const proj = curState.projectiles[0];
-        actionTarget = { x: proj.x, y: proj.y };
-        followSpeed = 0.16;
+        if (!isUserDraggingNow) {
+          isManualCameraModeRef.current = false;
+          const proj = curState.projectiles[0];
+          actionTarget = { x: proj.x, y: proj.y };
+          followSpeed = 0.16;
+        }
       }
-      // Priority 2: Recent Explosions (Tracked only when not exploring manually)
+      // 2. Recent Explosions (Show impact for 450ms)
       else if (!isManualCameraModeRef.current && clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
         const latestEx = clientExplosionsRef.current[clientExplosionsRef.current.length - 1];
         const nowMs = performance.now();
-        if (nowMs - latestEx.startTime < 600) {
+        if (nowMs - latestEx.startTime < 450) {
           actionTarget = { x: latestEx.x, y: latestEx.y };
           followSpeed = 0.12;
         }
       }
-      // Priority 3: Falling Supply Crates (Tracked only when not exploring manually)
+      // 3. Falling Supply Crates
       else if (!isManualCameraModeRef.current && curState && curState.supplyCrates && curState.supplyCrates.some((c) => !c.isLanded || Math.abs(c.vy) > 0.4)) {
         const fallingCrate = curState.supplyCrates.find((c) => !c.isLanded || Math.abs(c.vy) > 0.4);
         if (fallingCrate) {
@@ -868,13 +870,31 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           followSpeed = 0.09;
         }
       }
-      // Priority 4: Active Slug (Tracked on retreat phase or turn intro)
-      else if (curState && curState.activeSlugId && (curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
+      // 4. Active Slug (Follows slug on turn start, retreat, or when walking/jumping/roping/vehicle)
+      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
         const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
         if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
-          isManualCameraModeRef.current = false;
-          actionTarget = { x: activeSlug.x, y: activeSlug.y };
-          followSpeed = curState.phase === 'RETREAT' ? 0.12 : 0.08;
+          const isRetreating = curState.phase === 'RETREAT';
+          const isTurnIntro = curState.phase === 'TURN_START';
+          const isMovingSlug = 
+            (activeSlug.movingDir !== null && activeSlug.movingDir !== undefined) || 
+            Math.abs(activeSlug.vx) > 0.6 || 
+            Math.abs(activeSlug.vy) > 2.0 || 
+            (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined) ||
+            !!activeSlug.inVehicleId;
+
+          // If the player moved the slug (or on retreat/turn intro), cancel manual camera mode and follow slug!
+          if (isMovingSlug || isRetreating || isTurnIntro) {
+            if (!isUserDraggingNow) {
+              isManualCameraModeRef.current = false;
+            }
+          }
+
+          // Follow the active slug when not in manual camera exploration mode
+          if (!isManualCameraModeRef.current) {
+            actionTarget = { x: activeSlug.x, y: activeSlug.y };
+            followSpeed = isRetreating ? 0.12 : isMovingSlug ? 0.10 : 0.07;
+          }
         }
       }
 
