@@ -88,7 +88,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
   const targetCameraPanRef = useRef<Vector2D | null>(null);
-  const lastManualPanTimeRef = useRef<number>(0);
+  const isManualCameraModeRef = useRef<boolean>(false);
 
   const clientParticlesRef = useRef<ClientParticle[]>([]);
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
@@ -283,6 +283,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         terrain.data.height
       );
       targetCameraPanRef.current = null;
+      isManualCameraModeRef.current = true;
       zoomRef.current = newZoom;
       panRef.current = clamped;
       setZoomLevel(newZoom);
@@ -304,6 +305,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       if (activeSlug && activeSlug.isPlaced && activeSlug.x > 0 && activeSlug.y > 0) {
         if (lastCenteredSlugIdRef.current !== activeSlug.id) {
           lastCenteredSlugIdRef.current = activeSlug.id;
+          isManualCameraModeRef.current = false;
           if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
@@ -337,6 +339,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
+        isManualCameraModeRef.current = false;
         const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
         if (activeSlug && activeSlug.isPlaced && containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
@@ -833,57 +836,50 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Dynamic Action Camera Follow (Projectiles, Explosions, Supply Crates, Moving Slugs, Retreat)
-      const isUserManuallyPanning = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
-      if (isUserManuallyPanning) {
-        lastManualPanTimeRef.current = performance.now();
+      const isUserDraggingNow = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
+      if (isUserDraggingNow) {
+        isManualCameraModeRef.current = true;
       }
 
       let actionTarget: { x: number; y: number } | null = null;
       let followSpeed = 0.08;
 
-      // Priority 1: Flying Projectiles
+      // Priority 1: Flying Projectiles (Always tracked, automatically resets manual camera mode)
       if (curState && curState.projectiles && curState.projectiles.length > 0) {
+        isManualCameraModeRef.current = false;
         const proj = curState.projectiles[0];
         actionTarget = { x: proj.x, y: proj.y };
         followSpeed = 0.16;
-        lastManualPanTimeRef.current = 0;
       }
-      // Priority 2: Recent Explosions
-      else if (clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
+      // Priority 2: Recent Explosions (Tracked only when not exploring manually)
+      else if (!isManualCameraModeRef.current && clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
         const latestEx = clientExplosionsRef.current[clientExplosionsRef.current.length - 1];
         const nowMs = performance.now();
         if (nowMs - latestEx.startTime < 600) {
           actionTarget = { x: latestEx.x, y: latestEx.y };
           followSpeed = 0.12;
-          lastManualPanTimeRef.current = 0;
         }
       }
-      // Priority 3: Falling Supply Crates
-      else if (curState && curState.supplyCrates && curState.supplyCrates.some((c) => !c.isLanded || Math.abs(c.vy) > 0.4)) {
+      // Priority 3: Falling Supply Crates (Tracked only when not exploring manually)
+      else if (!isManualCameraModeRef.current && curState && curState.supplyCrates && curState.supplyCrates.some((c) => !c.isLanded || Math.abs(c.vy) > 0.4)) {
         const fallingCrate = curState.supplyCrates.find((c) => !c.isLanded || Math.abs(c.vy) > 0.4);
         if (fallingCrate) {
           actionTarget = { x: fallingCrate.x, y: fallingCrate.y };
           followSpeed = 0.09;
         }
       }
-      // Priority 4: Active Slug (Follow ONLY when actively in motion, retreating, or at turn start)
-      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
+      // Priority 4: Active Slug (Tracked on retreat phase or turn intro)
+      else if (curState && curState.activeSlugId && (curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
         const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
         if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
-          const isMoving = activeSlug.movingDir !== null || Math.abs(activeSlug.vx) > 0.4 || Math.abs(activeSlug.vy) > 0.4 || (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined);
-          const isRetreating = curState.phase === 'RETREAT';
-          const isTurnIntro = curState.phase === 'TURN_START';
-
-          // Follow the slug ONLY when it is in active motion, retreating, or at turn start (preserves manual exploration)
-          if (isMoving || isRetreating || isTurnIntro) {
-            actionTarget = { x: activeSlug.x, y: activeSlug.y };
-            followSpeed = isRetreating ? 0.12 : isMoving ? 0.10 : 0.08;
-          }
+          isManualCameraModeRef.current = false;
+          actionTarget = { x: activeSlug.x, y: activeSlug.y };
+          followSpeed = curState.phase === 'RETREAT' ? 0.12 : 0.08;
         }
       }
 
       // Smooth camera follow interpolation
-      if (actionTarget && !isUserManuallyPanning && cRect.width > 0 && cRect.height > 0) {
+      if (actionTarget && !isUserDraggingNow && cRect.width > 0 && cRect.height > 0) {
         const fitScale = Math.min(cRect.width / width, cRect.height / height);
         const totalScale = fitScale * zoomRef.current;
         const targetPanX = -(actionTarget.x - width / 2) * totalScale;
