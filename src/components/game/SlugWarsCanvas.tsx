@@ -391,12 +391,14 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         );
         mousePosRef.current = pos;
 
-        // Direct touch-to-aim across the entire screen for ballistic weapons (Bazooka, Grenades, etc.)
+        // Check if touch is near active slug to start direct aiming drag
         const curGameState = gameStateRef.current;
         const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
         if (isMyTurnRef.current && curGameState.phase === 'AIMING' && activeSlug) {
+          const distToSlug = Math.hypot(pos.x - activeSlug.x, pos.y - activeSlug.y);
           const weapon = getWeapon(activeSlug.selectedWeaponId);
-          if (!weapon.requiresTarget && weapon.id !== 'girder') {
+          if (distToSlug < 90 && !weapon.requiresTarget && weapon.id !== 'girder') {
+            g.touchIsAiming = true;
             const dx = pos.x - activeSlug.x;
             const dy = pos.y - activeSlug.y;
             let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
@@ -407,7 +409,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
               activeSlug.facing = facing;
               onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
             }
-            g.touchIsAiming = true;
           } else {
             g.touchIsAiming = false;
           }
