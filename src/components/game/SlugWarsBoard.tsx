@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, Profiler } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
 import { TurnHeader } from './TurnHeader';
+import { DesktopTopHeader } from './desktop/DesktopTopHeader';
+import { DesktopBottomDock } from './desktop/DesktopBottomDock';
 import { SlugWarsCanvas } from './SlugWarsCanvas';
 import { WeaponPicker } from './WeaponPicker';
 import { RulesModal } from './RulesModal';
@@ -136,61 +138,54 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   });
 
   return (
-    <div
-      className={
-        isTouch
-          ? 'fixed inset-0 h-[100dvh] w-screen overflow-hidden overscroll-none touch-none bg-zinc-950 text-zinc-100 select-none'
-          : 'flex flex-col h-screen max-h-screen overflow-hidden overscroll-none bg-zinc-950 p-1 md:p-1.5 text-zinc-100 relative'
-      }
-    >
-      {/* Top Header - Floating transparent on mobile, standard flex row on PC */}
+    <div className="fixed inset-0 h-[100dvh] w-screen overflow-hidden overscroll-none touch-none bg-zinc-950 text-zinc-100 select-none relative">
+      {/* Top Header - Floating transparent on mobile, new edge-to-edge floating cluster on PC */}
       <Profiler id="TurnHeader" onRender={perfTracker.onReactRender}>
         <div
           className={
             isTouch
               ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]'
-              : 'relative z-30 shrink-0'
+              : 'absolute top-0 inset-x-0 z-30 pointer-events-none'
           }
         >
-          <TurnHeader
-            gameState={gameState}
-            hostPeerId={hostPeerId}
-            isMyTurn={isMyTurn}
-            isHost={isHost}
-            showHitboxes={showHitboxes}
-            onToggleHitboxes={handleToggleHitboxes}
-            onOpenWeaponPicker={handleOpenWeaponPicker}
-            onSetFuseTimer={onSetFuseTimer}
-            onOpenRules={handleOpenRules}
-            onOpenMetrics={handleOpenMetrics}
-            onRestartGame={onRestartGame}
-            onExit={onExit}
-          />
+          {isTouch ? (
+            <TurnHeader
+              gameState={gameState}
+              hostPeerId={hostPeerId}
+              isMyTurn={isMyTurn}
+              isHost={isHost}
+              showHitboxes={showHitboxes}
+              onToggleHitboxes={handleToggleHitboxes}
+              onOpenWeaponPicker={handleOpenWeaponPicker}
+              onSetFuseTimer={onSetFuseTimer}
+              onOpenRules={handleOpenRules}
+              onOpenMetrics={handleOpenMetrics}
+              onRestartGame={onRestartGame}
+              onExit={onExit}
+            />
+          ) : (
+            <DesktopTopHeader
+              gameState={gameState}
+              hostPeerId={hostPeerId}
+              isMyTurn={isMyTurn}
+              isHost={isHost}
+              showHitboxes={showHitboxes}
+              onToggleHitboxes={handleToggleHitboxes}
+              onOpenRules={handleOpenRules}
+              onOpenMetrics={handleOpenMetrics}
+              onRestartGame={onRestartGame}
+              onExit={onExit}
+            />
+          )}
         </div>
       </Profiler>
 
-      {/* Main Canvas Area - Fullscreen behind header on mobile, middle flex container on PC */}
-      <div
-        className={
-          isTouch
-            ? 'absolute inset-0 z-10 flex items-center justify-center overflow-hidden'
-            : 'relative flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden my-0.5'
-        }
-      >
+      {/* Main Canvas Area - Fullscreen behind floating HUD on both mobile and PC */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden w-full h-full">
         {!isTouch && gameState.phase === 'PLACEMENT' && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none px-4 py-1 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-xl backdrop-blur-md animate-pulse">
-            📍 Cliquez sur le terrain pour placer votre limace ({activeSlug?.name})
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-5 py-2 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-2xl backdrop-blur-xl animate-pulse">
+            📍 Cliquez sur le terrain pour déployer votre limace ({activeSlug?.name})
           </div>
-        )}
-
-        {!isTouch && (
-          <BoardFuseTimerWidget
-            activeSlug={activeSlug}
-            activeWeapon={activeWeapon}
-            phase={gameState.phase}
-            isMyTurn={isMyTurn}
-            onSetFuseTimer={onSetFuseTimer}
-          />
         )}
 
         <Profiler id="SlugWarsCanvas" onRender={perfTracker.onReactRender}>
@@ -210,17 +205,24 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         </Profiler>
       </div>
 
+      {/* Bottom Controls Area - Edge-to-edge floating dock on PC */}
       {!isTouch && (
-        <BoardBottomDock
-          activeSlug={activeSlug}
-          activeSheep={activeSheep}
-          isMyTurn={isMyTurn}
-          showDrawer={showDrawer}
-          onToggleDrawer={() => setShowDrawer(!showDrawer)}
-          onOpenWeaponPicker={handleOpenWeaponPicker}
-          onExitVehicle={onExitVehicle}
-          chatMessageCount={chatMessages.length}
-        />
+        <div className="absolute bottom-0 inset-x-0 z-30 pointer-events-none">
+          <DesktopBottomDock
+            gameState={gameState}
+            activeSlug={activeSlug}
+            activeSheep={activeSheep}
+            isMyTurn={isMyTurn}
+            showDrawer={showDrawer}
+            onToggleDrawer={() => setShowDrawer(!showDrawer)}
+            onOpenWeaponPicker={handleOpenWeaponPicker}
+            onSetFuseTimer={onSetFuseTimer}
+            onUpdateAim={onUpdateAim}
+            onExitVehicle={onExitVehicle}
+            chatMessages={chatMessages}
+            sendChat={sendChat}
+          />
+        </div>
       )}
 
       <BoardChatDrawer

@@ -30,6 +30,36 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const allWeapons = getAllWeapons();
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
 
+  // Keyboard navigation for desktop: F1-F5 / 1-5 to switch categories, Esc/I/Tab to close
+  React.useEffect(() => {
+    if (isTouch) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Tab' || e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === 'F1' || e.key === '1') {
+        e.preventDefault();
+        setActiveCategory('EXPLOSIVE');
+      } else if (e.key === 'F2' || e.key === '2') {
+        e.preventDefault();
+        setActiveCategory('MELEE');
+      } else if (e.key === 'F3' || e.key === '3') {
+        e.preventDefault();
+        setActiveCategory('AIR_SUPPORT');
+      } else if (e.key === 'F4' || e.key === '4') {
+        e.preventDefault();
+        setActiveCategory('SPECIAL');
+      } else if (e.key === 'F5' || e.key === '5') {
+        e.preventDefault();
+        setActiveCategory('UTILITY');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTouch, onClose]);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
       <div className="bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl max-w-3xl w-full p-2.5 sm:p-4 space-y-2 flex flex-col h-[88vh] sm:h-[540px] max-h-[92vh] shadow-[0_0_50px_rgba(124,58,237,0.25)]">
@@ -87,7 +117,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
-            {CATEGORIES.map((cat) => {
+            {CATEGORIES.map((cat, idx) => {
               const count = allWeapons.filter((w) => w.category === cat.id).length;
               const isActive = activeCategory === cat.id;
               return (
@@ -100,6 +130,9 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                       : 'bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                   }`}
                 >
+                  <span className="font-mono text-[9px] px-1 py-0.2 bg-black/40 rounded border border-white/10 text-zinc-300">
+                    {idx + 1}
+                  </span>
                   {cat.icon}
                   <span className="truncate">{cat.label}</span>
                   <span
