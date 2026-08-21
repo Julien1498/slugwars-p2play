@@ -88,7 +88,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
   const targetCameraPanRef = useRef<Vector2D | null>(null);
-  const isManualCameraModeRef = useRef<boolean>(false);
+  const cameraModeRef = useRef<'FOLLOW_SLUG' | 'FOLLOW_PROJECTILE' | 'FREE_LOOK'>('FOLLOW_SLUG');
 
   const clientParticlesRef = useRef<ClientParticle[]>([]);
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
@@ -283,7 +283,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         terrain.data.height
       );
       targetCameraPanRef.current = null;
-      isManualCameraModeRef.current = true;
+      cameraModeRef.current = 'FREE_LOOK';
       zoomRef.current = newZoom;
       panRef.current = clamped;
       setZoomLevel(newZoom);
@@ -305,7 +305,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       if (activeSlug && activeSlug.isPlaced && activeSlug.x > 0 && activeSlug.y > 0) {
         if (lastCenteredSlugIdRef.current !== activeSlug.id) {
           lastCenteredSlugIdRef.current = activeSlug.id;
-          isManualCameraModeRef.current = false;
+          cameraModeRef.current = 'FOLLOW_SLUG';
           if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
@@ -331,15 +331,22 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
     }
   }, [gameState.activeSlugId, gameState.phase, terrain.data.width, terrain.data.height]);
 
-  // Global shortcut 'c' or 'C' to instantly re-center camera on active slug
+  // Global shortcut 'c' or 'C' to instantly re-center camera on active slug, and movement key detection
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea') return;
 
-      if (e.key === 'c' || e.key === 'C') {
+      const key = e.key.toLowerCase();
+
+      // If player starts walking, jumping, or controlling slug, immediately return to FOLLOW_SLUG mode!
+      if (['a', 'd', 'q', 'z', 'w', 's', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' ', 'enter'].includes(key)) {
+        cameraModeRef.current = 'FOLLOW_SLUG';
+      }
+
+      if (key === 'c') {
         e.preventDefault();
-        isManualCameraModeRef.current = false;
+        cameraModeRef.current = 'FOLLOW_SLUG';
         const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
         if (activeSlug && activeSlug.isPlaced && containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
@@ -528,6 +535,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             terrain.data.width,
             terrain.data.height
           );
+          cameraModeRef.current = 'FREE_LOOK';
           panRef.current = clamped;
           setPanOffset(clamped);
         }
@@ -628,6 +636,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           terrain.data.width,
           terrain.data.height
         );
+        cameraModeRef.current = 'FREE_LOOK';
         panRef.current = clamped;
         setPanOffset(clamped);
         return;
@@ -683,6 +692,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
         isDraggingCameraRef.current = true;
         dragStartMouseRef.current = { x: e.clientX, y: e.clientY };
         dragStartPanRef.current = { ...panRef.current };
+        cameraModeRef.current = 'FREE_LOOK';
         return;
       }
 
@@ -733,6 +743,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       if (isDraggingCameraRef.current) {
         isDraggingCameraRef.current = false;
+        cameraModeRef.current = 'FREE_LOOK';
         if (e.button === 1 || e.button === 2) return;
       }
 
@@ -838,62 +849,54 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       // Dynamic Action Camera Follow (Projectiles, Explosions, Supply Crates, Moving Slugs, Retreat)
       const isUserDraggingNow = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
       if (isUserDraggingNow) {
-        isManualCameraModeRef.current = true;
+        cameraModeRef.current = 'FREE_LOOK';
+      }
+
+      // Check for active projectiles in flight
+      if (curState && curState.projectiles && curState.projectiles.length > 0) {
+        if (!isUserDraggingNow) {
+          cameraModeRef.current = 'FOLLOW_PROJECTILE';
+        }
+      }
+
+      // Check for phase transitions (retreat or turn intro)
+      if (curState && (curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
+        if (!isUserDraggingNow && cameraModeRef.current !== 'FOLLOW_PROJECTILE') {
+          cameraModeRef.current = 'FOLLOW_SLUG';
+        }
       }
 
       let actionTarget: { x: number; y: number } | null = null;
       let followSpeed = 0.08;
 
-      // 1. Flying Projectiles (Highest Priority - follows the missile in flight)
-      if (curState && curState.projectiles && curState.projectiles.length > 0) {
-        if (!isUserDraggingNow) {
-          isManualCameraModeRef.current = false;
+      if (cameraModeRef.current === 'FREE_LOOK') {
+        // In Free Look Mode, do NOT follow any target! The camera remains frozen at the user's manual pan position!
+        actionTarget = null;
+      } else if (cameraModeRef.current === 'FOLLOW_PROJECTILE') {
+        if (curState && curState.projectiles && curState.projectiles.length > 0) {
           const proj = curState.projectiles[0];
           actionTarget = { x: proj.x, y: proj.y };
           followSpeed = 0.16;
-        }
-      }
-      // 2. Recent Explosions (Show impact for 450ms)
-      else if (!isManualCameraModeRef.current && clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
-        const latestEx = clientExplosionsRef.current[clientExplosionsRef.current.length - 1];
-        const nowMs = performance.now();
-        if (nowMs - latestEx.startTime < 450) {
-          actionTarget = { x: latestEx.x, y: latestEx.y };
-          followSpeed = 0.12;
-        }
-      }
-      // 3. Falling Supply Crates
-      else if (!isManualCameraModeRef.current && curState && curState.supplyCrates && curState.supplyCrates.some((c) => !c.isLanded || Math.abs(c.vy) > 0.4)) {
-        const fallingCrate = curState.supplyCrates.find((c) => !c.isLanded || Math.abs(c.vy) > 0.4);
-        if (fallingCrate) {
-          actionTarget = { x: fallingCrate.x, y: fallingCrate.y };
-          followSpeed = 0.09;
-        }
-      }
-      // 4. Active Slug (Follows slug on turn start, retreat, or when walking/jumping/roping/vehicle)
-      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
-        const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
-        if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
-          const isRetreating = curState.phase === 'RETREAT';
-          const isTurnIntro = curState.phase === 'TURN_START';
-          const isMovingSlug = 
-            (activeSlug.movingDir !== null && activeSlug.movingDir !== undefined) || 
-            Math.abs(activeSlug.vx) > 0.6 || 
-            Math.abs(activeSlug.vy) > 2.0 || 
-            (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined) ||
-            !!activeSlug.inVehicleId;
-
-          // If the player moved the slug (or on retreat/turn intro), cancel manual camera mode and follow slug!
-          if (isMovingSlug || isRetreating || isTurnIntro) {
-            if (!isUserDraggingNow) {
-              isManualCameraModeRef.current = false;
-            }
+        } else if (clientExplosionsRef.current && clientExplosionsRef.current.length > 0) {
+          const latestEx = clientExplosionsRef.current[clientExplosionsRef.current.length - 1];
+          const nowMs = performance.now();
+          if (nowMs - latestEx.startTime < 450) {
+            actionTarget = { x: latestEx.x, y: latestEx.y };
+            followSpeed = 0.12;
+          } else {
+            cameraModeRef.current = 'FOLLOW_SLUG';
           }
+        } else {
+          cameraModeRef.current = 'FOLLOW_SLUG';
+        }
+      }
 
-          // Follow the active slug when not in manual camera exploration mode
-          if (!isManualCameraModeRef.current) {
+      if (cameraModeRef.current === 'FOLLOW_SLUG') {
+        if (curState && curState.activeSlugId) {
+          const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
+          if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
             actionTarget = { x: activeSlug.x, y: activeSlug.y };
-            followSpeed = isRetreating ? 0.12 : isMovingSlug ? 0.10 : 0.07;
+            followSpeed = curState.phase === 'RETREAT' ? 0.12 : 0.08;
           }
         }
       }
