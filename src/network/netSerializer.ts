@@ -63,6 +63,7 @@ export interface CompactStateDelta {
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
   craters?: CraterRecord[];
+  journal?: GameState['journal'];
 }
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
@@ -339,10 +340,27 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.helicopters = [];
   }
 
+  // Journal Combat Log Sync (instant real-time combat log entries)
+  const curJournal = currentState.journal || [];
+  const prevJournal = prevState?.journal || [];
+  if (curJournal.length > 0 && curJournal[0]?.id !== prevJournal[0]?.id) {
+    delta.journal = curJournal.slice(0, 5);
+  }
+
   return delta;
 }
 
 export function applyStateDelta(localState: GameState, delta: CompactStateDelta): void {
+  if (delta.journal && delta.journal.length > 0) {
+    if (!localState.journal) localState.journal = [];
+    for (const newEntry of delta.journal) {
+      if (!localState.journal.some((j) => j.id === newEntry.id)) {
+        localState.journal.unshift(newEntry);
+      }
+    }
+    if (localState.journal.length > 50) localState.journal.splice(50);
+  }
+
   if (delta.phase) {
     localState.phase = delta.phase as any;
     if (delta.phase !== 'RETREAT') {
@@ -477,7 +495,8 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     (!delta.craters || delta.craters.length === 0) &&
     (!delta.supplyCrates || delta.supplyCrates.length === 0) &&
     (!delta.mines || delta.mines.length === 0) &&
-    (!delta.helicopters || delta.helicopters.length === 0)
+    (!delta.helicopters || delta.helicopters.length === 0) &&
+    (!delta.journal || delta.journal.length === 0)
   );
 }
 

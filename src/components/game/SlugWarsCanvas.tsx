@@ -866,16 +866,18 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
           followSpeed = 0.09;
         }
       }
-      // Priority 4: Active Slug (Moving, Roping, Retreating, or Aiming)
-      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START' || curState.phase === 'TURN_TIME')) {
+      // Priority 4: Active Slug (Follow ONLY when actively in motion, retreating, or at turn start)
+      else if (curState && curState.activeSlugId && (curState.phase === 'AIMING' || curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
         const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
         if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
-          const isMoving = activeSlug.movingDir !== null || Math.abs(activeSlug.vx) > 0.2 || Math.abs(activeSlug.vy) > 0.2 || (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined) || curState.phase === 'RETREAT';
-          const timeSinceManualPan = performance.now() - (lastManualPanTimeRef.current || 0);
+          const isMoving = activeSlug.movingDir !== null || Math.abs(activeSlug.vx) > 0.4 || Math.abs(activeSlug.vy) > 0.4 || (activeSlug.ropeState !== null && activeSlug.ropeState !== undefined);
+          const isRetreating = curState.phase === 'RETREAT';
+          const isTurnIntro = curState.phase === 'TURN_START';
 
-          if (isMoving || timeSinceManualPan > 2000 || curState.phase === 'RETREAT' || curState.phase === 'TURN_START') {
+          // Follow the slug ONLY when it is in active motion, retreating, or at turn start (preserves manual exploration)
+          if (isMoving || isRetreating || isTurnIntro) {
             actionTarget = { x: activeSlug.x, y: activeSlug.y };
-            followSpeed = curState.phase === 'RETREAT' ? 0.12 : isMoving ? 0.10 : 0.07;
+            followSpeed = isRetreating ? 0.12 : isMoving ? 0.10 : 0.08;
           }
         }
       }
