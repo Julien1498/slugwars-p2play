@@ -1136,7 +1136,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
             }`;
           }
           if (fpsBadgeRef.current) {
-            fpsBadgeRef.current.className = `absolute top-3 right-3 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-lg text-xs font-mono font-black shadow-lg flex items-center gap-2 select-none z-20 ${
+            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-2.5 py-1 bg-zinc-950/85 backdrop-blur border rounded-xl text-xs font-mono font-black shadow-xl flex items-center gap-2 select-none z-20 ${
               instantFps >= 50 ? 'text-emerald-400 border-emerald-500/30' : instantFps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
             }`;
           }
