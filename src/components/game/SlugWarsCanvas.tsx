@@ -70,8 +70,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const slugDeathTimestampsRef = useRef<Map<string, number>>(new Map());
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const lockedTargetRef = useRef<Vector2D | null>(null);
+  const girderDragOriginRef = useRef<Vector2D | null>(null);
+  const isGirderDraggingRef = useRef<boolean>(false);
 
   const gameStateRef = useRef(gameState);
+
   gameStateRef.current = gameState;
   const isMyTurnRef = useRef(isMyTurn);
   isMyTurnRef.current = isMyTurn;
@@ -342,6 +345,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const minZoom = isTouch ? 0.75 : 0.5;
       const newZoom = Math.max(minZoom, Math.min(3.0, zoomRef.current * zoomFactor));
 
+
       const rect = container.getBoundingClientRect();
       const mouseRelX = e.clientX - rect.left - rect.width / 2;
       const mouseRelY = e.clientY - rect.top - rect.height / 2;
@@ -444,6 +448,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState.slugs, gameState.activeSlugId, terrain.data.width, terrain.data.height]);
+
+
 
   const onPlaceSlugRef = useRef(onPlaceSlug);
   onPlaceSlugRef.current = onPlaceSlug;
@@ -719,6 +725,22 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
 
+      if (activeSlug.selectedWeaponId === 'girder') {
+        if (lockedTargetRef.current) {
+          const dx = pos.x - lockedTargetRef.current.x;
+          const dy = pos.y - lockedTargetRef.current.y;
+          if (Math.hypot(dx, dy) > 6) {
+            let angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI));
+            if (angle < 0) angle += 360;
+            activeSlug.aimAngle = angle;
+            onUpdateAim?.(angle, activeSlug.aimPower, activeSlug.facing, lockedTargetRef.current);
+          }
+        } else {
+          onUpdateAim?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
+        }
+        return;
+      }
+
       const dx = pos.x - activeSlug.x;
       const dy = pos.y - activeSlug.y;
       let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
@@ -741,7 +763,17 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
-      if (!weapon.requiresTarget && weapon.id !== 'girder') {
+
+      if (weapon.id === 'girder') {
+        const pos = getCanvasMousePos(e);
+        lockedTargetRef.current = pos;
+        activeSlug.currentTargetPoint = pos;
+        sfx.play('tick');
+        onUpdateAim?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
+        return;
+      }
+
+      if (!weapon.requiresTarget) {
         return;
       }
       const pos = getCanvasMousePos(e);
@@ -782,6 +814,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
+      if (weapon.id === 'girder') {
+        if (!lockedTargetRef.current) {
+          lockedTargetRef.current = { x: mouseX, y: mouseY };
+          activeSlug.currentTargetPoint = { x: mouseX, y: mouseY };
+          onUpdateAim?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, { x: mouseX, y: mouseY });
+        }
+        return;
+      }
+
       const dx = mouseX - activeSlug.x;
       const dy = mouseY - activeSlug.y;
       let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
@@ -790,7 +831,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       onUpdateAim?.(angle, activeSlug.aimPower, facing);
 
       const isInstantTarget = weapon.behavior === 'AIR_STRIKE' || weapon.behavior === 'TELEPORT' || weapon.behavior === 'HEAVY_FALL';
-      const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
+      const usesTargetPoint = weapon.requiresTarget;
       const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: mouseX, y: mouseY };
 
       if (weapon.id === 'blowtorch') {
@@ -823,7 +864,17 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
-      const usesTargetPoint = weapon.requiresTarget || weapon.id === 'girder';
+      if (weapon.id === 'girder') {
+        const placementPt = lockedTargetRef.current || { x: clickX, y: clickY };
+        onFire({ ...placementPt, aimAngle: activeSlug.aimAngle, aimPower: 5, facing: activeSlug.facing });
+        lockedTargetRef.current = null;
+        girderDragOriginRef.current = null;
+        isGirderDraggingRef.current = false;
+        return;
+      }
+
+
+      const usesTargetPoint = weapon.requiresTarget;
       const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: clickX, y: clickY };
 
       if (weapon.id === 'blowtorch') {
@@ -853,6 +904,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     [isMyTurn, gameState, getCanvasMousePos, onFire, onReleaseCharge, onUpdateAim]
   );
 
+
   // Render loop
   useEffect(() => {
     const matchKey = `${terrain.data.seed}_${terrain.data.theme}`;
@@ -871,6 +923,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     if (!canvas) return;
     const ctx = (canvas.getContext('2d', { alpha: false }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
     if (!ctx) return;
+
+
 
     let animId: number;
 
@@ -1011,7 +1065,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       ctx.translate(-width / 2, -height / 2);
 
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.imageSmoothingQuality = 'low';
+
 
       // Damage detection
       if (curState && curState.slugs) {
@@ -1158,6 +1213,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const pDecorStart = performance.now();
       renderDecorItems(ctx, terrain, decorItems, animTime);
       renderMines(ctx, curState.mines);
+
+
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
       renderTombstones(ctx, curState.slugs, waterLevel);
       perfTracker.recordRenderPass('decor_mines', performance.now() - pDecorStart);

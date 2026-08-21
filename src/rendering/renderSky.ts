@@ -15,61 +15,138 @@ export interface SkyRenderContext {
   worldBottom: number;
 }
 
+// Cached sky gradient
+let _cachedSkyGrad: CanvasGradient | null = null;
+let _cachedSkyKey = '';
+
+// Cached mountain gradient
+let _cachedMtGrad: CanvasGradient | null = null;
+let _cachedMtKey = '';
+
+// Pre-allocated typed arrays for background wave points
+let _bgWaveX = new Float32Array(1024);
+let _bgWaveY = new Float32Array(1024);
+
+// Cached background water gradient
+let _cachedBgWaterGrad: CanvasGradient | null = null;
+let _cachedBgWaterY = -99999;
+let _cachedBgWorldBottom = -99999;
+let _cachedBgTheme: MapTheme | null = null;
+let _cachedBgIsDay = true;
+
+function getCachedBgWaterGradient(
+  ctx: CanvasRenderingContext2D,
+  waterY: number,
+  worldBottom: number,
+  theme: MapTheme,
+  isDay: boolean
+): CanvasGradient {
+  if (
+    _cachedBgWaterGrad &&
+    _cachedBgWaterY === waterY &&
+    _cachedBgWorldBottom === worldBottom &&
+    _cachedBgTheme === theme &&
+    _cachedBgIsDay === isDay
+  ) {
+    return _cachedBgWaterGrad;
+  }
+
+  const grad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
+  if (isDay) {
+    if (theme === 'CAVERN') {
+      grad.addColorStop(0, '#d97706');
+      grad.addColorStop(0.3, '#9a3412');
+      grad.addColorStop(0.7, '#431407');
+      grad.addColorStop(1, '#170602');
+    } else {
+      grad.addColorStop(0, '#0284c7');
+      grad.addColorStop(0.25, '#0369a1');
+      grad.addColorStop(0.65, '#082f49');
+      grad.addColorStop(1, '#020617');
+    }
+  } else {
+    if (theme === 'CAVERN') {
+      grad.addColorStop(0, '#dc2626');
+      grad.addColorStop(0.35, '#7f1d1d');
+      grad.addColorStop(1, '#170602');
+    } else {
+      grad.addColorStop(0, '#0ea5e9');
+      grad.addColorStop(0.3, '#0f172a');
+      grad.addColorStop(1, '#020617');
+    }
+  }
+
+  _cachedBgWaterGrad = grad;
+  _cachedBgWaterY = waterY;
+  _cachedBgWorldBottom = worldBottom;
+  _cachedBgTheme = theme;
+  _cachedBgIsDay = isDay;
+  return grad;
+}
+
 export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
+
   const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
 
   // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
   const skyGradTop = Math.min(-650, -height * 0.9);
-  const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
-  if (isDay) {
-    if (theme === 'CAVERN') {
-      skyGrad.addColorStop(0, '#451a03');
-      skyGrad.addColorStop(0.35, '#78350f');
-      skyGrad.addColorStop(0.65, '#b45309');
-      skyGrad.addColorStop(0.88, '#d97706');
-      skyGrad.addColorStop(1, '#fef08a');
-    } else if (theme === 'FORTRESS') {
-      skyGrad.addColorStop(0, '#0f172a');
-      skyGrad.addColorStop(0.35, '#0369a1');
-      skyGrad.addColorStop(0.70, '#0284c7');
-      skyGrad.addColorStop(0.90, '#38bdf8');
-      skyGrad.addColorStop(1, '#e0f2fe');
-    } else if (theme === 'FLOATING_CHAOS') {
-      skyGrad.addColorStop(0, '#0369a1');
-      skyGrad.addColorStop(0.35, '#0284c7');
-      skyGrad.addColorStop(0.72, '#38bdf8');
-      skyGrad.addColorStop(1, '#e0f2fe');
+  const skyKey = `${skyGradTop}_${waterY}_${theme}_${isDay}`;
+  if (_cachedSkyKey !== skyKey || !_cachedSkyGrad) {
+    const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
+    if (isDay) {
+      if (theme === 'CAVERN') {
+        skyGrad.addColorStop(0, '#451a03');
+        skyGrad.addColorStop(0.35, '#78350f');
+        skyGrad.addColorStop(0.65, '#b45309');
+        skyGrad.addColorStop(0.88, '#d97706');
+        skyGrad.addColorStop(1, '#fef08a');
+      } else if (theme === 'FORTRESS') {
+        skyGrad.addColorStop(0, '#0f172a');
+        skyGrad.addColorStop(0.35, '#0369a1');
+        skyGrad.addColorStop(0.70, '#0284c7');
+        skyGrad.addColorStop(0.90, '#38bdf8');
+        skyGrad.addColorStop(1, '#e0f2fe');
+      } else if (theme === 'FLOATING_CHAOS') {
+        skyGrad.addColorStop(0, '#0369a1');
+        skyGrad.addColorStop(0.35, '#0284c7');
+        skyGrad.addColorStop(0.72, '#38bdf8');
+        skyGrad.addColorStop(1, '#e0f2fe');
+      } else {
+        skyGrad.addColorStop(0, '#0369a1');
+        skyGrad.addColorStop(0.38, '#0284c7');
+        skyGrad.addColorStop(0.74, '#38bdf8');
+        skyGrad.addColorStop(1, '#e0f2fe');
+      }
     } else {
-      skyGrad.addColorStop(0, '#0369a1');
-      skyGrad.addColorStop(0.38, '#0284c7');
-      skyGrad.addColorStop(0.74, '#38bdf8');
-      skyGrad.addColorStop(1, '#e0f2fe');
+      if (theme === 'CAVERN') {
+        skyGrad.addColorStop(0, '#030102');
+        skyGrad.addColorStop(0.35, '#170605');
+        skyGrad.addColorStop(0.7, '#2b0c07');
+        skyGrad.addColorStop(1, '#451a03');
+      } else if (theme === 'FORTRESS') {
+        skyGrad.addColorStop(0, '#020408');
+        skyGrad.addColorStop(0.35, '#070b14');
+        skyGrad.addColorStop(0.7, '#0f172a');
+        skyGrad.addColorStop(1, '#1e293b');
+      } else if (theme === 'FLOATING_CHAOS') {
+        skyGrad.addColorStop(0, '#02040a');
+        skyGrad.addColorStop(0.35, '#070d1a');
+        skyGrad.addColorStop(0.7, '#0f172a');
+        skyGrad.addColorStop(1, '#1e293b');
+      } else {
+        skyGrad.addColorStop(0, '#02040a');
+        skyGrad.addColorStop(0.35, '#070d1a');
+        skyGrad.addColorStop(0.7, '#0f172a');
+        skyGrad.addColorStop(1, '#1e1b4b');
+      }
     }
-  } else {
-    if (theme === 'CAVERN') {
-      skyGrad.addColorStop(0, '#030102');
-      skyGrad.addColorStop(0.35, '#170605');
-      skyGrad.addColorStop(0.7, '#2b0c07');
-      skyGrad.addColorStop(1, '#451a03');
-    } else if (theme === 'FORTRESS') {
-      skyGrad.addColorStop(0, '#020408');
-      skyGrad.addColorStop(0.35, '#070b14');
-      skyGrad.addColorStop(0.7, '#0f172a');
-      skyGrad.addColorStop(1, '#1e293b');
-    } else if (theme === 'FLOATING_CHAOS') {
-      skyGrad.addColorStop(0, '#02040a');
-      skyGrad.addColorStop(0.35, '#070d1a');
-      skyGrad.addColorStop(0.7, '#0f172a');
-      skyGrad.addColorStop(1, '#1e293b');
-    } else {
-      skyGrad.addColorStop(0, '#02040a');
-      skyGrad.addColorStop(0.35, '#070d1a');
-      skyGrad.addColorStop(0.7, '#0f172a');
-      skyGrad.addColorStop(1, '#1e1b4b');
-    }
+    _cachedSkyGrad = skyGrad;
+    _cachedSkyKey = skyKey;
   }
-  ctx.fillStyle = skyGrad;
+
+  ctx.fillStyle = _cachedSkyGrad;
   ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
+
 
   // 2. Day & Night Atmospheric Particles & Clouds
   if (isDay) {
@@ -187,6 +264,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
       ctx.fill();
     } else if (theme === 'FLOATING_CHAOS') {
+
       const riftX = width * 0.78;
       const riftY = height * 0.18;
       const riftR = 30;
@@ -230,46 +308,48 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.lineTo(-45, -beamLen);
       ctx.lineTo(45, -beamLen);
       ctx.lineTo(6, 0);
-      ctx.closePath();
-      ctx.fill();
       ctx.restore();
     }
   }
 
   // 4. Parallax Mountain & Ridge Horizons (Theme-Specific Colors)
-  const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
-  if (isDay) {
-    if (theme === 'CAVERN') {
-      mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
-      mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
-    } else if (theme === 'FORTRESS') {
-      mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
-      mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
-    } else if (theme === 'FLOATING_CHAOS') {
-      // Radiant Emerald Green Archipelago Hills
-      mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
-      mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
+  const mtKey = `${height}_${waterY}_${theme}_${isDay}`;
+  if (_cachedMtKey !== mtKey || !_cachedMtGrad) {
+    const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
+    if (isDay) {
+      if (theme === 'CAVERN') {
+        mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
+      } else if (theme === 'FORTRESS') {
+        mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
+      } else if (theme === 'FLOATING_CHAOS') {
+        mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
+      } else {
+        mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
+      }
     } else {
-      mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
-      mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
+      if (theme === 'CAVERN') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+      } else if (theme === 'FORTRESS') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+        mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
+      } else if (theme === 'FLOATING_CHAOS') {
+        mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
+      } else {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+      }
     }
-  } else {
-    if (theme === 'CAVERN') {
-      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-      mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
-    } else if (theme === 'FORTRESS') {
-      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
-      mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
-    } else if (theme === 'FLOATING_CHAOS') {
-      mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
-      mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
-    } else {
-      mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-      mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
-    }
+    _cachedMtGrad = mtGrad;
+    _cachedMtKey = mtKey;
   }
 
-  ctx.fillStyle = mtGrad;
+  ctx.fillStyle = _cachedMtGrad;
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
   for (let x = worldLeft; x <= worldRight + 40; x += 35) {
@@ -309,69 +389,9 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     ctx.stroke();
   }
 
-// Pre-allocated typed arrays for background wave points
-let _bgWaveX = new Float32Array(1024);
-let _bgWaveY = new Float32Array(1024);
-
-// Cached background water gradient
-let _cachedBgWaterGrad: CanvasGradient | null = null;
-let _cachedBgWaterY = -99999;
-let _cachedBgWorldBottom = -99999;
-let _cachedBgTheme: MapTheme | null = null;
-let _cachedBgIsDay = true;
-
-function getCachedBgWaterGradient(
-  ctx: CanvasRenderingContext2D,
-  waterY: number,
-  worldBottom: number,
-  theme: MapTheme,
-  isDay: boolean
-): CanvasGradient {
-  if (
-    _cachedBgWaterGrad &&
-    _cachedBgWaterY === waterY &&
-    _cachedBgWorldBottom === worldBottom &&
-    _cachedBgTheme === theme &&
-    _cachedBgIsDay === isDay
-  ) {
-    return _cachedBgWaterGrad;
-  }
-
-  const grad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
-  if (isDay) {
-    if (theme === 'CAVERN') {
-      grad.addColorStop(0, '#d97706');
-      grad.addColorStop(0.3, '#9a3412');
-      grad.addColorStop(0.7, '#431407');
-      grad.addColorStop(1, '#170602');
-    } else {
-      grad.addColorStop(0, '#0284c7');
-      grad.addColorStop(0.25, '#0369a1');
-      grad.addColorStop(0.65, '#082f49');
-      grad.addColorStop(1, '#020617');
-    }
-  } else {
-    if (theme === 'CAVERN') {
-      grad.addColorStop(0, '#dc2626');
-      grad.addColorStop(0.35, '#7f1d1d');
-      grad.addColorStop(1, '#170602');
-    } else {
-      grad.addColorStop(0, '#0ea5e9');
-      grad.addColorStop(0.3, '#0f172a');
-      grad.addColorStop(1, '#020617');
-    }
-  }
-
-  _cachedBgWaterGrad = grad;
-  _cachedBgWaterY = waterY;
-  _cachedBgWorldBottom = worldBottom;
-  _cachedBgTheme = theme;
-  _cachedBgIsDay = isDay;
-  return grad;
-}
-
   // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
+
 
   // Layer 1: Back Ocean Deep Body Polygon
   ctx.beginPath();

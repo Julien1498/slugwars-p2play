@@ -240,8 +240,9 @@ class PerformanceTracker {
     const frameIntervalMs = this.lastRafTime > 0 ? now - this.lastRafTime : 16.6;
     this.lastRafTime = now;
 
-    const fpsInstant = frameIntervalMs > 0 ? Math.min(240, Math.round(1000 / frameIntervalMs)) : 60;
+    const fpsInstant = frameIntervalMs > 0 ? Math.min(360, Math.round(1000 / frameIntervalMs)) : 60;
     this.currentFps = fpsInstant;
+
     this.currentFrameTimeMs = Math.round(frameIntervalMs * 10) / 10;
     this.currentRenderDurationMs = Math.round(renderDurationMs * 100) / 100;
 
@@ -492,10 +493,13 @@ class PerformanceTracker {
 
     // Detect Screen Hardware Refresh Rate Mode
     let detectedRefreshRateHz = 60;
-    if (avgFrameIntervalMs <= 7.5) detectedRefreshRateHz = 144;
+    if (avgFrameIntervalMs <= 4.8) detectedRefreshRateHz = 240;
+    else if (avgFrameIntervalMs <= 6.5) detectedRefreshRateHz = 165;
+    else if (avgFrameIntervalMs <= 7.5) detectedRefreshRateHz = 144;
     else if (avgFrameIntervalMs <= 9.0) detectedRefreshRateHz = 120;
     else if (avgFrameIntervalMs <= 14.0) detectedRefreshRateHz = 75;
     else detectedRefreshRateHz = 60;
+
 
     // Detect GPU Hardware via WebGL debug info
     const gpuInfo = this.getGpuHardwareInfo();

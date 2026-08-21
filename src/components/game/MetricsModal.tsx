@@ -57,45 +57,25 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
   useEffect(() => {
     if (!isOpen) return;
 
-    let frameCount = 0;
-    let lastTime = performance.now();
-    let animId: number;
+    const updateInterval = setInterval(() => {
+      setFps(perfTracker.currentFps);
+      setFrameTime(perfTracker.currentFrameTimeMs);
+      setSimPing(Math.round(14 + Math.random() * 8));
+      setNetStats(netMetrics.getStats());
 
-    const tick = () => {
-      const now = performance.now();
-      const delta = now - lastTime;
-      frameCount++;
-
-      if (delta >= 1000) {
-        const currentFps = Math.round((frameCount * 1000) / delta);
-        const currentFrameTime = (delta / frameCount).toFixed(1);
-
-        setFps(currentFps);
-        setFrameTime(parseFloat(currentFrameTime));
-        setSimPing(Math.round(14 + Math.random() * 8));
-        setNetStats(netMetrics.getStats());
-
-        const memory = (performance as any).memory;
-        if (memory) {
-          setMemoryUsage({
-            usedMB: Math.round(memory.usedJSHeapSize / (1024 * 1024)),
-            totalMB: Math.round(memory.jsHeapSizeLimit / (1024 * 1024)),
-          });
-        }
-
-        frameCount = 0;
-        lastTime = now;
+      const memory = (performance as any).memory;
+      if (memory) {
+        setMemoryUsage({
+          usedMB: Math.round(memory.usedJSHeapSize / (1024 * 1024)),
+          totalMB: Math.round(memory.jsHeapSizeLimit / (1024 * 1024)),
+        });
       }
+    }, 500);
 
-      animId = requestAnimationFrame(tick);
-    };
-
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
+    return () => clearInterval(updateInterval);
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
     const unsub = netMetrics.onCaptureUpdate((report, progressRemaining) => {
       if (progressRemaining > 0) {
         setIsNetRecording(true);
@@ -107,10 +87,9 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
       }
     });
     return unsub;
-  }, [isOpen]);
+  }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
     const unsub = perfTracker.onCaptureUpdate((report, progressRemaining) => {
       if (progressRemaining > 0) {
         setIsPerfRecording(true);
@@ -118,11 +97,14 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
       } else {
         setIsPerfRecording(false);
         setPerfCountdown(0);
-        if (report) setPerfReport(report);
+        if (report) {
+          setPerfReport(report);
+          setActiveTab('perf_capture');
+        }
       }
     });
     return unsub;
-  }, [isOpen]);
+  }, []);
 
   const handleStartNetCapture = () => {
     setIsNetRecording(true);
@@ -137,6 +119,7 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
     setPerfReport(null);
     perfTracker.startCapture(5);
   };
+
 
   const handleCopyNetReport = () => {
     if (!captureReport) return;
@@ -154,6 +137,16 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
 
   if (!isOpen) return null;
 
+  if (isPerfRecording) {
+    return (
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-zinc-950/95 border-2 border-amber-500/80 px-5 py-2.5 rounded-2xl shadow-2xl text-amber-300 font-mono text-sm animate-pulse pointer-events-none">
+        <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+        <span className="font-extrabold text-white">⚡ PROFILING EN JEU 100% PLEIN DÉBIT :</span>
+        <span className="font-bold text-amber-400">{perfCountdown}s restantes...</span>
+      </div>
+    );
+  }
+
   const fpsColor =
     fps >= 55
       ? 'text-emerald-400 border-emerald-500/40 bg-emerald-950/40'
@@ -164,8 +157,9 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
   const displayPing = netStats.realPingMs !== null ? netStats.realPingMs : simPing;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-in fade-in duration-150">
       <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+
         {/* Header Bar with 3 Tabs */}
         <div className="px-6 py-3.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
