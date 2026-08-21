@@ -12,6 +12,7 @@ import { sfx } from '../core/audio';
 import { useGameBroadcast } from './game/useGameBroadcast';
 import { useHostActionHandler } from './game/useHostActionHandler';
 import { useGuestStateReceiver } from './game/useGuestStateReceiver';
+import { shouldUpdateReactUi } from '../core/uiSyncUtils';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -47,11 +48,23 @@ export function useGame(options?: {
   const pendingAimPayloadRef = useRef<any>(null);
   const aimThrottleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const syncState = useCallback(() => {
-    if (engineRef.current) {
-      setGameState({ ...engineRef.current.state });
+  const lastUiUpdateRef = useRef<number>(0);
+  const lastUiStateRef = useRef<GameState | null>(null);
+
+  const updateReactState = useCallback((state: GameState, force: boolean = false) => {
+    const now = performance.now();
+    if (force || shouldUpdateReactUi(lastUiStateRef.current, state, lastUiUpdateRef.current, now)) {
+      lastUiUpdateRef.current = now;
+      lastUiStateRef.current = { ...state };
+      setGameState(lastUiStateRef.current);
     }
   }, []);
+
+  const syncState = useCallback(() => {
+    if (engineRef.current) {
+      updateReactState(engineRef.current.state, true);
+    }
+  }, [updateReactState]);
 
   useEffect(() => {
     netMetrics.setPeerManager(peerManager);
@@ -59,7 +72,7 @@ export function useGame(options?: {
 
   const { broadcastState, broadcastDeltaState } = useGameBroadcast(peerManager, myPeerId || '', lastSentStateRef);
   const { handleHostAction } = useHostActionHandler(engineRef, isHost, myPeerId || '', peerManager, syncState, broadcastState);
-  useGuestStateReceiver(engineRef, isHost, peerManager, setGameState, myPeerId || '');
+  useGuestStateReceiver(engineRef, isHost, peerManager, updateReactState, myPeerId || '');
 
   // Presence / Reconnect Handlers
   useEffect(() => {
@@ -119,12 +132,12 @@ export function useGame(options?: {
       }
 
       if (changed) {
-        setGameState({ ...state });
+        updateReactState(state);
       }
     }, 50);
 
     return () => stopWorker();
-  }, [isHost, gameState.phase]);
+  }, [isHost, gameState.phase, myPeerId, updateReactState]);
 
   // Host room creation wrapper
   const hostRoom = useCallback(
@@ -263,11 +276,11 @@ export function useGame(options?: {
       perfTracker.recordPhysicsTick(dt);
 
       broadcastDeltaState(engineRef.current.state);
-      setGameState({ ...engineRef.current.state });
+      updateReactState(engineRef.current.state);
     }, 50);
 
     return () => stopWorker();
-  }, [isHost, gameState.phase, broadcastDeltaState]);
+  }, [isHost, gameState.phase, broadcastDeltaState, updateReactState]);
 
   // Tab-Switch / Focus Recovery: Instantly re-synchronize full state when tab becomes visible
   useEffect(() => {
