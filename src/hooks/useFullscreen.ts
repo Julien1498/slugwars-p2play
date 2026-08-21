@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function toggleFullscreen(): Promise<void> {
   const doc = document as any;
@@ -33,7 +33,28 @@ export function toggleFullscreen(): Promise<void> {
   return Promise.resolve();
 }
 
+export function isFullscreenSupported(): boolean {
+  if (typeof document === 'undefined') return false;
+  // iPhone / iPod Safari does not support element.requestFullscreen
+  if (typeof navigator !== 'undefined' && /iPhone|iPod/.test(navigator.userAgent)) {
+    return false;
+  }
+  const doc = document as any;
+  const elem = document.documentElement as any;
+  return !!(
+    doc.fullscreenEnabled ||
+    doc.webkitFullscreenEnabled ||
+    doc.mozFullScreenEnabled ||
+    doc.msFullscreenEnabled ||
+    elem.requestFullscreen ||
+    elem.webkitRequestFullscreen ||
+    elem.mozRequestFullScreen ||
+    elem.msRequestFullscreen
+  );
+}
+
 export function useFullscreen() {
+  const [isSupported] = useState(() => isFullscreenSupported());
   const [isFullscreen, setIsFullscreen] = useState(() => {
     if (typeof document === 'undefined') return false;
     const doc = document as any;
@@ -46,6 +67,8 @@ export function useFullscreen() {
   });
 
   useEffect(() => {
+    if (!isSupported) return;
+
     const handleFsChange = () => {
       const doc = document as any;
       const isFs = !!(
@@ -68,11 +91,11 @@ export function useFullscreen() {
       document.removeEventListener('mozfullscreenchange', handleFsChange);
       document.removeEventListener('MSFullscreenChange', handleFsChange);
     };
-  }, []);
+  }, [isSupported]);
 
   const toggle = useCallback(() => {
     toggleFullscreen().catch(() => {});
   }, []);
 
-  return { isFullscreen, toggleFullscreen: toggle };
+  return { isFullscreen, isSupported, toggleFullscreen: toggle };
 }
