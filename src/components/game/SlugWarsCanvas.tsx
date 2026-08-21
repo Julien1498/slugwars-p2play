@@ -824,7 +824,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       }
 
       const container = containerRef.current;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.0);
       const cRect = container ? container.getBoundingClientRect() : { width, height };
 
       const targetW = Math.max(100, Math.round(cRect.width * dpr));
@@ -836,7 +836,6 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
 
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#09090b';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -933,7 +932,7 @@ export const SlugWarsCanvas: React.FC<SlugWarsCanvasProps> = React.memo(({
       ctx.translate(-width / 2, -height / 2);
 
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.imageSmoothingQuality = 'low';
 
       // Damage detection
       if (curState && curState.slugs) {
