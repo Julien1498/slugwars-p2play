@@ -177,45 +177,34 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
         </div>
 
         {/* ========================================================================= */}
-        {/* 2. TOP-CENTER: COMMAND HUB (HEX CHRONOMETER & WIND VANE)                   */}
+        {/* 2. TOP-CENTER: UNIFIED TACTICAL HUB (CHRONO & WIND INDICATOR)             */}
         {/* ========================================================================= */}
-        <div className="pointer-events-auto flex flex-col items-center gap-1.5">
-          <div className="bg-zinc-950/90 backdrop-blur-2xl border border-violet-500/30 px-5 py-2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85)] flex flex-col items-center gap-1">
-            {/* Phase & Turn Timer */}
-            <div className="flex items-center gap-3">
-              {gameState.phase === 'RETREAT' ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/90 border border-orange-500 rounded-xl text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.4)] animate-pulse">
-                  <Flame className="w-4 h-4 text-orange-400 animate-spin" style={{ animationDuration: '4s' }} />
-                  <span className="text-xs font-black uppercase tracking-wider">REPLI TACTIQUE</span>
-                  <span className="font-mono text-sm font-black">{turnTime}s</span>
-                </div>
-              ) : isTimeUrgent ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-red-950/90 border border-red-500 rounded-xl text-red-300 shadow-[0_0_20px_#ef4444] animate-bounce">
-                  <Clock className="w-4 h-4 text-red-400 animate-spin" />
-                  <span className="text-xs font-black uppercase tracking-wider">TIR IMMINENT</span>
-                  <span className="font-mono text-base font-black text-white">{turnTime}s</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-violet-400/80">
-                    {gameState.phase === 'PLACEMENT'
-                      ? 'PLACEMENT'
-                      : gameState.phase === 'TURN_START'
-                      ? 'PRÉPARATION'
-                      : 'PHASE DE TIR'}
-                  </span>
-                  <div className="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 px-2.5 py-0.5 rounded-lg shadow-inner">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="font-mono text-sm font-black text-amber-400">{turnTime}s</span>
-                  </div>
-                </div>
-              )}
-            </div>
+        <div className="pointer-events-auto flex items-center justify-center">
+          <div className="bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 hover:border-violet-500/40 p-1.5 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85)] flex items-center gap-2 transition-all">
+            {/* Turn Timer / Chrono Capsule */}
+            {gameState.phase === 'RETREAT' ? (
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/90 border border-orange-500 rounded-xl text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.4)] animate-pulse">
+                <Flame className="w-4 h-4 text-orange-400 animate-spin" style={{ animationDuration: '4s' }} />
+                <span className="text-xs font-black uppercase tracking-wider">Repli</span>
+                <span className="font-mono text-sm font-black">{turnTime}s</span>
+              </div>
+            ) : isTimeUrgent ? (
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-red-950/90 border border-red-500 rounded-xl text-red-300 shadow-[0_0_20px_#ef4444] animate-bounce">
+                <Clock className="w-4 h-4 text-red-400 animate-spin" />
+                <span className="font-mono text-sm font-black text-white">{turnTime}s</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-zinc-900/90 border border-zinc-800/80 px-3 py-1 rounded-xl shadow-inner">
+                <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                <span className="font-mono text-sm font-black text-amber-300">{turnTime}s</span>
+              </div>
+            )}
 
-            {/* Integrated Aerodynamic Wind Indicator */}
-            <div className="w-full flex items-center justify-center pt-0.5 border-t border-zinc-800/80">
-              <WindIndicator wind={gameState.wind} />
-            </div>
+            {/* Subtle Divider */}
+            <div className="w-px h-6 bg-zinc-800/80" />
+
+            {/* Aerodynamic Wind Indicator */}
+            <WindIndicator wind={gameState.wind} />
           </div>
         </div>
 
