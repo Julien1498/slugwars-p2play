@@ -36,8 +36,9 @@ const KNOWN_KEYS = [
   'id', 'facing', 'pilotSlugId',
   // Projectile keys
   'weaponId', 'radius', 'fuseTimerMs', 'bounces', 'windAffected', 'ownerSlugId', 'targetPoint', 'behaviorData',
-  // Crate / Mine keys
+  // Crate / Mine / Journal keys
   'isLanded', 'crateType', 'healAmount', 'isTriggered', 'text', 'color',
+  'journal', 'message', 'timestamp', 'type',
 ];
 
 const KEY_TO_INDEX: Record<string, number> = {};
