@@ -240,8 +240,8 @@ export class SlugWarsEngine {
 
     const unplaced = this.state.slugs.filter((s) => !s.isPlaced);
     if (unplaced.length === 0) {
-      const randomTeamIdx = this.state.teams.length > 0 ? Math.floor(Math.random() * this.state.teams.length) : 0;
-      this.state.activeTeamId = this.state.teams[randomTeamIdx]?.id || this.state.teams[0].id;
+      // Combat starts with Team 1 (the team that started the match/placement), exactly like Tactical Artillery!
+      this.state.activeTeamId = this.state.teams[0]?.id || '';
       this.state.activeSlugId = this.getNextSlugForTeam(this.state.activeTeamId) || this.state.slugs[0].id;
       this.randomizeWind();
       PhaseManager.startAiming(this.state);

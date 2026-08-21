@@ -39,8 +39,14 @@ export class PhaseManager {
   public static startPlacement(state: GameState): void {
     this.onExitPhase(state, state.phase);
     state.phase = 'PLACEMENT';
-    const randomTeamIdx = state.teams.length > 0 ? Math.floor(Math.random() * state.teams.length) : 0;
-    state.activeTeamId = state.teams[randomTeamIdx]?.id || state.teams[0]?.id || '';
+    if (state.teams.length > 1) {
+      // Shuffle teams once at the start of the match (defines the fixed turn order for the entire game, exactly like Tactical Artillery)
+      for (let i = state.teams.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.teams[i], state.teams[j]] = [state.teams[j], state.teams[i]];
+      }
+    }
+    state.activeTeamId = state.teams[0]?.id || '';
     const firstSlug = state.slugs.find((s) => s.teamId === state.activeTeamId && !s.isPlaced);
     state.activeSlugId = firstSlug ? firstSlug.id : (state.slugs[0]?.id || '');
     state.turnTimer = 30;
