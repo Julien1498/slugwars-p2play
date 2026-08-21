@@ -96,7 +96,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   }
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4 overflow-x-hidden selection:bg-violet-500 selection:text-white">
+    <div className="h-[100dvh] w-full bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
       <ConnectionBackdropCanvas />
 
       {/* Ambient Glows */}
