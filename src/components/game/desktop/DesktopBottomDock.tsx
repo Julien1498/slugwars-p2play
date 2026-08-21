@@ -49,11 +49,10 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
 
   const handleGirderRotate = () => {
     if (!activeSlug || isRetreat) return;
-    const angles = [0, 45, 90, 135];
-    const curIdx = angles.indexOf(activeSlug.aimAngle);
-    const nextIdx = (curIdx + 1) % angles.length;
-    onUpdateAim?.(angles[nextIdx], activeSlug.aimPower, activeSlug.facing);
+    const nextAngle = (activeSlug.aimAngle + 45) % 360;
+    onUpdateAim?.(nextAngle, activeSlug.aimPower, activeSlug.facing);
   };
+
 
   return (
     <footer className="relative w-full flex items-end justify-between pointer-events-none select-none px-4 pb-3">
@@ -178,14 +177,17 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
                     type="button"
                     onClick={handleGirderRotate}
                     className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-xs flex items-center gap-1.5 border border-sky-400 shadow-md active:scale-95 transition"
-                    title="Changer l'angle d'inclinaison de la poutre (Touche R)"
+                    title="Changer l'angle d'inclinaison de la poutre (Clic Droit pour verrouiller l'emplacement, Touche R ou Flèches)"
                   >
                     <Layers className="w-3.5 h-3.5" />
-                    <span>↻ 45° ({activeSlug?.aimAngle || 0}°)</span>
+                    <span>↻ {Math.round((activeSlug?.aimAngle || 0) % 360)}°</span>
                   </button>
+
+
                 )}
               </div>
             )}
+
 
             {/* Prominent Arsenal Button */}
             <button

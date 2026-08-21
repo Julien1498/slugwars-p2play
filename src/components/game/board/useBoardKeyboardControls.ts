@@ -15,14 +15,16 @@ interface KeyboardControlsProps {
   onStopSteer?: () => void;
   onDetonate?: () => void;
   onSetFuseTimer?: (seconds: number) => void;
-  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right') => void;
+  onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
   onStartMove: (dir: 'left' | 'right') => void;
+
   onStopMove: () => void;
   onJump: () => void;
   onFire?: (targetPoint?: Vector2D) => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
   setShowWeaponPicker: React.Dispatch<React.SetStateAction<boolean>>;
+
 }
 
 export function useBoardKeyboardControls({
@@ -52,12 +54,16 @@ export function useBoardKeyboardControls({
     if (!isMyTurn) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable) return;
+
       if (e.repeat) return;
 
       const key = e.key.toLowerCase();
       if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' ', 'a', 'd', 'w', 's', 'q', 'z', 'e', 'enter'].includes(key)) {
         e.preventDefault();
       }
+
 
       // Helicopter controls
       if (activeSlug && activeSlug.inVehicleId && (gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME' || gameState.phase === 'RETREAT')) {
@@ -126,10 +132,8 @@ export function useBoardKeyboardControls({
         }
 
         if (key === 'r' && activeSlug && activeSlug.selectedWeaponId === 'girder') {
-          const angles = [0, 45, 90, 135];
-          const curIdx = angles.indexOf(activeSlug.aimAngle);
-          const nextAngle = angles[(curIdx + 1) % angles.length];
-          onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+          const nextAngle = (activeSlug.aimAngle + 45) % 360;
+          onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
           sfx.play('tick');
           return;
         }
@@ -158,10 +162,9 @@ export function useBoardKeyboardControls({
               onStartSteer?.('left');
             } else if (gameState.phase !== 'RETREAT') {
               if (activeSlug.selectedWeaponId === 'girder') {
-                const angles = [0, 45, 90, 135];
-                const curIdx = angles.indexOf(activeSlug.aimAngle);
-                const nextAngle = angles[(curIdx + 1) % angles.length];
-                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+                let nextAngle = (activeSlug.aimAngle + 5) % 360;
+                if (nextAngle < 0) nextAngle += 360;
+                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
                 sfx.play('tick');
               } else {
                 const newAngle = Math.min(85, activeSlug.aimAngle + 5);
@@ -175,10 +178,9 @@ export function useBoardKeyboardControls({
               onStartSteer?.('right');
             } else if (gameState.phase !== 'RETREAT') {
               if (activeSlug.selectedWeaponId === 'girder') {
-                const angles = [0, 45, 90, 135];
-                const curIdx = angles.indexOf(activeSlug.aimAngle);
-                const nextAngle = angles[(curIdx - 1 + angles.length) % angles.length];
-                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing);
+                let nextAngle = (activeSlug.aimAngle - 5) % 360;
+                if (nextAngle < 0) nextAngle += 360;
+                onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
                 sfx.play('tick');
               } else {
                 const newAngle = Math.max(-85, activeSlug.aimAngle - 5);
@@ -186,7 +188,8 @@ export function useBoardKeyboardControls({
               }
             }
           }
-        } else if (key === 'enter' && gameState.phase !== 'RETREAT') {
+        }
+ else if (key === 'enter' && gameState.phase !== 'RETREAT') {
           if (activeSlug?.selectedWeaponId === 'blowtorch') {
             if (!activeSlug.isBlowtorching) onFire?.();
           } else {
@@ -197,7 +200,11 @@ export function useBoardKeyboardControls({
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable) return;
+
       const key = e.key.toLowerCase();
+
       if (['arrowleft', 'arrowright', 'q', 'a', 'd'].includes(key)) {
         if (activeSheep) {
           onStopSteer?.();

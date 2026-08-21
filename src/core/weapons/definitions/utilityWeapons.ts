@@ -53,3 +53,22 @@ export const airdropWeapon: WeaponDefinition = {
   customSoundKey: 'airdrop',
   createProjectiles: () => [],
 };
+
+export const skipTurnWeapon: WeaponDefinition = {
+  id: 'skip_turn',
+  name: 'Passer son tour',
+  category: 'UTILITY',
+  behavior: 'SKIP_TURN',
+  icon: '🏳️',
+  description: 'Passe immédiatement la main à l\'équipe suivante sans utiliser d\'action.',
+  damage: 0,
+  radius: 0,
+  defaultAmmo: -1,
+  windAffected: false,
+  bounces: false,
+  craftable: false,
+  customSoundKey: 'tick',
+  createProjectiles: () => [],
+};
+
+

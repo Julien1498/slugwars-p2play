@@ -108,13 +108,21 @@ export function fireWeapon(
   if (activeTeam) {
     const currentAmmo = activeTeam.inventory[weapon.id] ?? -1;
     if (currentAmmo === 0) {
-      activeSlug.selectedWeaponId = 'bazooka';
+      for (const s of state.slugs) {
+        if (s.teamId === activeTeam.id && s.selectedWeaponId === weapon.id) {
+          s.selectedWeaponId = 'bazooka';
+        }
+      }
       return false;
     }
     if (currentAmmo > 0) {
       activeTeam.inventory[weapon.id]--;
       if (activeTeam.inventory[weapon.id] === 0) {
-        activeSlug.selectedWeaponId = 'bazooka';
+        for (const s of state.slugs) {
+          if (s.teamId === activeTeam.id && s.selectedWeaponId === weapon.id) {
+            s.selectedWeaponId = 'bazooka';
+          }
+        }
       }
     }
   }
@@ -130,7 +138,15 @@ export function fireWeapon(
     activeSlug.currentTargetPoint = targetPoint;
   }
 
+  if (weapon.id === 'skip_turn') {
+    sfx.play('tick');
+    addLog(`${activeSlug.name} passe son tour ! 🏳️`, 'info');
+    PhaseManager.startResolving(state, { settleTimer: 0.3, phaseTimeout: 5.0 });
+    return true;
+  }
+
   if (weapon.behavior === 'TELEPORT') {
+
     const safePt = findSafeTeleportPoint(terrain, effectiveTargetPoint.x, effectiveTargetPoint.y, state.slugs);
     activeSlug.x = safePt.x;
     activeSlug.y = safePt.y;
