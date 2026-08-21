@@ -13,6 +13,8 @@ interface RealtimeMetricsTabProps {
   gameState: GameState;
   isFpsHudActive: boolean;
   onToggleFpsHud: () => void;
+  isFpsHudAdvancedActive: boolean;
+  onToggleFpsHudAdvanced: () => void;
 }
 
 export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
@@ -25,6 +27,8 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
   gameState,
   isFpsHudActive,
   onToggleFpsHud,
+  isFpsHudAdvancedActive,
+  onToggleFpsHudAdvanced,
 }) => {
   const particleCount = gameState.particles?.length || 0;
   const projectileCount = gameState.projectiles?.length || 0;
@@ -69,41 +73,82 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
         </div>
       </div>
 
-      {/* Permanent In-Game Zero-Cost FPS HUD Toggle */}
-      <div className="bg-zinc-950/90 border border-zinc-800 hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between transition">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg border ${isFpsHudActive ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
-            <Zap className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-2">
-              <span>Afficher le compteur FPS permanent en jeu (In-Game HUD)</span>
-              {isFpsHudActive && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase font-mono font-bold">
-                  Actif
-                </span>
-              )}
+      {/* In-Game HUD Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Permanent In-Game Zero-Cost FPS HUD Toggle */}
+        <div className="bg-zinc-950/90 border border-zinc-800 hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between transition">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg border ${isFpsHudActive ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+              <Zap className="w-5 h-5" />
             </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
-              Affiche les FPS en direct sur le terrain. <strong>Impact perf : 0.00% (0 re-render React)</strong>.
-            </p>
+            <div>
+              <div className="text-xs font-bold text-white flex items-center gap-2">
+                <span>Compteur FPS en jeu</span>
+                {isFpsHudActive && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase font-mono font-bold">
+                    Actif
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Pastille discrète 60 FPS sur le terrain.
+              </p>
+            </div>
           </div>
+
+          <button
+            onClick={onToggleFpsHud}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+              isFpsHudActive ? 'bg-emerald-600' : 'bg-zinc-800'
+            }`}
+            title={isFpsHudActive ? 'Désactiver le compteur FPS en jeu' : 'Activer le compteur FPS en jeu'}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isFpsHudActive ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
 
-        <button
-          onClick={onToggleFpsHud}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-            isFpsHudActive ? 'bg-emerald-600' : 'bg-zinc-800'
-          }`}
-          title={isFpsHudActive ? 'Désactiver le compteur FPS en jeu' : 'Activer le compteur FPS en jeu'}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              isFpsHudActive ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
+        {/* Advanced Profiler HUD Toggle */}
+        <div className={`bg-zinc-950/90 border ${isFpsHudActive ? 'border-zinc-800 hover:border-zinc-700' : 'border-zinc-800/40 opacity-50'} p-3.5 rounded-xl flex items-center justify-between transition`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg border ${isFpsHudAdvancedActive && isFpsHudActive ? 'bg-cyan-950/80 border-cyan-500/50 text-cyan-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-white flex items-center gap-2">
+                <span>Détails & Passes Canvas</span>
+                {isFpsHudAdvancedActive && isFpsHudActive && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase font-mono font-bold">
+                    Avancé
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Affiche les latences et passes (ciel, décor, etc.).
+              </p>
+            </div>
+          </div>
+
+          <button
+            disabled={!isFpsHudActive}
+            onClick={onToggleFpsHudAdvanced}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+              isFpsHudAdvancedActive && isFpsHudActive ? 'bg-cyan-600' : 'bg-zinc-800'
+            } ${!isFpsHudActive ? 'cursor-not-allowed opacity-50' : ''}`}
+            title={isFpsHudAdvancedActive ? 'Passer en affichage FPS simple' : 'Activer les détails microsecondes'}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isFpsHudAdvancedActive && isFpsHudActive ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
       </div>
+
 
       {/* Real-Time Bandwidth P2P Section */}
       <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 space-y-3">

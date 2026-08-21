@@ -87,6 +87,35 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const unsub1 = perfTracker.onFpsHudToggle((enabled) => {
+      if (fpsBadgeRef.current) {
+        fpsBadgeRef.current.style.display = enabled ? 'flex' : 'none';
+      }
+    });
+    const unsub2 = perfTracker.onFpsHudAdvancedToggle((advanced) => {
+      if (fpsDetailsRef.current) {
+        fpsDetailsRef.current.style.display = advanced ? 'inline' : 'none';
+      }
+      if (fpsPassesRef.current) {
+        fpsPassesRef.current.style.display = advanced ? 'block' : 'none';
+      }
+      if (fpsBadgeRef.current) {
+        if (advanced) {
+          fpsBadgeRef.current.classList.remove('px-2.5', 'py-1', 'rounded-xl', 'flex-row', 'items-center');
+          fpsBadgeRef.current.classList.add('px-3', 'py-1.5', 'rounded-2xl', 'flex-col', 'gap-0.5');
+        } else {
+          fpsBadgeRef.current.classList.remove('px-3', 'py-1.5', 'rounded-2xl', 'flex-col', 'gap-0.5');
+          fpsBadgeRef.current.classList.add('px-2.5', 'py-1', 'rounded-xl', 'flex-row', 'items-center');
+        }
+      }
+    });
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, []);
+
   // Zero-Reflow Container Resize Observer (Eliminates layout thrashing in 60 FPS RAF loop)
   useEffect(() => {
     const container = containerRef.current;
@@ -1291,14 +1320,26 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           lastFpsHudUpdateRef.current = nowFps;
           fpsTextRef.current.textContent = `${instantFps} FPS`;
 
+          const isAdvanced = perfTracker.getFpsHudAdvancedEnabled();
+
           if (fpsDetailsRef.current) {
-            fpsDetailsRef.current.textContent = `(${perfTracker.currentFrameTimeMs}ms) · Dessin: ${perfTracker.currentRenderDurationMs}ms · Phys: ${perfTracker.currentPhysicsDurationMs}ms`;
+            if (isAdvanced) {
+              fpsDetailsRef.current.style.display = 'inline';
+              fpsDetailsRef.current.textContent = `(${perfTracker.currentFrameTimeMs}ms) · Dessin: ${perfTracker.currentRenderDurationMs}ms · Phys: ${perfTracker.currentPhysicsDurationMs}ms`;
+            } else {
+              fpsDetailsRef.current.style.display = 'none';
+            }
           }
 
           if (fpsPassesRef.current) {
-            const top = perfTracker.liveTopPasses;
-            if (top && top.length > 0) {
-              fpsPassesRef.current.textContent = top.map((p) => `${p.label.split(' ')[0]} ${p.ms}ms`).join(' · ');
+            if (isAdvanced) {
+              fpsPassesRef.current.style.display = 'block';
+              const top = perfTracker.liveTopPasses;
+              if (top && top.length > 0) {
+                fpsPassesRef.current.textContent = top.map((p) => `${p.label.split(' ')[0]} ${p.ms}ms`).join(' · ');
+              }
+            } else {
+              fpsPassesRef.current.style.display = 'none';
             }
           }
 
@@ -1308,7 +1349,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             }`;
           }
           if (fpsBadgeRef.current) {
-            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border rounded-2xl text-xs font-mono shadow-2xl flex flex-col gap-0.5 select-none z-20 ${
+            fpsBadgeRef.current.className = `absolute top-16 right-4 pointer-events-none ${
+              isAdvanced ? 'px-3 py-1.5 rounded-2xl flex-col gap-0.5' : 'px-2.5 py-1 rounded-xl flex-row items-center gap-1.5'
+            } bg-zinc-950/90 backdrop-blur-md border text-xs font-mono shadow-2xl flex select-none z-20 ${
               instantFps >= 50 ? 'text-emerald-400 border-emerald-500/30' : instantFps >= 30 ? 'text-amber-300 border-amber-500/30' : 'text-red-400 border-red-500/30'
             }`;
           }
@@ -1347,16 +1390,28 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       <div
         ref={fpsBadgeRef}
         style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
-        className="absolute top-16 right-4 pointer-events-none px-3 py-1.5 bg-zinc-950/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl text-xs font-mono text-emerald-400 shadow-2xl flex flex-col gap-0.5 select-none z-20"
+        className={`absolute top-16 right-4 pointer-events-none ${
+          perfTracker.getFpsHudAdvancedEnabled()
+            ? 'px-3 py-1.5 rounded-2xl flex-col gap-0.5'
+            : 'px-2.5 py-1 rounded-xl flex-row items-center gap-1.5'
+        } bg-zinc-950/90 backdrop-blur-md border border-emerald-500/30 text-xs font-mono text-emerald-400 shadow-2xl flex select-none z-20`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0" />
-          <span ref={fpsTextRef} className="font-black text-white">60 FPS</span>
-          <span ref={fpsDetailsRef} className="text-[10px] text-zinc-400 font-normal">
+          <span ref={fpsTextRef} className="font-bold text-white">60 FPS</span>
+          <span
+            ref={fpsDetailsRef}
+            style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'inline' : 'none' }}
+            className="text-[10px] text-zinc-400 font-normal"
+          >
             (16.6ms) · Dessin: 1.0ms
           </span>
         </div>
-        <div ref={fpsPassesRef} className="text-[10px] text-cyan-300/90 font-mono tracking-tight">
+        <div
+          ref={fpsPassesRef}
+          style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'block' : 'none' }}
+          className="text-[10px] text-cyan-300/90 font-mono tracking-tight"
+        >
           Chargement des passes...
         </div>
       </div>
