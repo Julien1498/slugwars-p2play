@@ -15,21 +15,6 @@ export interface SkyRenderContext {
   worldBottom: number;
 }
 
-interface StaticSkyBackdrop {
-  canvas: HTMLCanvasElement;
-  originX: number;
-  originY: number;
-  width: number;
-  height: number;
-}
-
-let _cachedBackdrop: StaticSkyBackdrop | null = null;
-let _cachedBackdropWaterY = -99999;
-let _cachedBackdropHeight = -99999;
-let _cachedBackdropWidth = -99999;
-let _cachedBackdropTheme: MapTheme | null = null;
-let _cachedBackdropIsDay = true;
-
 let _cachedSkyGrad: CanvasGradient | null = null;
 let _cachedSkyGradTop = -99999;
 let _cachedSkyWaterY = -99999;
@@ -110,44 +95,20 @@ function getCachedSkyGradient(
   return skyGrad;
 }
 
-function bakeStaticSkyBackdrop(
-  width: number,
-  height: number,
-  waterY: number,
-  theme: MapTheme,
-  isDay: boolean
-): StaticSkyBackdrop {
-  const originX = -1400;
-  const originY = -1000;
-  const bufferWidth = width + 2800;
-  const bufferHeight = height + 2000;
+export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
+  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = bufferWidth;
-  canvas.height = bufferHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return { canvas, originX, originY, width: bufferWidth, height: bufferHeight };
-  }
-
-  ctx.translate(-originX, -originY);
-
-  const worldLeft = originX;
-  const worldRight = originX + bufferWidth;
-  const worldTop = originY;
-  const worldBottom = originY + bufferHeight;
-
-  // 1. Seamless Infinite Sky Horizon Gradient
+  // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
   const skyGradTop = Math.min(-650, -height * 0.9);
   ctx.fillStyle = getCachedSkyGradient(ctx, skyGradTop, waterY, theme, isDay);
-  ctx.fillRect(worldLeft, worldTop, bufferWidth, waterY - worldTop);
+  ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
 
-  // 2. Day Clouds / Cavern Light Beams / Night Stars
+  // 2. Day & Night Atmospheric Particles & Clouds (Streamlined lightweight rendering)
   if (isDay) {
     if (theme === 'CAVERN') {
       ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
-      for (let b = 0; b < 9; b++) {
-        const bx = worldLeft + ((b * 750 + 400) % bufferWidth);
+      for (let b = 0; b < 5; b++) {
+        const bx = worldLeft + ((b * 900 + 400) % (worldRight - worldLeft));
         ctx.beginPath();
         ctx.moveTo(bx - 20, worldTop);
         ctx.lineTo(bx + 20, worldTop);
@@ -158,10 +119,10 @@ function bakeStaticSkyBackdrop(
       }
     } else {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      for (let c = 0; c < 12; c++) {
-        const cx = worldLeft + ((c * 620 + 200) % (bufferWidth - 200));
-        const cy = -250 + (c * 42) % (Math.max(160, height * 0.22) + 250);
-        const cSize = 28 + (c * 7) % 18;
+      for (let c = 0; c < 5; c++) {
+        const cx = (((Date.now() * 0.012 + c * 750) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
+        const cy = -200 + (c * 60) % (Math.max(160, height * 0.22) + 200);
+        const cSize = 32 + (c * 8) % 16;
 
         ctx.beginPath();
         ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
@@ -172,16 +133,16 @@ function bakeStaticSkyBackdrop(
       }
     }
   } else {
-    for (let i = 0; i < 180; i++) {
-      const sx = worldLeft + ((i * 317 + i * 83) % bufferWidth);
+    for (let i = 0; i < 40; i++) {
+      const sx = worldLeft + ((i * 317 + i * 83) % (worldRight - worldLeft));
       const sy = worldTop + ((i * 179 + i * 47) % (waterY - worldTop));
-      const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
-      ctx.fillStyle = i % 5 === 0 ? 'rgba(165, 243, 252, 0.75)' : 'rgba(255, 255, 255, 0.75)';
-      ctx.fillRect(sx, sy, sz, sz);
+      const starAlpha = 0.35 + 0.55 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
+      ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+      ctx.fillRect(sx, sy, 2, 2);
     }
   }
 
-  // 3. Static Celestial Body & Glow (Sun / Moon / Rift)
+  // 3. Iconic Celestial Focus (Sun / Moon / Rift / Searchlight)
   if (isDay) {
     if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
       const sunX = width * 0.82;
@@ -197,6 +158,20 @@ function bakeStaticSkyBackdrop(
       ctx.beginPath();
       ctx.arc(sunX, sunY, sunR * 4.0, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.save();
+      ctx.translate(sunX, sunY);
+      ctx.rotate(animTime * 0.08);
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.3)';
+      ctx.lineWidth = 2.5;
+      for (let b = 0; b < 8; b++) {
+        const bAngle = (b * Math.PI * 2) / 8;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(bAngle) * (sunR + 4), Math.sin(bAngle) * (sunR + 4));
+        ctx.lineTo(Math.cos(bAngle) * (sunR + 26), Math.sin(bAngle) * (sunR + 26));
+        ctx.stroke();
+      }
+      ctx.restore();
 
       ctx.fillStyle = '#fef08a';
       ctx.beginPath();
@@ -255,10 +230,44 @@ function bakeStaticSkyBackdrop(
       ctx.beginPath();
       ctx.arc(riftX, riftY, riftR * 2.8, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.fillStyle = '#c084fc';
+      for (let s = 0; s < 6; s++) {
+        const sAngle = (s * Math.PI * 2) / 6 + animTime * 0.15;
+        const sDist = riftR * 1.1 + Math.sin(animTime * 0.5 + s) * 4;
+        const sx = riftX + Math.cos(sAngle) * sDist;
+        const sy = riftY + Math.sin(sAngle) * sDist;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (theme === 'FORTRESS') {
+      const beamX = width * 0.22;
+      const beamY = height * 0.52;
+      const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
+      const beamLen = height * 0.85;
+
+      ctx.save();
+      ctx.translate(beamX, beamY);
+      ctx.rotate(sweepAngle);
+
+      const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
+      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+      beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+      beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(-45, -beamLen);
+      ctx.lineTo(45, -beamLen);
+      ctx.lineTo(6, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     }
   }
 
-  // 4. Parallax Mountains Horizon
+  // 4. Parallax Mountain Horizon (Ultra-fast 120px step path)
   const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
   if (isDay) {
     if (theme === 'CAVERN') {
@@ -293,7 +302,7 @@ function bakeStaticSkyBackdrop(
   ctx.fillStyle = mtGrad;
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
-  for (let x = worldLeft; x <= worldRight + 40; x += 35) {
+  for (let x = worldLeft; x <= worldRight + 120; x += 120) {
     const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
     ctx.lineTo(x, my);
   }
@@ -301,7 +310,7 @@ function bakeStaticSkyBackdrop(
   ctx.closePath();
   ctx.fill();
 
-  // 5. Midground Ridge
+  // 5. Midground Ridge (Ultra-fast 100px step path)
   if (isDay) {
     ctx.fillStyle = theme === 'CAVERN' ? '#78350f' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
   } else {
@@ -309,7 +318,7 @@ function bakeStaticSkyBackdrop(
   }
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
-  for (let x = worldLeft; x <= worldRight + 40; x += 25) {
+  for (let x = worldLeft; x <= worldRight + 100; x += 100) {
     const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
     ctx.lineTo(x, my);
   }
@@ -317,20 +326,7 @@ function bakeStaticSkyBackdrop(
   ctx.closePath();
   ctx.fill();
 
-  // 6. Dotted Lush Grass Blade Dashes
-  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || !theme)) {
-    ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    for (let x = worldLeft; x <= worldRight; x += 14) {
-      const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
-      ctx.moveTo(x, by);
-      ctx.lineTo(x + Math.sin(x * 0.1) * 3, by - 5 - (Math.abs(x) % 4));
-    }
-    ctx.stroke();
-  }
-
-  // 7. Base Deep Water Fill under mountains
+  // 6. Base Ocean Background Fill
   const deepGrad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
   if (isDay) {
     deepGrad.addColorStop(0, theme === 'CAVERN' ? '#d97706' : '#0284c7');
@@ -342,103 +338,5 @@ function bakeStaticSkyBackdrop(
     deepGrad.addColorStop(1, theme === 'CAVERN' ? '#170602' : '#020617');
   }
   ctx.fillStyle = deepGrad;
-  ctx.fillRect(worldLeft, waterY, bufferWidth, worldBottom - waterY);
-
-  return {
-    canvas,
-    originX,
-    originY,
-    width: bufferWidth,
-    height: bufferHeight,
-  };
-}
-
-function getOrBakeStaticSkyBackdrop(
-  width: number,
-  height: number,
-  waterY: number,
-  theme: MapTheme,
-  isDay: boolean
-): StaticSkyBackdrop {
-  if (
-    _cachedBackdrop &&
-    _cachedBackdropWidth === width &&
-    _cachedBackdropHeight === height &&
-    _cachedBackdropWaterY === waterY &&
-    _cachedBackdropTheme === theme &&
-    _cachedBackdropIsDay === isDay
-  ) {
-    return _cachedBackdrop;
-  }
-
-  _cachedBackdrop = bakeStaticSkyBackdrop(width, height, waterY, theme, isDay);
-  _cachedBackdropWidth = width;
-  _cachedBackdropHeight = height;
-  _cachedBackdropWaterY = waterY;
-  _cachedBackdropTheme = theme;
-  _cachedBackdropIsDay = isDay;
-  return _cachedBackdrop;
-}
-
-export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
-  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
-
-  // 1. Infinite Sky Fallback Fill for extreme zoom-out
-  const skyGradTop = Math.min(-650, -height * 0.9);
-  ctx.fillStyle = getCachedSkyGradient(ctx, skyGradTop, waterY, theme, isDay);
-  ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
-
-  // 2. 1-Call High-Performance Blit of Pre-baked Static Backdrop (0 CPU vector overhead)
-  const backdrop = getOrBakeStaticSkyBackdrop(width, height, waterY, theme, isDay);
-  if (backdrop) {
-    ctx.drawImage(backdrop.canvas, backdrop.originX, backdrop.originY);
-  }
-
-  // 3. Dynamic rotating sun rays / searchlight (lightweight 60fps animations on top)
-  if (isDay) {
-    if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
-      const sunX = width * 0.82;
-      const sunY = height * 0.16;
-      const sunR = 28;
-
-      ctx.save();
-      ctx.translate(sunX, sunY);
-      ctx.rotate(animTime * 0.08);
-      ctx.strokeStyle = 'rgba(254, 240, 138, 0.3)';
-      ctx.lineWidth = 2.5;
-      for (let b = 0; b < 8; b++) {
-        const bAngle = (b * Math.PI * 2) / 8;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(bAngle) * (sunR + 4), Math.sin(bAngle) * (sunR + 4));
-        ctx.lineTo(Math.cos(bAngle) * (sunR + 26), Math.sin(bAngle) * (sunR + 26));
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-  } else {
-    if (theme === 'FORTRESS') {
-      const beamX = width * 0.22;
-      const beamY = height * 0.52;
-      const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
-      const beamLen = height * 0.85;
-
-      ctx.save();
-      ctx.translate(beamX, beamY);
-      ctx.rotate(sweepAngle);
-
-      const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
-      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
-      beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-      ctx.fillStyle = beamGrad;
-      ctx.beginPath();
-      ctx.moveTo(-6, 0);
-      ctx.lineTo(-45, -beamLen);
-      ctx.lineTo(45, -beamLen);
-      ctx.lineTo(6, 0);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-  }
+  ctx.fillRect(worldLeft, waterY, worldRight - worldLeft, worldBottom - waterY);
 }
