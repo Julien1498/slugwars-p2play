@@ -13,6 +13,7 @@ export interface SkyRenderContext {
   worldRight: number;
   worldTop: number;
   worldBottom: number;
+  cameraPanX?: number;
 }
 
 // Cached sky gradient
@@ -348,15 +349,14 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     }
   }
 
-  // 4. Parallax Mountain & Ridge Horizons / Subterranean Cave Backwall
+  // 4. Parallax Mountain & Ridge Horizons (Theme-Specific Colors)
   const mtKey = `${height}_${waterY}_${theme}_${isDay}`;
   if (_cachedMtKey !== mtKey || !_cachedMtGrad) {
     const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
     if (isDay) {
       if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-        mtGrad.addColorStop(0, '#1c101f');
-        mtGrad.addColorStop(0.5, '#120a17');
-        mtGrad.addColorStop(1, '#09040d');
+        mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
       } else if (theme === 'NATURAL_ARCHES') {
         mtGrad.addColorStop(0, 'rgba(194, 65, 12, 0.75)');
         mtGrad.addColorStop(1, 'rgba(124, 45, 18, 0.95)');
@@ -375,9 +375,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       }
     } else {
       if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-        mtGrad.addColorStop(0, '#0f0812');
-        mtGrad.addColorStop(0.5, '#0a050d');
-        mtGrad.addColorStop(1, '#050208');
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
       } else if (theme === 'NATURAL_ARCHES') {
         mtGrad.addColorStop(0, 'rgba(76, 29, 149, 0.85)');
         mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.95)');
@@ -399,50 +398,37 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     _cachedMtKey = mtKey;
   }
 
-  if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-    // Solid textured subterranean Cave Backwall
-    ctx.fillStyle = _cachedMtGrad;
-    ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY + 100 - worldTop);
+  const pShift1 = (rc.cameraPanX || 0) * 0.25;
+  const pShift2 = (rc.cameraPanX || 0) * 0.45;
 
-    // Subtle horizontal stratified rock fissures on Cave Backwall
-    ctx.strokeStyle = theme === 'ORGANIC_CAVES' ? 'rgba(234, 88, 12, 0.08)' : 'rgba(168, 85, 247, 0.06)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let by = 60; by < waterY; by += 40) {
-      ctx.moveTo(worldLeft, by + Math.sin(by * 0.1) * 8);
-      for (let bx = worldLeft; bx <= worldRight; bx += 80) {
-        ctx.lineTo(bx, by + Math.sin(bx * 0.01 + by) * 12);
-      }
-    }
-    ctx.stroke();
-  } else {
-    ctx.fillStyle = _cachedMtGrad;
-    ctx.beginPath();
-    ctx.moveTo(worldLeft, waterY + 100);
-    for (let x = worldLeft; x <= worldRight + 40; x += 35) {
-      const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
-      ctx.lineTo(x, my);
-    }
-    ctx.lineTo(worldRight, waterY + 100);
-    ctx.closePath();
-    ctx.fill();
-
-    // Midground Ridge
-    if (isDay) {
-      ctx.fillStyle = theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#312e81' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
-    } else {
-      ctx.fillStyle = theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#1e1b4b' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
-    }
-    ctx.beginPath();
-    ctx.moveTo(worldLeft, waterY + 100);
-    for (let x = worldLeft; x <= worldRight + 40; x += 25) {
-      const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
-      ctx.lineTo(x, my);
-    }
-    ctx.lineTo(worldRight, waterY + 100);
-    ctx.closePath();
-    ctx.fill();
+  ctx.fillStyle = _cachedMtGrad;
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, waterY + 100);
+  for (let x = worldLeft; x <= worldRight + 40; x += 35) {
+    const sx = x - pShift1;
+    const my = height * 0.46 + Math.sin(sx * 0.003 + 0.8) * 65 + Math.cos(sx * 0.007) * 35;
+    ctx.lineTo(x, my);
   }
+  ctx.lineTo(worldRight, waterY + 100);
+  ctx.closePath();
+  ctx.fill();
+
+  // Midground Ridge
+  if (isDay) {
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#78350f' : theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#312e81' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
+  } else {
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#1e1b4b' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+  }
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, waterY + 100);
+  for (let x = worldLeft; x <= worldRight + 40; x += 25) {
+    const sx = x - pShift2;
+    const my = height * 0.62 + Math.sin(sx * 0.005 + 2.4) * 45;
+    ctx.lineTo(x, my);
+  }
+  ctx.lineTo(worldRight, waterY + 100);
+  ctx.closePath();
+  ctx.fill();
 
   // Dotted Lush Grass Blade Dashes on Green Hills (Island, Floating Chaos, Fortress)
   if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || !theme)) {

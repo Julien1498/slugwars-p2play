@@ -100,10 +100,10 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
       rockRGB = [64, 49, 38];
       bedrockRGB = [21, 16, 12];
     } else if (theme === 'FLOATING_CHAOS') {
-      surfaceRGB = [232, 121, 249];
-      topsoilRGB = [147, 51, 234];
-      rockRGB = [71, 6, 42];
-      bedrockRGB = [20, 2, 12];
+      surfaceRGB = [34, 197, 94];
+      topsoilRGB = [95, 58, 30];
+      rockRGB = [38, 22, 12];
+      bedrockRGB = [18, 10, 6];
     }
 
     for (let py = 0; py < previewH; py++) {

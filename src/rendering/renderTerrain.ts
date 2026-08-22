@@ -108,16 +108,16 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     seam: 0xff06080b,         // #0b0806 Mortar seam
   },
   FLOATING_CHAOS: {
-    highlight: 0xffe879f9,    // #f979e8 Bioluminescent lilac
-    surfaceBody: 0xffc084fc,  // #fc84c0 Glowing purple flora
-    surfaceShadow: 0xff9333ea,// #ea3393 Deep alien moss
-    surfaceDeep: 0xff581c87,  // #871c58 Under-island crust
-    soilLight: 0xff3b0764,    // #64073b Cosmic violet dust
-    strataA: 0xff2a0647,      // #47062a Crystal-veined void rock
-    strataB: 0xff1f0535,      // #35051f Stratified floating stone
-    denseRock: 0xff150324,    // #240315 Heavy gravity rock
-    bedrock: 0xff0c0214,      // #14020c Void core
-    seam: 0xff00ffff,         // #ffff00 Pure cyan crystal seam!
+    highlight: 0xff86efac,    // #acef86 Bright mint/emerald moss rim
+    surfaceBody: 0xff22c55e,  // #5ec522 Lush floating island grass
+    surfaceShadow: 0xff15803d,// #3d8015 Rich forest green shadow
+    surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
+    soilLight: 0xff1e3a5f,    // #5f3a1e Warm earthy brown loam
+    strataA: 0xff162c4a,      // #4a2c16 Stratified floating sandstone
+    strataB: 0xff102038,      // #382010 Dark suspended rock
+    denseRock: 0xff0c1626,    // #26160c Heavy stone core
+    bedrock: 0xff060a12,      // #120a06 Dark basalt underbelly
+    seam: 0xff03060a,         // #0a0603 Rock fissure
   },
 };
 
