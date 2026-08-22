@@ -50,7 +50,7 @@ export const superSheepWeapon: WeaponDefinition = {
   bounces: false,
   fuseTimeMs: 8000,
   craftable: true,
-  customSoundKey: 'sheep_baah',
+  customSoundKey: 'baah',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
     const speed = 7;

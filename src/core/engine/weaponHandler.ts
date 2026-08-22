@@ -330,7 +330,12 @@ export function fireWeapon(
     PhaseManager.startProjectileActive(state);
   }
 
-  sfx.play('fire');
+  if (weapon.customSoundKey) {
+    const snd = weapon.customSoundKey === 'sheep_baah' ? 'baah' : weapon.customSoundKey;
+    sfx.play(snd as any);
+  } else {
+    sfx.play('fire');
+  }
   addLog(`${activeSlug.name} a tiré avec ${weapon.name} ! (Puissance: ${Math.round(activeSlug.aimPower)}%)`, 'weapon');
   return true;
 }

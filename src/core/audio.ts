@@ -210,42 +210,63 @@ class SoundEffects {
         snapOsc.stop(now + 0.08);
 
       } else if (type === 'fire') {
-        // High-Velocity Rocket Launch Exhaust & Thump
+        // Heavy Explosive Rocket / Missile Tube Ignition & Recoil Blast
 
-        // Layer 1: Rocket Tube Exhaust Gas Blast (Swept Pink Noise)
-        const pinkBuffer = this.createPinkNoiseBuffer(ctx, 0.28);
-        const pinkSource = ctx.createBufferSource();
-        pinkSource.buffer = pinkBuffer;
+        // Layer 1: Saturated Launch Tube Detonation & Muzzle Pop (260Hz -> 55Hz punch)
+        const popOsc = ctx.createOscillator();
+        const popGain = ctx.createGain();
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = DISTORTION_CURVE;
+        shaper.oversample = '2x';
 
-        const bpf = ctx.createBiquadFilter();
-        bpf.type = 'bandpass';
-        bpf.frequency.setValueAtTime(1600 * pitchRatio, now);
-        bpf.frequency.exponentialRampToValueAtTime(280 * pitchRatio, now + 0.25);
-        bpf.Q.setValueAtTime(2.8, now);
+        popOsc.type = 'sawtooth';
+        popOsc.frequency.setValueAtTime(260 * pitchRatio, now);
+        popOsc.frequency.exponentialRampToValueAtTime(55 * pitchRatio, now + 0.12);
 
-        const pGain = ctx.createGain();
-        pGain.gain.setValueAtTime(0.65, now);
-        pGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        popGain.gain.setValueAtTime(0.9, now);
+        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-        pinkSource.connect(bpf);
-        bpf.connect(pGain);
-        pGain.connect(dest);
-        pinkSource.start(now);
+        popOsc.connect(shaper);
+        shaper.connect(popGain);
+        popGain.connect(dest);
+        popOsc.start(now);
+        popOsc.stop(now + 0.15);
 
-        // Layer 2: Launcher Thump Kick
+        // Layer 2: Heavy Artillery Sub-Thump Kick (85Hz -> 28Hz)
         const kickOsc = ctx.createOscillator();
         const kickGain = ctx.createGain();
         kickOsc.type = 'sine';
-        kickOsc.frequency.setValueAtTime(140 * pitchRatio, now);
-        kickOsc.frequency.exponentialRampToValueAtTime(38 * pitchRatio, now + 0.16);
+        kickOsc.frequency.setValueAtTime(95 * pitchRatio, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(28 * pitchRatio, now + 0.18);
 
-        kickGain.gain.setValueAtTime(0.75, now);
-        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        kickGain.gain.setValueAtTime(1.0, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
         kickOsc.connect(kickGain);
         kickGain.connect(dest);
         kickOsc.start(now);
-        kickOsc.stop(now + 0.16);
+        kickOsc.stop(now + 0.18);
+
+        // Layer 3: High-Energy Fiery Propellant Ignition Crackle (Short sharp 80ms combustion burst)
+        const crackleBuffer = this.createBrownNoiseBuffer(ctx, 0.12);
+        const crackleSource = ctx.createBufferSource();
+        crackleSource.buffer = crackleBuffer;
+
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'lowpass';
+        bpf.frequency.setValueAtTime(2800 * pitchRatio, now);
+        bpf.frequency.exponentialRampToValueAtTime(350 * pitchRatio, now + 0.11);
+        bpf.Q.setValueAtTime(4.0, now);
+
+        const cGain = ctx.createGain();
+        cGain.gain.setValueAtTime(0.85, now);
+        cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        crackleSource.connect(bpf);
+        bpf.connect(cGain);
+        cGain.connect(dest);
+        crackleSource.start(now);
+
 
       } else if (type === 'splash') {
         // Organic Acoustic Water Entry & Multi-Bubble Glug
@@ -457,55 +478,101 @@ class SoundEffects {
         osc.stop(now + 0.06);
 
       } else if (type === 'baah') {
-        // Formant-Filtered Sheep Bleat ("Baa-a-a-h")
-        const osc = ctx.createOscillator();
+        // Authentic Comical Vibrato Sheep Bleat ("B-a-a-a-a-h")
+        const carrier = ctx.createOscillator();
+        const vibratoLfo = ctx.createOscillator();
+        const vibratoGain = ctx.createGain();
         const gain = ctx.createGain();
+
         const formant1 = ctx.createBiquadFilter();
         const formant2 = ctx.createBiquadFilter();
 
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(310 * pitchRatio, now);
-        osc.frequency.setValueAtTime(335 * pitchRatio, now + 0.08);
-        osc.frequency.setValueAtTime(300 * pitchRatio, now + 0.22);
-        osc.frequency.setValueAtTime(320 * pitchRatio, now + 0.32);
+        // 8.5Hz LFO for realistic rapid sheep vocal tremor
+        vibratoLfo.type = 'sine';
+        vibratoLfo.frequency.setValueAtTime(8.5, now);
+        vibratoGain.gain.setValueAtTime(22 * pitchRatio, now);
 
-        // Formant filters for vowel "ah"
+        vibratoLfo.connect(vibratoGain);
+        vibratoGain.connect(carrier.frequency);
+
+        carrier.type = 'sawtooth';
+        carrier.frequency.setValueAtTime(320 * pitchRatio, now);
+        carrier.frequency.linearRampToValueAtTime(350 * pitchRatio, now + 0.15);
+        carrier.frequency.linearRampToValueAtTime(290 * pitchRatio, now + 0.45);
+
+        // Vocal tract formants for "aah"
         formant1.type = 'bandpass';
-        formant1.frequency.setValueAtTime(820, now);
-        formant1.Q.setValueAtTime(4.0, now);
+        formant1.frequency.setValueAtTime(850, now);
+        formant1.Q.setValueAtTime(4.5, now);
 
         formant2.type = 'bandpass';
-        formant2.frequency.setValueAtTime(1400, now);
-        formant2.Q.setValueAtTime(3.5, now);
+        formant2.frequency.setValueAtTime(1350, now);
+        formant2.Q.setValueAtTime(3.8, now);
 
-        gain.gain.setValueAtTime(0.45, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+        gain.gain.setValueAtTime(0.0, now);
+        gain.gain.linearRampToValueAtTime(0.7, now + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
-        osc.connect(formant1);
-        osc.connect(formant2);
+        carrier.connect(formant1);
+        carrier.connect(formant2);
         formant1.connect(gain);
         formant2.connect(gain);
         gain.connect(dest);
-        osc.start(now);
-        osc.stop(now + 0.42);
+
+        vibratoLfo.start(now);
+        carrier.start(now);
+        vibratoLfo.stop(now + 0.5);
+        carrier.stop(now + 0.5);
 
       } else if (type === 'donkey') {
-        // Hee-Haw Concrete Donkey Horn Call
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(460 * pitchRatio, now);
-        osc.frequency.exponentialRampToValueAtTime(260 * pitchRatio, now + 0.16);
-        osc.frequency.setValueAtTime(510 * pitchRatio, now + 0.2);
-        osc.frequency.exponentialRampToValueAtTime(210 * pitchRatio, now + 0.45);
+        // High-Energy Comical Donkey Bray ("HEEEE-HAAAWWW!")
 
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+        // Part 1: High Inhale "HEEEE" (0 to 0.22s)
+        const heeOsc = ctx.createOscillator();
+        const heeGain = ctx.createGain();
+        const heeFilter = ctx.createBiquadFilter();
 
-        osc.connect(gain);
-        gain.connect(dest);
-        osc.start(now);
-        osc.stop(now + 0.48);
+        heeOsc.type = 'sawtooth';
+        heeOsc.frequency.setValueAtTime(680 * pitchRatio, now);
+        heeOsc.frequency.linearRampToValueAtTime(820 * pitchRatio, now + 0.2);
+
+        heeFilter.type = 'bandpass';
+        heeFilter.frequency.setValueAtTime(1650, now);
+        heeFilter.Q.setValueAtTime(4.0, now);
+
+        heeGain.gain.setValueAtTime(0.75, now);
+        heeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        heeOsc.connect(heeFilter);
+        heeFilter.connect(heeGain);
+        heeGain.connect(dest);
+        heeOsc.start(now);
+        heeOsc.stop(now + 0.22);
+
+        // Part 2: Deep Resonant Exhale "HAAAWWW" (0.22s to 0.6s)
+        const hawTime = now + 0.2;
+        const hawOsc = ctx.createOscillator();
+        const hawGain = ctx.createGain();
+        const hawFilter = ctx.createBiquadFilter();
+
+        hawOsc.type = 'sawtooth';
+        hawOsc.frequency.setValueAtTime(340 * pitchRatio, hawTime);
+        hawOsc.frequency.exponentialRampToValueAtTime(160 * pitchRatio, hawTime + 0.38);
+
+        hawFilter.type = 'lowpass';
+        hawFilter.frequency.setValueAtTime(850, hawTime);
+        hawFilter.Q.setValueAtTime(3.5, hawTime);
+
+        hawGain.gain.setValueAtTime(0.0, now);
+        hawGain.gain.setValueAtTime(0.85, hawTime);
+        hawGain.gain.exponentialRampToValueAtTime(0.001, hawTime + 0.4);
+
+        hawOsc.connect(hawFilter);
+        hawFilter.connect(hawGain);
+        hawGain.connect(dest);
+        hawOsc.start(hawTime);
+        hawOsc.stop(hawTime + 0.4);
+
 
       } else if (type === 'airdrop') {
         // Crate Chime Arpeggio
