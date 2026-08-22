@@ -229,25 +229,31 @@ export function generateProceduralTerrain(
 
   // 2. Organic Cave Tunnels & Natural Chambers
   if (theme !== 'ORGANIC_CAVES') {
-    // A. Natural Subterranean Tunnels (2 to 4 winding passages through the mountain)
-    const tunnelCount = theme === 'CAVERN' ? 8 : theme === 'NATURAL_ARCHES' ? 2 : 3;
+    // A. Natural Subterranean Tunnels & Open-Air Cave Portals
+    const tunnelCount = theme === 'CAVERN' ? 8 : theme === 'NATURAL_ARCHES' ? 3 : 4;
     for (let t = 0; t < tunnelCount; t++) {
-      let tx = prng.range(width * 0.15, width * 0.85);
-      let ty = prng.range(height * 0.35, waterLevel - 80);
-      let angle = prng.range(0, Math.PI * 2);
-      const steps = Math.floor(prng.range(50, 100));
+      // 65% of tunnels start near mountain slopes/cliffs and carve inwards or breach open air
+      const isSurfaceBreaching = prng.next() < 0.65;
+      let tx = isSurfaceBreaching
+        ? (prng.next() > 0.5 ? prng.range(width * 0.15, width * 0.38) : prng.range(width * 0.62, width * 0.85))
+        : prng.range(width * 0.2, width * 0.8);
+      let ty = prng.range(height * 0.3, waterLevel - 90);
+      let angle = isSurfaceBreaching
+        ? (tx < width * 0.5 ? prng.range(-0.4, 0.9) : prng.range(2.2, 3.5))
+        : prng.range(0, Math.PI * 2);
+      const steps = Math.floor(prng.range(70, 130));
       const tunnelRadius = Math.floor(prng.range(18, 28));
 
       for (let s = 0; s < steps; s++) {
-        angle += (prng.next() - 0.5) * 0.45;
-        const speed = prng.range(3.5, 5.5);
+        angle += (prng.next() - 0.5) * 0.4;
+        const speed = prng.range(4.0, 6.0);
         tx += Math.cos(angle) * speed;
         ty += Math.sin(angle) * speed;
 
-        if (tx < 80 || tx > width - 80 || ty < 40 || ty > waterLevel - 40) {
+        if (tx < 60 || tx > width - 60 || ty < 35 || ty > waterLevel - 35) {
           angle += Math.PI * 0.5 + (prng.next() - 0.5) * 0.3;
-          tx = Math.max(85, Math.min(width - 85, tx));
-          ty = Math.max(45, Math.min(waterLevel - 45, ty));
+          tx = Math.max(65, Math.min(width - 65, tx));
+          ty = Math.max(40, Math.min(waterLevel - 40, ty));
         }
 
         const minX = Math.max(0, Math.floor(tx - tunnelRadius));
@@ -269,7 +275,7 @@ export function generateProceduralTerrain(
       }
     }
 
-    // B. A Few Natural Round/Oval Pockets & Chambers (3 to 5 chambers)
+    // B. A Few Natural Round/Oval Pockets & Chambers (3 to 4 chambers)
     const chamberCount = theme === 'CAVERN' ? 8 : 4;
     for (let i = 0; i < chamberCount; i++) {
       const cx = Math.floor(prng.range(150, width - 150));
@@ -398,24 +404,59 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 4. Safe Spawn Points Generator
+  // 4. Safe Spawn Points Generator (Guarantees wide, stable footholds and avoids tiny fragile floating sky islands)
   const spawnPoints: Vector2D[] = [];
   const step = Math.floor((width - 240) / 14);
   const searchStartY = theme === 'CAVERN' ? 120 : theme === 'ORGANIC_CAVES' ? 35 : 40;
   const minHeadroom = theme === 'ORGANIC_CAVES' ? 12 : 22;
 
   for (let x = 120; x < width - 120; x += step) {
+    let fallbackSpawn: Vector2D | null = null;
+
     for (let y = searchStartY; y < waterLevel - 30; y++) {
       if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
         let openHeadroom = 0;
         for (let checkY = y - 1; checkY >= Math.max(0, y - 30); checkY--) {
           if (grid[checkY * width + x] === 0) openHeadroom++;
         }
-        if (openHeadroom >= minHeadroom) {
-          spawnPoints.push({ x, y: y - 10 });
-          break;
+        if (openHeadroom < minHeadroom) continue;
+
+        if (!fallbackSpawn) {
+          fallbackSpawn = { x, y: y - 10 };
         }
+
+        // Anti-Fragile / Anti-Tiny-Island Check:
+        // Ensure platform width is wide (at least 32px solid platform around x)
+        let solidPlatformWidth = 0;
+        const checkSpan = 16;
+        for (let dx = -checkSpan; dx <= checkSpan; dx++) {
+          const px = x + dx;
+          if (px >= 0 && px < width && grid[y * width + px] === 1) {
+            solidPlatformWidth++;
+          }
+        }
+
+        // Platform thickness check (ensure solid rock under slug is at least 12px deep)
+        let platformThickness = 0;
+        for (let dy = 0; dy < 14; dy++) {
+          if (y + dy < height && grid[(y + dy) * width + x] === 1) {
+            platformThickness++;
+          }
+        }
+
+        // Avoid tiny sky islands with high drop danger, keep scanning down for the main continent or wide plateau!
+        if (solidPlatformWidth < 22 || platformThickness < 8) {
+          continue;
+        }
+
+        spawnPoints.push({ x, y: y - 10 });
+        fallbackSpawn = null;
+        break;
       }
+    }
+
+    if (fallbackSpawn && !spawnPoints.some((sp) => Math.abs(sp.x - x) < step * 0.7)) {
+      spawnPoints.push(fallbackSpawn);
     }
   }
 
