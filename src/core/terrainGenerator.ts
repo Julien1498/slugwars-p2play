@@ -375,44 +375,63 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 3. Floating Islands / Suspended Ledges (Only for FLOATING_CHAOS and wide CAVERN ledges)
-  if (theme === 'FLOATING_CHAOS') {
-    // Generate large, wide, comfortable floating sky landmasses (160 to 300px wide)
-    const floatingIslandCount = 6;
-    for (let i = 0; i < floatingIslandCount; i++) {
-      const fx = Math.floor(prng.range(180, width - 180));
-      const fy = Math.floor(prng.range(height * 0.25, waterLevel - 140));
-      const fRadiusX = Math.floor(prng.range(80, 150));
-      const fRadiusY = Math.floor(prng.range(35, 65));
+  // 3. Tactical Cradle Floating Islands & Suspended Defensive Nests (Plateformes en cuvette protectrice)
+  const stampTacticalFloatingIsland = (fx: number, fy: number, rx: number, ry: number) => {
+    const minX = Math.max(0, Math.floor(fx - rx));
+    const maxX = Math.min(width - 1, Math.ceil(fx + rx));
+    const maxY = Math.min(waterLevel - 45, Math.ceil(fy + ry));
 
-      for (let y = Math.max(0, fy - fRadiusY); y <= Math.min(waterLevel - 60, fy + fRadiusY); y++) {
-        for (let x = Math.max(0, fx - fRadiusX); x <= Math.min(width - 1, fx + fRadiusX); x++) {
-          const dx = (x - fx) / fRadiusX;
-          const dy = (y - fy) / fRadiusY;
-          if (dx * dx + dy * dy <= 1.0) {
-            grid[y * width + x] = 1;
-          }
-        }
+    for (let x = minX; x <= maxX; x++) {
+      const u = (x - fx) / rx; // Normalized [-1 .. 1]
+      const uSq = u * u;
+      if (uSq > 1.0) continue;
+
+      // Solid curved rock underbelly
+      const bottomY = fy + Math.sqrt(1.0 - uSq) * ry;
+
+      // Tactical cradle profile: sheltered central basin with raised defensive parapets on left & right
+      const lip = Math.sin(Math.abs(u) * Math.PI) * (Math.abs(u) > 0.35 ? 0.4 : 0.0);
+      const topDip = (1.0 - uSq) * 0.35 - lip;
+      const topY = fy - topDip * ry;
+
+      const rowStart = Math.max(theme === 'CAVERN' ? 17 : 0, Math.floor(topY));
+      const rowEnd = Math.min(maxY, Math.ceil(bottomY));
+
+      for (let y = rowStart; y <= rowEnd; y++) {
+        grid[y * width + x] = 1;
       }
     }
-  } else if (theme === 'CAVERN') {
-    // Wide suspended subterranean rock shelves inside the cavern
-    const cavernLedgeCount = 3;
-    for (let i = 0; i < cavernLedgeCount; i++) {
-      const fx = Math.floor(prng.range(220, width - 220));
-      const fy = Math.floor(prng.range(height * 0.4, waterLevel - 120));
-      const fRadiusX = Math.floor(prng.range(75, 125));
-      const fRadiusY = Math.floor(prng.range(25, 45));
+  };
 
-      for (let y = Math.max(20, fy - fRadiusY); y <= Math.min(waterLevel - 70, fy + fRadiusY); y++) {
-        for (let x = Math.max(0, fx - fRadiusX); x <= Math.min(width - 1, fx + fRadiusX); x++) {
-          const dx = (x - fx) / fRadiusX;
-          const dy = (y - fy) / fRadiusY;
-          if (dx * dx + dy * dy <= 1.0) {
-            grid[y * width + x] = 1;
-          }
-        }
-      }
+  if (theme === 'FLOATING_CHAOS') {
+    // 6 large tactical floating islands (160 to 280px wide) with deep defensive cradles
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const fx = Math.floor(prng.range(180, width - 180));
+      const fy = Math.floor(prng.range(height * 0.25, waterLevel - 140));
+      const rx = Math.floor(prng.range(80, 140));
+      const ry = Math.floor(prng.range(32, 55));
+      stampTacticalFloatingIsland(fx, fy, rx, ry);
+    }
+  } else if (theme === 'CAVERN') {
+    // 3 wide suspended subterranean rock shelves inside cavern
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      const fx = Math.floor(prng.range(220, width - 220));
+      const fy = Math.floor(prng.range(height * 0.42, waterLevel - 120));
+      const rx = Math.floor(prng.range(75, 120));
+      const ry = Math.floor(prng.range(26, 44));
+      stampTacticalFloatingIsland(fx, fy, rx, ry);
+    }
+  } else if (theme !== 'ORGANIC_CAVES') {
+    // 2 to 3 tactical defensive floating nests (130 to 210px wide) at safe mid-altitudes above the main continent
+    const count = Math.floor(prng.range(2, 4));
+    for (let i = 0; i < count; i++) {
+      const fx = Math.floor(prng.range(200 + i * 280, 420 + i * 280));
+      const fy = Math.floor(prng.range(height * 0.32, waterLevel - 160));
+      const rx = Math.floor(prng.range(65, 105));
+      const ry = Math.floor(prng.range(24, 38));
+      stampTacticalFloatingIsland(fx, fy, rx, ry);
     }
   }
 
