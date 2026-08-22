@@ -80,10 +80,10 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
       rockRGB = [32, 19, 23];
       bedrockRGB = [14, 8, 10];
     } else if (theme === 'ORGANIC_CAVES') {
-      surfaceRGB = [71, 85, 105];
-      topsoilRGB = [30, 41, 59];
-      rockRGB = [17, 20, 28];
-      bedrockRGB = [7, 8, 12];
+      surfaceRGB = [217, 119, 6];
+      topsoilRGB = [120, 53, 15];
+      rockRGB = [44, 20, 6];
+      bedrockRGB = [16, 7, 2];
     } else if (theme === 'NATURAL_ARCHES') {
       surfaceRGB = [245, 155, 8];
       topsoilRGB = [194, 65, 12];

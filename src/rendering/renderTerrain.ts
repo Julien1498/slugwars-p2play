@@ -84,16 +84,16 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     seam: 0xff050407,         // #070405 Deep cave fissure
   },
   ORGANIC_CAVES: {
-    highlight: 0xff475569,    // #695547 Soft slate highlight rim
-    surfaceBody: 0xff334155,  // #554133 Dark stone body
-    surfaceShadow: 0xff1e293b,// #3b291e Deep shadow
-    surfaceDeep: 0xff0f172a,  // #2a170f Subterranean edge
-    soilLight: 0xff161a24,    // #241a16 Deep charcoal rock
-    strataA: 0xff11141c,      // #1c1411 Dark shale stratum
-    strataB: 0xff0d0f15,      // #150f0d Deep dark rock band
-    denseRock: 0xff08090d,    // #0d0908 Abyssal dark stone
-    bedrock: 0xff040507,      // #070504 Solid subterranean bedrock
-    seam: 0xff020304,         // #040302 Seamless subtle dark micro-crevice (Zero eye strain)
+    highlight: 0xff24bffb,    // #fbbf24 Golden amber highlight rim
+    surfaceBody: 0xff0677d9,  // #d97706 Warm amber ochre tunnel floor
+    surfaceShadow: 0xff0953b4,// #b45309 Warm terracotta shadow
+    surfaceDeep: 0xff0f3578,  // #78350f Warm subterranean edge
+    soilLight: 0xff081c3d,    // #3d1c08 Warm earthy subterranean rock
+    strataA: 0xff06142c,      // #2c1406 Stratified warm rock stratum
+    strataB: 0xff040e1f,      // #1f0e04 Dark warm rock band
+    denseRock: 0xff030914,    // #140903 Deep warm stone core
+    bedrock: 0xff02050c,      // #0c0502 Solid dark warm bedrock
+    seam: 0xff010307,         // #070301 Harmonious subtle dark crevice (Zero eye strain)
   },
   FORTRESS: {
     highlight: 0xffa3e635,    // #35e6a3 Rampart moss
