@@ -157,69 +157,78 @@ class SoundEffects {
       if (type === 'bat_hit') resolvedType = 'melee';
 
       if (resolvedType === 'explosion') {
+        // 16-Bit Arcade Firecracker Detonation ("PAAAAF / K-BLAM!")
 
-        // Multi-layered Cinematic Blockbuster Explosion
-
-        // Layer 1: Saturated Sub-Bass Shockwave Punch (45Hz -> 22Hz with soft distortion)
-        const subOsc = ctx.createOscillator();
-        const subGain = ctx.createGain();
+        // Layer 1: Snappy "PAAF" Firecracker Detonation Crack (480Hz -> 65Hz Saturated FM Transient)
+        const snapOsc = ctx.createOscillator();
+        const snapGain = ctx.createGain();
+        const snapMod = ctx.createOscillator();
+        const snapModGain = ctx.createGain();
         const shaper = ctx.createWaveShaper();
         shaper.curve = DISTORTION_CURVE;
         shaper.oversample = '2x';
 
-        subOsc.type = 'sine';
-        subOsc.frequency.setValueAtTime(58 * pitchRatio, now);
-        subOsc.frequency.exponentialRampToValueAtTime(24 * pitchRatio, now + 0.55);
+        snapMod.type = 'sawtooth';
+        snapMod.frequency.setValueAtTime(220 * pitchRatio, now);
+        snapMod.frequency.exponentialRampToValueAtTime(45 * pitchRatio, now + 0.08);
 
-        subGain.gain.setValueAtTime(1.0, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+        snapModGain.gain.setValueAtTime(220 * pitchRatio, now);
+        snapModGain.gain.exponentialRampToValueAtTime(1, now + 0.08);
 
-        subOsc.connect(shaper);
-        shaper.connect(subGain);
-        subGain.connect(dest);
-        subOsc.start(now);
-        subOsc.stop(now + 0.65);
-
-        // Layer 2: Brown Noise Dirt & Debris Blast (Resonant sweep 1800Hz -> 50Hz)
-        const brownBuffer = this.createBrownNoiseBuffer(ctx, 0.75);
-        const brownSource = ctx.createBufferSource();
-        brownSource.buffer = brownBuffer;
-
-        const brownFilter = ctx.createBiquadFilter();
-        brownFilter.type = 'lowpass';
-        brownFilter.frequency.setValueAtTime(1800 * pitchRatio, now);
-        brownFilter.frequency.exponentialRampToValueAtTime(45, now + 0.7);
-        brownFilter.Q.setValueAtTime(3.2, now);
-
-        const brownGain = ctx.createGain();
-        brownGain.gain.setValueAtTime(0.9, now);
-        brownGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
-
-        brownSource.connect(brownFilter);
-        brownFilter.connect(brownGain);
-        brownGain.connect(dest);
-        brownSource.start(now);
-
-        // Layer 3: Initial Detonation Air Crack (Crisp 12ms transient snap)
-        const snapOsc = ctx.createOscillator();
-        const snapGain = ctx.createGain();
-        const snapFilter = ctx.createBiquadFilter();
+        snapMod.connect(snapModGain);
+        snapModGain.connect(snapOsc.frequency);
 
         snapOsc.type = 'sawtooth';
-        snapOsc.frequency.setValueAtTime(320 * pitchRatio, now);
-        snapOsc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+        snapOsc.frequency.setValueAtTime(480 * pitchRatio, now);
+        snapOsc.frequency.exponentialRampToValueAtTime(65 * pitchRatio, now + 0.12);
 
-        snapFilter.type = 'highpass';
-        snapFilter.frequency.setValueAtTime(400, now);
+        snapGain.gain.setValueAtTime(1.0, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-        snapGain.gain.setValueAtTime(0.7, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-        snapOsc.connect(snapFilter);
-        snapFilter.connect(snapGain);
+        snapOsc.connect(shaper);
+        shaper.connect(snapGain);
         snapGain.connect(dest);
+
+        snapMod.start(now);
         snapOsc.start(now);
-        snapOsc.stop(now + 0.08);
+        snapMod.stop(now + 0.15);
+        snapOsc.stop(now + 0.15);
+
+        // Layer 2: 16-Bit Firecracker Gunpowder Noise Blast (Resonant 3200Hz -> 140Hz)
+        const powderBuffer = this.createPinkNoiseBuffer(ctx, 0.38);
+        const powderSource = ctx.createBufferSource();
+        powderSource.buffer = powderBuffer;
+
+        const powderFilter = ctx.createBiquadFilter();
+        powderFilter.type = 'lowpass';
+        powderFilter.frequency.setValueAtTime(3200 * pitchRatio, now);
+        powderFilter.frequency.exponentialRampToValueAtTime(140 * pitchRatio, now + 0.32);
+        powderFilter.Q.setValueAtTime(3.0, now);
+
+        const powderGain = ctx.createGain();
+        powderGain.gain.setValueAtTime(0.95, now);
+        powderGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+        powderSource.connect(powderFilter);
+        powderFilter.connect(powderGain);
+        powderGain.connect(dest);
+        powderSource.start(now);
+
+        // Layer 3: Punchy Firecracker Thump Body (200Hz -> 42Hz)
+        const thumpOsc = ctx.createOscillator();
+        const thumpGain = ctx.createGain();
+        thumpOsc.type = 'sine';
+        thumpOsc.frequency.setValueAtTime(200 * pitchRatio, now);
+        thumpOsc.frequency.exponentialRampToValueAtTime(42 * pitchRatio, now + 0.3);
+
+        thumpGain.gain.setValueAtTime(0.9, now);
+        thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        thumpOsc.connect(thumpGain);
+        thumpGain.connect(dest);
+        thumpOsc.start(now);
+        thumpOsc.stop(now + 0.35);
+
 
       } else if (resolvedType === 'fire') {
         // 16-Bit Arcade Bazooka Blast (SNES / Genesis Style "K-PWAM / BOOM")
