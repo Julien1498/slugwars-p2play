@@ -222,60 +222,63 @@ class SoundEffects {
         snapOsc.stop(now + 0.08);
 
       } else if (resolvedType === 'fire') {
-        // Arcade / Cartoon Punchy Rocket Launch ("PWHOOOM / FIOU-CRACK")
+        // Pure Arcade Cannon / Bazooka Explosive Blast (BANG! - Zero arrow whistle)
 
-        // Layer 1: Snappy Arcade Cannon Pop (620Hz -> 110Hz bright transient punch)
-        const popOsc = ctx.createOscillator();
-        const popGain = ctx.createGain();
-        popOsc.type = 'sawtooth';
-        popOsc.frequency.setValueAtTime(620 * pitchRatio, now);
-        popOsc.frequency.exponentialRampToValueAtTime(110 * pitchRatio, now + 0.14);
+        // Layer 1: Gunpowder / Propellant Muzzle Detonation (Noise Burst with Fast Filter Sweep)
+        const blastBuffer = this.createPinkNoiseBuffer(ctx, 0.18);
+        const blastSource = ctx.createBufferSource();
+        blastSource.buffer = blastBuffer;
 
-        popGain.gain.setValueAtTime(0.85, now);
-        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        const blastFilter = ctx.createBiquadFilter();
+        blastFilter.type = 'lowpass';
+        blastFilter.frequency.setValueAtTime(3600 * pitchRatio, now);
+        blastFilter.frequency.exponentialRampToValueAtTime(180 * pitchRatio, now + 0.14);
+        blastFilter.Q.setValueAtTime(2.0, now);
 
-        popOsc.connect(popGain);
-        popGain.connect(dest);
-        popOsc.start(now);
-        popOsc.stop(now + 0.16);
+        const blastGain = ctx.createGain();
+        blastGain.gain.setValueAtTime(1.0, now);
+        blastGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-        // Layer 2: Arcade Rocket Thruster "FIOUUU" Jet Sweep (1100Hz -> 260Hz with resonant bandpass)
-        const jetOsc = ctx.createOscillator();
-        const jetGain = ctx.createGain();
-        const jetFilter = ctx.createBiquadFilter();
+        blastSource.connect(blastFilter);
+        blastFilter.connect(blastGain);
+        blastGain.connect(dest);
+        blastSource.start(now);
 
-        jetOsc.type = 'triangle';
-        jetOsc.frequency.setValueAtTime(1100 * pitchRatio, now);
-        jetOsc.frequency.exponentialRampToValueAtTime(260 * pitchRatio, now + 0.22);
+        // Layer 2: Heavy Saturated Cannon Recoil Punch (180Hz -> 48Hz with WaveShaper Overdrive)
+        const punchOsc = ctx.createOscillator();
+        const punchGain = ctx.createGain();
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = DISTORTION_CURVE;
+        shaper.oversample = '2x';
 
-        jetFilter.type = 'bandpass';
-        jetFilter.frequency.setValueAtTime(1200 * pitchRatio, now);
-        jetFilter.frequency.exponentialRampToValueAtTime(320 * pitchRatio, now + 0.22);
-        jetFilter.Q.setValueAtTime(3.5, now);
+        punchOsc.type = 'triangle';
+        punchOsc.frequency.setValueAtTime(180 * pitchRatio, now);
+        punchOsc.frequency.exponentialRampToValueAtTime(48 * pitchRatio, now + 0.16);
 
-        jetGain.gain.setValueAtTime(0.75, now);
-        jetGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        punchGain.gain.setValueAtTime(1.0, now);
+        punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-        jetOsc.connect(jetFilter);
-        jetFilter.connect(jetGain);
-        jetGain.connect(dest);
-        jetOsc.start(now);
-        jetOsc.stop(now + 0.24);
+        punchOsc.connect(shaper);
+        shaper.connect(punchGain);
+        punchGain.connect(dest);
+        punchOsc.start(now);
+        punchOsc.stop(now + 0.18);
 
-        // Layer 3: Punchy Mid-Bass Body (220Hz -> 65Hz)
-        const thumpOsc = ctx.createOscillator();
-        const thumpGain = ctx.createGain();
-        thumpOsc.type = 'sine';
-        thumpOsc.frequency.setValueAtTime(220 * pitchRatio, now);
-        thumpOsc.frequency.exponentialRampToValueAtTime(65 * pitchRatio, now + 0.18);
+        // Layer 3: Sharp Firing Pin / Trigger Strike (12ms transient snap)
+        const clickOsc = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        clickOsc.type = 'square';
+        clickOsc.frequency.setValueAtTime(750 * pitchRatio, now);
+        clickOsc.frequency.exponentialRampToValueAtTime(120 * pitchRatio, now + 0.04);
 
-        thumpGain.gain.setValueAtTime(0.9, now);
-        thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        clickGain.gain.setValueAtTime(0.6, now);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
-        thumpOsc.connect(thumpGain);
-        thumpGain.connect(dest);
-        thumpOsc.start(now);
-        thumpOsc.stop(now + 0.18);
+        clickOsc.connect(clickGain);
+        clickGain.connect(dest);
+        clickOsc.start(now);
+        clickOsc.stop(now + 0.04);
+
 
 
       } else if (resolvedType === 'grenade_throw') {
