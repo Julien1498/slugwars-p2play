@@ -37,7 +37,7 @@ export function updateProjectilePhysics(
     const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
 
     const speed = 7.5;
-    proj.vx = Math.cos(newAngle) * speed;
+    proj.vx = Math.cos(newAngle) * speed + (proj.windAffected ? wind * 0.015 : 0);
     proj.vy = Math.sin(newAngle) * speed;
   } else if (proj.weaponId === 'homing_missile') {
     if (proj.targetPoint) {
@@ -53,7 +53,11 @@ export function updateProjectilePhysics(
       if (delay > 0) {
         if (!proj.behaviorData) proj.behaviorData = {};
         proj.behaviorData.homingDelayMs = delay - 50;
-        proj.vy += GRAVITY * 0.5;
+        // Behaves exactly like a classic bazooka rocket before homing engages:
+        if (proj.windAffected) {
+          proj.vx += wind * 0.02;
+        }
+        proj.vy += GRAVITY;
       } else {
         const desiredAngle = Math.atan2(dy, dx);
         const currentAngle = Math.atan2(proj.vy, proj.vx);
@@ -70,6 +74,9 @@ export function updateProjectilePhysics(
         proj.vy = Math.sin(newAngle) * speed;
       }
     } else {
+      if (proj.windAffected) {
+        proj.vx += wind * 0.02;
+      }
       proj.vy += GRAVITY;
     }
   } else if (proj.weaponId === 'concrete_donkey') {
