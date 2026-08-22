@@ -190,4 +190,46 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
     expect(dt.isSolid(300, 10)).toBe(true);
     expect(dt.isSolid(300, -5)).toBe(true);
   });
+
+  it('generates 2D domain warping overhangs and shelves in organic terrain', () => {
+    const terrainData = generateProceduralTerrain(456, 'NATURAL_ARCHES', 1400, 800);
+    const { grid, width, height } = terrainData;
+
+    // Detect presence of overhangs: a solid pixel that has air directly below it, which in turn has solid ground further down
+    let overhangCount = 0;
+    for (let x = 100; x < width - 100; x += 10) {
+      let transitions = 0;
+      let wasSolid = false;
+      for (let y = 30; y < height - 100; y++) {
+        const isSolid = grid[y * width + x] === 1;
+        if (isSolid !== wasSolid) {
+          transitions++;
+          wasSolid = isSolid;
+        }
+      }
+      // If there are 4 or more solid/air transitions in a column, it means there is an overhang/arch!
+      if (transitions >= 4) {
+        overhangCount++;
+      }
+    }
+
+    expect(overhangCount).toBeGreaterThan(0);
+  });
+
+  it('generates destructible stalactites in CAVERN theme maps', () => {
+    const terrainData = generateProceduralTerrain(789, 'CAVERN', 1400, 800);
+    const dt = new DestructibleTerrain(terrainData);
+
+    // Verify solid terrain exists below ceiling in upper cavern quadrant
+    let upperSolidSpikes = 0;
+    for (let x = 120; x < 1280; x += 20) {
+      for (let y = 30; y < 140; y++) {
+        if (dt.isSolid(x, y)) {
+          upperSolidSpikes++;
+        }
+      }
+    }
+
+    expect(upperSolidSpikes).toBeGreaterThan(50);
+  });
 });
