@@ -199,7 +199,10 @@ export function useGuestStateReceiver(
           }
         }
 
-        const hasActiveDynamics = (engine.state.projectiles?.length ?? 0) > 0 || (engine.state.explosions?.length ?? 0) > 0;
+        const hasActiveDynamics =
+          (engine.state.projectiles?.length ?? 0) > 0 ||
+          (engine.state.explosions?.length ?? 0) > 0 ||
+          (engine.state.supplyCrates?.some((c) => !c.isLanded) ?? false);
         setGameState(engine.state, hasActiveDynamics);
       } else if (payload.config) {
         const newState = payload as GameState;

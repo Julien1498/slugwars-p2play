@@ -131,8 +131,23 @@ export function useGame(options?: {
         changed = true;
       }
 
+      // Smooth continuous descent for falling supply crates on guest (50ms interval)
+      if (state.supplyCrates && state.supplyCrates.length > 0) {
+        for (const crate of state.supplyCrates) {
+          if (!crate.isLanded) {
+            crate.x += state.wind * 0.15;
+            crate.y += (crate.vy || 1.8);
+            if (engineRef.current.terrain.isSolid(crate.x, crate.y + 10) || crate.y >= engineRef.current.terrain.data.waterLevel - 15) {
+              crate.isLanded = true;
+              crate.vy = 0;
+            }
+            changed = true;
+          }
+        }
+      }
+
       if (changed) {
-        updateReactState(state);
+        updateReactState(state, true);
       }
     }, 50);
 
