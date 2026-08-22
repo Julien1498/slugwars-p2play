@@ -1,7 +1,7 @@
 import { GameState, GameConfig, Vector2D, JournalEntry, Particle, SolidProp, Slug } from './types';
 import { DestructibleTerrain } from './terrain';
 import { getWeaponSet } from './weapons/weaponSets';
-import { getWeapon } from './weapons/registry';
+import { getWeapon, isWeaponChargeable } from './weapons/registry';
 import { updateProjectilePhysics, applyExplosionToSlugs, updateSlugPhysics, isSlugGrounded } from './physics';
 import { sfx } from './audio';
 import {
@@ -297,6 +297,11 @@ export class SlugWarsEngine {
     if (this.state.phase !== 'AIMING') return;
     const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
     if (activeSlug && activeSlug.isAlive) {
+      const weapon = getWeapon(activeSlug.selectedWeaponId);
+      if (!isWeaponChargeable(weapon)) {
+        this.fireWeapon(targetPoint);
+        return;
+      }
       activeSlug.isChargingPower = true;
       activeSlug.aimPower = 5;
       if (targetPoint) {

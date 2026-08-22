@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { GameState, Slug, ActiveProjectile, Vector2D } from '../../../core/types';
-import { getWeapon } from '../../../core/weapons/registry';
+import { getWeapon, isWeaponChargeable } from '../../../core/weapons/registry';
 import { sfx } from '../../../core/audio';
 
 interface KeyboardControlsProps {
@@ -193,7 +193,12 @@ export function useBoardKeyboardControls({
           if (activeSlug?.selectedWeaponId === 'blowtorch') {
             if (!activeSlug.isBlowtorching) onFire?.();
           } else {
-            onStartCharge?.();
+            const weapon = activeSlug ? getWeapon(activeSlug.selectedWeaponId) : null;
+            if (weapon && !isWeaponChargeable(weapon)) {
+              onFire?.();
+            } else {
+              onStartCharge?.();
+            }
           }
         }
       }

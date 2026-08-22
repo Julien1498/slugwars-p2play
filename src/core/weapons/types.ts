@@ -74,5 +74,6 @@ export interface WeaponDefinition {
   minPower?: number;
   maxPower?: number;
   requiresTarget?: boolean;
+  chargeable?: boolean;
   createProjectiles: (ctx: FireContext) => ActiveProjectile[];
 }

@@ -196,6 +196,7 @@ export const dynamiteWeapon: WeaponDefinition = {
   bounces: false,
   fuseTimeMs: 3000,
   allowCustomFuse: true,
+  chargeable: false,
   craftable: true,
   customSoundKey: 'grenade_throw',
   createProjectiles: (ctx) => {

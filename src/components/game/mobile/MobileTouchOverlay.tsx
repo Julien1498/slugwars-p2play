@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import { GameState, Slug, ActiveProjectile, Vector2D } from '../../../core/types';
-import { getWeapon } from '../../../core/weapons/registry';
+import { getWeapon, isWeaponChargeable } from '../../../core/weapons/registry';
 import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
 import { sfx } from '../../../core/audio';
 import { MessageSquare } from 'lucide-react';
@@ -126,10 +126,11 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
       // Ignored if pointer capture not supported
     }
     triggerHaptic(20);
-    isHoldingFireRef.current = true;
-    if (currentWeapon?.id === 'blowtorch') {
+    const isChargeable = isWeaponChargeable(currentWeapon);
+    if (currentWeapon?.id === 'blowtorch' || !isChargeable) {
       onFire?.(activeSlug?.currentTargetPoint);
     } else {
+      isHoldingFireRef.current = true;
       onStartCharge?.(activeSlug?.currentTargetPoint);
     }
   };

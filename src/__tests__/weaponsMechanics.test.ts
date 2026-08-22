@@ -440,5 +440,81 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(bouncedWall.vx).toBeLessThan(0);
     expect(bouncedWall.vy).toBeGreaterThan(0);
   });
+
+  it('fires non-chargeable weapons like dynamite immediately on startCharge', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['dynamite'] = 2;
+    engine.selectWeapon('dynamite');
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    expect(activeSlug.isChargingPower).toBeFalsy();
+
+    // Calling startCharge on dynamite should immediately place the dynamite and enter retreat phase
+    engine.startCharge();
+
+    expect(activeSlug.isChargingPower).toBeFalsy();
+    expect(engine.state.projectiles.some((p) => p.weaponId === 'dynamite')).toBe(true);
+    expect(engine.state.phase).toBe('RETREAT');
+  });
+
+  it('immediately liberates helicopter when the pilot slug dies', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 2 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    const heli = {
+      id: 'heli_test_1',
+      x: activeSlug.x + 10,
+      y: activeSlug.y - 10,
+      vx: 0,
+      vy: 0,
+      hp: 100,
+      maxHp: 100,
+      facing: 'right' as const,
+      isFlying: false,
+      rotorAngle: 0,
+      pilotSlugId: null,
+    };
+    engine.state.helicopters = [heli];
+
+    // Slug enters helicopter
+    const entered = engine.enterVehicle();
+    expect(entered).toBe(true);
+    expect(heli.pilotSlugId).toBe(activeSlug.id);
+    expect(activeSlug.inVehicleId).toBe(heli.id);
+
+    // Pilot slug takes fatal damage (e.g. killed by weapon)
+    activeSlug.hp = 0;
+    activeSlug.isAlive = false;
+
+    // Tick the engine
+    engine.tick();
+
+    // Helicopter should now be free (pilotSlugId null) and available for other slugs
+    expect(heli.pilotSlugId).toBeNull();
+    expect(activeSlug.inVehicleId).toBeNull();
+
+    // Another slug can now enter the liberated helicopter
+    const otherSlug = engine.state.slugs.find((s) => s.id !== activeSlug.id && s.isAlive)!;
+    engine.state.phase = 'AIMING';
+    engine.state.activeSlugId = otherSlug.id;
+    engine.state.activeTeamId = otherSlug.teamId;
+    otherSlug.x = heli.x + 5;
+    otherSlug.y = heli.y + 5;
+
+    const otherEntered = engine.enterVehicle();
+    expect(otherEntered).toBe(true);
+    expect(heli.pilotSlugId).toBe(otherSlug.id);
+    expect(otherSlug.inVehicleId).toBe(heli.id);
+  });
 });
 

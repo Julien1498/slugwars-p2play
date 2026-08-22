@@ -8,6 +8,16 @@ export function enterVehicle(state: GameState, addLog: (msg: string, type?: Jour
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (!activeSlug || !activeSlug.isAlive || activeSlug.inVehicleId) return false;
 
+  // Clean up any stale or dead pilot associations first
+  for (const h of state.helicopters) {
+    if (h.pilotSlugId) {
+      const p = state.slugs.find((s) => s.id === h.pilotSlugId);
+      if (!p || !p.isAlive || p.hp <= 0) {
+        h.pilotSlugId = null;
+      }
+    }
+  }
+
   const nearbyHeli = state.helicopters.find(
     (h) => !h.pilotSlugId && Math.hypot(h.x - activeSlug.x, h.y - activeSlug.y) < 65
   );
@@ -131,7 +141,17 @@ export function updateHelicopters(
   if (!state.helicopters || state.helicopters.length === 0) return;
 
   for (const heli of state.helicopters) {
-    const pilot = state.slugs.find((s) => s.id === heli.pilotSlugId);
+    let pilot = state.slugs.find((s) => s.id === heli.pilotSlugId);
+
+    // If pilot slug died, was eliminated, or drowned, immediately free the helicopter!
+    if (heli.pilotSlugId && (!pilot || !pilot.isAlive || pilot.hp <= 0)) {
+      heli.pilotSlugId = null;
+      if (pilot) {
+        pilot.inVehicleId = null;
+      }
+      pilot = undefined;
+    }
+
     const res = updateHelicopterPhysics(heli, terrain, pilot);
 
     if (res.crashed || heli.hp <= 0) {

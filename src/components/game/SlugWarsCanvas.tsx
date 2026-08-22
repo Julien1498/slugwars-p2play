@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameState, Vector2D } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
-import { getWeapon } from '../../core/weapons/registry';
+import { getWeapon, isWeaponChargeable } from '../../core/weapons/registry';
 import { sfx } from '../../core/audio';
 import { perfTracker } from '../../core/perfTracker';
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
@@ -854,7 +854,10 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         return;
       }
 
-      if (!isInstantTarget) {
+      const isChargeable = isWeaponChargeable(weapon);
+      if (isInstantTarget || !isChargeable) {
+        onFire({ ...targetPt, aimAngle: angle, aimPower: 100, facing });
+      } else {
         onStartCharge?.(targetPt);
       }
     },

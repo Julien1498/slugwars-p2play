@@ -39,3 +39,29 @@ export function getAllWeapons(): WeaponDefinition[] {
 export function getWeaponsByCategory(category: WeaponCategory): WeaponDefinition[] {
   return getAllWeapons().filter((w) => w.category === category);
 }
+
+export function isWeaponChargeable(weaponOrId: WeaponDefinition | string | undefined | null): boolean {
+  if (!weaponOrId) return false;
+  const weapon = typeof weaponOrId === 'string' ? getWeapon(weaponOrId) : weaponOrId;
+  if (!weapon) return false;
+  if (weapon.chargeable !== undefined) return weapon.chargeable;
+  if (
+    weapon.id === 'dynamite' ||
+    weapon.id === 'shotgun' ||
+    weapon.id === 'prod' ||
+    weapon.id === 'homing_pigeon' ||
+    weapon.id === 'blowtorch' ||
+    weapon.id === 'super_sheep' ||
+    weapon.id === 'teleport' ||
+    weapon.id === 'air_strike' ||
+    weapon.id === 'concrete_donkey' ||
+    weapon.id === 'ninja_rope' ||
+    weapon.id === 'girder' ||
+    weapon.id === 'airdrop' ||
+    weapon.id === 'skip_turn'
+  ) {
+    return false;
+  }
+  return weapon.behavior === 'BALLISTIC' || weapon.behavior === 'BOUNCING_TIMER' || weapon.id === 'baseball_bat';
+}
+
