@@ -160,6 +160,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const zoomRef = useRef<number>(1.0);
   const panRef = useRef<Vector2D>({ x: 0, y: 0 });
   const isDraggingCameraRef = useRef<boolean>(false);
+  const didDragCameraRef = useRef<boolean>(false);
   const dragStartMouseRef = useRef<Vector2D>({ x: 0, y: 0 });
   const dragStartPanRef = useRef<Vector2D>({ x: 0, y: 0 });
   const targetCameraPanRef = useRef<Vector2D | null>(null);
@@ -179,6 +180,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const renderedSlugsCacheRef = useRef<any[]>([]);
   const visualCratePositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const renderedCratesCacheRef = useRef<any[]>([]);
+  const visualProjectilePositionsRef = useRef<Map<string, { x: number; y: number; angle: number }>>(new Map());
+  const renderedProjectilesCacheRef = useRef<any[]>([]);
   const visualStateRef = useRef<GameState | null>(null);
   const lastRenderTimeRef = useRef<number>(0);
 
@@ -705,6 +708,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (isDraggingCameraRef.current) {
         const dx = e.clientX - dragStartMouseRef.current.x;
         const dy = e.clientY - dragStartMouseRef.current.y;
+        if (Math.hypot(dx, dy) > 4) {
+          didDragCameraRef.current = true;
+        }
         const container = containerRef.current;
         const rect = container ? container.getBoundingClientRect() : { width: 1400, height: 700 };
         const clamped = clampPanOffset(
@@ -761,6 +767,10 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const handleContextMenu = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       e.preventDefault();
+      if (didDragCameraRef.current) {
+        didDragCameraRef.current = false;
+        return;
+      }
       if (!isMyTurn || gameState.phase !== 'AIMING') return;
       const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
       if (!activeSlug) return;
@@ -794,6 +804,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       if (e.button === 1 || e.button === 2) {
         isDraggingCameraRef.current = true;
+        didDragCameraRef.current = false;
         dragStartMouseRef.current = { x: e.clientX, y: e.clientY };
         dragStartPanRef.current = { ...panRef.current };
         cameraModeRef.current = 'FREE_LOOK';
@@ -1280,10 +1291,62 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         };
       }
 
+      // Frame-rate independent visual interpolation for buttery smooth 60/120/144/240 FPS projectiles (Pigeon, Sheep, Missiles, etc.)
+      const rawProjectiles = curState.projectiles || [];
+      const renderedProjectiles = renderedProjectilesCacheRef.current;
+      renderedProjectiles.length = rawProjectiles.length;
+      const currentProjIds = new Set<string>();
+
+      for (let i = 0; i < rawProjectiles.length; i++) {
+        const proj = rawProjectiles[i];
+        currentProjIds.add(proj.id);
+        let visualPos = visualProjectilePositionsRef.current.get(proj.id);
+        const targetAngle = Math.atan2(proj.vy, proj.vx);
+
+        if (!visualPos) {
+          visualPos = { x: proj.x, y: proj.y, angle: Number.isFinite(targetAngle) ? targetAngle : 0 };
+          visualProjectilePositionsRef.current.set(proj.id, visualPos);
+        } else {
+          const dist = Math.hypot(proj.x - visualPos.x, proj.y - visualPos.y);
+          if (dist > 90) {
+            visualPos.x = proj.x;
+            visualPos.y = proj.y;
+            visualPos.angle = Number.isFinite(targetAngle) ? targetAngle : visualPos.angle;
+          } else {
+            // Smooth position lerp
+            visualPos.x += (proj.x - visualPos.x) * alpha;
+            visualPos.y += (proj.y - visualPos.y) * alpha;
+
+            // Shortest-arc smooth angle lerp
+            if (Number.isFinite(targetAngle)) {
+              let angleDiff = targetAngle - visualPos.angle;
+              while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+              while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+              visualPos.angle += angleDiff * alpha;
+            }
+          }
+        }
+
+        renderedProjectiles[i] = {
+          ...proj,
+          x: visualPos.x,
+          y: visualPos.y,
+          interpolatedAngle: visualPos.angle,
+        };
+      }
+
+      // Cleanup visual positions for dead projectiles
+      for (const id of visualProjectilePositionsRef.current.keys()) {
+        if (!currentProjIds.has(id)) {
+          visualProjectilePositionsRef.current.delete(id);
+        }
+      }
+
       visualStateRef.current = {
         ...curState,
         slugs: renderedSlugs,
         supplyCrates: renderedCrates,
+        projectiles: renderedProjectiles,
       };
       const visualState = visualStateRef.current;
 
@@ -1296,11 +1359,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       // 7. Supply Crates, Projectiles & Particles FX
       const pFxStart = performance.now();
       renderSupplyCrates(ctx, renderedCrates, animTime);
-      renderProjectiles({ ctx, projectiles: curState.projectiles || [], animTime });
+      renderProjectiles({ ctx, projectiles: renderedProjectiles, animTime });
 
       // Spawn projectile smoke & fire trail particles
-      if (curState.projectiles && curState.projectiles.length > 0) {
-        for (const proj of curState.projectiles) {
+      if (renderedProjectiles.length > 0) {
+        for (const proj of renderedProjectiles) {
           if (Math.hypot(proj.vx, proj.vy) > 0.5 && clientParticlesRef.current.length < 60) {
             clientParticlesRef.current.push({
               x: proj.x - proj.vx * 0.8,

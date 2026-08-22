@@ -27,9 +27,18 @@ export function updateProjectilePhysics(
     }
 
     const desiredAngle = Math.atan2(dy, dx);
+    const currentAngle = Math.atan2(proj.vy, proj.vx) || desiredAngle;
+
+    let angleDiff = desiredAngle - currentAngle;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+    const turnSpeed = 0.22;
+    const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed);
+
     const speed = 7.5;
-    proj.vx = Math.cos(desiredAngle) * speed;
-    proj.vy = Math.sin(desiredAngle) * speed;
+    proj.vx = Math.cos(newAngle) * speed;
+    proj.vy = Math.sin(newAngle) * speed;
   } else if (proj.weaponId === 'homing_missile') {
     if (proj.targetPoint) {
       const dx = proj.targetPoint.x - proj.x;
