@@ -228,6 +228,11 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
       engine.state.floatingDamages = [];
     }
 
+    for (const s of engine.state.slugs) {
+      s.isAlive = true;
+      s.hp = 100;
+    }
+
     const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
     const heli = engine.state.helicopters[0];
     heli.pilotSlugId = activeSlug.id;
