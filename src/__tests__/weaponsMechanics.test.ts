@@ -364,5 +364,81 @@ describe('Weapons Arsenal & Mechanics', () => {
       expect(s.selectedWeaponId).toBe('bazooka');
     }
   });
+
+  it('bounces grenades predictably off flat floors and vertical walls using surface normals', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    // Clear map area for clean test
+    const width = engine.terrain.data.width;
+    for (let y = 0; y < 200; y++) {
+      for (let x = 0; x < 200; x++) {
+        engine.terrain.data.grid[y * width + x] = 0; // Air
+      }
+    }
+    // Solid flat ground at y >= 100
+    for (let y = 100; y < 200; y++) {
+      for (let x = 0; x < 200; x++) {
+        engine.terrain.data.grid[y * width + x] = 1;
+      }
+    }
+
+    // Spawn grenade moving down-right (vx=6, vy=8) towards floor
+    engine.state.projectiles = [
+      {
+        id: 'test_grenade_floor',
+        weaponId: 'grenade',
+        x: 50,
+        y: 95,
+        vx: 6,
+        vy: 8,
+        radius: 4,
+        bounces: true,
+        windAffected: false,
+        fuseTimerMs: 2000,
+        ownerSlugId: 'nobody',
+      },
+    ];
+
+    engine.tick();
+
+    const bouncedFloor = engine.state.projectiles[0];
+    // On flat floor: horizontal velocity should maintain forward direction (vx > 0), vertical should bounce UP (vy < 0)
+    expect(bouncedFloor.vx).toBeGreaterThan(0);
+    expect(bouncedFloor.vy).toBeLessThan(0);
+
+    // Now test vertical wall on the right: wall at x >= 100, air at x < 100
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x < 200; x++) {
+        engine.terrain.data.grid[y * width + x] = x >= 100 ? 1 : 0;
+      }
+    }
+
+    engine.state.projectiles = [
+      {
+        id: 'test_grenade_wall',
+        weaponId: 'grenade',
+        x: 95,
+        y: 50,
+        vx: 8,
+        vy: 3,
+        radius: 4,
+        bounces: true,
+        windAffected: false,
+        fuseTimerMs: 2000,
+        ownerSlugId: 'nobody',
+      },
+    ];
+
+    engine.tick();
+
+    const bouncedWall = engine.state.projectiles[0];
+    // On right wall: horizontal velocity should flip to left (vx < 0), vertical should maintain downward motion (vy > 0)
+    expect(bouncedWall.vx).toBeLessThan(0);
+    expect(bouncedWall.vy).toBeGreaterThan(0);
+  });
 });
 

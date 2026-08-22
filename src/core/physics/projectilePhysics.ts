@@ -95,8 +95,27 @@ export function updateProjectilePhysics(
       } else if (proj.weaponId === 'concrete_donkey') {
         return { exploded: true, collisionPoint: { x: slug.x, y: slugCenterY } };
       } else if (proj.bounces) {
-        proj.vx *= -0.65;
-        proj.vy *= -0.65;
+        const dx = nextX - slug.x;
+        const dy = nextY - slugCenterY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        const dot = proj.vx * nx + proj.vy * ny;
+        if (dot < 0) {
+          const elasticity = 0.65;
+          const friction = 0.85;
+          const vnX = dot * nx;
+          const vnY = dot * ny;
+          const vtX = proj.vx - vnX;
+          const vtY = proj.vy - vnY;
+          proj.vx = vtX * friction - vnX * elasticity;
+          proj.vy = vtY * friction - vnY * elasticity;
+        }
+
+        proj.x = slug.x + nx * (proj.radius + slugRadius + 1.2);
+        proj.y = slugCenterY + ny * (proj.radius + slugRadius + 1.2);
+
         sfx.play('bounce');
         return { exploded: false };
       } else {
@@ -117,10 +136,31 @@ export function updateProjectilePhysics(
     } else if (proj.weaponId === 'concrete_donkey') {
       return { exploded: true, collisionPoint: { x: ray.x, y: ray.y } };
     } else if (proj.bounces) {
-      proj.x = ray.x - Math.sign(proj.vx || 1) * 2;
-      proj.y = ray.y - Math.sign(proj.vy || 1) * 2;
-      proj.vx *= -0.65;
-      proj.vy *= -0.65;
+      const normal = terrain.getSurfaceNormal(ray.x, ray.y, Math.max(3, Math.ceil(proj.radius)));
+      const nx = normal.nx;
+      const ny = normal.ny;
+
+      const dot = proj.vx * nx + proj.vy * ny;
+      if (dot < 0) {
+        const elasticity = 0.62;
+        const friction = 0.85;
+        const vnX = dot * nx;
+        const vnY = dot * ny;
+        const vtX = proj.vx - vnX;
+        const vtY = proj.vy - vnY;
+        proj.vx = vtX * friction - vnX * elasticity;
+        proj.vy = vtY * friction - vnY * elasticity;
+      }
+
+      // Rest threshold: if moving very slowly, stop jittering
+      if (Math.hypot(proj.vx, proj.vy) < 0.25) {
+        proj.vx = 0;
+        proj.vy = 0;
+      }
+
+      // Position projectile cleanly on the surface along normal
+      proj.x = ray.x + nx * (proj.radius + 1.2);
+      proj.y = ray.y + ny * (proj.radius + 1.2);
 
       sfx.play('bounce');
       return { exploded: false };
