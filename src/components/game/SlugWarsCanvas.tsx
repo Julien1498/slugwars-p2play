@@ -177,6 +177,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const clientWaterBubblesRef = useRef<WaterBubble[]>([]);
   const visualSlugPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const renderedSlugsCacheRef = useRef<any[]>([]);
+  const visualCratePositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const renderedCratesCacheRef = useRef<any[]>([]);
   const visualStateRef = useRef<GameState | null>(null);
   const lastRenderTimeRef = useRef<number>(0);
 
@@ -1251,9 +1253,37 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         };
       }
 
+      // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS supply crates on guest
+      const renderedCrates = renderedCratesCacheRef.current;
+      const rawCrates = curState.supplyCrates || [];
+      renderedCrates.length = rawCrates.length;
+      for (let i = 0; i < rawCrates.length; i++) {
+        const crate = rawCrates[i];
+        let visualPos = visualCratePositionsRef.current.get(crate.id);
+        if (!visualPos) {
+          visualPos = { x: crate.x, y: crate.y };
+          visualCratePositionsRef.current.set(crate.id, visualPos);
+        } else {
+          const dist = Math.hypot(crate.x - visualPos.x, crate.y - visualPos.y);
+          if (dist > 64) {
+            visualPos.x = crate.x;
+            visualPos.y = crate.y;
+          } else {
+            visualPos.x += (crate.x - visualPos.x) * alpha;
+            visualPos.y += (crate.y - visualPos.y) * alpha;
+          }
+        }
+        renderedCrates[i] = {
+          ...crate,
+          x: visualPos.x,
+          y: visualPos.y,
+        };
+      }
+
       visualStateRef.current = {
         ...curState,
         slugs: renderedSlugs,
+        supplyCrates: renderedCrates,
       };
       const visualState = visualStateRef.current;
 
@@ -1265,7 +1295,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       // 7. Supply Crates, Projectiles & Particles FX
       const pFxStart = performance.now();
-      renderSupplyCrates(ctx, curState.supplyCrates);
+      renderSupplyCrates(ctx, renderedCrates, animTime);
       renderProjectiles({ ctx, projectiles: curState.projectiles || [], animTime });
 
       // Spawn projectile smoke & fire trail particles
