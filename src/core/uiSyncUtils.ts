@@ -75,8 +75,18 @@ export function shouldUpdateReactUi(
     }
   }
 
-  // 6. Crate inventory pickup changes
+  // 6. Supply Crates: falling in flight, landing, or pickup changes -> Instant React update
   if ((prev.supplyCrates?.length ?? 0) !== (next.supplyCrates?.length ?? 0)) return true;
+  if (prev.supplyCrates?.some((c) => !c.isLanded) || next.supplyCrates?.some((c) => !c.isLanded)) return true;
+  if (prev.supplyCrates && next.supplyCrates) {
+    for (let i = 0; i < next.supplyCrates.length; i++) {
+      const pc = prev.supplyCrates[i];
+      const nc = next.supplyCrates[i];
+      if (pc && nc && (Math.abs(pc.x - nc.x) > 0.1 || Math.abs(pc.y - nc.y) > 0.1 || pc.isLanded !== nc.isLanded)) {
+        return true;
+      }
+    }
+  }
 
   // 7. Maximum throttle safeguard (250ms = 4 Hz UI refresh for passive updates)
   if (nowMs - lastUpdateTimeMs >= 250) {
