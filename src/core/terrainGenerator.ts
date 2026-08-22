@@ -514,13 +514,36 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 5. Landmine Spawn Points Generator
+  const findAllFloorsAt = (x: number, minY: number = searchStartY, maxY: number = waterLevel - 25): number[] => {
+    const floors: number[] = [];
+    for (let y = minY; y <= maxY; y++) {
+      if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
+        let clear = true;
+        for (let h = 1; h <= 16; h++) {
+          if (y - h < 0 || grid[(y - h) * width + x] !== 0) {
+            clear = false;
+            break;
+          }
+        }
+        if (clear) {
+          floors.push(y);
+        }
+      }
+    }
+    return floors;
+  };
+
+  // 5. Landmine Spawn Points Generator (Distributed across all depths: surface, tunnels, caves & ledges)
   const minePoints: Vector2D[] = [];
-  const mineCount = Math.floor(prng.range(8, 12));
+  const mineCount = Math.floor(prng.range(8, 14));
   for (let i = 0; i < mineCount; i++) {
-    const mx = Math.floor(prng.range(150, width - 150));
-    for (let my = searchStartY; my < waterLevel - 20; my++) {
-      if (grid[my * width + mx] === 1 && grid[(my - 1) * width + mx] === 0) {
+    for (let attempts = 0; attempts < 15; attempts++) {
+      const mx = Math.floor(prng.range(120, width - 120));
+      if (minePoints.some((mp) => Math.abs(mp.x - mx) < 40)) continue;
+
+      const floors = findAllFloorsAt(mx, searchStartY, waterLevel - 20);
+      if (floors.length > 0) {
+        const my = floors[Math.floor(prng.range(0, floors.length))];
         minePoints.push({ x: mx, y: my - 3 });
         break;
       }
@@ -605,25 +628,6 @@ export function generateProceduralTerrain(
 
   const isFarFromProps = (testX: number, minDist: number = 55) => {
     return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
-  };
-
-  const findAllFloorsAt = (x: number, minY: number = searchStartY, maxY: number = waterLevel - 25): number[] => {
-    const floors: number[] = [];
-    for (let y = minY; y <= maxY; y++) {
-      if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
-        let clear = true;
-        for (let h = 1; h <= 16; h++) {
-          if (y - h < 0 || grid[(y - h) * width + x] !== 0) {
-            clear = false;
-            break;
-          }
-        }
-        if (clear) {
-          floors.push(y);
-        }
-      }
-    }
-    return floors;
   };
 
   // 1. Fortified Concrete Bunkers (1-2 bunkers on hills or fortresses)
