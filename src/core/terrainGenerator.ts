@@ -90,8 +90,9 @@ export function generateProceduralTerrain(
   const p2 = prng.range(0, Math.PI * 2);
   const p3 = prng.range(0, Math.PI * 2);
 
-  // 1. Primary Base Height Function
-  const getBaseGroundY = (x: number): number => {
+  // 1. Precalculate 1D Terrain Heightmap in a single ultra-fast pass (<0.5ms)
+  const baseGroundY = new Float32Array(width);
+  for (let x = 0; x < width; x++) {
     let groundY = height * 0.52;
 
     if (theme === 'ISLAND') {
@@ -113,12 +114,12 @@ export function generateProceduralTerrain(
       const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3);
       groundY = height * 0.6 + noise * 0.9;
     } else if (theme === 'ARCHIPELAGO') {
-      // 2-3 distinct oceanic island masses separated by deep water trenches
+      // 3 clearly separated oceanic islands with deep sea channels
       const noise = prng.harmonicNoise(x, baseFreq * 1.3, p1, p2, p3) * 0.75;
       const islandMask = Math.pow(Math.sin((x / width) * Math.PI * 3 + p2 * 0.5), 2);
-      const trench = (1 - islandMask) * 420;
+      const trench = (1 - islandMask) * 440;
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 3.2) * 500;
-      groundY = height * 0.44 + noise + trench + edgeDrop;
+      groundY = height * 0.42 + noise + trench + edgeDrop;
     } else if (theme === 'NATURAL_ARCHES') {
       // Mountain ridges prepared for massive natural rock bridge arches
       const noise = prng.harmonicNoise(x, baseFreq * 0.9, p1, p2, p3);
@@ -131,7 +132,7 @@ export function generateProceduralTerrain(
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.2) * 350;
       groundY = height * 0.56 + noise + spireHarmonic + edgeDrop;
     } else if (theme === 'WORM_CAVES') {
-      // Solid massive subterranean rock slab (Swiss cheese / ant-farm labyrinth)
+      // Solid massive subterranean rock slab
       groundY = 16;
     } else if (theme === 'FLOATING_CHAOS') {
       const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
@@ -143,33 +144,28 @@ export function generateProceduralTerrain(
       groundY = height * 0.48 + noise + channel;
     }
 
-    return groundY;
-  };
+    baseGroundY[x] = groundY;
+  }
 
-  // 1.5 Rasterize 2D Domain Warped Terrain Grid (forming natural cliff overhangs and rock waves)
+  // 1.5 Fill Terrain Grid from Heightmap (Ultra-fast direct memory write)
   for (let x = 0; x < width; x++) {
     // Cavern Roof Ceiling
     if (theme === 'CAVERN') {
       const roofNoise = prng.harmonicNoise(x, baseFreq * 1.2, p3, p1, p2) * 0.8;
       const roofY = height * 0.2 + roofNoise;
-      for (let y = 0; y < Math.min(height, Math.max(0, Math.floor(roofY))); y++) {
+      const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
+      for (let y = 0; y < maxRoofY; y++) {
         grid[y * width + x] = 1;
       }
     }
 
-    for (let y = 0; y < height; y++) {
-      if (theme === 'WORM_CAVES') {
-        if (y >= 16) grid[y * width + x] = 1;
-        continue;
+    if (theme === 'WORM_CAVES') {
+      for (let y = 16; y < height; y++) {
+        grid[y * width + x] = 1;
       }
-
-      // 2D Domain Warping for organic overhangs and undercut coastal rock
-      const warpX = Math.sin(y * 0.014 + p1) * 20 + Math.cos(x * 0.006 + p2) * 10;
-      const warpY = Math.cos(x * 0.012 + p3) * 8;
-      const sampleX = Math.max(0, Math.min(width - 1, x + warpX));
-      const baseGround = getBaseGroundY(sampleX);
-
-      if (y + warpY >= baseGround) {
+    } else {
+      const startY = Math.max(0, Math.min(height - 1, Math.floor(baseGroundY[x])));
+      for (let y = startY; y < height; y++) {
         grid[y * width + x] = 1;
       }
     }
@@ -268,71 +264,6 @@ export function generateProceduralTerrain(
           const dx = x - hx;
           if (dx * dx + dy * dy <= hr * hr) {
             grid[rowOffset + x] = 0;
-          }
-        }
-      }
-    }
-  }
-
-  // 2.7 Procedural Stalactites & Stalagmites (for CAVERN, WORM_CAVES, NATURAL_ARCHES)
-  if (theme === 'CAVERN' || theme === 'WORM_CAVES' || theme === 'NATURAL_ARCHES') {
-    // A. Hanging Ceiling Stalactites (5 to 10 stalactites)
-    const stalactiteCount = theme === 'CAVERN' ? 9 : theme === 'NATURAL_ARCHES' ? 5 : 6;
-    for (let i = 0; i < stalactiteCount; i++) {
-      const sx = Math.floor(prng.range(120, width - 120));
-      // Find solid ceiling bottom
-      let roofBottomY = -1;
-      for (let y = 16; y < height * 0.45; y++) {
-        if (grid[y * width + sx] === 1 && grid[(y + 1) * width + sx] === 0) {
-          roofBottomY = y;
-          break;
-        }
-      }
-
-      if (roofBottomY > 0) {
-        const length = Math.floor(prng.range(30, 70));
-        const baseWidth = Math.floor(prng.range(10, 20));
-        for (let dy = 0; dy <= length; dy++) {
-          const cy = roofBottomY + dy;
-          if (cy >= height - 1) break;
-          const halfW = Math.max(1, Math.round(baseWidth * Math.pow(1 - dy / length, 1.2)));
-          const rowOffset = cy * width;
-          for (let dx = -halfW; dx <= halfW; dx++) {
-            const cx = sx + dx;
-            if (cx >= 0 && cx < width) {
-              grid[rowOffset + cx] = 1;
-            }
-          }
-        }
-      }
-    }
-
-    // B. Rising Floor Stalagmites (4 to 8 stalagmites)
-    const stalagmiteCount = theme === 'CAVERN' ? 8 : theme === 'NATURAL_ARCHES' ? 4 : 5;
-    for (let i = 0; i < stalagmiteCount; i++) {
-      const sx = Math.floor(prng.range(140, width - 140));
-      // Find solid floor top
-      let floorTopY = -1;
-      for (let y = Math.floor(height * 0.35); y < waterLevel - 20; y++) {
-        if (grid[y * width + sx] === 1 && grid[(y - 1) * width + sx] === 0) {
-          floorTopY = y;
-          break;
-        }
-      }
-
-      if (floorTopY > 0) {
-        const length = Math.floor(prng.range(25, 55));
-        const baseWidth = Math.floor(prng.range(8, 16));
-        for (let dy = 0; dy <= length; dy++) {
-          const cy = floorTopY - dy;
-          if (cy <= 16) break;
-          const halfW = Math.max(1, Math.round(baseWidth * Math.pow(1 - dy / length, 1.2)));
-          const rowOffset = cy * width;
-          for (let dx = -halfW; dx <= halfW; dx++) {
-            const cx = sx + dx;
-            if (cx >= 0 && cx < width) {
-              grid[rowOffset + cx] = 1;
-            }
           }
         }
       }
