@@ -53,7 +53,7 @@ export const homingMissileWeapon: WeaponDefinition = {
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
     const speed = (ctx.power / 100) * 16 + 4;
-    const homingDelayMs = Math.round(250 + (ctx.power / 100) * 450);
+    const homingDelayMs = 500;
     return [
       {
         id: `proj_${Date.now()}_${Math.random()}`,

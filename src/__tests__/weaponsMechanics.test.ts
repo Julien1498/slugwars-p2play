@@ -153,6 +153,16 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
     expect(engine.state.projectiles.length).toBe(1);
     expect(engine.state.projectiles[0].behaviorData?.bouncesLeft).toBe(7);
+
+    // If the donkey drops into water (y >= waterLevel), it should sink and NOT bounce back into projectiles
+    const activeDonkey = engine.state.projectiles[0];
+    activeDonkey.y = engine.terrain.data.waterLevel - 5;
+    activeDonkey.vy = 10;
+
+    engine.tick();
+
+    // Reaching water should destroy the donkey (no projectiles left)
+    expect(engine.state.projectiles.length).toBe(0);
   });
 
   it('detonates Holy Grenade with massive radius, 110 damage, and holy sound', () => {
@@ -549,8 +559,8 @@ describe('Weapons Arsenal & Mechanics', () => {
     // Initial speed at 80% power: (80/100)*16 + 4 = 16.8 px/tick
     const launchSpeed = Math.hypot(missile.vx, missile.vy);
     expect(launchSpeed).toBeGreaterThan(15);
-    // Initial delay before homing kicks in: 250 + (80/100)*450 = 610ms
-    expect(missile.behaviorData?.homingDelayMs).toBe(610);
+    // Initial delay before homing kicks in: 500ms
+    expect(missile.behaviorData?.homingDelayMs).toBe(500);
   });
 });
 
