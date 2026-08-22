@@ -171,6 +171,62 @@ export function generateProceduralTerrain(
     }
   }
 
+  // 1.8 Dramatic Cliff Overhangs & Rocky Corniches (Surplombs rocheux & corniches en saillie)
+  if (theme !== 'ORGANIC_CAVES') {
+    const overhangCount = theme === 'SPIRES' ? 6 : theme === 'NATURAL_ARCHES' ? 5 : 4;
+    for (let i = 0; i < overhangCount; i++) {
+      const ox = Math.floor(prng.range(160, width - 160));
+      const surfaceY = Math.floor(baseGroundY[ox]);
+      if (surfaceY > 60 && surfaceY < waterLevel - 90) {
+        // Carve an undercut hollow slice under the surface, creating an overhanging cliff roof!
+        const notchWidth = Math.floor(prng.range(50, 90));
+        const notchHeight = Math.floor(prng.range(32, 60));
+        const roofThickness = Math.floor(prng.range(14, 22));
+        const dir = prng.next() > 0.5 ? 1 : -1;
+
+        const notchStartY = surfaceY + roofThickness;
+        const notchEndY = Math.min(waterLevel - 30, notchStartY + notchHeight);
+
+        for (let y = notchStartY; y <= notchEndY; y++) {
+          const dy = (y - notchStartY) / (notchHeight || 1);
+          const currentDepth = Math.round(notchWidth * Math.sin(dy * Math.PI));
+          const rowOffset = y * width;
+          for (let d = 0; d < currentDepth; d++) {
+            const cx = ox + d * dir;
+            if (cx >= 0 && cx < width) {
+              grid[rowOffset + cx] = 0; // Open air carved under the overhang!
+            }
+          }
+        }
+      }
+    }
+
+    // Protruding Rocky Corniche Ledges (Corniches rocheuses horizontales suspendues)
+    const ledgeCount = theme === 'SPIRES' ? 5 : 3;
+    for (let i = 0; i < ledgeCount; i++) {
+      const lx = Math.floor(prng.range(180, width - 180));
+      const ly = Math.floor(prng.range(height * 0.35, waterLevel - 90));
+      const ledgeLength = Math.floor(prng.range(55, 95));
+      const ledgeThickness = Math.floor(prng.range(12, 18));
+      const dir = prng.next() > 0.5 ? 1 : -1;
+
+      // Only stamp if anchored against solid rock wall
+      if (grid[ly * width + lx] === 1) {
+        for (let t = 0; t < ledgeThickness; t++) {
+          const rowOffset = (ly + t) * width;
+          for (let l = 0; l < ledgeLength; l++) {
+            const cx = lx + l * dir;
+            if (cx >= 0 && cx < width && (ly + t) < waterLevel - 20) {
+              if (l < ledgeLength - t * 2) {
+                grid[rowOffset + cx] = 1;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // 2. Organic Cave Networks, Tunnels & Archways
   const caveCount = theme === 'CAVERN' ? 24 : theme === 'ORGANIC_CAVES' ? 0 : 14;
   for (let i = 0; i < caveCount; i++) {
