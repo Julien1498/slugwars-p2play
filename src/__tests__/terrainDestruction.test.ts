@@ -149,4 +149,45 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
     // Bedrock ceiling at y <= 16 remains intact and solid
     expect(dt.isSolid(300, 10)).toBe(true);
   });
+
+  it('generates all 8 procedural terrain archetypes deterministically with valid spawn points', () => {
+    const themes = [
+      'ISLAND',
+      'CAVERN',
+      'FORTRESS',
+      'FLOATING_CHAOS',
+      'ARCHIPELAGO',
+      'NATURAL_ARCHES',
+      'SPIRES',
+      'WORM_CAVES',
+    ] as const;
+
+    for (const theme of themes) {
+      const terrain1 = generateProceduralTerrain(12345, theme, 1000, 600);
+      const terrain2 = generateProceduralTerrain(12345, theme, 1000, 600);
+
+      // Verify non-empty terrain
+      let solidPixels = 0;
+      let identical = true;
+      for (let i = 0; i < terrain1.grid.length; i++) {
+        if (terrain1.grid[i] > 0) solidPixels++;
+        if (terrain1.grid[i] !== terrain2.grid[i]) {
+          identical = false;
+          break;
+        }
+      }
+
+      expect(identical).toBe(true);
+      expect(solidPixels).toBeGreaterThan(1000);
+      expect(terrain1.spawnPoints.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('enforces indestructible bedrock ceiling for WORM_CAVES maps', () => {
+    const terrainData = generateProceduralTerrain(888, 'WORM_CAVES', 600, 400);
+    const dt = new DestructibleTerrain(terrainData);
+
+    expect(dt.isSolid(300, 10)).toBe(true);
+    expect(dt.isSolid(300, -5)).toBe(true);
+  });
 });

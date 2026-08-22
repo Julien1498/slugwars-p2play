@@ -144,7 +144,15 @@ export type GamePhase =
   | 'PROJECTILE_ACTIVE'
   | 'RESOLVING';
 
-export type MapTheme = 'ISLAND' | 'CAVERN' | 'FORTRESS' | 'FLOATING_CHAOS';
+export type MapTheme =
+  | 'ISLAND'
+  | 'CAVERN'
+  | 'FORTRESS'
+  | 'FLOATING_CHAOS'
+  | 'ARCHIPELAGO'
+  | 'NATURAL_ARCHES'
+  | 'SPIRES'
+  | 'WORM_CAVES';
 
 export type MapSize = 'SMALL' | 'NORMAL' | 'LARGE';
 

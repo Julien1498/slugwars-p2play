@@ -119,6 +119,36 @@ export function generateProceduralTerrain(
       for (let y = 0; y < Math.min(height, Math.max(0, Math.floor(roofY))); y++) {
         grid[y * width + x] = 1;
       }
+    } else if (theme === 'ARCHIPELAGO') {
+      // 2-3 distinct oceanic island masses separated by deep water trenches
+      const noise = prng.harmonicNoise(x, baseFreq * 1.3, p1, p2, p3) * 0.75;
+      const islandMask = Math.pow(Math.sin((x / width) * Math.PI * 3 + p2 * 0.5), 2);
+      const trench = (1 - islandMask) * 420;
+      const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 3.2) * 500;
+      groundY = height * 0.44 + noise + trench + edgeDrop;
+    } else if (theme === 'NATURAL_ARCHES') {
+      // Mountain ridges prepared for massive natural rock bridge arches
+      const noise = prng.harmonicNoise(x, baseFreq * 0.9, p1, p2, p3);
+      const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.5) * 400;
+      groundY = height * 0.38 + noise + edgeDrop;
+    } else if (theme === 'SPIRES') {
+      // Dramatic narrow vertical stone needles and spires with deep gorges
+      const noise = prng.harmonicNoise(x, baseFreq * 2.2, p1, p2, p3) * 0.6;
+      const spireHarmonic = Math.pow(Math.sin((x / width) * Math.PI * 5 + p1), 6) * -260;
+      const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.2) * 350;
+      groundY = height * 0.56 + noise + spireHarmonic + edgeDrop;
+    } else if (theme === 'WORM_CAVES') {
+      // Deep subterranean body prepared for continuous winding Perlin Worm networks
+      const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3) * 0.5;
+      groundY = height * 0.68 + noise;
+      const roofY = height * 0.18 + prng.harmonicNoise(x, baseFreq * 1.5, p3, p1, p2) * 0.5;
+      for (let y = 0; y < Math.min(height, Math.max(0, Math.floor(roofY))); y++) {
+        grid[y * width + x] = 1;
+      }
+    } else if (theme === 'FLOATING_CHAOS') {
+      const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
+      const channel = Math.sin(x * 0.007 + p2) * 200;
+      groundY = height * 0.48 + noise + channel;
     } else {
       const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
       const channel = Math.sin(x * 0.007 + p2) * 200;
@@ -132,7 +162,7 @@ export function generateProceduralTerrain(
   }
 
   // 2. Organic Cave Networks, Tunnels & Archways
-  const caveCount = theme === 'CAVERN' ? 24 : 14;
+  const caveCount = theme === 'CAVERN' ? 24 : theme === 'WORM_CAVES' ? 8 : 14;
   for (let i = 0; i < caveCount; i++) {
     const cx = Math.floor(prng.range(140, width - 140));
     const cy = Math.floor(prng.range(180, waterLevel - 90));
@@ -150,8 +180,66 @@ export function generateProceduralTerrain(
     }
   }
 
+  // 2.5 Monumental Natural Rock Arches Carving (for NATURAL_ARCHES theme)
+  if (theme === 'NATURAL_ARCHES') {
+    const archPositions = [width * 0.32, width * 0.68];
+    for (const archX of archPositions) {
+      const archY = height * 0.54;
+      const rx = 120;
+      const ry = 90;
+      for (let y = Math.max(0, Math.floor(archY - ry)); y <= Math.min(height - 1, Math.ceil(archY + ry + 30)); y++) {
+        for (let x = Math.max(0, Math.floor(archX - rx)); x <= Math.min(width - 1, Math.ceil(archX + rx)); x++) {
+          const dx = (x - archX) / rx;
+          const dy = (y - archY) / ry;
+          if (dx * dx + dy * dy <= 1.0) {
+            grid[y * width + x] = 0;
+          }
+        }
+      }
+    }
+  }
+
+  // 2.6 Multi-Agent Continuous Perlin Worms Tunnel Network (for WORM_CAVES theme)
+  if (theme === 'WORM_CAVES') {
+    const wormCount = 5;
+    for (let w = 0; w < wormCount; w++) {
+      let wx = prng.range(width * 0.15, width * 0.85);
+      let wy = prng.range(height * 0.28, waterLevel - 90);
+      let angle = prng.range(0, Math.PI * 2);
+      const steps = Math.floor(prng.range(90, 140));
+
+      for (let s = 0; s < steps; s++) {
+        angle += (prng.next() - 0.5) * 0.45;
+        const speed = prng.range(4, 7);
+        wx += Math.cos(angle) * speed;
+        wy += Math.sin(angle) * speed;
+
+        if (wx < 80 || wx > width - 80 || wy < 40 || wy > waterLevel - 40) {
+          angle += Math.PI * 0.5;
+        }
+
+        const wormRadius = Math.floor(prng.range(22, 36));
+        const minX = Math.max(0, Math.floor(wx - wormRadius));
+        const maxX = Math.min(width - 1, Math.ceil(wx + wormRadius));
+        const minY = Math.max(0, Math.floor(wy - wormRadius));
+        const maxY = Math.min(height - 1, Math.ceil(wy + wormRadius));
+
+        for (let y = minY; y <= maxY; y++) {
+          const dy = y - wy;
+          const rowOffset = y * width;
+          for (let x = minX; x <= maxX; x++) {
+            const dx = x - wx;
+            if (dx * dx + dy * dy <= wormRadius * wormRadius) {
+              grid[rowOffset + x] = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
   // 3. Floating Rock Islands / Ledges in Sky / Cavern
-  const floatingIslandCount = theme === 'CAVERN' ? 6 : 4;
+  const floatingIslandCount = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? 6 : theme === 'ARCHIPELAGO' ? 5 : 4;
   for (let i = 0; i < floatingIslandCount; i++) {
     const fx = Math.floor(prng.range(200, width - 200));
     const fy = Math.floor(prng.range(160, 320));
@@ -169,8 +257,8 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 3.5 Enforce Solid Bedrock Ceiling for CAVERN Maps
-  if (theme === 'CAVERN') {
+  // 3.5 Enforce Solid Bedrock Ceiling for CAVERN & WORM_CAVES Maps
+  if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
     for (let y = 0; y <= 16; y++) {
       const rowOffset = y * width;
       for (let x = 0; x < width; x++) {
@@ -182,7 +270,7 @@ export function generateProceduralTerrain(
   // 4. Safe Spawn Points Generator
   const spawnPoints: Vector2D[] = [];
   const step = Math.floor((width - 240) / 14);
-  const searchStartY = theme === 'CAVERN' ? 120 : 40;
+  const searchStartY = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? 120 : 40;
 
   for (let x = 120; x < width - 120; x += step) {
     for (let y = searchStartY; y < waterLevel - 30; y++) {

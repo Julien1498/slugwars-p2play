@@ -74,11 +74,16 @@ function getCachedFgWaterGradient(
 
   const grad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
   if (isDay) {
-    if (theme === 'CAVERN') {
+    if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
       grad.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
       grad.addColorStop(0.12, 'rgba(249, 115, 22, 0.88)');
       grad.addColorStop(0.45, 'rgba(220, 38, 38, 0.94)');
       grad.addColorStop(1, 'rgba(23, 6, 2, 0.99)');
+    } else if (theme === 'ARCHIPELAGO') {
+      grad.addColorStop(0, 'rgba(20, 184, 166, 0.70)');
+      grad.addColorStop(0.15, 'rgba(13, 148, 136, 0.82)');
+      grad.addColorStop(0.45, 'rgba(15, 118, 110, 0.92)');
+      grad.addColorStop(1, 'rgba(4, 47, 46, 0.99)');
     } else {
       grad.addColorStop(0, 'rgba(6, 182, 212, 0.65)');
       grad.addColorStop(0.15, 'rgba(2, 132, 199, 0.78)');
@@ -86,7 +91,7 @@ function getCachedFgWaterGradient(
       grad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
     }
   } else {
-    if (theme === 'CAVERN') {
+    if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
       grad.addColorStop(0, 'rgba(239, 68, 68, 0.85)');
       grad.addColorStop(0.35, 'rgba(153, 27, 27, 0.94)');
       grad.addColorStop(1, 'rgba(3, 1, 2, 0.99)');
