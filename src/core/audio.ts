@@ -1,9 +1,14 @@
 export type SoundEffectType =
   | 'fire'
+  | 'bazooka_fire'
+  | 'grenade_throw'
+  | 'siren'
+  | 'bat_hit'
   | 'explosion'
   | 'jump'
   | 'splash'
   | 'baah'
+  | 'sheep_baah'
   | 'donkey'
   | 'victory'
   | 'tick'
@@ -22,6 +27,7 @@ export interface PlaySoundOptions {
   pitchMod?: number; // Frequency multiplier, e.g. 1.0
   randomizePitch?: boolean; // Default true (+/- 3% natural variation)
 }
+
 
 // Pre-calculated soft-clipping saturation curve for rich warm analog harmonics
 function makeDistortionCurve(amount: number = 20): Float32Array {
@@ -145,7 +151,13 @@ class SoundEffects {
       const { dest, pitchRatio } = this.createDestination(options);
       const now = ctx.currentTime;
 
-      if (type === 'explosion') {
+      let resolvedType: string = type;
+      if (type === 'bazooka_fire') resolvedType = 'fire';
+      if (type === 'sheep_baah') resolvedType = 'baah';
+      if (type === 'bat_hit') resolvedType = 'melee';
+
+      if (resolvedType === 'explosion') {
+
         // Multi-layered Cinematic Blockbuster Explosion
 
         // Layer 1: Saturated Sub-Bass Shockwave Punch (45Hz -> 22Hz with soft distortion)
@@ -209,7 +221,7 @@ class SoundEffects {
         snapOsc.start(now);
         snapOsc.stop(now + 0.08);
 
-      } else if (type === 'fire') {
+      } else if (resolvedType === 'fire') {
         // Heavy Explosive Rocket / Missile Tube Ignition & Recoil Blast
 
         // Layer 1: Saturated Launch Tube Detonation & Muzzle Pop (260Hz -> 55Hz punch)
@@ -267,8 +279,53 @@ class SoundEffects {
         cGain.connect(dest);
         crackleSource.start(now);
 
+      } else if (resolvedType === 'grenade_throw') {
+        // Metallic Pin Pull + Arm Swing Whoosh (80ms)
+        const pinOsc = ctx.createOscillator();
+        const pinGain = ctx.createGain();
+        pinOsc.type = 'triangle';
+        pinOsc.frequency.setValueAtTime(1400 * pitchRatio, now);
+        pinOsc.frequency.exponentialRampToValueAtTime(800 * pitchRatio, now + 0.04);
+        pinGain.gain.setValueAtTime(0.4, now);
+        pinGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        pinOsc.connect(pinGain);
+        pinGain.connect(dest);
+        pinOsc.start(now);
+        pinOsc.stop(now + 0.04);
 
-      } else if (type === 'splash') {
+        const throwOsc = ctx.createOscillator();
+        const throwGain = ctx.createGain();
+        throwOsc.type = 'sine';
+        throwOsc.frequency.setValueAtTime(180 * pitchRatio, now + 0.02);
+        throwOsc.frequency.exponentialRampToValueAtTime(460 * pitchRatio, now + 0.12);
+        throwGain.gain.setValueAtTime(0.0, now);
+        throwGain.gain.setValueAtTime(0.5, now + 0.02);
+        throwGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        throwOsc.connect(throwGain);
+        throwGain.connect(dest);
+        throwOsc.start(now + 0.02);
+        throwOsc.stop(now + 0.14);
+
+      } else if (resolvedType === 'siren') {
+        // Air Raid Siren Two-Tone Alert
+        const sirenOsc = ctx.createOscillator();
+        const sirenGain = ctx.createGain();
+        sirenOsc.type = 'sawtooth';
+        sirenOsc.frequency.setValueAtTime(480 * pitchRatio, now);
+        sirenOsc.frequency.linearRampToValueAtTime(860 * pitchRatio, now + 0.25);
+        sirenOsc.frequency.linearRampToValueAtTime(520 * pitchRatio, now + 0.5);
+
+        sirenGain.gain.setValueAtTime(0.0, now);
+        sirenGain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+        sirenGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+        sirenOsc.connect(sirenGain);
+        sirenGain.connect(dest);
+        sirenOsc.start(now);
+        sirenOsc.stop(now + 0.55);
+
+      } else if (resolvedType === 'splash') {
+
         // Organic Acoustic Water Entry & Multi-Bubble Glug
 
         // Layer 1: Water Cavity Resonant Plop
@@ -327,7 +384,7 @@ class SoundEffects {
           bOsc.stop(bTime + 0.09);
         });
 
-      } else if (type === 'jump') {
+      } else if (resolvedType === 'jump') {
         // Squelchy Organic Slug Jump (FM Pitch Modulation)
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -343,7 +400,7 @@ class SoundEffects {
         osc.start(now);
         osc.stop(now + 0.15);
 
-      } else if (type === 'bounce') {
+      } else if (resolvedType === 'bounce') {
         // Solid Elastic / Rubber Impact Thump
         const osc = ctx.createOscillator();
         const osc2 = ctx.createOscillator();
@@ -368,7 +425,7 @@ class SoundEffects {
         osc.stop(now + 0.08);
         osc2.stop(now + 0.08);
 
-      } else if (type === 'melee') {
+      } else if (resolvedType === 'melee') {
         // Heavy Slapstick Impact Smack (Noise Slap + Overdriven Thud)
         const thudOsc = ctx.createOscillator();
         const thudGain = ctx.createGain();
@@ -394,7 +451,7 @@ class SoundEffects {
         snapGain.connect(dest);
         snapSource.start(now);
 
-      } else if (type === 'girder') {
+      } else if (resolvedType === 'girder') {
         // Metallic Resonant Structural Steel Clank (Modal Harmonics)
         const harmonics = [220, 440, 720, 1180];
         harmonics.forEach((freq, idx) => {
@@ -413,7 +470,7 @@ class SoundEffects {
           osc.stop(now + decay);
         });
 
-      } else if (type === 'teleport') {
+      } else if (resolvedType === 'teleport') {
         // Sci-Fi Quantum Disintegration Shimmer
         const osc1 = ctx.createOscillator();
         const osc2 = ctx.createOscillator();
@@ -445,7 +502,7 @@ class SoundEffects {
         osc1.stop(now + 0.3);
         osc2.stop(now + 0.3);
 
-      } else if (type === 'rope_shoot') {
+      } else if (resolvedType === 'rope_shoot') {
         // Ninja Grappling Wire Zip & Whistle
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -461,7 +518,7 @@ class SoundEffects {
         osc.start(now);
         osc.stop(now + 0.12);
 
-      } else if (type === 'rope_attach') {
+      } else if (resolvedType === 'rope_attach') {
         // Sharp Metal Hook Claw Clamp
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -477,7 +534,7 @@ class SoundEffects {
         osc.start(now);
         osc.stop(now + 0.06);
 
-      } else if (type === 'baah') {
+      } else if (resolvedType === 'baah') {
         // Authentic Comical Vibrato Sheep Bleat ("B-a-a-a-a-h")
         const carrier = ctx.createOscillator();
         const vibratoLfo = ctx.createOscillator();
@@ -524,7 +581,7 @@ class SoundEffects {
         vibratoLfo.stop(now + 0.5);
         carrier.stop(now + 0.5);
 
-      } else if (type === 'donkey') {
+      } else if (resolvedType === 'donkey') {
         // High-Energy Comical Donkey Bray ("HEEEE-HAAAWWW!")
 
         // Part 1: High Inhale "HEEEE" (0 to 0.22s)
@@ -574,7 +631,7 @@ class SoundEffects {
         hawOsc.stop(hawTime + 0.4);
 
 
-      } else if (type === 'airdrop') {
+      } else if (resolvedType === 'airdrop') {
         // Crate Chime Arpeggio
         const notes = [392.0, 523.25, 659.25, 783.99];
         notes.forEach((freq, idx) => {
@@ -594,7 +651,7 @@ class SoundEffects {
           osc.stop(startTime + 0.25);
         });
 
-      } else if (type === 'ouch') {
+      } else if (resolvedType === 'ouch') {
         // Cartoon Squeak / Pain Yelp
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -610,7 +667,7 @@ class SoundEffects {
         osc.start(now);
         osc.stop(now + 0.2);
 
-      } else if (type === 'tick') {
+      } else if (resolvedType === 'tick') {
         // Crisp Wooden Clock Tick
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -626,7 +683,7 @@ class SoundEffects {
         osc.start(now);
         osc.stop(now + 0.035);
 
-      } else if (type === 'victory') {
+      } else if (resolvedType === 'victory') {
         // Triumph Fanfare Major Triad
         const notes = [261.63, 329.63, 392.0, 523.25];
         notes.forEach((freq, idx) => {
