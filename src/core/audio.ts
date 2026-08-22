@@ -16,8 +16,32 @@ export type SoundEffectType =
   | 'airdrop'
   | 'ouch';
 
+export interface PlaySoundOptions {
+  volume?: number;
+  pan?: number; // -1.0 (left) to 1.0 (right)
+  pitchMod?: number; // Frequency multiplier, e.g. 1.0
+  randomizePitch?: boolean; // Default true (+/- 3% natural variation)
+}
+
+// Pre-calculated soft-clipping saturation curve for rich warm analog harmonics
+function makeDistortionCurve(amount: number = 20): Float32Array {
+  const k = amount;
+  const nSamples = 44100;
+  const curve = new Float32Array(nSamples);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < nSamples; ++i) {
+    const x = (i * 2) / nSamples - 1;
+    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
+
+const DISTORTION_CURVE = makeDistortionCurve(18);
+
 class SoundEffects {
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private masterCompressor: DynamicsCompressorNode | null = null;
 
   public init(): AudioContext | null {
     return this.initCtx();
@@ -28,6 +52,19 @@ class SoundEffects {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        // Master Limiter / Dynamics Compressor to prevent clipping and add Hollywood punch
+        this.masterCompressor = this.ctx.createDynamicsCompressor();
+        this.masterCompressor.threshold.setValueAtTime(-14, this.ctx.currentTime);
+        this.masterCompressor.knee.setValueAtTime(10, this.ctx.currentTime);
+        this.masterCompressor.ratio.setValueAtTime(8, this.ctx.currentTime);
+        this.masterCompressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+        this.masterCompressor.release.setValueAtTime(0.22, this.ctx.currentTime);
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
+
+        this.masterGain.connect(this.masterCompressor);
+        this.masterCompressor.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -36,271 +73,518 @@ class SoundEffects {
     return this.ctx;
   }
 
-  public play(type: SoundEffectType): void {
+  private createDestination(options?: PlaySoundOptions): { dest: AudioNode; pitchRatio: number } {
+    const ctx = this.initCtx();
+    if (!ctx || !this.masterGain) {
+      throw new Error('AudioContext unavailable');
+    }
+
+    const vol = Math.max(0, Math.min(2.0, options?.volume ?? 1.0));
+    let pitchRatio = options?.pitchMod ?? 1.0;
+    if (options?.randomizePitch !== false) {
+      // Natural subtle human pitch variation (+/- 3.5%)
+      pitchRatio *= 0.965 + Math.random() * 0.07;
+    }
+
+    // Channel gain node
+    const channelGain = ctx.createGain();
+    channelGain.gain.setValueAtTime(vol, ctx.currentTime);
+
+    // Optional stereo spatial panning
+    if (typeof options?.pan === 'number' && typeof (ctx as any).createStereoPanner === 'function') {
+      const panner = (ctx as any).createStereoPanner();
+      panner.pan.setValueAtTime(Math.max(-1, Math.min(1, options.pan)), ctx.currentTime);
+      channelGain.connect(panner);
+      panner.connect(this.masterGain);
+    } else {
+      channelGain.connect(this.masterGain);
+    }
+
+    return { dest: channelGain, pitchRatio };
+  }
+
+  // Generates brownian noise (deep, warm rumble) for realistic explosions & debris
+  private createBrownNoiseBuffer(ctx: AudioContext, durationSec: number): AudioBuffer {
+    const bufferSize = Math.floor(ctx.sampleRate * durationSec);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0.0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      // 1-pole lowpass filter on white noise creates authentic brownian physics noise
+      lastOut = (lastOut + 0.025 * white) / 1.025;
+      data[i] = lastOut * 3.8;
+    }
+    return buffer;
+  }
+
+  // Generates pink noise (smooth acoustic air & foam hiss)
+  private createPinkNoiseBuffer(ctx: AudioContext, durationSec: number): AudioBuffer {
+    const bufferSize = Math.floor(ctx.sampleRate * durationSec);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+      b6 = white * 0.115926;
+    }
+    return buffer;
+  }
+
+  public play(type: SoundEffectType, options?: PlaySoundOptions): void {
     try {
       const ctx = this.initCtx();
       if (!ctx) return;
-
+      const { dest, pitchRatio } = this.createDestination(options);
       const now = ctx.currentTime;
 
-      if (type === 'rope_shoot') {
+      if (type === 'explosion') {
+        // Multi-layered Cinematic Blockbuster Explosion
+
+        // Layer 1: Saturated Sub-Bass Shockwave Punch (45Hz -> 22Hz with soft distortion)
+        const subOsc = ctx.createOscillator();
+        const subGain = ctx.createGain();
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = DISTORTION_CURVE;
+        shaper.oversample = '2x';
+
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(58 * pitchRatio, now);
+        subOsc.frequency.exponentialRampToValueAtTime(24 * pitchRatio, now + 0.55);
+
+        subGain.gain.setValueAtTime(1.0, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+        subOsc.connect(shaper);
+        shaper.connect(subGain);
+        subGain.connect(dest);
+        subOsc.start(now);
+        subOsc.stop(now + 0.65);
+
+        // Layer 2: Brown Noise Dirt & Debris Blast (Resonant sweep 1800Hz -> 50Hz)
+        const brownBuffer = this.createBrownNoiseBuffer(ctx, 0.75);
+        const brownSource = ctx.createBufferSource();
+        brownSource.buffer = brownBuffer;
+
+        const brownFilter = ctx.createBiquadFilter();
+        brownFilter.type = 'lowpass';
+        brownFilter.frequency.setValueAtTime(1800 * pitchRatio, now);
+        brownFilter.frequency.exponentialRampToValueAtTime(45, now + 0.7);
+        brownFilter.Q.setValueAtTime(3.2, now);
+
+        const brownGain = ctx.createGain();
+        brownGain.gain.setValueAtTime(0.9, now);
+        brownGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+
+        brownSource.connect(brownFilter);
+        brownFilter.connect(brownGain);
+        brownGain.connect(dest);
+        brownSource.start(now);
+
+        // Layer 3: Initial Detonation Air Crack (Crisp 12ms transient snap)
+        const snapOsc = ctx.createOscillator();
+        const snapGain = ctx.createGain();
+        const snapFilter = ctx.createBiquadFilter();
+
+        snapOsc.type = 'sawtooth';
+        snapOsc.frequency.setValueAtTime(320 * pitchRatio, now);
+        snapOsc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+
+        snapFilter.type = 'highpass';
+        snapFilter.frequency.setValueAtTime(400, now);
+
+        snapGain.gain.setValueAtTime(0.7, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+        snapOsc.connect(snapFilter);
+        snapFilter.connect(snapGain);
+        snapGain.connect(dest);
+        snapOsc.start(now);
+        snapOsc.stop(now + 0.08);
+
+      } else if (type === 'fire') {
+        // High-Velocity Rocket Launch Exhaust & Thump
+
+        // Layer 1: Rocket Tube Exhaust Gas Blast (Swept Pink Noise)
+        const pinkBuffer = this.createPinkNoiseBuffer(ctx, 0.28);
+        const pinkSource = ctx.createBufferSource();
+        pinkSource.buffer = pinkBuffer;
+
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.setValueAtTime(1600 * pitchRatio, now);
+        bpf.frequency.exponentialRampToValueAtTime(280 * pitchRatio, now + 0.25);
+        bpf.Q.setValueAtTime(2.8, now);
+
+        const pGain = ctx.createGain();
+        pGain.gain.setValueAtTime(0.65, now);
+        pGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+        pinkSource.connect(bpf);
+        bpf.connect(pGain);
+        pGain.connect(dest);
+        pinkSource.start(now);
+
+        // Layer 2: Launcher Thump Kick
+        const kickOsc = ctx.createOscillator();
+        const kickGain = ctx.createGain();
+        kickOsc.type = 'sine';
+        kickOsc.frequency.setValueAtTime(140 * pitchRatio, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(38 * pitchRatio, now + 0.16);
+
+        kickGain.gain.setValueAtTime(0.75, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+        kickOsc.connect(kickGain);
+        kickGain.connect(dest);
+        kickOsc.start(now);
+        kickOsc.stop(now + 0.16);
+
+      } else if (type === 'splash') {
+        // Organic Acoustic Water Entry & Multi-Bubble Glug
+
+        // Layer 1: Water Cavity Resonant Plop
+        const plopOsc = ctx.createOscillator();
+        const plopGain = ctx.createGain();
+        plopOsc.type = 'sine';
+        plopOsc.frequency.setValueAtTime(220 * pitchRatio, now);
+        plopOsc.frequency.exponentialRampToValueAtTime(780 * pitchRatio, now + 0.05);
+        plopOsc.frequency.exponentialRampToValueAtTime(300 * pitchRatio, now + 0.22);
+
+        plopGain.gain.setValueAtTime(0.6, now);
+        plopGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+        plopOsc.connect(plopGain);
+        plopGain.connect(dest);
+        plopOsc.start(now);
+        plopOsc.stop(now + 0.26);
+
+        // Layer 2: Liquid Foam Churn Spray
+        const foamBuffer = this.createPinkNoiseBuffer(ctx, 0.38);
+        const foamSource = ctx.createBufferSource();
+        foamSource.buffer = foamBuffer;
+
+        const foamFilter = ctx.createBiquadFilter();
+        foamFilter.type = 'bandpass';
+        foamFilter.frequency.setValueAtTime(2200 * pitchRatio, now);
+        foamFilter.frequency.exponentialRampToValueAtTime(450 * pitchRatio, now + 0.35);
+        foamFilter.Q.setValueAtTime(3.2, now);
+
+        const foamGain = ctx.createGain();
+        foamGain.gain.setValueAtTime(0.45, now);
+        foamGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+        foamSource.connect(foamFilter);
+        foamFilter.connect(foamGain);
+        foamGain.connect(dest);
+        foamSource.start(now);
+
+        // Layer 3: Staggered Hydrophone Bubble Pops
+        const bubblePitches = [380, 520, 680];
+        bubblePitches.forEach((freq, idx) => {
+          const bTime = now + 0.04 + idx * 0.06;
+          const bOsc = ctx.createOscillator();
+          const bGain = ctx.createGain();
+          bOsc.type = 'sine';
+          bOsc.frequency.setValueAtTime(freq * pitchRatio, bTime);
+          bOsc.frequency.exponentialRampToValueAtTime((freq + 240) * pitchRatio, bTime + 0.08);
+
+          bGain.gain.setValueAtTime(0.0, now);
+          bGain.gain.setValueAtTime(0.35, bTime);
+          bGain.gain.exponentialRampToValueAtTime(0.001, bTime + 0.09);
+
+          bOsc.connect(bGain);
+          bGain.connect(dest);
+          bOsc.start(bTime);
+          bOsc.stop(bTime + 0.09);
+        });
+
+      } else if (type === 'jump') {
+        // Squelchy Organic Slug Jump (FM Pitch Modulation)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(440 * pitchRatio, now + 0.13);
+
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(now);
+        osc.stop(now + 0.15);
+
+      } else if (type === 'bounce') {
+        // Solid Elastic / Rubber Impact Thump
+        const osc = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(160 * pitchRatio, now + 0.07);
+
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(740 * pitchRatio, now);
+        osc2.frequency.exponentialRampToValueAtTime(220 * pitchRatio, now + 0.07);
+
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(dest);
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 0.08);
+        osc2.stop(now + 0.08);
+
+      } else if (type === 'melee') {
+        // Heavy Slapstick Impact Smack (Noise Slap + Overdriven Thud)
+        const thudOsc = ctx.createOscillator();
+        const thudGain = ctx.createGain();
+        thudOsc.type = 'triangle';
+        thudOsc.frequency.setValueAtTime(190 * pitchRatio, now);
+        thudOsc.frequency.exponentialRampToValueAtTime(45 * pitchRatio, now + 0.12);
+
+        thudGain.gain.setValueAtTime(0.8, now);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+        thudOsc.connect(thudGain);
+        thudGain.connect(dest);
+        thudOsc.start(now);
+        thudOsc.stop(now + 0.14);
+
+        const snapBuffer = this.createPinkNoiseBuffer(ctx, 0.06);
+        const snapSource = ctx.createBufferSource();
+        snapSource.buffer = snapBuffer;
+        const snapGain = ctx.createGain();
+        snapGain.gain.setValueAtTime(0.6, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        snapSource.connect(snapGain);
+        snapGain.connect(dest);
+        snapSource.start(now);
+
+      } else if (type === 'girder') {
+        // Metallic Resonant Structural Steel Clank (Modal Harmonics)
+        const harmonics = [220, 440, 720, 1180];
+        harmonics.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = idx % 2 === 0 ? 'triangle' : 'sine';
+          osc.frequency.setValueAtTime(freq * pitchRatio, now);
+
+          const decay = 0.18 + (3 - idx) * 0.06;
+          gain.gain.setValueAtTime(0.4 / (idx + 1), now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+
+          osc.connect(gain);
+          gain.connect(dest);
+          osc.start(now);
+          osc.stop(now + decay);
+        });
+
+      } else if (type === 'teleport') {
+        // Sci-Fi Quantum Disintegration Shimmer
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(260 * pitchRatio, now);
+        osc1.frequency.exponentialRampToValueAtTime(1900 * pitchRatio, now + 0.28);
+
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(265 * pitchRatio, now);
+        osc2.frequency.exponentialRampToValueAtTime(1920 * pitchRatio, now + 0.28);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(400 * pitchRatio, now);
+        filter.frequency.exponentialRampToValueAtTime(2400 * pitchRatio, now + 0.28);
+        filter.Q.setValueAtTime(3.5, now);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(dest);
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.3);
+        osc2.stop(now + 0.3);
+
+      } else if (type === 'rope_shoot') {
+        // Ninja Grappling Wire Zip & Whistle
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.frequency.setValueAtTime(1100 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(260 * pitchRatio, now + 0.12);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(now);
         osc.stop(now + 0.12);
+
       } else if (type === 'rope_attach') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(350, now);
-        osc.frequency.exponentialRampToValueAtTime(700, now + 0.06);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.06);
-      } else if (type === 'girder') {
+        // Sharp Metal Hook Claw Clamp
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(220, now);
-        osc.frequency.setValueAtTime(440, now + 0.08);
+        osc.frequency.setValueAtTime(520 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(980 * pitchRatio, now + 0.05);
+
         gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(now);
-        osc.stop(now + 0.2);
+        osc.stop(now + 0.06);
+
+      } else if (type === 'baah') {
+        // Formant-Filtered Sheep Bleat ("Baa-a-a-h")
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const formant1 = ctx.createBiquadFilter();
+        const formant2 = ctx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(310 * pitchRatio, now);
+        osc.frequency.setValueAtTime(335 * pitchRatio, now + 0.08);
+        osc.frequency.setValueAtTime(300 * pitchRatio, now + 0.22);
+        osc.frequency.setValueAtTime(320 * pitchRatio, now + 0.32);
+
+        // Formant filters for vowel "ah"
+        formant1.type = 'bandpass';
+        formant1.frequency.setValueAtTime(820, now);
+        formant1.Q.setValueAtTime(4.0, now);
+
+        formant2.type = 'bandpass';
+        formant2.frequency.setValueAtTime(1400, now);
+        formant2.Q.setValueAtTime(3.5, now);
+
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+        osc.connect(formant1);
+        osc.connect(formant2);
+        formant1.connect(gain);
+        formant2.connect(gain);
+        gain.connect(dest);
+        osc.start(now);
+        osc.stop(now + 0.42);
+
+      } else if (type === 'donkey') {
+        // Hee-Haw Concrete Donkey Horn Call
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(460 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(260 * pitchRatio, now + 0.16);
+        osc.frequency.setValueAtTime(510 * pitchRatio, now + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(210 * pitchRatio, now + 0.45);
+
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start(now);
+        osc.stop(now + 0.48);
+
       } else if (type === 'airdrop') {
-        const notes = [392.0, 523.25, 659.25];
+        // Crate Chime Arpeggio
+        const notes = [392.0, 523.25, 659.25, 783.99];
         notes.forEach((freq, idx) => {
+          const startTime = now + idx * 0.07;
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
-          osc.frequency.value = freq;
-          const startTime = now + idx * 0.08;
+          osc.frequency.setValueAtTime(freq * pitchRatio, startTime);
+
+          gain.gain.setValueAtTime(0.0, now);
           gain.gain.setValueAtTime(0.35, startTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(dest);
           osc.start(startTime);
-          osc.stop(startTime + 0.2);
+          osc.stop(startTime + 0.25);
         });
-      } else if (type === 'jump') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(450, now + 0.15);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.15);
-      } else if (type === 'bounce') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(450, now);
-        osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.08);
-      } else if (type === 'teleport') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.25);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      } else if (type === 'fire') {
+
+      } else if (type === 'ouch') {
+        // Cartoon Squeak / Pain Yelp
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(60, now + 0.2);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.frequency.setValueAtTime(540 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(160 * pitchRatio, now + 0.18);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(now);
         osc.stop(now + 0.2);
-      } else if (type === 'explosion') {
-        // Low frequency noise + sub bass rumble
-        const bufferSize = ctx.sampleRate * 0.4;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const output = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
 
-        const whiteNoise = ctx.createBufferSource();
-        whiteNoise.buffer = buffer;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(800, now);
-        filter.frequency.exponentialRampToValueAtTime(40, now + 0.4);
-
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-
-        whiteNoise.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        whiteNoise.start(now);
-      } else if (type === 'splash') {
-        // Layer 1: Resonant Water Impact Plop
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(220, now);
-        osc.frequency.exponentialRampToValueAtTime(750, now + 0.06);
-        osc.frequency.exponentialRampToValueAtTime(280, now + 0.22);
-        gain.gain.setValueAtTime(0.45, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.28);
-
-        // Layer 2: White Noise Liquid Spray & Foam Churn
-        const bufferSize = Math.floor(ctx.sampleRate * 0.35);
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const output = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.1));
-        }
-        const noise = ctx.createBufferSource();
-        noise.buffer = buffer;
-        const bpf = ctx.createBiquadFilter();
-        bpf.type = 'bandpass';
-        bpf.frequency.setValueAtTime(1400, now);
-        bpf.frequency.exponentialRampToValueAtTime(450, now + 0.32);
-        bpf.Q.value = 2.5;
-        const nGain = ctx.createGain();
-        nGain.gain.setValueAtTime(0.4, now);
-        nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-        noise.connect(bpf);
-        bpf.connect(nGain);
-        nGain.connect(ctx.destination);
-        noise.start(now);
-
-        // Layer 3: Secondary Submerged Bubble Glug
-        const bubble = ctx.createOscillator();
-        const bGain = ctx.createGain();
-        bubble.type = 'sine';
-        bubble.frequency.setValueAtTime(360, now + 0.08);
-        bubble.frequency.exponentialRampToValueAtTime(580, now + 0.16);
-        bGain.gain.setValueAtTime(0.0, now);
-        bGain.gain.setValueAtTime(0.3, now + 0.08);
-        bGain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-        bubble.connect(bGain);
-        bGain.connect(ctx.destination);
-        bubble.start(now + 0.08);
-        bubble.stop(now + 0.22);
-      } else if (type === 'baah') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(320, now);
-        osc.frequency.setValueAtTime(340, now + 0.1);
-        osc.frequency.setValueAtTime(310, now + 0.25);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.4);
-      } else if (type === 'melee') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.15);
       } else if (type === 'tick') {
+        // Crisp Wooden Clock Tick
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, now);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200 * pitchRatio, now);
+        osc.frequency.exponentialRampToValueAtTime(350 * pitchRatio, now + 0.035);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(now);
-        osc.stop(now + 0.05);
+        osc.stop(now + 0.035);
+
       } else if (type === 'victory') {
+        // Triumph Fanfare Major Triad
         const notes = [261.63, 329.63, 392.0, 523.25];
         notes.forEach((freq, idx) => {
+          const startTime = now + idx * 0.11;
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'triangle';
-          osc.frequency.value = freq;
-          const startTime = now + idx * 0.12;
-          gain.gain.setValueAtTime(0.3, startTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+          osc.frequency.setValueAtTime(freq * pitchRatio, startTime);
+
+          gain.gain.setValueAtTime(0.0, now);
+          gain.gain.setValueAtTime(0.35, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(dest);
           osc.start(startTime);
-          osc.stop(startTime + 0.3);
+          osc.stop(startTime + 0.35);
         });
-      } else if (type === 'donkey') {
-        // Hee-Haw donkey braying two-tone brass oscillator
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(420, now);
-        osc.frequency.exponentialRampToValueAtTime(240, now + 0.15);
-        osc.frequency.setValueAtTime(460, now + 0.2);
-        osc.frequency.exponentialRampToValueAtTime(190, now + 0.4);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.45);
-      } else if (type === 'ouch') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(480, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
-        gain.gain.setValueAtTime(0.45, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.22);
       }
     } catch {
       // AudioContext fallback
     }
   }
 }
+
 
 export const sfx = new SoundEffects();
 
