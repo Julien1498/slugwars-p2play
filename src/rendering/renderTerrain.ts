@@ -1,4 +1,5 @@
 import { DestructibleTerrain } from '../core/terrain';
+import { MapTheme } from '../core/types';
 import { getPixelHash } from './renderProps';
 
 export interface TerrainBuffers {
@@ -7,6 +8,118 @@ export interface TerrainBuffers {
   terrainHitboxCanvas: HTMLCanvasElement;
   distMap: Float32Array;
 }
+
+export interface TerrainPalette {
+  highlight: number;
+  surfaceBody: number;
+  surfaceShadow: number;
+  surfaceDeep: number;
+  soilLight: number;
+  strataA: number;
+  strataB: number;
+  denseRock: number;
+  bedrock: number;
+  seam: number;
+}
+
+export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
+  ISLAND: {
+    highlight: 0xff35e6a3,    // #a3e635 Lime top edge
+    surfaceBody: 0xff5ec522,  // #22c55e Rich grass green
+    surfaceShadow: 0xff3d8015,// #15803d Dark forest green
+    surfaceDeep: 0xff2d5314,  // #14532d Deep undercoat shadow
+    soilLight: 0xff183154,    // #543118 Warm topsoil
+    strataA: 0xff122642,      // #422612 Clay sandstone
+    strataB: 0xff0e1e35,      // #351e0e Banded sedimentary stone
+    denseRock: 0xff0a1626,    // #26160a Deep dense rock
+    bedrock: 0xff040914,      // #140904 Deep subterranean dark rock
+    seam: 0xff02050b,         // #0b0502 Deep dark soil crack
+  },
+  ARCHIPELAGO: {
+    highlight: 0xff4ade80,    // #80de4a Tropical palm lime
+    surfaceBody: 0xff22c55e,  // #5ec522 Vibrant lagoon green
+    surfaceShadow: 0xff16a34a,// #4aa316 Rich tropical shadow
+    surfaceDeep: 0xff166534,  // #346516 Deep coastal foliage
+    soilLight: 0xff2d5778,    // #78572d Coastal coral sand/loam
+    strataA: 0xff203e5c,      // #5c3e20 Sandstone reef stratum
+    strataB: 0xff18314a,      // #4a3118 Deep oceanic strata
+    denseRock: 0xff0f2030,    // #30200f Volcanic trench rock
+    bedrock: 0xff071018,      // #181007 Abyssal reef bedrock
+    seam: 0xff03080c,         // #0c0803 Coral seam
+  },
+  NATURAL_ARCHES: {
+    highlight: 0xff2bf0f5,    // #f5f02b Sunlit golden sand rim
+    surfaceBody: 0xff089bf5,  // #f59b08 Rich orange sandstone
+    surfaceShadow: 0xff0c41c2,// #c2410c Terracotta red
+    surfaceDeep: 0xff122d7c,  // #7c2d12 Deep ironstone
+    soilLight: 0xff182d5a,    // #5a2d18 Desert clay
+    strataA: 0xff142245,      // #452214 Layered red sandstone
+    strataB: 0xff101a35,      // #351a10 Dark canyon stratum
+    denseRock: 0xff0c1328,    // #28130c Heavy iron rock
+    bedrock: 0xff060a17,      // #170a06 Canyon bedrock
+    seam: 0xff03050c,         // #0c0503 Mineral seam
+  },
+  SPIRES: {
+    highlight: 0xfffef08a,    // #8af0fe Glacial frost highlight
+    surfaceBody: 0xfff88c81,  // #818cf8 Cool mountain slate
+    surfaceShadow: 0xffca3843,// #4338ca Deep granite
+    surfaceDeep: 0xff812e31,  // #312e81 Dark alpine stone
+    soilLight: 0xff50352a,    // #2a3550 Weathered rock
+    strataA: 0xff3d2920,      // #20293d Cold shale stratum
+    strataB: 0xff2c1e17,      // #171e2c Dark slate band
+    denseRock: 0xff1e1510,    // #10151e Deep mountain core
+    bedrock: 0xff120d0a,      // #0a0d12 Abyssal granite
+    seam: 0xff0a0705,         // #05070a Black fissure
+  },
+  CAVERN: {
+    highlight: 0xffcbd5e1,    // #e1d5cb Pale subterranean crust
+    surfaceBody: 0xff64748b,  // #8b7464 Cool cavern slate
+    surfaceShadow: 0xff475569,// #695547 Dark slate
+    surfaceDeep: 0xff334155,  // #554133 Damp rock
+    soilLight: 0xff2a2436,    // #36242a Amethyst loam
+    strataA: 0xff201b2b,      // #2b1b20 Purple-tinted strata
+    strataB: 0xff171320,      // #201317 Dark cavern stratum
+    denseRock: 0xff110e17,    // #170e11 Heavy subterranean rock
+    bedrock: 0xff0a080e,      // #0e080a Charcoal bedrock
+    seam: 0xff050407,         // #070405 Deep cave fissure
+  },
+  WORM_CAVES: {
+    highlight: 0xff22d3ee,    // #eed322 Glowing sulfur rim
+    surfaceBody: 0xff0284c7,  // #c78402 Scorched volcanic rock
+    surfaceShadow: 0xff0369a1,// #a16903 Burnt amber rock
+    surfaceDeep: 0xff042f49,  // #492f04 Dark basalt
+    soilLight: 0xff071527,    // #271507 Obsidian soil
+    strataA: 0xff0f0c24,      // #240c0f Crimson/magma stratum
+    strataB: 0xff0c091c,      // #1c090c Deep scorched stratum
+    denseRock: 0xff080614,    // #140608 Heavy molten crust
+    bedrock: 0xff04030a,      // #0a0304 Abyssal magma bedrock
+    seam: 0xff0045e0,         // #e04500 Glowing magma vein!
+  },
+  FORTRESS: {
+    highlight: 0xffa3e635,    // #35e6a3 Rampart moss
+    surfaceBody: 0xff94a3b8,  // #b8a394 Ashlar castle stone
+    surfaceShadow: 0xff64748b,// #8b7464 Heavy stone masonry
+    surfaceDeep: 0xff475569,  // #695547 Deep foundation
+    soilLight: 0xff334155,    // #554133 Moat loam
+    strataA: 0xff263140,      // #403126 Fortress bedrock
+    strataB: 0xff1c2430,      // #30241c Stratified dungeon rock
+    denseRock: 0xff141a22,    // #221a14 Heavy granite base
+    bedrock: 0xff0c1015,      // #15100c Keep bedrock
+    seam: 0xff06080b,         // #0b0806 Mortar seam
+  },
+  FLOATING_CHAOS: {
+    highlight: 0xffe879f9,    // #f979e8 Bioluminescent lilac
+    surfaceBody: 0xffc084fc,  // #fc84c0 Glowing purple flora
+    surfaceShadow: 0xff9333ea,// #ea3393 Deep alien moss
+    surfaceDeep: 0xff581c87,  // #871c58 Under-island crust
+    soilLight: 0xff3b0764,    // #64073b Cosmic violet dust
+    strataA: 0xff2a0647,      // #47062a Crystal-veined void rock
+    strataB: 0xff1f0535,      // #35051f Stratified floating stone
+    denseRock: 0xff150324,    // #240315 Heavy gravity rock
+    bedrock: 0xff0c0214,      // #14020c Void core
+    seam: 0xff00ffff,         // #ffff00 Pure cyan crystal seam!
+  },
+};
 
 export function createTerrainBuffers(width: number, height: number): TerrainBuffers {
   const offscreenCanvas = document.createElement('canvas');
@@ -37,7 +150,7 @@ export function redrawOffscreenTerrain(
   buffers: TerrainBuffers,
   dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }
 ) {
-  const { width, height, grid } = terrain.data;
+  const { width, height, grid, theme } = terrain.data;
   const { offscreenCanvas, occlusionCanvas, terrainHitboxCanvas, distMap } = buffers;
 
   if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) {
@@ -62,16 +175,8 @@ export function redrawOffscreenTerrain(
   const imgData = offCtx.createImageData(dirtyW, dirtyH);
   const data32 = new Uint32Array(imgData.data.buffer);
 
-  // Fast Little-Endian ABGR 32-bit integer colors
-  const grassHighlight = 0xff35e6a3; // #a3e635 Lime top edge
-  const grassBody = 0xff5ec522;      // #22c55e Rich grass green
-  const grassShadow = 0xff3d8015;    // #15803d Dark forest green
-  const grassDeep = 0xff2d5314;      // #14532d Deep undercoat shadow
-
-  const soilLight = 0xff183154;   // #543118 Warm topsoil
-  const soilMedium = 0xff11233d;  // #3d2311 Rich earthy brown
-  const soilDark = 0xff040914;    // #140904 Deep subterranean dark rock
-  const soilSeam = 0xff02050b;    // #0b0502 Deep dark soil crack/seam
+  // Retrieve Theme-Specific Geological Stratification Palette
+  const palette = THEME_PALETTES[theme || 'ISLAND'] || THEME_PALETTES.ISLAND;
 
   // 2-Pass Integer/Float Distance Transform
   for (let y = minY; y <= maxY; y++) {
@@ -131,7 +236,7 @@ export function redrawOffscreenTerrain(
     }
   }
 
-  // Render Terrain Pixels inside Dirty Bounding Box
+  // Render Multi-Layer Geological Strata inside Dirty Bounding Box
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
     const dirtyRowOffset = (y - minY) * dirtyW;
@@ -143,27 +248,31 @@ export function redrawOffscreenTerrain(
         const airDist = distMap[idx];
 
         if (airDist <= 1.5) {
-          data32[dirtyIdx] = grassHighlight;
+          data32[dirtyIdx] = palette.highlight;
         } else if (airDist <= 3.5) {
-          data32[dirtyIdx] = grassBody;
+          data32[dirtyIdx] = palette.surfaceBody;
         } else if (airDist <= 5.5) {
-          data32[dirtyIdx] = grassShadow;
-        } else if (airDist <= 7.0) {
-          data32[dirtyIdx] = grassDeep;
+          data32[dirtyIdx] = palette.surfaceShadow;
+        } else if (airDist <= 7.5) {
+          data32[dirtyIdx] = palette.surfaceDeep;
         } else {
-          const bx = (x / 4) | 0;
-          const by = (y / 4) | 0;
+          const bx = (x >> 2);
+          const by = (y >> 2);
           const blockHash = getPixelHash(bx, by);
 
           const isSeam = (x % 4 === 0 && ((y >> 2) % 2 === 0)) || (y % 4 === 0);
-          if (isSeam && blockHash % 100 < 35) {
-            data32[dirtyIdx] = soilSeam;
-          } else if (airDist <= 12) {
-            data32[dirtyIdx] = soilLight;
-          } else if (airDist <= 24) {
-            data32[dirtyIdx] = soilMedium;
+          if (isSeam && blockHash % 100 < 30) {
+            data32[dirtyIdx] = palette.seam;
+          } else if (airDist <= 18) {
+            data32[dirtyIdx] = palette.soilLight;
+          } else if (airDist <= 42) {
+            // Geological Strata Banding (subtle horizontal layer alternating every 4-8px)
+            const isBand = (y >> 2) & 1;
+            data32[dirtyIdx] = isBand ? palette.strataA : palette.strataB;
+          } else if (airDist <= 80) {
+            data32[dirtyIdx] = palette.denseRock;
           } else {
-            data32[dirtyIdx] = soilDark;
+            data32[dirtyIdx] = palette.bedrock;
           }
         }
       } else {
