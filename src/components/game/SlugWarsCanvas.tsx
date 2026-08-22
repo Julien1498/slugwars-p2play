@@ -1174,7 +1174,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         worldRight,
         worldTop,
         worldBottom,
-        cameraPanX: panRef.current.x,
       });
       perfTracker.recordRenderPass('sky_atmosphere', performance.now() - pSkyStart);
 
