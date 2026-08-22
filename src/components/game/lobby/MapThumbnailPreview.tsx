@@ -28,32 +28,29 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
     const { grid, width, height, waterLevel } = terrain;
 
-    // Sky Background
+    // Sky / Atmosphere Background (Bright & High-Contrast for crystal clear map readability)
     const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
-    if (theme === 'ISLAND' || theme === 'ARCHIPELAGO' || theme === 'FLOATING_CHAOS') {
-      skyGrad.addColorStop(0, '#38bdf8');
-      skyGrad.addColorStop(0.7, '#93c5fd');
-      skyGrad.addColorStop(1, '#60a5fa');
-    } else if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
-      skyGrad.addColorStop(0, '#0f172a');
-      skyGrad.addColorStop(0.6, '#1e1b4b');
-      skyGrad.addColorStop(1, '#312e81');
+    if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
+      // Radiant golden/amber glowing cavern sky (High contrast against dark rock and tunnels)
+      skyGrad.addColorStop(0, '#d97706');
+      skyGrad.addColorStop(0.5, '#fbbf24');
+      skyGrad.addColorStop(1, '#fef08a');
     } else if (theme === 'NATURAL_ARCHES') {
-      skyGrad.addColorStop(0, '#ea580c');
-      skyGrad.addColorStop(0.5, '#f59e0b');
-      skyGrad.addColorStop(1, '#7c2d12');
-    } else if (theme === 'SPIRES') {
-      skyGrad.addColorStop(0, '#312e81');
-      skyGrad.addColorStop(0.6, '#4f46e5');
-      skyGrad.addColorStop(1, '#818cf8');
+      // Warm glowing canyon sunset sky
+      skyGrad.addColorStop(0, '#f97316');
+      skyGrad.addColorStop(0.55, '#fde047');
+      skyGrad.addColorStop(1, '#fef9c3');
     } else if (theme === 'FORTRESS') {
-      skyGrad.addColorStop(0, '#ea580c');
-      skyGrad.addColorStop(0.5, '#9a3412');
-      skyGrad.addColorStop(1, '#431407');
+      // Crisp clear morning fortress sky
+      skyGrad.addColorStop(0, '#0284c7');
+      skyGrad.addColorStop(0.55, '#7dd3fc');
+      skyGrad.addColorStop(1, '#e0f2fe');
     } else {
-      skyGrad.addColorStop(0, '#38bdf8');
-      skyGrad.addColorStop(0.7, '#93c5fd');
-      skyGrad.addColorStop(1, '#60a5fa');
+      // Bright crisp azure sky (Island, Archipelago, Spires, Floating Chaos)
+      skyGrad.addColorStop(0, '#0284c7');
+      skyGrad.addColorStop(0.45, '#38bdf8');
+      skyGrad.addColorStop(0.8, '#bae6fd');
+      skyGrad.addColorStop(1, '#f0f9ff');
     }
 
     ctx.fillStyle = skyGrad;

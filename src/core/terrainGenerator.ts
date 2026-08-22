@@ -227,20 +227,63 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 2. Organic Cave Networks, Tunnels & Archways
-  const caveCount = theme === 'CAVERN' ? 24 : theme === 'WORM_CAVES' ? 0 : 14;
-  for (let i = 0; i < caveCount; i++) {
-    const cx = Math.floor(prng.range(140, width - 140));
-    const cy = Math.floor(prng.range(180, waterLevel - 90));
-    const rx = Math.floor(prng.range(40, 110));
-    const ry = Math.floor(prng.range(30, 80));
+  // 2. Organic Cave Tunnels & Natural Chambers
+  if (theme !== 'WORM_CAVES') {
+    // A. Natural Subterranean Tunnels (2 to 4 winding passages through the mountain)
+    const tunnelCount = theme === 'CAVERN' ? 8 : theme === 'NATURAL_ARCHES' ? 2 : 3;
+    for (let t = 0; t < tunnelCount; t++) {
+      let tx = prng.range(width * 0.15, width * 0.85);
+      let ty = prng.range(height * 0.35, waterLevel - 80);
+      let angle = prng.range(0, Math.PI * 2);
+      const steps = Math.floor(prng.range(50, 100));
+      const tunnelRadius = Math.floor(prng.range(18, 28));
 
-    for (let y = Math.max(0, cy - ry); y <= Math.min(height - 1, cy + ry); y++) {
-      for (let x = Math.max(0, cx - rx); x <= Math.min(width - 1, cx + rx); x++) {
-        const dx = (x - cx) / rx;
-        const dy = (y - cy) / ry;
-        if (dx * dx + dy * dy <= 1.0) {
-          grid[y * width + x] = 0;
+      for (let s = 0; s < steps; s++) {
+        angle += (prng.next() - 0.5) * 0.45;
+        const speed = prng.range(3.5, 5.5);
+        tx += Math.cos(angle) * speed;
+        ty += Math.sin(angle) * speed;
+
+        if (tx < 80 || tx > width - 80 || ty < 40 || ty > waterLevel - 40) {
+          angle += Math.PI * 0.5 + (prng.next() - 0.5) * 0.3;
+          tx = Math.max(85, Math.min(width - 85, tx));
+          ty = Math.max(45, Math.min(waterLevel - 45, ty));
+        }
+
+        const minX = Math.max(0, Math.floor(tx - tunnelRadius));
+        const maxX = Math.min(width - 1, Math.ceil(tx + tunnelRadius));
+        const minY = Math.max(theme === 'CAVERN' ? 17 : 0, Math.floor(ty - tunnelRadius));
+        const maxY = Math.min(height - 1, Math.ceil(ty + tunnelRadius));
+        const rSq = tunnelRadius * tunnelRadius;
+
+        for (let y = minY; y <= maxY; y++) {
+          const dy = y - ty;
+          const rowOffset = y * width;
+          for (let x = minX; x <= maxX; x++) {
+            const dx = x - tx;
+            if (dx * dx + dy * dy <= rSq) {
+              grid[rowOffset + x] = 0;
+            }
+          }
+        }
+      }
+    }
+
+    // B. A Few Natural Round/Oval Pockets & Chambers (3 to 5 chambers)
+    const chamberCount = theme === 'CAVERN' ? 8 : 4;
+    for (let i = 0; i < chamberCount; i++) {
+      const cx = Math.floor(prng.range(150, width - 150));
+      const cy = Math.floor(prng.range(height * 0.38, waterLevel - 90));
+      const rx = Math.floor(prng.range(32, 60));
+      const ry = Math.floor(prng.range(24, 45));
+
+      for (let y = Math.max(theme === 'CAVERN' ? 17 : 0, cy - ry); y <= Math.min(height - 1, cy + ry); y++) {
+        for (let x = Math.max(0, cx - rx); x <= Math.min(width - 1, cx + rx); x++) {
+          const dx = (x - cx) / rx;
+          const dy = (y - cy) / ry;
+          if (dx * dx + dy * dy <= 1.0) {
+            grid[y * width + x] = 0;
+          }
         }
       }
     }
