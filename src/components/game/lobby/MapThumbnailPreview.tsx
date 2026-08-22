@@ -63,24 +63,47 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
-    let grassR = 34, grassG = 197, grassB = 94;
-    let rockR = 120, rockG = 53, rockB = 15;
+    // Thematic Geological Strata Colors
+    let surfaceRGB = [34, 197, 94];
+    let topsoilRGB = [84, 49, 24];
+    let rockRGB = [38, 22, 10];
+    let bedrockRGB = [20, 9, 4];
 
-    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-      grassR = 71; grassG = 85; grassB = 105;
-      rockR = 30; rockG = 27; rockB = 75;
+    if (theme === 'ARCHIPELAGO') {
+      surfaceRGB = [74, 222, 128];
+      topsoilRGB = [120, 87, 45];
+      rockRGB = [48, 32, 15];
+      bedrockRGB = [24, 16, 7];
+    } else if (theme === 'CAVERN') {
+      surfaceRGB = [140, 116, 100];
+      topsoilRGB = [54, 36, 42];
+      rockRGB = [32, 19, 23];
+      bedrockRGB = [14, 8, 10];
+    } else if (theme === 'ORGANIC_CAVES') {
+      surfaceRGB = [238, 211, 34];
+      topsoilRGB = [199, 132, 2];
+      rockRGB = [36, 12, 15];
+      bedrockRGB = [10, 3, 4];
     } else if (theme === 'NATURAL_ARCHES') {
-      grassR = 217; grassG = 119; grassB = 6;
-      rockR = 154; rockG = 52; rockB = 18;
+      surfaceRGB = [245, 155, 8];
+      topsoilRGB = [194, 65, 12];
+      rockRGB = [69, 34, 20];
+      bedrockRGB = [23, 10, 6];
     } else if (theme === 'SPIRES') {
-      grassR = 129; grassG = 140; grassB = 248;
-      rockR = 49; rockG = 46; rockB = 129;
+      surfaceRGB = [129, 140, 248];
+      topsoilRGB = [67, 56, 202];
+      rockRGB = [32, 41, 61];
+      bedrockRGB = [10, 13, 18];
     } else if (theme === 'FORTRESS') {
-      grassR = 132; grassG = 204; grassB = 22;
-      rockR = 82; rockG = 82; rockB = 91;
+      surfaceRGB = [163, 230, 53];
+      topsoilRGB = [184, 163, 148];
+      rockRGB = [64, 49, 38];
+      bedrockRGB = [21, 16, 12];
     } else if (theme === 'FLOATING_CHAOS') {
-      grassR = 168; grassG = 85; grassB = 247;
-      rockR = 46; rockG = 16; rockB = 101;
+      surfaceRGB = [232, 121, 249];
+      topsoilRGB = [147, 51, 234];
+      rockRGB = [71, 6, 42];
+      bedrockRGB = [20, 2, 12];
     }
 
     for (let py = 0; py < previewH; py++) {
@@ -91,18 +114,30 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
 
         if (isSolid) {
           const idx = (py * previewW + px) * 4;
-          const isAboveSolid = srcY > 0 && grid[(srcY - 1) * width + srcX] === 1;
-          if (!isAboveSolid) {
-            data[idx] = grassR;
-            data[idx + 1] = grassG;
-            data[idx + 2] = grassB;
-            data[idx + 3] = 255;
-          } else {
-            data[idx] = rockR;
-            data[idx + 1] = rockG;
-            data[idx + 2] = rockB;
-            data[idx + 3] = 255;
+          // Determine depth from top surface
+          let depth = 0;
+          for (let dy = 1; dy <= 12; dy++) {
+            if (srcY - dy < 0 || grid[(srcY - dy) * width + srcX] === 0) {
+              break;
+            }
+            depth++;
           }
+
+          let color = surfaceRGB;
+          if (depth === 0) {
+            color = surfaceRGB;
+          } else if (depth <= 2) {
+            color = topsoilRGB;
+          } else if (depth <= 7) {
+            color = rockRGB;
+          } else {
+            color = bedrockRGB;
+          }
+
+          data[idx] = color[0];
+          data[idx + 1] = color[1];
+          data[idx + 2] = color[2];
+          data[idx + 3] = 255;
         }
       }
     }
