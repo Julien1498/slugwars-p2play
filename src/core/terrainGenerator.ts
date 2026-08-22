@@ -375,20 +375,42 @@ export function generateProceduralTerrain(
     }
   }
 
-  // 3. Floating Rock Islands / Ledges in Sky / Cavern
-  const floatingIslandCount = theme === 'CAVERN' ? 6 : theme === 'ORGANIC_CAVES' ? 0 : theme === 'ARCHIPELAGO' ? 5 : 4;
-  for (let i = 0; i < floatingIslandCount; i++) {
-    const fx = Math.floor(prng.range(200, width - 200));
-    const fy = Math.floor(prng.range(160, 320));
-    const fRadiusX = Math.floor(prng.range(40, 90));
-    const fRadiusY = Math.floor(prng.range(15, 30));
+  // 3. Floating Islands / Suspended Ledges (Only for FLOATING_CHAOS and wide CAVERN ledges)
+  if (theme === 'FLOATING_CHAOS') {
+    // Generate large, wide, comfortable floating sky landmasses (160 to 300px wide)
+    const floatingIslandCount = 6;
+    for (let i = 0; i < floatingIslandCount; i++) {
+      const fx = Math.floor(prng.range(180, width - 180));
+      const fy = Math.floor(prng.range(height * 0.25, waterLevel - 140));
+      const fRadiusX = Math.floor(prng.range(80, 150));
+      const fRadiusY = Math.floor(prng.range(35, 65));
 
-    for (let y = Math.max(0, fy - fRadiusY); y <= Math.min(waterLevel - 100, fy + fRadiusY); y++) {
-      for (let x = Math.max(0, fx - fRadiusX); x <= Math.min(width - 1, fx + fRadiusX); x++) {
-        const dx = (x - fx) / fRadiusX;
-        const dy = (y - fy) / fRadiusY;
-        if (dx * dx + dy * dy <= 1.0) {
-          grid[y * width + x] = 1;
+      for (let y = Math.max(0, fy - fRadiusY); y <= Math.min(waterLevel - 60, fy + fRadiusY); y++) {
+        for (let x = Math.max(0, fx - fRadiusX); x <= Math.min(width - 1, fx + fRadiusX); x++) {
+          const dx = (x - fx) / fRadiusX;
+          const dy = (y - fy) / fRadiusY;
+          if (dx * dx + dy * dy <= 1.0) {
+            grid[y * width + x] = 1;
+          }
+        }
+      }
+    }
+  } else if (theme === 'CAVERN') {
+    // Wide suspended subterranean rock shelves inside the cavern
+    const cavernLedgeCount = 3;
+    for (let i = 0; i < cavernLedgeCount; i++) {
+      const fx = Math.floor(prng.range(220, width - 220));
+      const fy = Math.floor(prng.range(height * 0.4, waterLevel - 120));
+      const fRadiusX = Math.floor(prng.range(75, 125));
+      const fRadiusY = Math.floor(prng.range(25, 45));
+
+      for (let y = Math.max(20, fy - fRadiusY); y <= Math.min(waterLevel - 70, fy + fRadiusY); y++) {
+        for (let x = Math.max(0, fx - fRadiusX); x <= Math.min(width - 1, fx + fRadiusX); x++) {
+          const dx = (x - fx) / fRadiusX;
+          const dy = (y - fy) / fRadiusY;
+          if (dx * dx + dy * dy <= 1.0) {
+            grid[y * width + x] = 1;
+          }
         }
       }
     }
@@ -457,6 +479,19 @@ export function generateProceduralTerrain(
 
     if (fallbackSpawn && !spawnPoints.some((sp) => Math.abs(sp.x - x) < step * 0.7)) {
       spawnPoints.push(fallbackSpawn);
+    }
+  }
+
+  // Fallback pass: ensure we always have ample spawn points across all seeds & archetypes
+  if (spawnPoints.length < 6) {
+    for (let x = 80; x < width - 80; x += 40) {
+      if (spawnPoints.some((sp) => Math.abs(sp.x - x) < 30)) continue;
+      for (let y = searchStartY; y < waterLevel - 20; y++) {
+        if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
+          spawnPoints.push({ x, y: y - 10 });
+          break;
+        }
+      }
     }
   }
 
