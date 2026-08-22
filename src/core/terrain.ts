@@ -165,4 +165,40 @@ export class DestructibleTerrain {
     }
     return { hit: false, x: x1, y: y1 };
   }
+
+  /**
+   * Calculates the surface normal vector at a solid impact point (nx, ny).
+   * Points OUTWARD from solid terrain into air/space with unit length 1.0.
+   */
+  public getSurfaceNormal(
+    x: number,
+    y: number,
+    sampleRadius: number = 4
+  ): { nx: number; ny: number } {
+    let nx = 0;
+    let ny = 0;
+    const r = Math.max(2, Math.floor(sampleRadius));
+
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const dSq = dx * dx + dy * dy;
+        if (dSq <= r * r) {
+          if (this.isSolid(x + dx, y + dy)) {
+            // Solid terrain pushes the normal OUTWARD away from solid mass
+            const invDist = 1 / Math.sqrt(dSq);
+            nx -= dx * invDist;
+            ny -= dy * invDist;
+          }
+        }
+      }
+    }
+
+    const len = Math.hypot(nx, ny);
+    if (len > 0.001) {
+      return { nx: nx / len, ny: ny / len };
+    }
+    // Default fallback: upward normal (flat ground)
+    return { nx: 0, ny: -1 };
+  }
 }
