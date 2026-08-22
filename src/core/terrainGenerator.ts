@@ -512,6 +512,25 @@ export function generateProceduralTerrain(
     return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
   };
 
+  const findAllFloorsAt = (x: number, minY: number = searchStartY, maxY: number = waterLevel - 25): number[] => {
+    const floors: number[] = [];
+    for (let y = minY; y <= maxY; y++) {
+      if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
+        let clear = true;
+        for (let h = 1; h <= 16; h++) {
+          if (y - h < 0 || grid[(y - h) * width + x] !== 0) {
+            clear = false;
+            break;
+          }
+        }
+        if (clear) {
+          floors.push(y);
+        }
+      }
+    }
+    return floors;
+  };
+
   // 1. Fortified Concrete Bunkers (1-2 bunkers on hills or fortresses)
   const bunkerCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < bunkerCount; i++) {
@@ -519,34 +538,28 @@ export function generateProceduralTerrain(
       const bx = Math.floor(prng.range(160 + i * 420, 380 + i * 420));
       if (!isFarFromProps(bx, 75)) continue;
 
-      let placed = false;
-      for (let by = searchStartY; by < waterLevel - 50; by++) {
-        if (grid[by * width + bx] === 1 && grid[(by - 1) * width + bx] === 0) {
-          stampSolidProp('bunker', bx, by, 38, 26, Math.floor(prng.range(0, 2)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(bx, searchStartY, waterLevel - 50);
+      if (floors.length > 0) {
+        const by = floors[0]; // Top exterior surface
+        stampSolidProp('bunker', bx, by, 38, 26, Math.floor(prng.range(0, 2)));
+        break;
       }
-      if (placed) break;
     }
   }
 
-  // 2. Ancient Moai / Tiki Totem Idols (1-2 totems)
+  // 2. Ancient Moai / Tiki Totem Idols (1-2 totems placed on hills or cave alcoves)
   const totemCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < totemCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const tx = Math.floor(prng.range(220 + i * 460, 460 + i * 460));
       if (!isFarFromProps(tx, 70)) continue;
 
-      let placed = false;
-      for (let ty = searchStartY; ty < waterLevel - 50; ty++) {
-        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
-          stampSolidProp('totem', tx, ty, 26, 36, Math.floor(prng.range(0, 2)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(tx, searchStartY, waterLevel - 50);
+      if (floors.length > 0) {
+        const ty = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('totem', tx, ty, 26, 36, Math.floor(prng.range(0, 2)));
+        break;
       }
-      if (placed) break;
     }
   }
 
@@ -557,53 +570,44 @@ export function generateProceduralTerrain(
       const cx = Math.floor(prng.range(120, width - 120));
       if (!isFarFromProps(cx, 60)) continue;
 
-      let placed = false;
-      for (let cy = searchStartY; cy < waterLevel - 50; cy++) {
-        if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
-          stampSolidProp('cactus', cx, cy, 24, 38, Math.floor(prng.range(0, 3)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(cx, searchStartY, waterLevel - 50);
+      if (floors.length > 0) {
+        const cy = floors[0];
+        stampSolidProp('cactus', cx, cy, 24, 38, Math.floor(prng.range(0, 3)));
+        break;
       }
-      if (placed) break;
     }
   }
 
-  // 4. Luminous Crystal Geodes (3-5 glowing crystal clusters)
+  // 4. Luminous Crystal Geodes (3-5 glowing crystal clusters across subterranean tunnels & chambers)
   const crystalCount = theme === 'ORGANIC_CAVES' ? 6 : Math.floor(prng.range(3, 5));
   for (let i = 0; i < crystalCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
       if (!isFarFromProps(rx, 55)) continue;
 
-      let placed = false;
-      for (let ry = searchStartY; ry < waterLevel - 30; ry++) {
-        if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
-          stampSolidProp('crystal', rx, ry, 28, 26, Math.floor(prng.range(0, 3)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(rx, searchStartY, waterLevel - 30);
+      if (floors.length > 0) {
+        const ry = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('crystal', rx, ry, 28, 26, Math.floor(prng.range(0, 3)));
+        break;
       }
-      if (placed) break;
     }
   }
 
-  // 5. Industrial Hazard Oil Drums (2-3 barrels)
+  // 5. Industrial Hazard Oil Drums (2-4 barrels on surfaces and tunnel routes)
   const drumCount = theme === 'ORGANIC_CAVES' ? 5 : Math.floor(prng.range(2, 4));
   for (let i = 0; i < drumCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const dx = Math.floor(prng.range(140, width - 140));
       if (!isFarFromProps(dx, 55)) continue;
 
-      let placed = false;
-      for (let dy = searchStartY; dy < waterLevel - 30; dy++) {
-        if (grid[dy * width + dx] === 1 && grid[(dy - 1) * width + dx] === 0) {
-          stampSolidProp('oil_drum', dx, dy, 20, 26, Math.floor(prng.range(0, 2)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(dx, searchStartY, waterLevel - 30);
+      if (floors.length > 0) {
+        const dy = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('oil_drum', dx, dy, 20, 26, Math.floor(prng.range(0, 2)));
+        break;
       }
-      if (placed) break;
     }
   }
 
@@ -614,34 +618,28 @@ export function generateProceduralTerrain(
       const lx = Math.floor(prng.range(150, width - 150));
       if (!isFarFromProps(lx, 65)) continue;
 
-      let placed = false;
-      for (let ly = searchStartY; ly < waterLevel - 50; ly++) {
-        if (grid[ly * width + lx] === 1 && grid[(ly - 1) * width + lx] === 0) {
-          stampSolidProp('lamppost', lx, ly, 18, 42);
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(lx, searchStartY, waterLevel - 50);
+      if (floors.length > 0) {
+        const ly = floors[0];
+        stampSolidProp('lamppost', lx, ly, 18, 42);
+        break;
       }
-      if (placed) break;
     }
   }
 
-  // 7. Trees (2-4 trees)
+  // 7. Trees (2-4 trees on upper contours)
   const treeCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(2, 5));
   for (let i = 0; i < treeCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const tx = Math.floor(prng.range(120 + i * 220, 280 + i * 220));
       if (!isFarFromProps(tx, 55)) continue;
 
-      let placed = false;
-      for (let ty = searchStartY; ty < waterLevel - 60; ty++) {
-        if (grid[ty * width + tx] === 1 && grid[(ty - 1) * width + tx] === 0) {
-          stampSolidProp('tree', tx, ty, 32, 48, Math.floor(prng.range(0, 2)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(tx, searchStartY, waterLevel - 60);
+      if (floors.length > 0) {
+        const ty = floors[0];
+        stampSolidProp('tree', tx, ty, 32, 48, Math.floor(prng.range(0, 2)));
+        break;
       }
-      if (placed) break;
     }
   }
 
@@ -652,15 +650,12 @@ export function generateProceduralTerrain(
       const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
       if (!isFarFromProps(hx, 60)) continue;
 
-      let placed = false;
-      for (let hy = searchStartY; hy < waterLevel - 60; hy++) {
-        if (grid[hy * width + hx] === 1 && grid[(hy - 1) * width + hx] === 0) {
-          stampSolidProp('hedgehog', hx, hy, 26, 22);
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(hx, searchStartY, waterLevel - 60);
+      if (floors.length > 0) {
+        const hy = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('hedgehog', hx, hy, 26, 22);
+        break;
       }
-      if (placed) break;
     }
   }
 
@@ -671,34 +666,28 @@ export function generateProceduralTerrain(
       const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
       if (!isFarFromProps(cx, 70)) continue;
 
-      let placed = false;
-      for (let cy = searchStartY; cy < waterLevel - 60; cy++) {
-        if (grid[cy * width + cx] === 1 && grid[(cy - 1) * width + cx] === 0) {
-          stampSolidProp('chick', cx, cy, 28, 24);
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(cx, searchStartY, waterLevel - 60);
+      if (floors.length > 0) {
+        const cy = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('chick', cx, cy, 28, 24);
+        break;
       }
-      if (placed) break;
     }
   }
 
-  // 10. Mushrooms (4-6 mushrooms)
+  // 10. Mushrooms (4-6 mushrooms in caves and subterranean tunnels)
   const mushroomCount = theme === 'ORGANIC_CAVES' ? 8 : Math.floor(prng.range(4, 7));
   for (let i = 0; i < mushroomCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
       if (!isFarFromProps(rx, 55)) continue;
 
-      let placed = false;
-      for (let ry = searchStartY; ry < waterLevel - 20; ry++) {
-        if (grid[ry * width + rx] === 1 && grid[(ry - 1) * width + rx] === 0) {
-          stampSolidProp('mushroom', rx, ry, 22, 22, Math.floor(prng.range(0, 3)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(rx, searchStartY, waterLevel - 20);
+      if (floors.length > 0) {
+        const ry = floors[Math.floor(prng.range(0, floors.length))];
+        stampSolidProp('mushroom', rx, ry, 22, 22, Math.floor(prng.range(0, 3)));
+        break;
       }
-      if (placed) break;
     }
   }
 
@@ -709,15 +698,12 @@ export function generateProceduralTerrain(
       const fx = Math.floor(prng.range(80, width - 80));
       if (!isFarFromProps(fx, 50)) continue;
 
-      let placed = false;
-      for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
-        if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
-          stampSolidProp('flower', fx, fy, 20, 24, Math.floor(prng.range(0, 4)));
-          placed = true;
-          break;
-        }
+      const floors = findAllFloorsAt(fx, searchStartY, waterLevel - 20);
+      if (floors.length > 0) {
+        const fy = floors[0];
+        stampSolidProp('flower', fx, fy, 20, 24, Math.floor(prng.range(0, 4)));
+        break;
       }
-      if (placed) break;
     }
   }
 

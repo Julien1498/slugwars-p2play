@@ -28,35 +28,22 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
     const { grid, width, height, waterLevel } = terrain;
 
-    // Sky / Atmosphere Background (Bright & High-Contrast for crystal clear map readability)
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
+    // Sky RGB Gradients (top and bottom)
+    let skyTopRGB = [2, 132, 199];      // #0284c7 Crisp bright blue
+    let skyBottomRGB = [240, 249, 255]; // #f0f9ff Luminous atmospheric white-blue
+
     if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-      // Radiant golden/amber glowing cavern sky (High contrast against dark rock and tunnels)
-      skyGrad.addColorStop(0, '#d97706');
-      skyGrad.addColorStop(0.5, '#fbbf24');
-      skyGrad.addColorStop(1, '#fef08a');
+      skyTopRGB = [217, 119, 6];       // #d97706 Warm radiant amber
+      skyBottomRGB = [254, 240, 138];   // #fef08a Glowing golden cavern light
     } else if (theme === 'NATURAL_ARCHES') {
-      // Warm glowing canyon sunset sky
-      skyGrad.addColorStop(0, '#f97316');
-      skyGrad.addColorStop(0.55, '#fde047');
-      skyGrad.addColorStop(1, '#fef9c3');
+      skyTopRGB = [249, 115, 22];      // #f97316 Warm canyon orange
+      skyBottomRGB = [254, 249, 195];   // #fef9c3 Radiant sunset gold
     } else if (theme === 'FORTRESS') {
-      // Crisp clear morning fortress sky
-      skyGrad.addColorStop(0, '#0284c7');
-      skyGrad.addColorStop(0.55, '#7dd3fc');
-      skyGrad.addColorStop(1, '#e0f2fe');
-    } else {
-      // Bright crisp azure sky (Island, Archipelago, Spires, Floating Chaos)
-      skyGrad.addColorStop(0, '#0284c7');
-      skyGrad.addColorStop(0.45, '#38bdf8');
-      skyGrad.addColorStop(0.8, '#bae6fd');
-      skyGrad.addColorStop(1, '#f0f9ff');
+      skyTopRGB = [2, 132, 199];       // #0284c7 Clear blue
+      skyBottomRGB = [224, 242, 254];   // #e0f2fe Soft sky blue
     }
 
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, previewW, previewH);
-
-    // Terrain Surface & Rock
+    // Terrain Surface & Rock + Opaque Sky Buffer
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
@@ -105,12 +92,17 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
 
     for (let py = 0; py < previewH; py++) {
       const srcY = Math.floor((py / previewH) * height);
+      const skyT = py / previewH;
+      const skyR = Math.round(skyTopRGB[0] + (skyBottomRGB[0] - skyTopRGB[0]) * skyT);
+      const skyG = Math.round(skyTopRGB[1] + (skyBottomRGB[1] - skyTopRGB[1]) * skyT);
+      const skyB = Math.round(skyTopRGB[2] + (skyBottomRGB[2] - skyTopRGB[2]) * skyT);
+
       for (let px = 0; px < previewW; px++) {
         const srcX = Math.floor((px / previewW) * width);
         const isSolid = grid[srcY * width + srcX] === 1;
+        const idx = (py * previewW + px) * 4;
 
         if (isSolid) {
-          const idx = (py * previewW + px) * 4;
           // Determine depth from top surface
           let depth = 0;
           for (let dy = 1; dy <= 12; dy++) {
@@ -134,6 +126,12 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
           data[idx] = color[0];
           data[idx + 1] = color[1];
           data[idx + 2] = color[2];
+          data[idx + 3] = 255;
+        } else {
+          // 100% Opaque High-Contrast Sky Pixel
+          data[idx] = skyR;
+          data[idx + 1] = skyG;
+          data[idx + 2] = skyB;
           data[idx + 3] = 255;
         }
       }
