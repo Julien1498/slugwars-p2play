@@ -70,20 +70,13 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
 
   const FADE_DURATION_MS = 6000;
 
-  // Extract recent logs & messages for the floating feed (newest are at index 0 of gameState.journal)
-  const recentJournal = (gameState.journal || []).slice(0, 4).map((j: JournalEntry) => ({
-    id: `j_${j.id || j.timestamp}_${j.message}`,
-    text: j.message,
-    type: j.type || 'info',
-    isSystem: true,
-    timestamp: j.timestamp,
-  }));
-
-  const recentChat = chatMessages.slice(-3).map((c, idx) => {
+  // Extract recent chat messages for the compact floating preview (only chat, no combat logs!)
+  const recentChat = chatMessages.slice(-4).map((c, idx) => {
     const senderTeam = gameState.teams.find(
       (t) => t.id === c.senderPeerId || t.name === c.sender || t.id === c.sender
     );
     const senderDisplayName = senderTeam?.name || (c.sender.startsWith('Joueur-') ? `Limace (${c.sender.slice(7)})` : c.sender);
+    const senderColor = senderTeam?.color || '#c084fc';
     const msgKey = `${c.sender}_${c.text}_${c.time || ''}_${idx}`;
     if (!chatTimestampsRef.current.has(msgKey)) {
       chatTimestampsRef.current.set(msgKey, Date.now());
@@ -91,14 +84,14 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
     const timestamp = chatTimestampsRef.current.get(msgKey)!;
     return {
       id: `c_${msgKey}`,
-      text: `${senderDisplayName}: ${c.text}`,
-      type: 'chat',
-      isSystem: false,
+      senderDisplayName,
+      senderColor,
+      text: c.text,
       timestamp,
     };
   });
 
-  const recentEvents = [...recentJournal, ...recentChat]
+  const recentChatEvents = recentChat
     .filter((e) => currentTime - e.timestamp < FADE_DURATION_MS)
     .sort((a, b) => a.timestamp - b.timestamp)
     .slice(-3);
@@ -303,12 +296,11 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
       )}
 
       {/* ========================================================================= */}
-      {/* 2. RECENT COMPACT FLOATING FEED (WHEN PANEL IS CLOSED)                     */}
+      {/* 2. RECENT COMPACT FLOATING CHAT PREVIEW (WHEN PANEL IS CLOSED)             */}
       {/* ========================================================================= */}
-      {!showDrawer && recentEvents.length > 0 && (
+      {!showDrawer && recentChatEvents.length > 0 && (
         <div className="flex flex-col gap-1 w-full animate-in fade-in duration-200">
-          {recentEvents.map((item) => {
-            const meta = getLogMeta(item.type);
+          {recentChatEvents.map((item) => {
             const ageMs = currentTime - item.timestamp;
             const isFading = ageMs > FADE_DURATION_MS - 1500;
             const opacity = isFading ? Math.max(0.1, 1 - (ageMs - (FADE_DURATION_MS - 1500)) / 1500) : 1;
@@ -316,20 +308,13 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
               <div
                 key={item.id}
                 style={{ opacity }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-xl border shadow-lg truncate max-w-full flex items-center gap-2 transition-opacity duration-300 ${
-                  item.isSystem
-                    ? item.type === 'death'
-                      ? 'bg-red-950/85 border-red-500/50 text-red-200'
-                      : item.type === 'combat'
-                      ? 'bg-amber-950/85 border-amber-500/50 text-amber-200'
-                      : item.type === 'weapon'
-                      ? 'bg-sky-950/85 border-sky-500/50 text-sky-200'
-                      : 'bg-zinc-950/85 border-zinc-800/90 text-zinc-300'
-                    : 'bg-violet-950/85 border-violet-500/60 text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                }`}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-xl border border-violet-500/50 bg-zinc-950/90 text-violet-100 shadow-[0_4px_20px_rgba(0,0,0,0.85)] truncate max-w-full flex items-center gap-2 transition-opacity duration-300"
               >
-                {item.isSystem ? meta.icon : <MessageSquare className="w-3.5 h-3.5 text-violet-400 shrink-0" />}
-                <span className="truncate">{item.text}</span>
+                <MessageSquare className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                <span className="font-bold shrink-0" style={{ color: item.senderColor }}>
+                  {item.senderDisplayName}:
+                </span>
+                <span className="truncate text-zinc-100">{item.text}</span>
               </div>
             );
           })}
