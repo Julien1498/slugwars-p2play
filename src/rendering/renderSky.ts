@@ -94,12 +94,33 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   if (_cachedSkyKey !== skyKey || !_cachedSkyGrad) {
     const skyGrad = ctx.createLinearGradient(0, skyGradTop, 0, waterY);
     if (isDay) {
-      if (theme === 'CAVERN') {
+      if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
         skyGrad.addColorStop(0, '#451a03');
         skyGrad.addColorStop(0.35, '#78350f');
         skyGrad.addColorStop(0.65, '#b45309');
         skyGrad.addColorStop(0.88, '#d97706');
         skyGrad.addColorStop(1, '#fef08a');
+      } else if (theme === 'NATURAL_ARCHES') {
+        // Warm desert sunset canyon sky
+        skyGrad.addColorStop(0, '#7c2d12');
+        skyGrad.addColorStop(0.30, '#c2410c');
+        skyGrad.addColorStop(0.65, '#ea580c');
+        skyGrad.addColorStop(0.85, '#f59e0b');
+        skyGrad.addColorStop(1, '#fef08a');
+      } else if (theme === 'SPIRES') {
+        // Alpine mist and moody violet sky
+        skyGrad.addColorStop(0, '#312e81');
+        skyGrad.addColorStop(0.35, '#4338ca');
+        skyGrad.addColorStop(0.70, '#6366f1');
+        skyGrad.addColorStop(0.90, '#a5b4fc');
+        skyGrad.addColorStop(1, '#e0e7ff');
+      } else if (theme === 'ARCHIPELAGO') {
+        // Vibrant tropical turquoise lagoon sky
+        skyGrad.addColorStop(0, '#0369a1');
+        skyGrad.addColorStop(0.30, '#0284c7');
+        skyGrad.addColorStop(0.65, '#38bdf8');
+        skyGrad.addColorStop(0.88, '#7dd3fc');
+        skyGrad.addColorStop(1, '#e0f2fe');
       } else if (theme === 'FORTRESS') {
         skyGrad.addColorStop(0, '#0f172a');
         skyGrad.addColorStop(0.35, '#0369a1');
@@ -118,11 +139,26 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         skyGrad.addColorStop(1, '#e0f2fe');
       }
     } else {
-      if (theme === 'CAVERN') {
+      if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
         skyGrad.addColorStop(0, '#030102');
         skyGrad.addColorStop(0.35, '#170605');
         skyGrad.addColorStop(0.7, '#2b0c07');
         skyGrad.addColorStop(1, '#451a03');
+      } else if (theme === 'NATURAL_ARCHES') {
+        skyGrad.addColorStop(0, '#1c0a00');
+        skyGrad.addColorStop(0.35, '#2e1065');
+        skyGrad.addColorStop(0.7, '#4c1d95');
+        skyGrad.addColorStop(1, '#1e1b4b');
+      } else if (theme === 'SPIRES') {
+        skyGrad.addColorStop(0, '#0f0a1e');
+        skyGrad.addColorStop(0.35, '#1e1b4b');
+        skyGrad.addColorStop(0.7, '#312e81');
+        skyGrad.addColorStop(1, '#1e293b');
+      } else if (theme === 'ARCHIPELAGO') {
+        skyGrad.addColorStop(0, '#02040a');
+        skyGrad.addColorStop(0.35, '#071527');
+        skyGrad.addColorStop(0.7, '#082f49');
+        skyGrad.addColorStop(1, '#0c4a6e');
       } else if (theme === 'FORTRESS') {
         skyGrad.addColorStop(0, '#020408');
         skyGrad.addColorStop(0.35, '#070b14');

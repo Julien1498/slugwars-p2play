@@ -30,18 +30,30 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
 
     // Sky Background
     const skyGrad = ctx.createLinearGradient(0, 0, 0, previewH);
-    if (theme === 'ISLAND' || theme === 'FLOATING_CHAOS') {
+    if (theme === 'ISLAND' || theme === 'ARCHIPELAGO' || theme === 'FLOATING_CHAOS') {
       skyGrad.addColorStop(0, '#38bdf8');
       skyGrad.addColorStop(0.7, '#93c5fd');
       skyGrad.addColorStop(1, '#60a5fa');
-    } else if (theme === 'CAVERN') {
+    } else if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
       skyGrad.addColorStop(0, '#0f172a');
       skyGrad.addColorStop(0.6, '#1e1b4b');
       skyGrad.addColorStop(1, '#312e81');
+    } else if (theme === 'NATURAL_ARCHES') {
+      skyGrad.addColorStop(0, '#ea580c');
+      skyGrad.addColorStop(0.5, '#f59e0b');
+      skyGrad.addColorStop(1, '#7c2d12');
+    } else if (theme === 'SPIRES') {
+      skyGrad.addColorStop(0, '#312e81');
+      skyGrad.addColorStop(0.6, '#4f46e5');
+      skyGrad.addColorStop(1, '#818cf8');
     } else if (theme === 'FORTRESS') {
       skyGrad.addColorStop(0, '#ea580c');
       skyGrad.addColorStop(0.5, '#9a3412');
       skyGrad.addColorStop(1, '#431407');
+    } else {
+      skyGrad.addColorStop(0, '#38bdf8');
+      skyGrad.addColorStop(0.7, '#93c5fd');
+      skyGrad.addColorStop(1, '#60a5fa');
     }
 
     ctx.fillStyle = skyGrad;
@@ -51,13 +63,25 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
-    const grassR = theme === 'ISLAND' ? 34 : theme === 'CAVERN' ? 71 : theme === 'FORTRESS' ? 132 : 168;
-    const grassG = theme === 'ISLAND' ? 197 : theme === 'CAVERN' ? 85 : theme === 'FORTRESS' ? 204 : 85;
-    const grassB = theme === 'ISLAND' ? 94 : theme === 'CAVERN' ? 105 : theme === 'FORTRESS' ? 22 : 247;
+    let grassR = 34, grassG = 197, grassB = 94;
+    let rockR = 120, rockG = 53, rockB = 15;
 
-    const rockR = theme === 'ISLAND' ? 120 : theme === 'CAVERN' ? 30 : theme === 'FORTRESS' ? 82 : 46;
-    const rockG = theme === 'ISLAND' ? 53 : theme === 'CAVERN' ? 27 : theme === 'FORTRESS' ? 82 : 16;
-    const rockB = theme === 'ISLAND' ? 15 : theme === 'CAVERN' ? 75 : theme === 'FORTRESS' ? 91 : 101;
+    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
+      grassR = 71; grassG = 85; grassB = 105;
+      rockR = 30; rockG = 27; rockB = 75;
+    } else if (theme === 'NATURAL_ARCHES') {
+      grassR = 217; grassG = 119; grassB = 6;
+      rockR = 154; rockG = 52; rockB = 18;
+    } else if (theme === 'SPIRES') {
+      grassR = 129; grassG = 140; grassB = 248;
+      rockR = 49; rockG = 46; rockB = 129;
+    } else if (theme === 'FORTRESS') {
+      grassR = 132; grassG = 204; grassB = 22;
+      rockR = 82; rockG = 82; rockB = 91;
+    } else if (theme === 'FLOATING_CHAOS') {
+      grassR = 168; grassG = 85; grassB = 247;
+      rockR = 46; rockG = 16; rockB = 101;
+    }
 
     for (let py = 0; py < previewH; py++) {
       const srcY = Math.floor((py / previewH) * height);
