@@ -222,62 +222,61 @@ class SoundEffects {
         snapOsc.stop(now + 0.08);
 
       } else if (resolvedType === 'fire') {
-        // Heavy Explosive Rocket / Missile Tube Ignition & Recoil Blast
+        // Arcade / Cartoon Punchy Rocket Launch ("PWHOOOM / FIOU-CRACK")
 
-        // Layer 1: Saturated Launch Tube Detonation & Muzzle Pop (260Hz -> 55Hz punch)
+        // Layer 1: Snappy Arcade Cannon Pop (620Hz -> 110Hz bright transient punch)
         const popOsc = ctx.createOscillator();
         const popGain = ctx.createGain();
-        const shaper = ctx.createWaveShaper();
-        shaper.curve = DISTORTION_CURVE;
-        shaper.oversample = '2x';
-
         popOsc.type = 'sawtooth';
-        popOsc.frequency.setValueAtTime(260 * pitchRatio, now);
-        popOsc.frequency.exponentialRampToValueAtTime(55 * pitchRatio, now + 0.12);
+        popOsc.frequency.setValueAtTime(620 * pitchRatio, now);
+        popOsc.frequency.exponentialRampToValueAtTime(110 * pitchRatio, now + 0.14);
 
-        popGain.gain.setValueAtTime(0.9, now);
-        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        popGain.gain.setValueAtTime(0.85, now);
+        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
 
-        popOsc.connect(shaper);
-        shaper.connect(popGain);
+        popOsc.connect(popGain);
         popGain.connect(dest);
         popOsc.start(now);
-        popOsc.stop(now + 0.15);
+        popOsc.stop(now + 0.16);
 
-        // Layer 2: Heavy Artillery Sub-Thump Kick (85Hz -> 28Hz)
-        const kickOsc = ctx.createOscillator();
-        const kickGain = ctx.createGain();
-        kickOsc.type = 'sine';
-        kickOsc.frequency.setValueAtTime(95 * pitchRatio, now);
-        kickOsc.frequency.exponentialRampToValueAtTime(28 * pitchRatio, now + 0.18);
+        // Layer 2: Arcade Rocket Thruster "FIOUUU" Jet Sweep (1100Hz -> 260Hz with resonant bandpass)
+        const jetOsc = ctx.createOscillator();
+        const jetGain = ctx.createGain();
+        const jetFilter = ctx.createBiquadFilter();
 
-        kickGain.gain.setValueAtTime(1.0, now);
-        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        jetOsc.type = 'triangle';
+        jetOsc.frequency.setValueAtTime(1100 * pitchRatio, now);
+        jetOsc.frequency.exponentialRampToValueAtTime(260 * pitchRatio, now + 0.22);
 
-        kickOsc.connect(kickGain);
-        kickGain.connect(dest);
-        kickOsc.start(now);
-        kickOsc.stop(now + 0.18);
+        jetFilter.type = 'bandpass';
+        jetFilter.frequency.setValueAtTime(1200 * pitchRatio, now);
+        jetFilter.frequency.exponentialRampToValueAtTime(320 * pitchRatio, now + 0.22);
+        jetFilter.Q.setValueAtTime(3.5, now);
 
-        // Layer 3: High-Energy Fiery Propellant Ignition Crackle (Short sharp 80ms combustion burst)
-        const crackleBuffer = this.createBrownNoiseBuffer(ctx, 0.12);
-        const crackleSource = ctx.createBufferSource();
-        crackleSource.buffer = crackleBuffer;
+        jetGain.gain.setValueAtTime(0.75, now);
+        jetGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
 
-        const bpf = ctx.createBiquadFilter();
-        bpf.type = 'lowpass';
-        bpf.frequency.setValueAtTime(2800 * pitchRatio, now);
-        bpf.frequency.exponentialRampToValueAtTime(350 * pitchRatio, now + 0.11);
-        bpf.Q.setValueAtTime(4.0, now);
+        jetOsc.connect(jetFilter);
+        jetFilter.connect(jetGain);
+        jetGain.connect(dest);
+        jetOsc.start(now);
+        jetOsc.stop(now + 0.24);
 
-        const cGain = ctx.createGain();
-        cGain.gain.setValueAtTime(0.85, now);
-        cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        // Layer 3: Punchy Mid-Bass Body (220Hz -> 65Hz)
+        const thumpOsc = ctx.createOscillator();
+        const thumpGain = ctx.createGain();
+        thumpOsc.type = 'sine';
+        thumpOsc.frequency.setValueAtTime(220 * pitchRatio, now);
+        thumpOsc.frequency.exponentialRampToValueAtTime(65 * pitchRatio, now + 0.18);
 
-        crackleSource.connect(bpf);
-        bpf.connect(cGain);
-        cGain.connect(dest);
-        crackleSource.start(now);
+        thumpGain.gain.setValueAtTime(0.9, now);
+        thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+        thumpOsc.connect(thumpGain);
+        thumpGain.connect(dest);
+        thumpOsc.start(now);
+        thumpOsc.stop(now + 0.18);
+
 
       } else if (resolvedType === 'grenade_throw') {
         // Metallic Pin Pull + Arm Swing Whoosh (80ms)
