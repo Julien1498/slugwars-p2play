@@ -222,62 +222,66 @@ class SoundEffects {
         snapOsc.stop(now + 0.08);
 
       } else if (resolvedType === 'fire') {
-        // Pure Arcade Cannon / Bazooka Explosive Blast (BANG! - Zero arrow whistle)
+        // Juicy Cartoon Arcade Bazooka / Cannon ("KA-THUMP / P-TOUM")
 
-        // Layer 1: Gunpowder / Propellant Muzzle Detonation (Noise Burst with Fast Filter Sweep)
-        const blastBuffer = this.createPinkNoiseBuffer(ctx, 0.18);
-        const blastSource = ctx.createBufferSource();
-        blastSource.buffer = blastBuffer;
+        // Layer 1: Juicy Cartoon Cannon Pop (380Hz -> 85Hz -> 42Hz rounded punch)
+        const popOsc = ctx.createOscillator();
+        const popGain = ctx.createGain();
+        popOsc.type = 'sine';
+        popOsc.frequency.setValueAtTime(380 * pitchRatio, now);
+        popOsc.frequency.exponentialRampToValueAtTime(85 * pitchRatio, now + 0.08);
+        popOsc.frequency.exponentialRampToValueAtTime(42 * pitchRatio, now + 0.2);
 
-        const blastFilter = ctx.createBiquadFilter();
-        blastFilter.type = 'lowpass';
-        blastFilter.frequency.setValueAtTime(3600 * pitchRatio, now);
-        blastFilter.frequency.exponentialRampToValueAtTime(180 * pitchRatio, now + 0.14);
-        blastFilter.Q.setValueAtTime(2.0, now);
+        popGain.gain.setValueAtTime(1.0, now);
+        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
-        const blastGain = ctx.createGain();
-        blastGain.gain.setValueAtTime(1.0, now);
-        blastGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        popOsc.connect(popGain);
+        popGain.connect(dest);
+        popOsc.start(now);
+        popOsc.stop(now + 0.22);
 
-        blastSource.connect(blastFilter);
-        blastFilter.connect(blastGain);
-        blastGain.connect(dest);
-        blastSource.start(now);
+        // Layer 2: Warm Explosive Muzzle Puff (Soft 1600Hz -> 90Hz warm noise)
+        const puffBuffer = this.createPinkNoiseBuffer(ctx, 0.16);
+        const puffSource = ctx.createBufferSource();
+        puffSource.buffer = puffBuffer;
 
-        // Layer 2: Heavy Saturated Cannon Recoil Punch (180Hz -> 48Hz with WaveShaper Overdrive)
-        const punchOsc = ctx.createOscillator();
-        const punchGain = ctx.createGain();
-        const shaper = ctx.createWaveShaper();
-        shaper.curve = DISTORTION_CURVE;
-        shaper.oversample = '2x';
+        const puffFilter = ctx.createBiquadFilter();
+        puffFilter.type = 'lowpass';
+        puffFilter.frequency.setValueAtTime(1600 * pitchRatio, now);
+        puffFilter.frequency.exponentialRampToValueAtTime(90 * pitchRatio, now + 0.14);
+        puffFilter.Q.setValueAtTime(1.8, now);
 
-        punchOsc.type = 'triangle';
-        punchOsc.frequency.setValueAtTime(180 * pitchRatio, now);
-        punchOsc.frequency.exponentialRampToValueAtTime(48 * pitchRatio, now + 0.16);
+        const puffGain = ctx.createGain();
+        puffGain.gain.setValueAtTime(0.8, now);
+        puffGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
 
-        punchGain.gain.setValueAtTime(1.0, now);
-        punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        puffSource.connect(puffFilter);
+        puffFilter.connect(puffGain);
+        puffGain.connect(dest);
+        puffSource.start(now);
 
-        punchOsc.connect(shaper);
-        shaper.connect(punchGain);
-        punchGain.connect(dest);
-        punchOsc.start(now);
-        punchOsc.stop(now + 0.18);
+        // Layer 3: Resonant Bazooka Launch Tube Body (320Hz hollow resonance)
+        const tubeOsc = ctx.createOscillator();
+        const tubeGain = ctx.createGain();
+        const tubeFilter = ctx.createBiquadFilter();
 
-        // Layer 3: Sharp Firing Pin / Trigger Strike (12ms transient snap)
-        const clickOsc = ctx.createOscillator();
-        const clickGain = ctx.createGain();
-        clickOsc.type = 'square';
-        clickOsc.frequency.setValueAtTime(750 * pitchRatio, now);
-        clickOsc.frequency.exponentialRampToValueAtTime(120 * pitchRatio, now + 0.04);
+        tubeOsc.type = 'triangle';
+        tubeOsc.frequency.setValueAtTime(280 * pitchRatio, now);
+        tubeOsc.frequency.exponentialRampToValueAtTime(60 * pitchRatio, now + 0.12);
 
-        clickGain.gain.setValueAtTime(0.6, now);
-        clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        tubeFilter.type = 'bandpass';
+        tubeFilter.frequency.setValueAtTime(340 * pitchRatio, now);
+        tubeFilter.Q.setValueAtTime(3.0, now);
 
-        clickOsc.connect(clickGain);
-        clickGain.connect(dest);
-        clickOsc.start(now);
-        clickOsc.stop(now + 0.04);
+        tubeGain.gain.setValueAtTime(0.7, now);
+        tubeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        tubeOsc.connect(tubeFilter);
+        tubeFilter.connect(tubeGain);
+        tubeGain.connect(dest);
+        tubeOsc.start(now);
+        tubeOsc.stop(now + 0.15);
+
 
 
 
