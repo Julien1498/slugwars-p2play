@@ -222,65 +222,74 @@ class SoundEffects {
         snapOsc.stop(now + 0.08);
 
       } else if (resolvedType === 'fire') {
-        // Juicy Cartoon Arcade Bazooka / Cannon ("KA-THUMP / P-TOUM")
+        // 16-Bit Arcade Bazooka Blast (SNES / Genesis Style "K-PWAM / BOOM")
 
-        // Layer 1: Juicy Cartoon Cannon Pop (380Hz -> 85Hz -> 42Hz rounded punch)
-        const popOsc = ctx.createOscillator();
-        const popGain = ctx.createGain();
-        popOsc.type = 'sine';
-        popOsc.frequency.setValueAtTime(380 * pitchRatio, now);
-        popOsc.frequency.exponentialRampToValueAtTime(85 * pitchRatio, now + 0.08);
-        popOsc.frequency.exponentialRampToValueAtTime(42 * pitchRatio, now + 0.2);
+        // Layer 1: 16-Bit FM Arcade Crunch Punch (Modulated Sawtooth 380Hz -> 55Hz)
+        const carrier = ctx.createOscillator();
+        const mod = ctx.createOscillator();
+        const modGain = ctx.createGain();
+        const fmGain = ctx.createGain();
 
-        popGain.gain.setValueAtTime(1.0, now);
-        popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        mod.type = 'sawtooth';
+        mod.frequency.setValueAtTime(140 * pitchRatio, now);
+        mod.frequency.exponentialRampToValueAtTime(35 * pitchRatio, now + 0.12);
 
-        popOsc.connect(popGain);
-        popGain.connect(dest);
-        popOsc.start(now);
-        popOsc.stop(now + 0.22);
+        modGain.gain.setValueAtTime(160 * pitchRatio, now);
+        modGain.gain.exponentialRampToValueAtTime(1, now + 0.12);
 
-        // Layer 2: Warm Explosive Muzzle Puff (Soft 1600Hz -> 90Hz warm noise)
-        const puffBuffer = this.createPinkNoiseBuffer(ctx, 0.16);
-        const puffSource = ctx.createBufferSource();
-        puffSource.buffer = puffBuffer;
+        mod.connect(modGain);
+        modGain.connect(carrier.frequency);
 
-        const puffFilter = ctx.createBiquadFilter();
-        puffFilter.type = 'lowpass';
-        puffFilter.frequency.setValueAtTime(1600 * pitchRatio, now);
-        puffFilter.frequency.exponentialRampToValueAtTime(90 * pitchRatio, now + 0.14);
-        puffFilter.Q.setValueAtTime(1.8, now);
+        carrier.type = 'sawtooth';
+        carrier.frequency.setValueAtTime(380 * pitchRatio, now);
+        carrier.frequency.exponentialRampToValueAtTime(55 * pitchRatio, now + 0.16);
 
-        const puffGain = ctx.createGain();
-        puffGain.gain.setValueAtTime(0.8, now);
-        puffGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        fmGain.gain.setValueAtTime(0.65, now);
+        fmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-        puffSource.connect(puffFilter);
-        puffFilter.connect(puffGain);
-        puffGain.connect(dest);
-        puffSource.start(now);
+        carrier.connect(fmGain);
+        fmGain.connect(dest);
 
-        // Layer 3: Resonant Bazooka Launch Tube Body (320Hz hollow resonance)
-        const tubeOsc = ctx.createOscillator();
-        const tubeGain = ctx.createGain();
-        const tubeFilter = ctx.createBiquadFilter();
+        mod.start(now);
+        carrier.start(now);
+        mod.stop(now + 0.18);
+        carrier.stop(now + 0.18);
 
-        tubeOsc.type = 'triangle';
-        tubeOsc.frequency.setValueAtTime(280 * pitchRatio, now);
-        tubeOsc.frequency.exponentialRampToValueAtTime(60 * pitchRatio, now + 0.12);
+        // Layer 2: 16-Bit Arcade Resonant Noise Burst (2400Hz -> 110Hz sweep)
+        const noiseBuffer = this.createPinkNoiseBuffer(ctx, 0.18);
+        const noiseSource = ctx.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
 
-        tubeFilter.type = 'bandpass';
-        tubeFilter.frequency.setValueAtTime(340 * pitchRatio, now);
-        tubeFilter.Q.setValueAtTime(3.0, now);
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(2400 * pitchRatio, now);
+        noiseFilter.frequency.exponentialRampToValueAtTime(110 * pitchRatio, now + 0.15);
+        noiseFilter.Q.setValueAtTime(2.8, now);
 
-        tubeGain.gain.setValueAtTime(0.7, now);
-        tubeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.85, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-        tubeOsc.connect(tubeFilter);
-        tubeFilter.connect(tubeGain);
-        tubeGain.connect(dest);
-        tubeOsc.start(now);
-        tubeOsc.stop(now + 0.15);
+        noiseSource.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(dest);
+        noiseSource.start(now);
+
+        // Layer 3: Punchy Sub-Bass Body (180Hz -> 45Hz)
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'sine';
+        bassOsc.frequency.setValueAtTime(180 * pitchRatio, now);
+        bassOsc.frequency.exponentialRampToValueAtTime(45 * pitchRatio, now + 0.2);
+
+        bassGain.gain.setValueAtTime(0.9, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(dest);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.22);
+
 
 
 
