@@ -138,13 +138,8 @@ export function generateProceduralTerrain(
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.2) * 350;
       groundY = height * 0.56 + noise + spireHarmonic + edgeDrop;
     } else if (theme === 'ORGANIC_CAVES') {
-      // Deep subterranean body prepared for continuous winding Perlin Digger networks
-      const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3) * 0.5;
-      groundY = height * 0.68 + noise;
-      const roofY = height * 0.18 + prng.harmonicNoise(x, baseFreq * 1.5, p3, p1, p2) * 0.5;
-      for (let y = 0; y < Math.min(height, Math.max(0, Math.floor(roofY))); y++) {
-        grid[y * width + x] = 1;
-      }
+      // Solid massive subterranean rock slab (Swiss cheese / ant-farm labyrinth)
+      groundY = 16;
     } else if (theme === 'FLOATING_CHAOS') {
       const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
       const channel = Math.sin(x * 0.007 + p2) * 200;
@@ -162,7 +157,7 @@ export function generateProceduralTerrain(
   }
 
   // 2. Organic Cave Networks, Tunnels & Archways
-  const caveCount = theme === 'CAVERN' ? 24 : theme === 'ORGANIC_CAVES' ? 8 : 14;
+  const caveCount = theme === 'CAVERN' ? 24 : theme === 'ORGANIC_CAVES' ? 0 : 14;
   for (let i = 0; i < caveCount; i++) {
     const cx = Math.floor(prng.range(140, width - 140));
     const cy = Math.floor(prng.range(180, waterLevel - 90));
@@ -201,27 +196,31 @@ export function generateProceduralTerrain(
 
   // 2.6 Multi-Agent Continuous Perlin Tactical Artillery Tunnel Network (for ORGANIC_CAVES theme)
   if (theme === 'ORGANIC_CAVES') {
-    const diggerCount = 5;
+    // Swarm of 10 narrow, winding underground tactical artillery (radius 13 to 20px) creating tight labyrinthine tunnels
+    const diggerCount = 10;
     for (let w = 0; w < diggerCount; w++) {
-      let wx = prng.range(width * 0.15, width * 0.85);
-      let wy = prng.range(height * 0.28, waterLevel - 90);
+      let wx = prng.range(width * 0.1, width * 0.9);
+      let wy = prng.range(50, waterLevel - 60);
       let angle = prng.range(0, Math.PI * 2);
-      const steps = Math.floor(prng.range(90, 140));
+      const steps = Math.floor(prng.range(120, 220));
 
       for (let s = 0; s < steps; s++) {
-        angle += (prng.next() - 0.5) * 0.45;
-        const speed = prng.range(4, 7);
+        angle += (prng.next() - 0.5) * 0.5;
+        const speed = prng.range(3.5, 6);
         wx += Math.cos(angle) * speed;
         wy += Math.sin(angle) * speed;
 
-        if (wx < 80 || wx > width - 80 || wy < 40 || wy > waterLevel - 40) {
-          angle += Math.PI * 0.5;
+        if (wx < 60 || wx > width - 60 || wy < 32 || wy > waterLevel - 35) {
+          angle += Math.PI * 0.5 + (prng.next() - 0.5) * 0.3;
+          wx = Math.max(65, Math.min(width - 65, wx));
+          wy = Math.max(35, Math.min(waterLevel - 40, wy));
         }
 
-        const diggerRadius = Math.floor(prng.range(22, 36));
+        // Tight tunnel radius (radius 13 to 20px -> diameter 26 to 40px)
+        const diggerRadius = Math.floor(prng.range(13, 20));
         const minX = Math.max(0, Math.floor(wx - diggerRadius));
         const maxX = Math.min(width - 1, Math.ceil(wx + diggerRadius));
-        const minY = Math.max(0, Math.floor(wy - diggerRadius));
+        const minY = Math.max(17, Math.floor(wy - diggerRadius)); // Preserve bedrock ceiling
         const maxY = Math.min(height - 1, Math.ceil(wy + diggerRadius));
 
         for (let y = minY; y <= maxY; y++) {
@@ -236,10 +235,28 @@ export function generateProceduralTerrain(
         }
       }
     }
+
+    // 4 small intersection crossroad chambers (radius 22 to 28px)
+    const hubCount = 4;
+    for (let h = 0; h < hubCount; h++) {
+      const hx = prng.range(width * 0.2, width * 0.8);
+      const hy = prng.range(80, waterLevel - 80);
+      const hr = prng.range(22, 28);
+      for (let y = Math.max(17, Math.floor(hy - hr)); y <= Math.min(height - 1, Math.ceil(hy + hr)); y++) {
+        const dy = y - hy;
+        const rowOffset = y * width;
+        for (let x = Math.max(0, Math.floor(hx - hr)); x <= Math.min(width - 1, Math.ceil(hx + hr)); x++) {
+          const dx = x - hx;
+          if (dx * dx + dy * dy <= hr * hr) {
+            grid[rowOffset + x] = 0;
+          }
+        }
+      }
+    }
   }
 
   // 3. Floating Rock Islands / Ledges in Sky / Cavern
-  const floatingIslandCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 6 : theme === 'ARCHIPELAGO' ? 5 : 4;
+  const floatingIslandCount = theme === 'CAVERN' ? 6 : theme === 'ORGANIC_CAVES' ? 0 : theme === 'ARCHIPELAGO' ? 5 : 4;
   for (let i = 0; i < floatingIslandCount; i++) {
     const fx = Math.floor(prng.range(200, width - 200));
     const fy = Math.floor(prng.range(160, 320));
@@ -270,7 +287,8 @@ export function generateProceduralTerrain(
   // 4. Safe Spawn Points Generator
   const spawnPoints: Vector2D[] = [];
   const step = Math.floor((width - 240) / 14);
-  const searchStartY = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 120 : 40;
+  const searchStartY = theme === 'CAVERN' ? 120 : theme === 'ORGANIC_CAVES' ? 35 : 40;
+  const minHeadroom = theme === 'ORGANIC_CAVES' ? 12 : 22;
 
   for (let x = 120; x < width - 120; x += step) {
     for (let y = searchStartY; y < waterLevel - 30; y++) {
@@ -279,7 +297,7 @@ export function generateProceduralTerrain(
         for (let checkY = y - 1; checkY >= Math.max(0, y - 30); checkY--) {
           if (grid[checkY * width + x] === 0) openHeadroom++;
         }
-        if (openHeadroom >= 22) {
+        if (openHeadroom >= minHeadroom) {
           spawnPoints.push({ x, y: y - 10 });
           break;
         }
@@ -381,7 +399,7 @@ export function generateProceduralTerrain(
   };
 
   // 1. Fortified Concrete Bunkers (1-2 bunkers on hills or fortresses)
-  const bunkerCount = Math.floor(prng.range(1, 3));
+  const bunkerCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < bunkerCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const bx = Math.floor(prng.range(160 + i * 420, 380 + i * 420));
@@ -400,7 +418,7 @@ export function generateProceduralTerrain(
   }
 
   // 2. Ancient Moai / Tiki Totem Idols (1-2 totems)
-  const totemCount = Math.floor(prng.range(1, 3));
+  const totemCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < totemCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const tx = Math.floor(prng.range(220 + i * 460, 460 + i * 460));
@@ -419,7 +437,7 @@ export function generateProceduralTerrain(
   }
 
   // 3. Saguaro Wild West Cacti (2-4 cacti on hills)
-  const cactusCount = Math.floor(prng.range(2, 4));
+  const cactusCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(2, 4));
   for (let i = 0; i < cactusCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const cx = Math.floor(prng.range(120, width - 120));
@@ -438,7 +456,7 @@ export function generateProceduralTerrain(
   }
 
   // 4. Luminous Crystal Geodes (3-5 glowing crystal clusters)
-  const crystalCount = Math.floor(prng.range(3, 5));
+  const crystalCount = theme === 'ORGANIC_CAVES' ? 6 : Math.floor(prng.range(3, 5));
   for (let i = 0; i < crystalCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
@@ -457,7 +475,7 @@ export function generateProceduralTerrain(
   }
 
   // 5. Industrial Hazard Oil Drums (2-3 barrels)
-  const drumCount = Math.floor(prng.range(2, 4));
+  const drumCount = theme === 'ORGANIC_CAVES' ? 5 : Math.floor(prng.range(2, 4));
   for (let i = 0; i < drumCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const dx = Math.floor(prng.range(140, width - 140));
@@ -476,7 +494,7 @@ export function generateProceduralTerrain(
   }
 
   // 6. Vintage Street Lampposts (1-2 lampposts)
-  const lampCount = Math.floor(prng.range(1, 3));
+  const lampCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < lampCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const lx = Math.floor(prng.range(150, width - 150));
@@ -495,7 +513,7 @@ export function generateProceduralTerrain(
   }
 
   // 7. Trees (2-4 trees)
-  const treeCount = Math.floor(prng.range(2, 5));
+  const treeCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(2, 5));
   for (let i = 0; i < treeCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const tx = Math.floor(prng.range(120 + i * 220, 280 + i * 220));
@@ -514,7 +532,7 @@ export function generateProceduralTerrain(
   }
 
   // 8. Hedgehogs (1-2 hedgehogs)
-  const hedgehogCount = Math.floor(prng.range(1, 3));
+  const hedgehogCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < hedgehogCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
@@ -533,7 +551,7 @@ export function generateProceduralTerrain(
   }
 
   // 9. Chicks (1-2 chicks)
-  const chickCount = Math.floor(prng.range(1, 3));
+  const chickCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
   for (let i = 0; i < chickCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
@@ -552,7 +570,7 @@ export function generateProceduralTerrain(
   }
 
   // 10. Mushrooms (4-6 mushrooms)
-  const mushroomCount = Math.floor(prng.range(4, 7));
+  const mushroomCount = theme === 'ORGANIC_CAVES' ? 8 : Math.floor(prng.range(4, 7));
   for (let i = 0; i < mushroomCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
@@ -571,7 +589,7 @@ export function generateProceduralTerrain(
   }
 
   // 11. Flowers (5-8 flowers)
-  const flowerCount = Math.floor(prng.range(5, 9));
+  const flowerCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(5, 9));
   for (let i = 0; i < flowerCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const fx = Math.floor(prng.range(80, width - 80));
@@ -580,7 +598,7 @@ export function generateProceduralTerrain(
       let placed = false;
       for (let fy = searchStartY; fy < waterLevel - 20; fy++) {
         if (grid[fy * width + fx] === 1 && grid[(fy - 1) * width + fx] === 0) {
-          stampSolidProp('flower', fx, fy, 18, 24, Math.floor(prng.range(0, 4)));
+          stampSolidProp('flower', fx, fy, 20, 24, Math.floor(prng.range(0, 4)));
           placed = true;
           break;
         }
@@ -593,7 +611,7 @@ export function generateProceduralTerrain(
   const decorItems: DecorItem[] = [];
 
   // Hanging Leaf Roots under ceiling overhangs (10-16 leaves)
-  const leafCount = Math.floor(prng.range(10, 16));
+  const leafCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 8 : 4;
   for (let i = 0; i < leafCount; i++) {
     const lx = Math.floor(prng.range(100, width - 100));
     for (let ly = searchStartY + 40; ly < waterLevel - 100; ly++) {
@@ -611,7 +629,7 @@ export function generateProceduralTerrain(
   }
 
   // Floating Butterflies in sky (5-8 butterflies)
-  const bCount = Math.floor(prng.range(5, 8));
+  const bCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(5, 8));
   for (let i = 0; i < bCount; i++) {
     decorItems.push({
       id: `bfly_${i}`,
