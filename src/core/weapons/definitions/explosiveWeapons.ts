@@ -40,11 +40,12 @@ export const homingMissileWeapon: WeaponDefinition = {
   category: 'EXPLOSIVE',
   behavior: 'STEERABLE',
   icon: '🎯',
-  description: 'Posez la cible au Clic Droit, ajustez l\'angle et chargez la puissance au Clic Gauche ! La roquette s\'élance puis se réoriente vers la cible !',
+  description: 'Posez la cible au Clic Droit, ajustez l\'angle et chargez la puissance au Clic Gauche / Entrée ! La roquette s\'élance balistiquement puis se réoriente vers la cible.',
   damage: 55,
   radius: 45,
   defaultAmmo: 3,
   requiresTarget: true,
+  chargeable: true,
   windAffected: false,
   bounces: false,
   craftable: true,
@@ -52,6 +53,7 @@ export const homingMissileWeapon: WeaponDefinition = {
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
     const speed = (ctx.power / 100) * 16 + 4;
+    const homingDelayMs = Math.round(250 + (ctx.power / 100) * 450);
     return [
       {
         id: `proj_${Date.now()}_${Math.random()}`,
@@ -65,7 +67,7 @@ export const homingMissileWeapon: WeaponDefinition = {
         windAffected: false,
         ownerSlugId: ctx.ownerSlugId,
         targetPoint: ctx.targetPoint,
-        behaviorData: { homingDelayMs: 400 },
+        behaviorData: { homingDelayMs },
       },
     ];
   },

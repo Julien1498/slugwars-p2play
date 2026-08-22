@@ -516,5 +516,41 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(heli.pilotSlugId).toBe(otherSlug.id);
     expect(otherSlug.inVehicleId).toBe(heli.id);
   });
+
+  it('charges homing missile and scales initial launch velocity and ballistic delay with power', () => {
+    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['homing_missile'] = 3;
+    engine.selectWeapon('homing_missile');
+
+    const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    activeSlug.currentTargetPoint = { x: 800, y: 300 };
+
+    // Start charging homing missile
+    engine.startCharge();
+    expect(activeSlug.isChargingPower).toBe(true);
+
+    // Simulate charging up to 80% power
+    activeSlug.aimPower = 80;
+    engine.releaseCharge();
+
+    expect(activeSlug.isChargingPower).toBe(false);
+    expect(engine.state.projectiles.length).toBe(1);
+
+    const missile = engine.state.projectiles[0];
+    expect(missile.weaponId).toBe('homing_missile');
+    expect(missile.targetPoint).toEqual({ x: 800, y: 300 });
+
+    // Initial speed at 80% power: (80/100)*16 + 4 = 16.8 px/tick
+    const launchSpeed = Math.hypot(missile.vx, missile.vy);
+    expect(launchSpeed).toBeGreaterThan(15);
+    // Initial delay before homing kicks in: 250 + (80/100)*450 = 610ms
+    expect(missile.behaviorData?.homingDelayMs).toBe(610);
+  });
 });
 

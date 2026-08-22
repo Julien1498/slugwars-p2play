@@ -313,7 +313,7 @@ export function fireWeapon(
     angleDeg: activeSlug.facing === 'right' ? -activeSlug.aimAngle : 180 + activeSlug.aimAngle,
     power: activeSlug.aimPower,
     ownerSlugId: activeSlug.id,
-    targetPoint,
+    targetPoint: effectiveTargetPoint,
     fuseTimerMs: customFuseMs,
   });
 
