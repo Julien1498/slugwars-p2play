@@ -60,16 +60,16 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     seam: 0xff03050c,         // #0c0503 Mineral seam
   },
   SPIRES: {
-    highlight: 0xfffef08a,    // #8af0fe Glacial frost highlight
-    surfaceBody: 0xfff88c81,  // #818cf8 Cool mountain slate
-    surfaceShadow: 0xffca3843,// #4338ca Deep granite
-    surfaceDeep: 0xff812e31,  // #312e81 Dark alpine stone
-    soilLight: 0xff50352a,    // #2a3550 Weathered rock
-    strataA: 0xff3d2920,      // #20293d Cold shale stratum
-    strataB: 0xff2c1e17,      // #171e2c Dark slate band
-    denseRock: 0xff1e1510,    // #10151e Deep mountain core
-    bedrock: 0xff120d0a,      // #0a0d12 Abyssal granite
-    seam: 0xff0a0705,         // #05070a Black fissure
+    highlight: 0xff86efac,    // #acef86 Alpine grass rim
+    surfaceBody: 0xff22c55e,  // #5ec522 Mountain meadow green
+    surfaceShadow: 0xff15803d,// #3d8015 Rich pine forest green shadow
+    surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
+    soilLight: 0xff64748b,    // #8b7464 Classic granite mountain stone
+    strataA: 0xff475569,      // #695547 Stratified mountain slate
+    strataB: 0xff334155,      // #554133 Dark granite layer
+    denseRock: 0xff1e293b,    // #3b291e Deep mountain bedrock
+    bedrock: 0xff0f172a,      // #2a170f Abyssal mountain core
+    seam: 0xff080d17,         // #170d08 Subtle granite fissure
   },
   CAVERN: {
     highlight: 0xffcbd5e1,    // #e1d5cb Pale subterranean crust
@@ -84,16 +84,16 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     seam: 0xff050407,         // #070405 Deep cave fissure
   },
   WORM_CAVES: {
-    highlight: 0xff22d3ee,    // #eed322 Glowing sulfur rim
-    surfaceBody: 0xff0284c7,  // #c78402 Scorched volcanic rock
-    surfaceShadow: 0xff0369a1,// #a16903 Burnt amber rock
-    surfaceDeep: 0xff042f49,  // #492f04 Dark basalt
-    soilLight: 0xff071527,    // #271507 Obsidian soil
-    strataA: 0xff0f0c24,      // #240c0f Crimson/magma stratum
-    strataB: 0xff0c091c,      // #1c090c Deep scorched stratum
-    denseRock: 0xff080614,    // #140608 Heavy molten crust
-    bedrock: 0xff04030a,      // #0a0304 Abyssal magma bedrock
-    seam: 0xff0045e0,         // #e04500 Glowing magma vein!
+    highlight: 0xff475569,    // #695547 Soft slate highlight rim
+    surfaceBody: 0xff334155,  // #554133 Dark stone body
+    surfaceShadow: 0xff1e293b,// #3b291e Deep shadow
+    surfaceDeep: 0xff0f172a,  // #2a170f Subterranean edge
+    soilLight: 0xff161a24,    // #241a16 Deep charcoal rock
+    strataA: 0xff11141c,      // #1c1411 Dark shale stratum
+    strataB: 0xff0d0f15,      // #150f0d Deep dark rock band
+    denseRock: 0xff08090d,    // #0d0908 Abyssal dark stone
+    bedrock: 0xff040507,      // #070504 Solid subterranean bedrock
+    seam: 0xff020304,         // #040302 Seamless subtle dark micro-crevice (Zero eye strain)
   },
   FORTRESS: {
     highlight: 0xffa3e635,    // #35e6a3 Rampart moss

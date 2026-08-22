@@ -80,20 +80,20 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
       rockRGB = [32, 19, 23];
       bedrockRGB = [14, 8, 10];
     } else if (theme === 'WORM_CAVES') {
-      surfaceRGB = [238, 211, 34];
-      topsoilRGB = [199, 132, 2];
-      rockRGB = [36, 12, 15];
-      bedrockRGB = [10, 3, 4];
+      surfaceRGB = [71, 85, 105];
+      topsoilRGB = [30, 41, 59];
+      rockRGB = [17, 20, 28];
+      bedrockRGB = [7, 8, 12];
     } else if (theme === 'NATURAL_ARCHES') {
       surfaceRGB = [245, 155, 8];
       topsoilRGB = [194, 65, 12];
       rockRGB = [69, 34, 20];
       bedrockRGB = [23, 10, 6];
     } else if (theme === 'SPIRES') {
-      surfaceRGB = [129, 140, 248];
-      topsoilRGB = [67, 56, 202];
-      rockRGB = [32, 41, 61];
-      bedrockRGB = [10, 13, 18];
+      surfaceRGB = [34, 197, 94];
+      topsoilRGB = [100, 116, 139];
+      rockRGB = [51, 65, 85];
+      bedrockRGB = [15, 23, 42];
     } else if (theme === 'FORTRESS') {
       surfaceRGB = [163, 230, 53];
       topsoilRGB = [184, 163, 148];

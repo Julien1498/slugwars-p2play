@@ -13,7 +13,6 @@ export interface SkyRenderContext {
   worldRight: number;
   worldTop: number;
   worldBottom: number;
-  cameraPanX?: number;
 }
 
 // Cached sky gradient
@@ -53,28 +52,31 @@ function getCachedBgWaterGradient(
   }
 
   const grad = ctx.createLinearGradient(0, waterY, 0, worldBottom);
-  if (isDay) {
-    if (theme === 'CAVERN') {
-      grad.addColorStop(0, '#d97706');
-      grad.addColorStop(0.3, '#9a3412');
-      grad.addColorStop(0.7, '#431407');
-      grad.addColorStop(1, '#170602');
-    } else {
-      grad.addColorStop(0, '#0284c7');
-      grad.addColorStop(0.25, '#0369a1');
-      grad.addColorStop(0.65, '#082f49');
-      grad.addColorStop(1, '#020617');
-    }
+  if (theme === 'WORM_CAVES' || theme === 'CAVERN') {
+    grad.addColorStop(0, '#78350f');
+    grad.addColorStop(0.35, '#451a03');
+    grad.addColorStop(0.75, '#1c0a02');
+    grad.addColorStop(1, '#0c0401');
+  } else if (theme === 'ARCHIPELAGO') {
+    grad.addColorStop(0, '#0284c7');
+    grad.addColorStop(0.35, '#0369a1');
+    grad.addColorStop(0.75, '#0c4a6e');
+    grad.addColorStop(1, '#082f49');
+  } else if (theme === 'NATURAL_ARCHES') {
+    grad.addColorStop(0, '#9a3412');
+    grad.addColorStop(0.35, '#7c2d12');
+    grad.addColorStop(0.75, '#431407');
+    grad.addColorStop(1, '#270a03');
+  } else if (theme === 'SPIRES') {
+    grad.addColorStop(0, '#0284c7');
+    grad.addColorStop(0.35, '#0369a1');
+    grad.addColorStop(0.75, '#0c4a6e');
+    grad.addColorStop(1, '#082f49');
   } else {
-    if (theme === 'CAVERN') {
-      grad.addColorStop(0, '#dc2626');
-      grad.addColorStop(0.35, '#7f1d1d');
-      grad.addColorStop(1, '#170602');
-    } else {
-      grad.addColorStop(0, '#0ea5e9');
-      grad.addColorStop(0.3, '#0f172a');
-      grad.addColorStop(1, '#020617');
-    }
+    grad.addColorStop(0, isDay ? '#0284c7' : '#0369a1');
+    grad.addColorStop(0.35, isDay ? '#0369a1' : '#0c4a6e');
+    grad.addColorStop(0.75, isDay ? '#0c4a6e' : '#082f49');
+    grad.addColorStop(1, isDay ? '#082f49' : '#041d2d');
   }
 
   _cachedBgWaterGrad = grad;
@@ -109,12 +111,12 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         skyGrad.addColorStop(0.85, '#f59e0b');
         skyGrad.addColorStop(1, '#fef08a');
       } else if (theme === 'SPIRES') {
-        // Alpine mist and moody violet sky
-        skyGrad.addColorStop(0, '#312e81');
-        skyGrad.addColorStop(0.35, '#4338ca');
-        skyGrad.addColorStop(0.70, '#6366f1');
-        skyGrad.addColorStop(0.90, '#a5b4fc');
-        skyGrad.addColorStop(1, '#e0e7ff');
+        // Alpine mountain clear azure sky
+        skyGrad.addColorStop(0, '#0284c7');
+        skyGrad.addColorStop(0.35, '#38bdf8');
+        skyGrad.addColorStop(0.70, '#7dd3fc');
+        skyGrad.addColorStop(0.90, '#bae6fd');
+        skyGrad.addColorStop(1, '#f0f9ff');
       } else if (theme === 'ARCHIPELAGO') {
         // Vibrant tropical turquoise lagoon sky
         skyGrad.addColorStop(0, '#0369a1');
@@ -151,10 +153,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         skyGrad.addColorStop(0.7, '#4c1d95');
         skyGrad.addColorStop(1, '#1e1b4b');
       } else if (theme === 'SPIRES') {
-        skyGrad.addColorStop(0, '#0f0a1e');
-        skyGrad.addColorStop(0.35, '#1e1b4b');
-        skyGrad.addColorStop(0.7, '#312e81');
-        skyGrad.addColorStop(1, '#1e293b');
+        skyGrad.addColorStop(0, '#020617');
+        skyGrad.addColorStop(0.35, '#0f172a');
+        skyGrad.addColorStop(0.7, '#1e293b');
+        skyGrad.addColorStop(1, '#334155');
       } else if (theme === 'ARCHIPELAGO') {
         skyGrad.addColorStop(0, '#02040a');
         skyGrad.addColorStop(0.35, '#071527');
@@ -185,9 +187,9 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   ctx.fillRect(worldLeft, worldTop, worldRight - worldLeft, waterY - worldTop);
 
 
-  // 2. Day & Night Atmospheric Particles & Clouds
+  // 2. Light Rays / Clouds / Atmosphere Particles
   if (isDay) {
-    if (theme === 'CAVERN') {
+    if (theme === 'CAVERN' || theme === 'WORM_CAVES') {
       ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
       for (let b = 0; b < 9; b++) {
         const bx = worldLeft + ((b * 750 + 400) % (worldRight - worldLeft));
@@ -227,7 +229,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   // 3. Iconic Celestial Focus (Sun / Moon / Rift / Searchlight)
   if (isDay) {
-    if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS') {
+    if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS' || theme === 'SPIRES' || theme === 'ARCHIPELAGO') {
       const sunX = width * 0.82;
       const sunY = height * 0.16;
       const sunR = 28;
@@ -267,7 +269,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.fill();
     }
   } else {
-    if (theme === 'ISLAND') {
+    if (theme === 'ISLAND' || theme === 'SPIRES' || theme === 'ARCHIPELAGO') {
       const moonX = width * 0.82;
       const moonY = height * 0.16;
       const moonR = 26;
@@ -329,15 +331,14 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       const beamX = width * 0.22;
       const beamY = height * 0.52;
       const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;
-      const beamLen = height * 0.85;
+      const beamLen = 900;
 
       ctx.save();
       ctx.translate(beamX, beamY);
       ctx.rotate(sweepAngle);
-
       const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLen);
-      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+      beamGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.12)');
       beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
       ctx.fillStyle = beamGrad;
       ctx.beginPath();
@@ -349,7 +350,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     }
   }
 
-  // 4. Parallax Mountain & Ridge Horizons (Theme-Specific Colors)
+  // 4. Background Mountain & Ridge Horizons (Theme-Specific Colors)
   const mtKey = `${height}_${waterY}_${theme}_${isDay}`;
   if (_cachedMtKey !== mtKey || !_cachedMtGrad) {
     const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
@@ -361,8 +362,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         mtGrad.addColorStop(0, 'rgba(194, 65, 12, 0.75)');
         mtGrad.addColorStop(1, 'rgba(124, 45, 18, 0.95)');
       } else if (theme === 'SPIRES') {
-        mtGrad.addColorStop(0, 'rgba(67, 56, 202, 0.75)');
-        mtGrad.addColorStop(1, 'rgba(49, 46, 129, 0.95)');
+        mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(30, 41, 59, 0.95)');
       } else if (theme === 'FORTRESS') {
         mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
         mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
@@ -381,8 +382,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         mtGrad.addColorStop(0, 'rgba(76, 29, 149, 0.85)');
         mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.95)');
       } else if (theme === 'SPIRES') {
-        mtGrad.addColorStop(0, 'rgba(30, 27, 75, 0.85)');
-        mtGrad.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
       } else if (theme === 'FORTRESS') {
         mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
         mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
@@ -398,40 +399,37 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     _cachedMtKey = mtKey;
   }
 
-  const pShift1 = (rc.cameraPanX || 0) * 0.25;
-  const pShift2 = (rc.cameraPanX || 0) * 0.45;
-
   ctx.fillStyle = _cachedMtGrad;
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
   for (let x = worldLeft; x <= worldRight + 40; x += 35) {
-    const sx = x - pShift1;
-    const my = height * 0.46 + Math.sin(sx * 0.003 + 0.8) * 65 + Math.cos(sx * 0.007) * 35;
+    const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(worldRight, waterY + 100);
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(worldLeft, worldBottom);
   ctx.closePath();
   ctx.fill();
 
   // Midground Ridge
   if (isDay) {
-    ctx.fillStyle = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? '#78350f' : theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#312e81' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? '#78350f' : theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#334155' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
   } else {
-    ctx.fillStyle = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#1e1b4b' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'WORM_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#0f172a' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
   }
   ctx.beginPath();
   ctx.moveTo(worldLeft, waterY + 100);
   for (let x = worldLeft; x <= worldRight + 40; x += 25) {
-    const sx = x - pShift2;
-    const my = height * 0.62 + Math.sin(sx * 0.005 + 2.4) * 45;
+    const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(worldRight, waterY + 100);
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(worldLeft, worldBottom);
   ctx.closePath();
   ctx.fill();
 
-  // Dotted Lush Grass Blade Dashes on Green Hills (Island, Floating Chaos, Fortress)
-  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || !theme)) {
+  // Dotted Lush Grass Blade Dashes on Green Hills (Island, Floating Chaos, Fortress, Spires)
+  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || theme === 'SPIRES' || !theme)) {
     ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
