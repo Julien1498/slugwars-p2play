@@ -1453,7 +1453,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           isMyTurn: isMyTurnRef.current,
           terrain,
           mousePos: mousePosRef.current,
-          lockedTarget: lockedTargetRef.current,
+          lockedTarget: lockedTargetRef.current || activeSlug.currentTargetPoint || null,
           animTime,
         });
       }
