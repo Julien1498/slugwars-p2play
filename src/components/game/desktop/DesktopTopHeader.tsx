@@ -261,8 +261,8 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="p-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-sm bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95"
-                title={isFullscreen ? 'Quitter le plein écran (F11)' : 'Plein écran immersif (F11)'}
+                className="p-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-sm active:scale-95 bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700"
+                title={isFullscreen ? 'Quitter le plein écran (Touche F ou F11)' : 'Plein écran immersif (Touche F ou F11)'}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
               </button>
@@ -297,10 +297,10 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
                       className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
                     >
                       <div className="flex items-center gap-2">
-                        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-violet-400" />}
+                        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-zinc-400" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-400" />}
                         <span>Plein écran</span>
                       </div>
-                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-violet-950 text-violet-300 border border-violet-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-zinc-900 text-zinc-500'}`}>
                         {isFullscreen ? 'ON' : 'OFF'}
                       </span>
                     </button>

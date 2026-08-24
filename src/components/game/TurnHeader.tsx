@@ -175,14 +175,10 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className={`p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-md active:scale-95 ${
-                  isFullscreen
-                    ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
-                    : 'bg-zinc-950/60 border-zinc-700/80 text-zinc-300'
-                }`}
+                className="p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-md active:scale-95 bg-zinc-950/60 border-zinc-700/80 text-zinc-300"
                 title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+                {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
               </button>
             )}
 
@@ -211,10 +207,10 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                       className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
                     >
                       <div className="flex items-center gap-2">
-                        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-violet-400" />}
+                        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-zinc-400" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-400" />}
                         <span>Plein écran</span>
                       </div>
-                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-violet-950 text-violet-300 border border-violet-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-zinc-900 text-zinc-500'}`}>
                         {isFullscreen ? 'ON' : 'OFF'}
                       </span>
                     </button>
@@ -473,14 +469,10 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className={`p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 shadow-sm ${
-              isFullscreen
-                ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
-                : 'bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95'
-            }`}
+            className="p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 shadow-sm bg-zinc-900/90 hover:bg-zinc-800 border-zinc-800 text-zinc-300 hover:border-zinc-700 active:scale-95"
             title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
           >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-300" />}
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-zinc-300" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-300" />}
           </button>
 
           {/* Consolidated Menu Dropdown Button (Cleans up the HUD!) */}
@@ -512,10 +504,10 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                   className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
                 >
                   <div className="flex items-center gap-2">
-                    {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-violet-400" /> : <Maximize2 className="w-3.5 h-3.5 text-violet-400" />}
+                    {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-zinc-400" /> : <Maximize2 className="w-3.5 h-3.5 text-zinc-400" />}
                     <span>Plein écran</span>
                   </div>
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-violet-950 text-violet-300 border border-violet-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isFullscreen ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-zinc-900 text-zinc-500'}`}>
                     {isFullscreen ? 'ON' : 'OFF'}
                   </span>
                 </button>

@@ -119,14 +119,10 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
           <button
             type="button"
             onClick={toggleFullscreen}
-            className={`p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 ${
-              isFullscreen
-                ? 'bg-violet-950/80 border-violet-500 text-violet-300 shadow-[0_0_10px_rgba(139,92,246,0.4)]'
-                : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300'
-            }`}
+            className="p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300"
             title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4 text-violet-400" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
             <span className="text-[11px] hidden sm:inline">{isFullscreen ? "Réduire" : "Plein écran"}</span>
           </button>
         </div>

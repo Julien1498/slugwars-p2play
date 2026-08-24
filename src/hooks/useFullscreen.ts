@@ -1,34 +1,45 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export function toggleFullscreen(): Promise<void> {
+  if (typeof document === 'undefined') return Promise.resolve();
   const doc = document as any;
   const elem = document.documentElement as any;
 
-  if (
-    !doc.fullscreenElement &&
-    !doc.mozFullScreenElement &&
-    !doc.webkitFullscreenElement &&
-    !doc.msFullscreenElement
-  ) {
-    if (elem.requestFullscreen) {
-      return elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      return elem.webkitRequestFullscreen();
-    } else if (elem.mozRequestFullScreen) {
-      return elem.mozRequestFullScreen();
-    } else if (elem.msRequestFullscreen) {
-      return elem.msRequestFullscreen();
+  try {
+    const isFs = !!(
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement
+    );
+
+    if (!isFs) {
+      if (elem.requestFullscreen) {
+        return elem.requestFullscreen().catch((err: any) => {
+          console.warn('requestFullscreen failed:', err);
+        });
+      } else if (elem.webkitRequestFullscreen) {
+        return Promise.resolve(elem.webkitRequestFullscreen());
+      } else if (elem.mozRequestFullScreen) {
+        return Promise.resolve(elem.mozRequestFullScreen());
+      } else if (elem.msRequestFullscreen) {
+        return Promise.resolve(elem.msRequestFullscreen());
+      }
+    } else {
+      if (doc.exitFullscreen) {
+        return doc.exitFullscreen().catch((err: any) => {
+          console.warn('exitFullscreen failed:', err);
+        });
+      } else if (doc.webkitExitFullscreen) {
+        return Promise.resolve(doc.webkitExitFullscreen());
+      } else if (doc.mozCancelFullScreen) {
+        return Promise.resolve(doc.mozCancelFullScreen());
+      } else if (doc.msExitFullscreen) {
+        return Promise.resolve(doc.msExitFullscreen());
+      }
     }
-  } else {
-    if (doc.exitFullscreen) {
-      return doc.exitFullscreen();
-    } else if (doc.webkitExitFullscreen) {
-      return doc.webkitExitFullscreen();
-    } else if (doc.mozCancelFullScreen) {
-      return doc.mozCancelFullScreen();
-    } else if (doc.msExitFullscreen) {
-      return doc.msExitFullscreen();
-    }
+  } catch (err) {
+    console.warn('toggleFullscreen error:', err);
   }
   return Promise.resolve();
 }
@@ -53,43 +64,56 @@ export function isFullscreenSupported(): boolean {
   );
 }
 
+function checkCurrentFullscreen(): boolean {
+  if (typeof document === 'undefined') return false;
+  const doc = document as any;
+  const isApiFs = !!(
+    doc.fullscreenElement ||
+    doc.webkitFullscreenElement ||
+    doc.mozFullScreenElement ||
+    doc.msFullscreenElement
+  );
+  if (isApiFs) return true;
+  if (typeof window !== 'undefined' && typeof window.screen !== 'undefined') {
+    return window.innerWidth === window.screen.width && Math.abs(window.innerHeight - window.screen.height) <= 8;
+  }
+  return false;
+}
+
 export function useFullscreen() {
   const [isSupported] = useState(() => isFullscreenSupported());
-  const [isFullscreen, setIsFullscreen] = useState(() => {
-    if (typeof document === 'undefined') return false;
-    const doc = document as any;
-    return !!(
-      doc.fullscreenElement ||
-      doc.webkitFullscreenElement ||
-      doc.mozFullScreenElement ||
-      doc.msFullscreenElement
-    );
-  });
+  const [isFullscreen, setIsFullscreen] = useState(() => checkCurrentFullscreen());
 
   useEffect(() => {
     if (!isSupported) return;
 
     const handleFsChange = () => {
-      const doc = document as any;
-      const isFs = !!(
-        doc.fullscreenElement ||
-        doc.webkitFullscreenElement ||
-        doc.mozFullScreenElement ||
-        doc.msFullscreenElement
-      );
-      setIsFullscreen(isFs);
+      setIsFullscreen(checkCurrentFullscreen());
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable) return;
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen().catch(() => {});
+      }
     };
 
     document.addEventListener('fullscreenchange', handleFsChange);
     document.addEventListener('webkitfullscreenchange', handleFsChange);
     document.addEventListener('mozfullscreenchange', handleFsChange);
     document.addEventListener('MSFullscreenChange', handleFsChange);
+    window.addEventListener('resize', handleFsChange);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange);
       document.removeEventListener('webkitfullscreenchange', handleFsChange);
       document.removeEventListener('mozfullscreenchange', handleFsChange);
       document.removeEventListener('MSFullscreenChange', handleFsChange);
+      window.removeEventListener('resize', handleFsChange);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isSupported]);
 
@@ -99,3 +123,4 @@ export function useFullscreen() {
 
   return { isFullscreen, isSupported, toggleFullscreen: toggle };
 }
+
