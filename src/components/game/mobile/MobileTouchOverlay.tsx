@@ -60,6 +60,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
 }) => {
   const isTouch = useIsTouchDevice();
   const isHoldingFireRef = useRef<boolean>(false);
+  const lastDirectFireTimeRef = useRef<number>(0);
 
   const triggerHaptic = useCallback((duration = 15) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -71,11 +72,42 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     }
   }, []);
 
+  const isRetreat = gameState.phase === 'RETREAT';
+
+  const handleDirectFire = useCallback(() => {
+    if (!isMyTurn || isRetreat || gameState.phase !== 'AIMING') return;
+    const now = Date.now();
+    if (now - lastDirectFireTimeRef.current < 400) return;
+    lastDirectFireTimeRef.current = now;
+    setShowWeaponPicker(false);
+    triggerHaptic(30);
+    const target = activeSlug?.currentTargetPoint;
+    onFire?.(target);
+  }, [isMyTurn, isRetreat, gameState.phase, triggerHaptic, activeSlug?.currentTargetPoint, onFire, setShowWeaponPicker]);
+
+  // Window-level safety fallback: guarantees shot release even if finger drifts off-screen
+  useEffect(() => {
+    const handleGlobalRelease = () => {
+      if (isHoldingFireRef.current) {
+        isHoldingFireRef.current = false;
+        triggerHaptic(25);
+        onReleaseCharge?.(activeSlug?.currentTargetPoint);
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalRelease);
+    window.addEventListener('touchend', handleGlobalRelease);
+    window.addEventListener('pointercancel', handleGlobalRelease);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalRelease);
+      window.removeEventListener('touchend', handleGlobalRelease);
+      window.removeEventListener('pointercancel', handleGlobalRelease);
+    };
+  }, [onReleaseCharge, activeSlug?.currentTargetPoint, triggerHaptic]);
+
   if (!isTouch) return null;
 
   const inVehicle = !!activeSlug?.inVehicleId;
   const isAimingPhase = gameState.phase === 'AIMING' || gameState.phase === 'TURN_TIME';
-  const isRetreat = gameState.phase === 'RETREAT';
   const currentWeapon = activeSlug ? getWeapon(activeSlug.selectedWeaponId) : null;
   const myTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const ammo = currentWeapon && myTeam ? (myTeam.inventory[currentWeapon.id] ?? currentWeapon.defaultAmmo) : -1;
@@ -106,18 +138,6 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
       onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
     }
   };
-
-  const lastDirectFireTimeRef = useRef<number>(0);
-  const handleDirectFire = useCallback(() => {
-    if (!isMyTurn || isRetreat || gameState.phase !== 'AIMING') return;
-    const now = Date.now();
-    if (now - lastDirectFireTimeRef.current < 400) return;
-    lastDirectFireTimeRef.current = now;
-    setShowWeaponPicker(false);
-    triggerHaptic(30);
-    const target = activeSlug?.currentTargetPoint;
-    onFire?.(target);
-  }, [isMyTurn, isRetreat, gameState.phase, triggerHaptic, activeSlug?.currentTargetPoint, onFire, setShowWeaponPicker]);
 
   const handleFirePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -156,25 +176,6 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     triggerHaptic(25);
     onReleaseCharge?.(activeSlug?.currentTargetPoint);
   };
-
-  // Window-level safety fallback: guarantees shot release even if finger drifts off-screen
-  useEffect(() => {
-    const handleGlobalRelease = () => {
-      if (isHoldingFireRef.current) {
-        isHoldingFireRef.current = false;
-        triggerHaptic(25);
-        onReleaseCharge?.(activeSlug?.currentTargetPoint);
-      }
-    };
-    window.addEventListener('pointerup', handleGlobalRelease);
-    window.addEventListener('touchend', handleGlobalRelease);
-    window.addEventListener('pointercancel', handleGlobalRelease);
-    return () => {
-      window.removeEventListener('pointerup', handleGlobalRelease);
-      window.removeEventListener('touchend', handleGlobalRelease);
-      window.removeEventListener('pointercancel', handleGlobalRelease);
-    };
-  }, [onReleaseCharge, activeSlug?.currentTargetPoint, triggerHaptic]);
 
   const isPlacementPhase = gameState.phase === 'PLACEMENT';
 
