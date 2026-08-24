@@ -104,12 +104,17 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
         {/* ========================================================================= */}
         <div className="pointer-events-auto flex items-center gap-3">
           {activeTeam && activeSlug && (
-            <div
-              className="bg-zinc-950/90 backdrop-blur-2xl border border-zinc-800/90 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 transition-all"
+            <button
+              type="button"
+              onClick={() => {
+                try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
+              }}
+              className="bg-zinc-950/90 hover:bg-zinc-900 active:scale-95 cursor-pointer backdrop-blur-2xl border border-zinc-800/90 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 transition-all text-left"
               style={{
                 boxShadow: `0 8px 32px -4px rgba(0,0,0,0.8), 0 0 16px -2px ${activeTeam.color}33`,
                 borderColor: `${activeTeam.color}55`,
               }}
+              title="Cliquer pour centrer la caméra sur la limace active [Touche C]"
             >
               {/* Squad Avatar with Glow Ring */}
               <div className="relative">
@@ -173,7 +178,7 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
                   </span>
                 </div>
               </div>
-            </div>
+            </button>
           )}
         </div>
 

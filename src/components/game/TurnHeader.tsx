@@ -87,15 +87,20 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
         <header className="h-10 min-h-[40px] max-h-[40px] bg-transparent border-b border-transparent px-2 flex items-center justify-between gap-2 shrink-0 z-30 select-none pointer-events-none">
           {/* Left: Active Slug + Turn Indicator */}
           <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
-            <div
-              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-950/60 backdrop-blur-md shadow-lg"
+            <button
+              type="button"
+              onClick={() => {
+                try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
+              }}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-950/60 backdrop-blur-md shadow-lg active:scale-95 transition-transform cursor-pointer"
               style={{ borderColor: activeTeam ? `${activeTeam.color}70` : '#3f3f46' }}
+              title="Toucher pour centrer la caméra sur la limace active"
             >
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTeam?.color || '#a855f7' }} />
               <span className="font-black text-xs text-zinc-100 truncate max-w-[90px]">
                 {activeSlug?.name || 'Tour de jeu'}
               </span>
-            </div>
+            </button>
 
             {/* Big glowing Turn Timer */}
             {gameState.phase === 'RETREAT' ? (

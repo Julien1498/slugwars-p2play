@@ -93,14 +93,17 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
     if (!activeSlug || isRetreat) return;
     triggerHaptic(10);
     sfx.play('tick');
+    try {
+      window.dispatchEvent(new CustomEvent('slugwars:recenter-camera'));
+    } catch {}
     if (activeSlug.selectedWeaponId === 'girder') {
       const angles = [0, 45, 90, 135];
       const curIdx = angles.indexOf(activeSlug.aimAngle);
       const nextIdx = (curIdx + (delta > 0 ? 1 : -1) + angles.length) % angles.length;
-      onUpdateAim(angles[nextIdx], activeSlug.aimPower, activeSlug.facing);
+      onUpdateAim(angles[nextIdx], activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
     } else {
       const newAngle = Math.max(-85, Math.min(85, activeSlug.aimAngle + delta));
-      onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing);
+      onUpdateAim(newAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
     }
   };
 
@@ -258,6 +261,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onSteerVehicle?.('up');
                   }}
                 >
@@ -270,6 +274,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onSteerVehicle?.('left');
                   }}
                 >
@@ -280,6 +285,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   className="w-14 h-14 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xs flex items-center justify-center shadow-xl uppercase active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic(30);
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onExitVehicle?.();
                   }}
                 >
@@ -290,6 +296,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onSteerVehicle?.('right');
                   }}
                 >
@@ -302,6 +309,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onSteerVehicle?.('down');
                   }}
                 >
@@ -320,6 +328,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                     e.preventDefault();
                     if (!isMyTurn) return;
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onStartMove('left');
                   }}
                   onPointerUp={(e) => {
@@ -339,6 +348,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                     e.preventDefault();
                     if (!isMyTurn) return;
                     triggerHaptic();
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onStartMove('right');
                   }}
                   onPointerUp={(e) => {
@@ -357,6 +367,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   onClick={() => {
                     if (!isMyTurn) return;
                     triggerHaptic(20);
+                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                     onJump();
                   }}
                 >
@@ -369,6 +380,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                     className="w-[74px] h-[74px] rounded-2xl bg-amber-600 active:bg-amber-500 border-2 border-amber-400 text-white font-black text-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform animate-pulse"
                     onClick={() => {
                       triggerHaptic(30);
+                      try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
                       onEnterVehicle?.();
                     }}
                     title="Monter dans l'hélicoptère"
@@ -509,57 +521,64 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
               )}
 
               {/* Main Fire / Action Button - Always maintains layout stability */}
-              {isMyTurn && !isRetreat && (
-                <button
-                  type="button"
-                  disabled={!isAimingPhase}
-                  className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl transition-all ${
-                    !isAimingPhase
-                      ? 'opacity-30 border-slate-700 bg-slate-900 cursor-not-allowed scale-95'
-                      : currentWeapon?.id === 'girder'
-                      ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50 active:scale-95'
-                      : currentWeapon?.requiresTarget
-                      ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50 active:scale-95'
-                      : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50 active:scale-95'
-                  }`}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isAimingPhase || currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) return;
-                    handleFirePointerDown(e);
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isAimingPhase) return;
-                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
-                      handleDirectFire();
-                      return;
-                    }
-                    handleFirePointerUp(e);
-                  }}
-                  onPointerCancel={(e) => {
-                    if (isAimingPhase && currentWeapon?.id !== 'girder' && !currentWeapon?.requiresTarget) {
+              {isMyTurn && !isRetreat && (() => {
+                const isGirder = currentWeapon?.id === 'girder';
+                const isChargeable = isWeaponChargeable(currentWeapon);
+                const isInstantTarget = !!currentWeapon?.requiresTarget && !isChargeable;
+                const isHomingMissile = currentWeapon?.id === 'homing_missile';
+
+                return (
+                  <button
+                    type="button"
+                    disabled={!isAimingPhase}
+                    className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl transition-all ${
+                      !isAimingPhase
+                        ? 'opacity-30 border-slate-700 bg-slate-900 cursor-not-allowed scale-95'
+                        : isGirder
+                        ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50 active:scale-95'
+                        : isInstantTarget
+                        ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50 active:scale-95'
+                        : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50 active:scale-95'
+                    }`}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isAimingPhase || isGirder || isInstantTarget) return;
+                      handleFirePointerDown(e);
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isAimingPhase) return;
+                      if (isGirder || isInstantTarget) {
+                        handleDirectFire();
+                        return;
+                      }
                       handleFirePointerUp(e);
-                    }
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!isAimingPhase) return;
-                    if (currentWeapon?.id === 'girder' || currentWeapon?.requiresTarget) {
-                      handleDirectFire();
-                    }
-                  }}
-                >
-                  <span className="text-3xl leading-none">
-                    {currentWeapon?.id === 'girder' ? '🪜' : currentWeapon?.requiresTarget ? '🎯' : '🔥'}
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-tighter mt-0.5">
-                    {currentWeapon?.id === 'girder' ? 'POSER' : currentWeapon?.requiresTarget ? 'CIBLER' : 'TIR'}
-                  </span>
-                </button>
-              )}
+                    }}
+                    onPointerCancel={(e) => {
+                      if (isAimingPhase && !isGirder && !isInstantTarget) {
+                        handleFirePointerUp(e);
+                      }
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isAimingPhase) return;
+                      if (isGirder || isInstantTarget) {
+                        handleDirectFire();
+                      }
+                    }}
+                  >
+                    <span className="text-3xl leading-none">
+                      {isGirder ? '🪜' : isHomingMissile ? '🎯' : currentWeapon?.requiresTarget ? '🎯' : '🔥'}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter mt-0.5">
+                      {isGirder ? 'POSER' : isHomingMissile ? 'TIRER' : currentWeapon?.requiresTarget ? 'CIBLER' : 'TIR'}
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </>

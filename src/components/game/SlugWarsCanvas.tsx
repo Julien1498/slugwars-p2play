@@ -450,8 +450,33 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
     };
 
+    const handleRecenterEvent = () => {
+      cameraModeRef.current = 'FOLLOW_SLUG';
+      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      if (activeSlug && activeSlug.isPlaced && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const fitScale = Math.min(rect.width / terrain.data.width, rect.height / terrain.data.height);
+        const totalScale = fitScale * zoomRef.current;
+        const targetPanX = -(activeSlug.x - terrain.data.width / 2) * totalScale;
+        const targetPanY = -(activeSlug.y - terrain.data.height / 2) * totalScale;
+        const clamped = clampPanOffset(
+          { x: targetPanX, y: targetPanY },
+          zoomRef.current,
+          rect.width,
+          rect.height,
+          terrain.data.width,
+          terrain.data.height
+        );
+        targetCameraPanRef.current = clamped;
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('slugwars:recenter-camera', handleRecenterEvent);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('slugwars:recenter-camera', handleRecenterEvent);
+    };
   }, [gameState.slugs, gameState.activeSlugId, terrain.data.width, terrain.data.height]);
 
 
@@ -526,7 +551,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         if (isMyTurnRef.current && curGameState.phase === 'AIMING' && activeSlug) {
           const distToSlug = Math.hypot(pos.x - activeSlug.x, pos.y - activeSlug.y);
           const weapon = getWeapon(activeSlug.selectedWeaponId);
-          if (distToSlug < 90 && !weapon.requiresTarget && weapon.id !== 'girder') {
+          const allowsTouchAim = !weapon.requiresTarget || weapon.id === 'homing_missile';
+          if (distToSlug < 90 && allowsTouchAim && weapon.id !== 'girder') {
             g.touchIsAiming = true;
             const dx = pos.x - activeSlug.x;
             const dy = pos.y - activeSlug.y;
@@ -536,7 +562,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
               activeSlug.aimAngle = angle;
               activeSlug.facing = facing;
-              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
+              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing, activeSlug.currentTargetPoint);
             }
           } else {
             g.touchIsAiming = false;
@@ -605,7 +631,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             if (angle !== activeSlug.aimAngle || facing !== activeSlug.facing) {
               activeSlug.aimAngle = angle;
               activeSlug.facing = facing;
-              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing);
+              onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing, activeSlug.currentTargetPoint);
             }
           }
         } else {
@@ -658,7 +684,28 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
             if (activeSlug) {
               const weapon = getWeapon(activeSlug.selectedWeaponId);
-              if (weapon.requiresTarget || weapon.id === 'girder') {
+              const distToSlug = Math.hypot(pos.x - activeSlug.x, pos.y - activeSlug.y);
+
+              if (weapon.id === 'homing_missile') {
+                if (distToSlug < 85) {
+                  // Tap near slug: aim rocket launch angle and facing direction
+                  const dx = pos.x - activeSlug.x;
+                  const dy = pos.y - activeSlug.y;
+                  let angle = Math.round(Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
+                  angle = Math.max(-85, Math.min(85, angle));
+                  const facing: 'left' | 'right' = dx >= 0 ? 'right' : 'left';
+                  activeSlug.aimAngle = angle;
+                  activeSlug.facing = facing;
+                  sfx.play('tick');
+                  onUpdateAimRef.current?.(angle, activeSlug.aimPower, facing, activeSlug.currentTargetPoint);
+                } else {
+                  // Tap on terrain: place target crosshair
+                  lockedTargetRef.current = pos;
+                  activeSlug.currentTargetPoint = pos;
+                  sfx.play('tick');
+                  onUpdateAimRef.current?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
+                }
+              } else if (weapon.requiresTarget || weapon.id === 'girder') {
                 lockedTargetRef.current = pos;
                 activeSlug.currentTargetPoint = pos;
                 sfx.play('tick');
@@ -994,6 +1041,19 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         cameraModeRef.current = 'FREE_LOOK';
       }
 
+      // If active slug is actively moving (walking, jumping, falling, or steering vehicle), automatically refocus to FOLLOW_SLUG!
+      const currentActiveSlug = curState?.slugs.find((s) => s.id === curState.activeSlugId);
+      const isSlugMoving = currentActiveSlug && currentActiveSlug.isAlive && (
+        currentActiveSlug.movingDir !== null ||
+        Math.abs(currentActiveSlug.vx) > 0.15 ||
+        Math.abs(currentActiveSlug.vy) > 0.5 ||
+        currentActiveSlug.inVehicleId !== null
+      );
+
+      if (isSlugMoving && !isUserDraggingNow) {
+        cameraModeRef.current = 'FOLLOW_SLUG';
+      }
+
       // Check for active projectiles in flight
       if (curState && curState.projectiles && curState.projectiles.length > 0) {
         if (!isUserDraggingNow) {
@@ -1001,8 +1061,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      // Check for phase transitions (retreat or turn intro)
-      if (curState && (curState.phase === 'RETREAT' || curState.phase === 'TURN_START')) {
+      // Check for phase transitions (retreat or turn intro or resolving)
+      if (curState && (curState.phase === 'RETREAT' || curState.phase === 'TURN_START' || curState.phase === 'RESOLVING')) {
         if (!isUserDraggingNow && cameraModeRef.current !== 'FOLLOW_PROJECTILE') {
           cameraModeRef.current = 'FOLLOW_SLUG';
         }
@@ -1034,12 +1094,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       if (cameraModeRef.current === 'FOLLOW_SLUG') {
-        if (curState && curState.activeSlugId) {
-          const activeSlug = curState.slugs.find((s) => s.id === curState.activeSlugId);
-          if (activeSlug && activeSlug.isAlive && activeSlug.isPlaced) {
-            actionTarget = { x: activeSlug.x, y: activeSlug.y };
-            followSpeed = curState.phase === 'RETREAT' ? 0.12 : 0.08;
-          }
+        if (currentActiveSlug && currentActiveSlug.isAlive && currentActiveSlug.isPlaced) {
+          actionTarget = { x: currentActiveSlug.x, y: currentActiveSlug.y };
+          followSpeed = curState.phase === 'RETREAT' ? 0.12 : 0.08;
         }
       }
 
