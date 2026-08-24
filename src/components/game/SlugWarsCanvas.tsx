@@ -157,7 +157,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const isTouch = useIsTouchDevice();
 
   // Smooth Camera Pan & Cursor-Centered Zoom Refs (0 React Re-renders)
-  const zoomRef = useRef<number>(1.0);
+  const zoomRef = useRef<number>(
+    typeof window !== 'undefined' && window.innerHeight > window.innerWidth ? 1.6 : 1.0
+  );
   const panRef = useRef<Vector2D>({ x: 0, y: 0 });
   const isDraggingCameraRef = useRef<boolean>(false);
   const didDragCameraRef = useRef<boolean>(false);

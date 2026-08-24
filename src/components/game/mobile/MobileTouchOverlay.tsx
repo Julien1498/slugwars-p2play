@@ -204,61 +204,65 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
         </div>
       ) : (
         <>
-          {/* 1. LEFT THUMB CLUSTER (Movement, D-Pad, Jump, Vehicle / Sheep Controls) */}
-          <div className="pointer-events-auto flex items-end gap-1.5 sm:gap-2">
+          {/* 1. LEFT THUMB CLUSTER (Movement, D-Pad, Jump, Vehicle / Sheep Controls) - Full 74px buttons */}
+          <div className="pointer-events-auto flex items-end gap-2">
             {activeSheep ? (
               // Super Sheep flight controls
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    triggerHaptic();
-                    onStartSteer?.('left');
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    onStopSteer?.();
-                  }}
-                  onPointerCancel={() => onStopSteer?.()}
-                >
-                  ◀
-                </button>
-                <button
-                  type="button"
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    triggerHaptic();
-                    onStartSteer?.('right');
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    onStopSteer?.();
-                  }}
-                  onPointerCancel={() => onStopSteer?.()}
-                >
-                  ▶
-                </button>
-                <button
-                  type="button"
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-                  onClick={() => {
-                    triggerHaptic(30);
-                    onDetonate?.();
-                  }}
-                >
-                  💥
-                </button>
+              <div className="flex flex-col portrait:items-start landscape:flex-row landscape:items-center gap-2">
+                <div className="portrait:order-first landscape:order-last">
+                  <button
+                    type="button"
+                    className="w-[74px] h-[74px] rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                    onClick={() => {
+                      triggerHaptic(30);
+                      onDetonate?.();
+                    }}
+                  >
+                    💥
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 landscape:order-first">
+                  <button
+                    type="button"
+                    className="w-[74px] h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      triggerHaptic();
+                      onStartSteer?.('left');
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      onStopSteer?.();
+                    }}
+                    onPointerCancel={() => onStopSteer?.()}
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    className="w-[74px] h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      triggerHaptic();
+                      onStartSteer?.('right');
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      onStopSteer?.();
+                    }}
+                    onPointerCancel={() => onStopSteer?.()}
+                  >
+                    ▶
+                  </button>
+                </div>
               </div>
             ) : inVehicle ? (
               // Helicopter directional cross-pad with Sortir in the center
-              <div className="grid grid-cols-3 gap-1 items-center justify-items-center">
+              <div className="grid grid-cols-3 gap-1.5 items-center justify-items-center">
                 <div />
                 <button
                   type="button"
-                  className="w-12 h-12 landscape:w-11 landscape:h-11 sm:w-14 sm:h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
                     try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
@@ -271,7 +275,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
 
                 <button
                   type="button"
-                  className="w-12 h-12 landscape:w-11 landscape:h-11 sm:w-14 sm:h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
                     try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
@@ -282,7 +286,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="w-12 h-12 landscape:w-11 landscape:h-11 sm:w-14 sm:h-14 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-[10px] sm:text-xs flex items-center justify-center shadow-xl uppercase active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-red-400 text-white font-black text-xs flex items-center justify-center shadow-xl uppercase active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic(30);
                     try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
@@ -293,7 +297,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 </button>
                 <button
                   type="button"
-                  className="w-12 h-12 landscape:w-11 landscape:h-11 sm:w-14 sm:h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
                     try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
@@ -306,7 +310,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                 <div />
                 <button
                   type="button"
-                  className="w-12 h-12 landscape:w-11 landscape:h-11 sm:w-14 sm:h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="w-14 h-14 rounded-2xl bg-slate-900/90 active:bg-amber-600 border-2 border-slate-700 active:border-amber-400 text-white font-bold text-3xl flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95 transition-transform"
                   onClick={() => {
                     triggerHaptic();
                     try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
@@ -319,81 +323,86 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
               </div>
             ) : (
               // Standard Slug D-Pad (Walk & Jump) - Balanced comfortable touch targets
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  disabled={!isMyTurn}
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    if (!isMyTurn) return;
-                    triggerHaptic();
-                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
-                    onStartMove('left');
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    onStopMove();
-                  }}
-                  onPointerCancel={() => onStopMove()}
-                >
-                  ◀
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!isMyTurn}
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    if (!isMyTurn) return;
-                    triggerHaptic();
-                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
-                    onStartMove('right');
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    onStopMove();
-                  }}
-                  onPointerCancel={() => onStopMove()}
-                >
-                  ▶
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!isMyTurn}
-                  className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 active:from-emerald-700 active:to-teal-600 border-2 border-emerald-400 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-40"
-                  onClick={() => {
-                    if (!isMyTurn) return;
-                    triggerHaptic(20);
-                    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
-                    onJump();
-                  }}
-                >
-                  🦘
-                </button>
-
-                {nearbyHeli && (
+              <div className="flex flex-col portrait:items-start landscape:flex-row landscape:items-center gap-2">
+                <div className="flex items-center gap-2 landscape:order-2 portrait:order-first">
                   <button
                     type="button"
-                    className="w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl bg-amber-600 active:bg-amber-500 border-2 border-amber-400 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform animate-pulse"
+                    disabled={!isMyTurn}
+                    className="w-[74px] h-[74px] rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 active:from-emerald-700 active:to-teal-600 border-2 border-emerald-400 text-white font-black text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-40"
                     onClick={() => {
-                      triggerHaptic(30);
+                      if (!isMyTurn) return;
+                      triggerHaptic(20);
                       try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
-                      onEnterVehicle?.();
+                      onJump();
                     }}
-                    title="Monter dans l'hélicoptère"
+                    title="Sauter"
                   >
-                    🚁
+                    🦘
                   </button>
-                )}
+
+                  {nearbyHeli && (
+                    <button
+                      type="button"
+                      className="w-[74px] h-[74px] rounded-2xl bg-amber-600 active:bg-amber-500 border-2 border-amber-400 text-white font-black text-2xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform animate-pulse"
+                      onClick={() => {
+                        triggerHaptic(30);
+                        try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
+                        onEnterVehicle?.();
+                      }}
+                      title="Monter dans l'hélicoptère"
+                    >
+                      🚁
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 landscape:order-1">
+                  <button
+                    type="button"
+                    disabled={!isMyTurn}
+                    className="w-[74px] h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      if (!isMyTurn) return;
+                      triggerHaptic();
+                      try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
+                      onStartMove('left');
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      onStopMove();
+                    }}
+                    onPointerCancel={() => onStopMove()}
+                  >
+                    ◀
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!isMyTurn}
+                    className="w-[74px] h-[74px] rounded-2xl bg-slate-900/90 active:bg-blue-600 border-2 border-slate-700/90 active:border-blue-400 text-white font-bold text-4xl flex items-center justify-center shadow-2xl backdrop-blur-md active:scale-95 transition-transform disabled:opacity-40"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      if (!isMyTurn) return;
+                      triggerHaptic();
+                      try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
+                      onStartMove('right');
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      onStopMove();
+                    }}
+                    onPointerCancel={() => onStopMove()}
+                  >
+                    ▶
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
           {/* 2. CENTER CLUSTER (Chat Drawer Toggle) */}
-          <div className="pointer-events-auto flex items-center gap-1.5 pb-1">
+          <div className="pointer-events-auto flex items-end gap-1.5 pb-1">
             {onToggleDrawer && (
               <button
                 type="button"
@@ -401,24 +410,22 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                   triggerHaptic(15);
                   onToggleDrawer();
                 }}
-                className={`px-3.5 py-2 rounded-full border text-xs font-black flex items-center gap-1.5 shadow-xl backdrop-blur-md transition-all active:scale-95 ${
+                className={`p-2.5 rounded-2xl border flex items-center gap-1.5 shadow-xl backdrop-blur-md active:scale-95 transition-all ${
                   showDrawer
-                    ? 'bg-amber-500/30 border-amber-400 text-amber-300'
-                    : 'bg-slate-900/90 border-slate-700 text-slate-300 hover:text-white'
+                    ? 'bg-violet-950/90 border-violet-500 text-white'
+                    : 'bg-zinc-900/80 border-zinc-700/80 text-zinc-300'
                 }`}
+                title="Journal et Tchat"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Chat</span>
-                {chatMessageCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-violet-600 text-[10px] font-black text-white">
-                    {chatMessageCount}
-                  </span>
+                <MessageSquare className="w-5 h-5 text-violet-400" />
+                {chatMessageCount > 0 && !showDrawer && (
+                  <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
                 )}
               </button>
             )}
           </div>
 
-          {/* 3. RIGHT THUMB CLUSTER (Weapon Card, Fuse/Girder, Fire Button, Angle Nudges) - Frameless */}
+          {/* 3. RIGHT THUMB CLUSTER (Weapon Dossier Card, Fuse, Angle Nudges, Fire Button) */}
           <div className="pointer-events-auto flex flex-col items-end gap-2">
             {/* Fuse Selector / Girder Rotate Widget */}
             {isMyTurn && !isRetreat && (
@@ -463,8 +470,8 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
               </div>
             )}
 
-            {/* Main Actions Row (Weapon Card + Angle Nudges + Action/Fire Button) */}
-            <div className="flex items-center gap-2">
+            {/* Actions: In Landscape, Weapon card + Nudges + Fire in a single row. In Portrait, Weapon card stacked above Nudges + Fire */}
+            <div className="flex flex-col portrait:items-end landscape:flex-row landscape:items-center gap-2">
               {/* Equipped Weapon Card (Tap to open Arsenal) */}
               {currentWeapon && isMyTurn && !isRetreat && (
                 <button
@@ -477,108 +484,111 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
                     triggerHaptic(20);
                     setShowWeaponPicker((prev) => !prev);
                   }}
-                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[56px] landscape:min-h-[54px] sm:min-h-[64px] max-w-[100px] sm:max-w-[110px] rounded-2xl bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-2 border-violet-500/80 active:border-violet-400 text-left flex items-center gap-1.5 sm:gap-2 shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
+                  className="px-3 py-2 min-h-[58px] landscape:min-h-[64px] max-w-[110px] rounded-2xl bg-gradient-to-br from-violet-950/95 to-purple-950/90 border-2 border-violet-500/80 active:border-violet-400 text-left flex items-center gap-2 shadow-2xl backdrop-blur-md active:scale-95 transition-transform"
                   title="Toucher pour ouvrir l'Arsenal"
                 >
-                  <span className="text-2xl sm:text-3xl leading-none shrink-0">{currentWeapon.icon}</span>
+                  <span className="text-3xl leading-none shrink-0">{currentWeapon.icon}</span>
                   <div className="flex flex-col leading-none min-w-0">
-                    <span className="text-[11px] sm:text-xs font-black text-violet-200 truncate">
+                    <span className="text-xs font-black text-violet-200 truncate">
                       {currentWeapon.name}
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-violet-400 mt-0.5 sm:mt-1 truncate">
+                    <span className="text-[10px] font-bold text-violet-400 mt-1 truncate">
                       {ammoLabel} • 🎒
                     </span>
                   </div>
                 </button>
               )}
 
-              {/* Angle Nudges ▲ / ▼ */}
-              {isMyTurn && !isRetreat && currentWeapon?.id !== 'girder' && (
-                <div className="flex flex-col gap-1 sm:gap-1.5">
-                  <button
-                    type="button"
-                    className="w-10 h-8 landscape:w-10 landscape:h-8 sm:w-12 sm:h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-sm sm:text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAngleChange(3);
-                    }}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    className="w-10 h-8 landscape:w-10 landscape:h-8 sm:w-12 sm:h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-sm sm:text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAngleChange(-3);
-                    }}
-                  >
-                    ▼
-                  </button>
-                </div>
-              )}
+              {/* Angle Nudges + Fire Button row */}
+              <div className="flex items-center gap-2">
+                {/* Angle Nudges ▲ / ▼ */}
+                {isMyTurn && !isRetreat && currentWeapon?.id !== 'girder' && (
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAngleChange(3);
+                      }}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAngleChange(-3);
+                      }}
+                    >
+                      ▼
+                    </button>
+                  </div>
+                )}
 
-              {/* Main Fire / Action Button - Always maintains layout stability */}
-              {isMyTurn && !isRetreat && (() => {
-                const isGirder = currentWeapon?.id === 'girder';
-                const isChargeable = isWeaponChargeable(currentWeapon);
-                const isInstantTarget = !!currentWeapon?.requiresTarget && !isChargeable;
-                const isHomingMissile = currentWeapon?.id === 'homing_missile';
+                {/* Main Fire / Action Button - Full 74px comfortable button */}
+                {isMyTurn && !isRetreat && (() => {
+                  const isGirder = currentWeapon?.id === 'girder';
+                  const isChargeable = isWeaponChargeable(currentWeapon);
+                  const isInstantTarget = !!currentWeapon?.requiresTarget && !isChargeable;
+                  const isHomingMissile = currentWeapon?.id === 'homing_missile';
 
-                return (
-                  <button
-                    type="button"
-                    disabled={!isAimingPhase}
-                    className={`w-[66px] h-[66px] landscape:w-[62px] landscape:h-[62px] sm:w-[74px] sm:h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl transition-all ${
-                      !isAimingPhase
-                        ? 'opacity-30 border-slate-700 bg-slate-900 cursor-not-allowed scale-95'
-                        : isGirder
-                        ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50 active:scale-95'
-                        : isInstantTarget
-                        ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50 active:scale-95'
-                        : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50 active:scale-95'
-                    }`}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isAimingPhase || isGirder || isInstantTarget) return;
-                      handleFirePointerDown(e);
-                    }}
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isAimingPhase) return;
-                      if (isGirder || isInstantTarget) {
-                        handleDirectFire();
-                        return;
-                      }
-                      handleFirePointerUp(e);
-                    }}
-                    onPointerCancel={(e) => {
-                      if (isAimingPhase && !isGirder && !isInstantTarget) {
+                  return (
+                    <button
+                      type="button"
+                      disabled={!isAimingPhase}
+                      className={`w-[74px] h-[74px] rounded-2xl border-2 text-white font-black flex flex-col items-center justify-center shadow-2xl transition-all ${
+                        !isAimingPhase
+                          ? 'opacity-30 border-slate-700 bg-slate-900 cursor-not-allowed scale-95'
+                          : isGirder
+                          ? 'bg-gradient-to-tr from-sky-600 to-cyan-500 active:from-sky-700 active:to-cyan-600 border-sky-300 shadow-sky-600/50 active:scale-95'
+                          : isInstantTarget
+                          ? 'bg-gradient-to-tr from-amber-600 to-orange-500 active:from-amber-700 active:to-orange-600 border-amber-300 shadow-amber-600/50 active:scale-95'
+                          : 'bg-gradient-to-tr from-red-600 via-rose-600 to-amber-500 active:from-red-700 active:to-amber-600 border-amber-300 shadow-red-600/50 active:scale-95'
+                      }`}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isAimingPhase || isGirder || isInstantTarget) return;
+                        handleFirePointerDown(e);
+                      }}
+                      onPointerUp={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isAimingPhase) return;
+                        if (isGirder || isInstantTarget) {
+                          handleDirectFire();
+                          return;
+                        }
                         handleFirePointerUp(e);
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (!isAimingPhase) return;
-                      if (isGirder || isInstantTarget) {
-                        handleDirectFire();
-                      }
-                    }}
-                  >
-                    <span className="text-2xl sm:text-3xl leading-none">
-                      {isGirder ? '🪜' : isHomingMissile ? '🎯' : currentWeapon?.requiresTarget ? '🎯' : '🔥'}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter mt-0.5">
-                      {isGirder ? 'POSER' : isHomingMissile ? 'TIRER' : currentWeapon?.requiresTarget ? 'CIBLER' : 'TIR'}
-                    </span>
-                  </button>
-                );
-              })()}
+                      }}
+                      onPointerCancel={(e) => {
+                        if (isAimingPhase && !isGirder && !isInstantTarget) {
+                          handleFirePointerUp(e);
+                        }
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isAimingPhase) return;
+                        if (isGirder || isInstantTarget) {
+                          handleDirectFire();
+                        }
+                      }}
+                    >
+                      <span className="text-3xl leading-none">
+                        {isGirder ? '🪜' : isHomingMissile ? '🎯' : currentWeapon?.requiresTarget ? '🎯' : '🔥'}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-tighter mt-0.5">
+                        {isGirder ? 'POSER' : isHomingMissile ? 'TIRER' : currentWeapon?.requiresTarget ? 'CIBLER' : 'TIR'}
+                      </span>
+                    </button>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </>

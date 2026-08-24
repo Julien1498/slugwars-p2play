@@ -84,37 +84,37 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   if (isTouch) {
     return (
       <>
-        <header className="h-10 min-h-[40px] max-h-[40px] bg-transparent border-b border-transparent px-2 flex items-center justify-between gap-2 shrink-0 z-30 select-none pointer-events-none">
+        <header className="h-10 min-h-[40px] max-h-[40px] bg-transparent border-b border-transparent px-1 sm:px-2 landscape:px-2 flex items-center justify-between gap-1 sm:gap-2 landscape:gap-2 shrink-0 z-30 select-none pointer-events-none">
           {/* Left: Active Slug + Turn Indicator */}
-          <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
+          <div className="flex items-center gap-1 sm:gap-1.5 landscape:gap-1.5 shrink-0 pointer-events-auto">
             <button
               type="button"
               onClick={() => {
                 try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
               }}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-zinc-950/60 backdrop-blur-md shadow-lg active:scale-95 transition-transform cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 landscape:gap-1.5 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl border bg-zinc-950/60 backdrop-blur-md shadow-lg active:scale-95 transition-transform cursor-pointer"
               style={{ borderColor: activeTeam ? `${activeTeam.color}70` : '#3f3f46' }}
               title="Toucher pour centrer la caméra sur la limace active"
             >
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeTeam?.color || '#a855f7' }} />
-              <span className="font-black text-xs text-zinc-100 truncate max-w-[90px]">
+              <span className="font-black text-xs text-zinc-100 truncate max-w-[48px] sm:max-w-[70px] landscape:max-w-[90px]">
                 {activeSlug?.name || 'Tour de jeu'}
               </span>
             </button>
 
             {/* Big glowing Turn Timer */}
             {gameState.phase === 'RETREAT' ? (
-              <div className="flex items-center gap-1 bg-orange-950/80 border border-orange-500/80 px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow-lg backdrop-blur-md animate-pulse">
+              <div className="flex items-center gap-1 bg-orange-950/80 border border-orange-500/80 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow-lg backdrop-blur-md animate-pulse">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{turnTime}s (Repli)</span>
               </div>
             ) : isTimeUrgent ? (
-              <div className="flex items-center gap-1 bg-red-950/80 border border-red-500 px-2 py-1 rounded-xl text-xs font-black text-red-300 shadow-[0_0_12px_#ef4444] backdrop-blur-md animate-ping">
+              <div className="flex items-center gap-1 bg-red-950/80 border border-red-500 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-red-300 shadow-[0_0_12px_#ef4444] backdrop-blur-md animate-ping">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{turnTime}s</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1 bg-zinc-950/60 border border-zinc-700/80 px-2 py-1 rounded-xl text-xs font-black text-amber-400 shadow-lg backdrop-blur-md">
+              <div className="flex items-center gap-1 bg-zinc-950/60 border border-zinc-700/80 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-amber-400 shadow-lg backdrop-blur-md">
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
                 <span>{turnTime}s</span>
               </div>
@@ -122,7 +122,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
           </div>
 
           {/* Right: Wind + Scoreboard Toggle + Menu */}
-          <div className="flex items-center gap-1.5 shrink-0 pointer-events-auto">
+          <div className="flex items-center gap-1 sm:gap-1.5 landscape:gap-1.5 shrink-0 pointer-events-auto">
             <WindIndicator wind={gameState.wind} />
 
             {/* Scoreboard Popover Toggle */}

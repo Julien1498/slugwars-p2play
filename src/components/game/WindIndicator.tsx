@@ -58,19 +58,19 @@ export const WindIndicatorComponent: React.FC<WindIndicatorProps> = ({ wind }) =
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1 rounded-xl bg-zinc-950/80 backdrop-blur-xl border transition-all duration-300 ${theme.glow}`}
+      className={`flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1 rounded-xl bg-zinc-950/80 backdrop-blur-xl border transition-all duration-300 ${theme.glow}`}
       title={`Vent: ${theme.label} (${roundedAbs} m/s)`}
     >
       {/* Icon & Value */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         <Wind className={`w-3.5 h-3.5 transition-transform duration-300 ${theme.iconColor} ${absWind > 2 ? 'animate-pulse' : ''}`} />
         <span className="font-mono text-xs font-black text-white">
           {roundedAbs.toFixed(1)} <span className="text-[9px] text-zinc-400 font-semibold">m/s</span>
         </span>
       </div>
 
-      {/* Aerodynamic Wind Vane Tube */}
-      <div className="relative flex items-center w-28 sm:w-32 h-4 bg-zinc-900/90 rounded-full border border-zinc-800 overflow-hidden px-1">
+      {/* Aerodynamic Wind Vane Tube (Shown on landscape & desktop, hidden on compact portrait) */}
+      <div className="hidden landscape:flex sm:flex relative items-center w-28 sm:w-32 h-4 bg-zinc-900/90 rounded-full border border-zinc-800 overflow-hidden px-1">
         {/* Animated Background Wind Grid Marks */}
         <div className="absolute inset-0 flex justify-between px-2 items-center pointer-events-none opacity-20">
           <span className="w-px h-2 bg-zinc-400" />
