@@ -24,7 +24,7 @@ export const BoardChatDrawer: React.FC<BoardChatDrawerProps> = ({
   if (!showDrawer) return null;
 
   return (
-    <div className="absolute right-4 top-16 z-40 w-80 max-h-[75vh] bg-zinc-900/95 border border-violet-500/40 backdrop-blur-md rounded-2xl p-3 shadow-2xl flex flex-col space-y-2 animate-in fade-in slide-in-from-right duration-200">
+    <div className="absolute right-2 sm:right-4 top-12 sm:top-16 z-40 w-72 sm:w-80 max-h-[78vh] landscape:max-h-[82vh] bg-zinc-900/95 border border-violet-500/40 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 shadow-2xl flex flex-col space-y-2 animate-in fade-in slide-in-from-right duration-200">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
         <div className="flex items-center gap-2">
           <button

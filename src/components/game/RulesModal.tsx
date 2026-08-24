@@ -19,7 +19,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
           </button>
         </div>
 
-        <div className="space-y-4 text-sm max-h-96 overflow-y-auto pr-2">
+        <div className="space-y-4 text-sm max-h-[65vh] overflow-y-auto pr-2">
           <div className="space-y-1">
             <h3 className="font-bold text-violet-400 flex items-center gap-2">
               <Target className="w-4 h-4" /> But du jeu

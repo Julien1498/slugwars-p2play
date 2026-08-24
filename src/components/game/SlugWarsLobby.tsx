@@ -91,7 +91,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
         </div>
 
         {/* 2-Column Battle Preparation Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-12 landscape:grid-cols-12 gap-3.5">
           {/* Left Column: Map Radar, Weapons & Modifiers (7 Cols) */}
           <LobbyMapConfig config={config} isHost={isHost} onChangeConfig={onChangeConfig} />
 

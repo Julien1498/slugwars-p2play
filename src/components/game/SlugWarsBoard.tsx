@@ -144,7 +144,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         <div
           className={
             isTouch
-              ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]'
+              ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.35rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]'
               : 'absolute top-0 inset-x-0 z-30 pointer-events-none'
           }
         >

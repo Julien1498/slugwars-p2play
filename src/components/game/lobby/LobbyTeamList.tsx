@@ -11,7 +11,7 @@ interface LobbyTeamListProps {
 
 export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({ teams, config, isHost, onStartGame }) => {
   return (
-    <div className="lg:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
+    <div className="md:col-span-5 landscape:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
         <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-violet-400" /> Escouades Engagées ({teams.length}/6)
