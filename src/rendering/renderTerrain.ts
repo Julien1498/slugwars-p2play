@@ -29,7 +29,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff2d5314,  // #14532d Deep undercoat shadow
     soilLight: 0xff183154,    // #543118 Warm topsoil
     strataA: 0xff081427,      // #271408 Darker clay sandstone band
-    strataB: 0xff0e1e35,      // #351e0e Banded sedimentary stone
+    strataB: 0xff07101e,      // #1e1007 Darker banded sedimentary stone
     denseRock: 0xff0a1626,    // #26160a Deep dense rock
     bedrock: 0xff040914,      // #140904 Deep subterranean dark rock
     seam: 0xff02050b,         // #0b0502 Deep dark soil crack
@@ -41,7 +41,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff166534,  // #346516 Deep coastal foliage
     soilLight: 0xff2d5778,    // #78572d Coastal coral sand/loam
     strataA: 0xff102338,      // #382310 Darker sandstone reef band
-    strataB: 0xff18314a,      // #4a3118 Deep oceanic strata
+    strataB: 0xff0d1b2b,      // #2b1b0d Darker oceanic strata
     denseRock: 0xff0f2030,    // #30200f Volcanic trench rock
     bedrock: 0xff071018,      // #181007 Abyssal reef bedrock
     seam: 0xff03080c,         // #0c0803 Coral seam
@@ -53,7 +53,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff122d7c,  // #7c2d12 Deep ironstone
     soilLight: 0xff182d5a,    // #5a2d18 Desert clay
     strataA: 0xff09132b,      // #2b1309 Darker canyon sandstone band
-    strataB: 0xff101a35,      // #351a10 Dark canyon stratum
+    strataB: 0xff090e1e,      // #1e0e09 Darker canyon stratum
     denseRock: 0xff0c1328,    // #28130c Heavy iron rock
     bedrock: 0xff060a17,      // #170a06 Canyon bedrock
     seam: 0xff03050c,         // #0c0503 Mineral seam
@@ -65,7 +65,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
     soilLight: 0xff64748b,    // #8b7464 Classic granite mountain stone
     strataA: 0xff27303d,      // #3d3027 Darker mountain slate band
-    strataB: 0xff334155,      // #554133 Dark granite layer
+    strataB: 0xff1b232e,      // #2e231b Darker granite layer
     denseRock: 0xff1e293b,    // #3b291e Deep mountain bedrock
     bedrock: 0xff0f172a,      // #2a170f Abyssal mountain core
     seam: 0xff080d17,         // #170d08 Subtle granite fissure
@@ -77,7 +77,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff334155,  // #554133 Damp rock
     soilLight: 0xff2a2436,    // #36242a Amethyst loam
     strataA: 0xff120e1a,      // #1a0e12 Darker purple strata band
-    strataB: 0xff171320,      // #201317 Dark cavern stratum
+    strataB: 0xff0d0a12,      // #120a0d Darker cavern stratum
     denseRock: 0xff110e17,    // #170e11 Heavy subterranean rock
     bedrock: 0xff0a080e,      // #0e080a Charcoal bedrock
     seam: 0xff050407,         // #070405 Deep cave fissure
@@ -89,7 +89,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff0f3578,  // #78350f Warm subterranean edge
     soilLight: 0xff081c3d,    // #3d1c08 Warm earthy subterranean rock
     strataA: 0xff020918,      // #180902 Darker warm rock stratum band
-    strataB: 0xff040e1f,      // #1f0e04 Dark warm rock band
+    strataB: 0xff020711,      // #110702 Darker warm rock band
     denseRock: 0xff030914,    // #140903 Deep warm stone core
     bedrock: 0xff02050c,      // #0c0502 Solid dark warm bedrock
     seam: 0xff010307,         // #070301 Harmonious subtle dark crevice (Zero eye strain)
@@ -101,7 +101,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff475569,  // #695547 Deep foundation
     soilLight: 0xff334155,    // #554133 Moat loam
     strataA: 0xff131b26,      // #261b13 Darker fortress bedrock band
-    strataB: 0xff1c2430,      // #30241c Stratified dungeon rock
+    strataB: 0xff0f131a,      // #1a130f Darker dungeon rock
     denseRock: 0xff141a22,    // #221a14 Heavy granite base
     bedrock: 0xff0c1015,      // #15100c Keep bedrock
     seam: 0xff06080b,         // #0b0806 Mortar seam
@@ -113,7 +113,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
     soilLight: 0xff1e3a5f,    // #5f3a1e Warm earthy brown loam
     strataA: 0xff091629,      // #291609 Darker floating sandstone band
-    strataB: 0xff102038,      // #382010 Dark suspended rock
+    strataB: 0xff09111f,      // #1f1109 Darker suspended rock
     denseRock: 0xff0c1626,    // #26160c Heavy stone core
     bedrock: 0xff060a12,      // #120a06 Dark basalt underbelly
     seam: 0xff03060a,         // #0a0603 Rock fissure
