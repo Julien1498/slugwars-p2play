@@ -1032,8 +1032,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      const rawDpr = window.devicePixelRatio || 1;
-      const dpr = Math.min(rawDpr, isTouch ? 1.5 : 2.0);
+      const dpr = 1.0;
       const cRect = containerRectRef.current;
 
       const targetW = Math.max(100, Math.round(cRect.width * dpr));

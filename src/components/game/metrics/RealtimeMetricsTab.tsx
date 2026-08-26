@@ -229,7 +229,7 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
           <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
             <span className="text-zinc-400">DPR Rendu (Écran) :</span>
             <span className="font-mono font-bold text-white">
-              {typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? 1.5 : 2.0) : 1}x{' '}
+              1.0x{' '}
               <span className="text-[10px] text-emerald-400 font-normal">
                 ({typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1}x natif)
               </span>
