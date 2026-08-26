@@ -4,7 +4,6 @@ import { getPixelHash } from './renderProps';
 
 export interface TerrainBuffers {
   offscreenCanvas: HTMLCanvasElement;
-  occlusionCanvas: HTMLCanvasElement;
   terrainHitboxCanvas: HTMLCanvasElement;
   distMap: Float32Array;
 }
@@ -126,10 +125,6 @@ export function createTerrainBuffers(width: number, height: number): TerrainBuff
   offscreenCanvas.width = width;
   offscreenCanvas.height = height;
 
-  const occlusionCanvas = document.createElement('canvas');
-  occlusionCanvas.width = width;
-  occlusionCanvas.height = height;
-
   const terrainHitboxCanvas = document.createElement('canvas');
   terrainHitboxCanvas.width = width;
   terrainHitboxCanvas.height = height;
@@ -139,7 +134,6 @@ export function createTerrainBuffers(width: number, height: number): TerrainBuff
 
   return {
     offscreenCanvas,
-    occlusionCanvas,
     terrainHitboxCanvas,
     distMap,
   };
@@ -151,7 +145,7 @@ export function redrawOffscreenTerrain(
   dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }
 ) {
   const { width, height, grid, theme } = terrain.data;
-  const { offscreenCanvas, occlusionCanvas, terrainHitboxCanvas, distMap } = buffers;
+  const { offscreenCanvas, terrainHitboxCanvas, distMap } = buffers;
 
   if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) {
     offscreenCanvas.width = width;
@@ -283,33 +277,6 @@ export function redrawOffscreenTerrain(
   offCtx.putImageData(imgData, minX, minY);
 
   if (isFullScan) {
-    // Pre-render Subterranean Soil Occlusion Mask
-    if (occlusionCanvas.width !== width || occlusionCanvas.height !== height) {
-      occlusionCanvas.width = width;
-      occlusionCanvas.height = height;
-    }
-    const occCtx = occlusionCanvas.getContext('2d');
-    if (occCtx) {
-      occCtx.clearRect(0, 0, width, height);
-      const occImgData = occCtx.createImageData(width, height);
-      const occData32 = new Uint32Array(occImgData.data.buffer);
-
-      for (let y = 0; y < height; y++) {
-        const rowOffset = y * width;
-        for (let x = 0; x < width; x++) {
-          const idx = rowOffset + x;
-          if (grid[idx] === 1) {
-            const d = distMap[idx];
-            if (d > 7) {
-              const alpha = Math.min(145, Math.floor((d - 7) * 9));
-              occData32[idx] = (alpha << 24) | 0x0a0503;
-            }
-          }
-        }
-      }
-      occCtx.putImageData(occImgData, 0, 0);
-    }
-
     // Pre-render Exact Ground Collision Hitbox Mask
     if (terrainHitboxCanvas.width !== width || terrainHitboxCanvas.height !== height) {
       terrainHitboxCanvas.width = width;

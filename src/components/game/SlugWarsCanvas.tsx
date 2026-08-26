@@ -241,19 +241,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           offCtx.restore();
         }
       }
-
-      // 3. Cut crater out of subterranean shadow occlusion canvas
-      if (buffers.occlusionCanvas) {
-        const occCtx = buffers.occlusionCanvas.getContext('2d');
-        if (occCtx) {
-          occCtx.save();
-          occCtx.globalCompositeOperation = 'destination-out';
-          occCtx.beginPath();
-          occCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
-          occCtx.fill();
-          occCtx.restore();
-        }
-      }
     },
     [terrain, getBuffers]
   );
@@ -1299,14 +1286,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
       perfTracker.recordRenderPass('props_solids', performance.now() - pSolidsStart);
 
-      // 4. Subterranean Occlusion Mask (Temporarily disabled for testing)
-      const pOcclusionStart = performance.now();
-      // if (buffers.occlusionCanvas) {
-      //   ctx.drawImage(buffers.occlusionCanvas, 0, 0);
-      // }
-      perfTracker.recordRenderPass('occlusion_mask', performance.now() - pOcclusionStart);
-
-      // 5. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
+      // 4. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
       const pDecorStart = performance.now();
       renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
       perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);

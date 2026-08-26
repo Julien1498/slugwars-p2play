@@ -5,9 +5,8 @@ export const RENDER_PASS_LABELS: Record<string, string> = {
   sky_celestial: '☀️ Soleil / Lune / Phare',
   sky_mountains: '🏔️ Montagnes & Collines',
   sky_back_ocean: '🌊 Océan Arrière-Plan',
-  // Terrain & Masques
+  // Terrain
   terrain_buffer: '🏜️ Terrain Destructible',
-  occlusion_mask: '🕳️ Masque Occlusion Souterraine',
   // Décors & Poutres
   props_girders: '🏗️ Poutres Métalliques HD',
   props_solids: '🌴 Décors Solides (Palmiers, Hérissons, etc.)',
