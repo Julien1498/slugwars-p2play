@@ -356,6 +356,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.lineTo(-45, -beamLen);
       ctx.lineTo(45, -beamLen);
       ctx.lineTo(6, 0);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
   }
@@ -461,11 +463,12 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   }
   perfTracker.recordRenderPass('sky_mountains', performance.now() - pMountainsStart);
 
-  // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
+  // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell with Adaptive LOD)
   const pBackOceanStart = performance.now();
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
 
-  const waveStep = 24;
+  const span = drawRight - drawLeft;
+  const waveStep = Math.max(18, Math.min(36, Math.round(span / 60)));
   const waveStartX = Math.floor(drawLeft / waveStep) * waveStep;
 
   // Layer 1: Back Ocean Deep Body Polygon

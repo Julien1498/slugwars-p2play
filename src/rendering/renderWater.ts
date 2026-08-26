@@ -132,6 +132,8 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
 
   const clampLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
   const clampRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
+  const span = clampRight - clampLeft;
+  const waveStep = Math.max(14, Math.min(30, Math.round(span / 70)));
 
   // Layer 1: Mid Translucent Rolling Wave
   ctx.fillStyle = isDay
@@ -142,24 +144,24 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   ctx.beginPath();
   ctx.moveTo(worldLeft, worldBottom);
   ctx.lineTo(clampLeft, worldBottom);
-  for (let x = clampLeft; x <= clampRight; x += 14) {
+  for (let x = clampLeft; x <= clampRight + waveStep * 2; x += waveStep) {
     const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
     ctx.lineTo(x, wy2);
   }
-  ctx.lineTo(clampRight, worldBottom);
+  ctx.lineTo(clampRight + waveStep, worldBottom);
   ctx.lineTo(worldRight, worldBottom);
   ctx.closePath();
   ctx.fill();
 
   // Single-pass computation of the main surface wave points (used by Layers 2, 3, and 4)
-  const neededCapacity = Math.ceil((clampRight - clampLeft) / 14) + 4;
+  const neededCapacity = Math.ceil(span / waveStep) + 8;
   if (_waveX.length < neededCapacity) {
     _waveX = new Float32Array(neededCapacity + 64);
     _waveY = new Float32Array(neededCapacity + 64);
   }
 
   let ptCount = 0;
-  for (let x = clampLeft; x <= clampRight; x += 14) {
+  for (let x = clampLeft; x <= clampRight + waveStep * 2; x += waveStep) {
     _waveX[ptCount] = x;
     _waveY[ptCount] = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
     ptCount++;
