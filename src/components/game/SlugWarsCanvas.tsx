@@ -1233,6 +1233,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
+      const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
+      const viewRight = viewLeft + cRect.width / totalScale;
+
       // 1. Sky, Atmosphere & Deep Background Ocean Swell
       const pSkyStart = performance.now();
       renderSkyAndAtmosphere({
@@ -1248,6 +1251,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         worldRight,
         worldTop,
         worldBottom,
+        viewLeft,
+        viewRight,
       });
       perfTracker.recordRenderPass('sky_atmosphere', performance.now() - pSkyStart);
 
@@ -1473,8 +1478,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       // 9. Foreground Ocean & Rolling Water Waves (With visible screen culling)
       const pOceanStart = performance.now();
-      const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
-      const viewRight = viewLeft + cRect.width / totalScale;
 
       renderForegroundOcean({
         ctx,
