@@ -16,6 +16,8 @@ export interface SkyRenderContext {
   worldBottom: number;
   viewLeft?: number;
   viewRight?: number;
+  viewTop?: number;
+  viewBottom?: number;
 }
 
 // Cached sky gradient
@@ -189,9 +191,13 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   const drawLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
   const drawRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
+  const drawTop = rc.viewTop !== undefined ? Math.max(worldTop, rc.viewTop - 100) : worldTop;
+  const drawBottom = rc.viewBottom !== undefined ? Math.min(worldBottom, rc.viewBottom + 100) : worldBottom;
 
-  ctx.fillStyle = _cachedSkyGrad;
-  ctx.fillRect(drawLeft, worldTop, drawRight - drawLeft, waterY - worldTop);
+  if (drawTop < waterY) {
+    ctx.fillStyle = _cachedSkyGrad;
+    ctx.fillRect(drawLeft, drawTop, drawRight - drawLeft, waterY - drawTop);
+  }
   perfTracker.recordRenderPass('sky_gradient', performance.now() - pSkyGradStart);
 
   // 2. Light Rays / Clouds / Atmosphere Particles
@@ -423,8 +429,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(drawRight + mtStep1, worldBottom);
-  ctx.lineTo(drawLeft, worldBottom);
+  ctx.lineTo(drawRight + mtStep1, drawBottom);
+  ctx.lineTo(drawLeft, drawBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -442,8 +448,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(drawRight + mtStep2, worldBottom);
-  ctx.lineTo(drawLeft, worldBottom);
+  ctx.lineTo(drawRight + mtStep2, drawBottom);
+  ctx.lineTo(drawLeft, drawBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -473,13 +479,13 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   // Layer 1: Back Ocean Deep Body Polygon
   ctx.beginPath();
-  ctx.moveTo(drawLeft, worldBottom);
+  ctx.moveTo(drawLeft, drawBottom);
   for (let x = waveStartX; x <= drawRight + waveStep * 2; x += waveStep) {
     const wy1 = waterY + Math.sin(x * 0.008 + slowTime * 1.5) * 10 + Math.cos(x * 0.016 - slowTime * 1.0) * 4;
     ctx.lineTo(x, wy1);
   }
-  ctx.lineTo(drawRight + waveStep, worldBottom);
-  ctx.lineTo(drawLeft, worldBottom);
+  ctx.lineTo(drawRight + waveStep, drawBottom);
+  ctx.lineTo(drawLeft, drawBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -490,13 +496,13 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       : 'rgba(14, 165, 233, 0.55)'
     : 'rgba(30, 58, 138, 0.45)';
   ctx.beginPath();
-  ctx.moveTo(drawLeft, worldBottom);
+  ctx.moveTo(drawLeft, drawBottom);
   for (let x = waveStartX; x <= drawRight + waveStep * 2; x += waveStep) {
     const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
     ctx.lineTo(x, wy2);
   }
-  ctx.lineTo(drawRight + waveStep, worldBottom);
-  ctx.lineTo(drawLeft, worldBottom);
+  ctx.lineTo(drawRight + waveStep, drawBottom);
+  ctx.lineTo(drawLeft, drawBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -521,12 +527,12 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       : 'rgba(2, 132, 199, 0.80)'
     : 'rgba(15, 23, 42, 0.80)';
   ctx.beginPath();
-  ctx.moveTo(drawLeft, worldBottom);
+  ctx.moveTo(drawLeft, drawBottom);
   for (let i = 0; i < bgPtCount; i++) {
     ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
-  ctx.lineTo(drawRight + waveStep, worldBottom);
-  ctx.lineTo(drawLeft, worldBottom);
+  ctx.lineTo(drawRight + waveStep, drawBottom);
+  ctx.lineTo(drawLeft, drawBottom);
   ctx.closePath();
   ctx.fill();
 

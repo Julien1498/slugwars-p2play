@@ -39,6 +39,8 @@ export interface WaterRenderContext {
   worldBottom: number;
   viewLeft?: number;
   viewRight?: number;
+  viewTop?: number;
+  viewBottom?: number;
   bubbles: WaterBubble[];
   ripples: WaterRipple[];
   splashes: WaterSplash[];
@@ -98,7 +100,7 @@ function getCachedFgWaterGradient(
     } else {
       grad.addColorStop(0, 'rgba(14, 165, 233, 0.70)');
       grad.addColorStop(0.20, 'rgba(2, 132, 199, 0.82)');
-      grad.addColorStop(0.50, 'rgba(3, 105, 161, 0.94)');
+      grad.addColorStop(0.45, 'rgba(3, 105, 161, 0.92)');
       grad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
     }
   }
@@ -125,6 +127,7 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
     worldBottom,
     viewLeft,
     viewRight,
+    viewBottom,
     bubbles,
     ripples,
     splashes,
@@ -132,6 +135,7 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
 
   const clampLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
   const clampRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
+  const clampBottom = viewBottom !== undefined ? Math.min(worldBottom, viewBottom + 100) : worldBottom;
   const span = clampRight - clampLeft;
   const waveStep = Math.max(14, Math.min(30, Math.round(span / 70)));
 
@@ -142,14 +146,13 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
       : 'rgba(14, 165, 233, 0.55)'
     : 'rgba(30, 58, 138, 0.45)';
   ctx.beginPath();
-  ctx.moveTo(worldLeft, worldBottom);
-  ctx.lineTo(clampLeft, worldBottom);
+  ctx.moveTo(clampLeft, clampBottom);
   for (let x = clampLeft; x <= clampRight + waveStep * 2; x += waveStep) {
     const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
     ctx.lineTo(x, wy2);
   }
-  ctx.lineTo(clampRight + waveStep, worldBottom);
-  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(clampRight + waveStep, clampBottom);
+  ctx.lineTo(clampLeft, clampBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -170,13 +173,12 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   // Layer 2: Front Main Ocean Body (Smooth cached gradient following wave surface)
   ctx.fillStyle = getCachedFgWaterGradient(ctx, waterY, height, theme, isDay);
   ctx.beginPath();
-  ctx.moveTo(worldLeft, worldBottom);
-  ctx.lineTo(clampLeft, worldBottom);
+  ctx.moveTo(clampLeft, clampBottom);
   for (let i = 0; i < ptCount; i++) {
     ctx.lineTo(_waveX[i], _waveY[i]);
   }
-  ctx.lineTo(clampRight, worldBottom);
-  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(clampRight + waveStep, clampBottom);
+  ctx.lineTo(clampLeft, clampBottom);
   ctx.closePath();
   ctx.fill();
 

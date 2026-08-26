@@ -1231,6 +1231,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
       const viewRight = viewLeft + cRect.width / totalScale;
+      const viewTop = height / 2 - (cRect.height / 2 + panRef.current.y) / totalScale;
+      const viewBottom = viewTop + cRect.height / totalScale;
 
       // 1. Sky, Atmosphere & Deep Background Ocean Swell (Granular sub-passes recorded inside renderSkyAndAtmosphere)
       renderSkyAndAtmosphere({
@@ -1248,6 +1250,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         worldBottom,
         viewLeft,
         viewRight,
+        viewTop,
+        viewBottom,
       });
 
       // 2. Offscreen Terrain Buffer
@@ -1538,6 +1542,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         worldBottom,
         viewLeft,
         viewRight,
+        viewTop,
+        viewBottom,
         bubbles: clientWaterBubblesRef.current,
         ripples: clientWaterRipplesRef.current,
         splashes: clientWaterSplashesRef.current,
