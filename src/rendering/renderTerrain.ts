@@ -25,7 +25,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   ISLAND: {
     highlight: 0xff35e6a3,    // #a3e635 Lime top edge
     surfaceBody: 0xff48a816,  // #16a848 Rich grass green
-    surfaceShadow: 0xff2a680e,// #0e682a Dark forest green shadow
+    surfaceShadow: 0xff20520a,// #0a5220 Darker forest green shadow
     surfaceDeep: 0xff1c3a0c,  // #0c3a1c Deep mossy undercoat
     soilLight: 0xff12223a,    // #3a2212 Rich warm soil
     strataA: 0xff0d182b,      // #2b180d Deep clay sandstone
@@ -37,7 +37,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   ARCHIPELAGO: {
     highlight: 0xff4ade80,    // #80de4a Tropical palm lime
     surfaceBody: 0xff16a34a,  // #4aa316 Vibrant lagoon green
-    surfaceShadow: 0xff127838,// #387812 Rich tropical shadow
+    surfaceShadow: 0xff0e602c,// #2c600e Darker tropical shadow
     surfaceDeep: 0xff0e4624,  // #24460e Coastal foliage shadow
     soilLight: 0xff1c3852,    // #52381c Coastal coral loam
     strataA: 0xff14293e,      // #3e2914 Sandstone reef stratum
@@ -49,7 +49,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   NATURAL_ARCHES: {
     highlight: 0xff2bf0f5,    // #f5f02b Sunlit golden sand rim
     surfaceBody: 0xff067ac2,  // #c27a06 Rich golden ochre sandstone
-    surfaceShadow: 0xff093294,// #943209 Terracotta red shadow
+    surfaceShadow: 0xff07287a,// #7a2807 Darker terracotta red shadow
     surfaceDeep: 0xff0c2058,  // #58200c Deep ironstone
     soilLight: 0xff101e3e,    // #3e1e10 Deep desert clay
     strataA: 0xff0d1730,      // #30170d Layered canyon sandstone
@@ -61,7 +61,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   SPIRES: {
     highlight: 0xff86efac,    // #acef86 Alpine grass rim
     surfaceBody: 0xff1ca84f,  // #4fa81c Mountain meadow green
-    surfaceShadow: 0xff10662e,// #2e6610 Rich pine forest green shadow
+    surfaceShadow: 0xff0c5224,// #24520c Darker pine forest green shadow
     surfaceDeep: 0xff0c3e1e,  // #1e3e0c Deep foliage undercoat
     soilLight: 0xff3d4756,    // #56473d Granite mountain stone
     strataA: 0xff2a323d,      // #3d322a Stratified mountain slate
@@ -73,7 +73,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   CAVERN: {
     highlight: 0xffa8b6c8,    // #c8b6a8 Pale subterranean crust
     surfaceBody: 0xff475569,  // #695547 Cool cavern slate
-    surfaceShadow: 0xff334155,// #554133 Dark slate
+    surfaceShadow: 0xff283445,// #453428 Darker slate shadow
     surfaceDeep: 0xff242d3b,  // #3b2d24 Damp rock
     soilLight: 0xff1a1622,    // #22161a Amethyst loam
     strataA: 0xff13101b,      // #1b1013 Purple-tinted strata
@@ -85,7 +85,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   ORGANIC_CAVES: {
     highlight: 0xff24bffb,    // #fbbf24 Golden amber highlight rim
     surfaceBody: 0xff055da8,  // #a85d05 Warm amber ochre tunnel floor
-    surfaceShadow: 0xff073e86,// #863e07 Warm terracotta shadow
+    surfaceShadow: 0xff05326d,// #6d3205 Darker terracotta shadow
     surfaceDeep: 0xff0a2454,  // #54240a Warm subterranean edge
     soilLight: 0xff05132a,    // #2a1305 Warm earthy subterranean rock
     strataA: 0xff040d1e,      // #1e0d04 Stratified warm rock stratum
@@ -97,7 +97,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   FORTRESS: {
     highlight: 0xffa3e635,    // #35e6a3 Rampart moss
     surfaceBody: 0xff6f7b8c,  // #8c7b6f Ashlar castle stone
-    surfaceShadow: 0xff475569,// #695547 Heavy stone masonry
+    surfaceShadow: 0xff384355,// #554338 Darker stone masonry shadow
     surfaceDeep: 0xff313c4c,  // #4c3c31 Deep foundation
     soilLight: 0xff212935,    // #352921 Moat loam
     strataA: 0xff171e28,      // #281e17 Fortress bedrock
@@ -109,7 +109,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
   FLOATING_CHAOS: {
     highlight: 0xff86efac,    // #acef86 Bright mint/emerald moss rim
     surfaceBody: 0xff199443,  // #439419 Lush floating island grass
-    surfaceShadow: 0xff10662e,// #2e6610 Rich forest green shadow
+    surfaceShadow: 0xff0c5022,// #22500c Darker forest green shadow
     surfaceDeep: 0xff0c3e1e,  // #1e3e0c Deep foliage undercoat
     soilLight: 0xff142740,    // #402714 Warm earthy brown loam
     strataA: 0xff0e1b2e,      // #2e1b0e Stratified floating sandstone
