@@ -687,7 +687,6 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   if (prev.isHost !== next.isHost) return false;
   if (prev.hostPeerId !== next.hostPeerId) return false;
   if (prev.showHitboxes !== next.showHitboxes) return false;
-  if (prev.onRestartGame !== next.onRestartGame) return false;
 
   const pState = prev.gameState;
   const nState = next.gameState;

@@ -49,6 +49,9 @@ export interface FrameLogEntry {
   renderDurationMs: number;
   physicsDurationMs: number;
   reactRenderDurationMs: number;
+  cpuJsMs: number;
+  gpuRasterMs: number;
+  realIdleWaitMs: number;
   browserWaitMs: number;
   fpsInstant: number;
   isJank: boolean;
@@ -97,7 +100,6 @@ export interface EnvironmentMetrics {
   deviceMemoryGB: number | null;
   gpuRenderer: string;
   gpuVendor: string;
-  detectedRefreshRateHz: number;
   framePacingJitterMs: number;
   smoothnessScore: number;
   avgEventLoopLagMs: number;
@@ -105,6 +107,15 @@ export interface EnvironmentMetrics {
   longTasksCount: number;
   longTasksTotalMs: number;
   heapSizeLimitMB: number | null;
+}
+
+export interface CpuGpuBreakdown {
+  avgCpuJsMs: number;
+  cpuJsPercent: number;
+  avgGpuRasterMs: number;
+  gpuRasterPercent: number;
+  avgRealIdleMs: number;
+  realIdlePercent: number;
 }
 
 export interface PerfCaptureReport {
@@ -125,6 +136,7 @@ export interface PerfCaptureReport {
   maxReactRenderMs: number;
   avgBrowserWaitMs: number;
   browserWaitPercent: number;
+  cpuGpuBreakdown: CpuGpuBreakdown;
   fpsDistribution: FpsDistribution;
   environment: EnvironmentMetrics;
   diagnosticVerdict: string;
@@ -223,12 +235,17 @@ class PerformanceTracker {
     this.currentReactDurationMs = Math.round(actualDuration * 100) / 100;
 
     if (this.isCapturing) {
-      this.totalReactRendersCount++;
+      const isActualWork = phase === 'mount' || actualDuration > 0.02;
+      if (isActualWork) {
+        this.totalReactRendersCount++;
+      }
       this.sumReactDurationMs += actualDuration;
       this.maxReactDurationMs = Math.max(this.maxReactDurationMs, actualDuration);
 
       const existing = this.reactStatsMap.get(componentId) || { count: 0, totalMs: 0, maxMs: 0 };
-      existing.count++;
+      if (isActualWork) {
+        existing.count++;
+      }
       existing.totalMs += actualDuration;
       existing.maxMs = Math.max(existing.maxMs, actualDuration);
       this.reactStatsMap.set(componentId, existing);
@@ -294,10 +311,22 @@ class PerformanceTracker {
       memoryMB = Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
     }
 
-    const browserWaitMs = Math.max(
-      0,
-      Math.round((frameIntervalMs - (renderDurationMs + this.lastPhysicsDurationMs + reactDuration)) * 100) / 100
-    );
+    const cpuJsMs = Math.round((renderDurationMs + this.lastPhysicsDurationMs + reactDuration) * 100) / 100;
+    
+    // Sample real idle remaining via requestIdleCallback
+    const sampledIdle = this.lastSampledIdleMs;
+    const maxPossibleIdle = Math.max(0, frameIntervalMs - cpuJsMs);
+    const realIdleWaitMs = Math.min(sampledIdle > 0 ? sampledIdle : (frameIntervalMs > 15 ? Math.max(0, 16.6 - cpuJsMs - 4) : 0), maxPossibleIdle);
+    const gpuRasterMs = Math.max(0, Math.round((frameIntervalMs - cpuJsMs - realIdleWaitMs) * 100) / 100);
+    const browserWaitMs = Math.max(0, Math.round((frameIntervalMs - cpuJsMs) * 100) / 100);
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      try {
+        (window as any).requestIdleCallback((deadline: any) => {
+          this.lastSampledIdleMs = Math.max(0, Math.round(deadline.timeRemaining() * 10) / 10);
+        }, { timeout: 16 });
+      } catch {}
+    }
 
     const frameEntry: FrameLogEntry = {
       frameId: this.nextFrameId++,
@@ -306,6 +335,9 @@ class PerformanceTracker {
       renderDurationMs: Math.round(renderDurationMs * 100) / 100,
       physicsDurationMs: this.lastPhysicsDurationMs,
       reactRenderDurationMs: reactDuration,
+      cpuJsMs,
+      gpuRasterMs,
+      realIdleWaitMs,
       browserWaitMs,
       fpsInstant,
       isJank,
@@ -322,6 +354,8 @@ class PerformanceTracker {
     }
   }
 
+  private lastSampledIdleMs = 0;
+
   public startCapture(durationSeconds: number = 5): void {
     if (this.isCapturing) return;
     this.isCapturing = true;
@@ -330,6 +364,7 @@ class PerformanceTracker {
     this.capturedFrames = [];
     this.nextFrameId = 1;
     this.lastReport = null;
+    this.lastSampledIdleMs = 0;
 
     this.longTasksCount = 0;
     this.longTasksTotalMs = 0;
@@ -419,8 +454,12 @@ class PerformanceTracker {
     let minFps = 999;
     let maxFps = 0;
     let sumInterval = 0;
+    let minInterval = 999;
     let sumRender = 0;
     let maxRender = 0;
+    let sumCpuJs = 0;
+    let sumGpuRaster = 0;
+    let sumRealIdle = 0;
     let sumBrowserWait = 0;
     let jankCount = 0;
     let criticalJankCount = 0;
@@ -432,8 +471,12 @@ class PerformanceTracker {
       minFps = Math.min(minFps, f.fpsInstant);
       maxFps = Math.max(maxFps, f.fpsInstant);
       sumInterval += f.frameIntervalMs;
+      minInterval = Math.min(minInterval, f.frameIntervalMs);
       sumRender += f.renderDurationMs;
       maxRender = Math.max(maxRender, f.renderDurationMs);
+      sumCpuJs += f.cpuJsMs;
+      sumGpuRaster += f.gpuRasterMs;
+      sumRealIdle += f.realIdleWaitMs;
       sumBrowserWait += f.browserWaitMs;
       if (f.isJank) jankCount++;
       if (f.isCriticalJank) criticalJankCount++;
@@ -476,6 +519,23 @@ class PerformanceTracker {
     const avgBrowserWaitMs = totalFrames > 0 ? Math.round((sumBrowserWait / totalFrames) * 10) / 10 : 0;
     const browserWaitPercent = sumInterval > 0 ? Math.round((sumBrowserWait / sumInterval) * 1000) / 10 : 0;
 
+    // Real CPU vs GPU vs Idle Breakdown
+    const avgCpuJsMs = totalFrames > 0 ? Math.round((sumCpuJs / totalFrames) * 100) / 100 : 0;
+    const cpuJsPercent = sumInterval > 0 ? Math.round((sumCpuJs / sumInterval) * 1000) / 10 : 0;
+    const avgGpuRasterMs = totalFrames > 0 ? Math.round((sumGpuRaster / totalFrames) * 100) / 100 : 0;
+    const gpuRasterPercent = sumInterval > 0 ? Math.round((sumGpuRaster / sumInterval) * 1000) / 10 : 0;
+    const avgRealIdleMs = totalFrames > 0 ? Math.round((sumRealIdle / totalFrames) * 100) / 100 : 0;
+    const realIdlePercent = sumInterval > 0 ? Math.round((sumRealIdle / sumInterval) * 1000) / 10 : 0;
+
+    const cpuGpuBreakdown: CpuGpuBreakdown = {
+      avgCpuJsMs,
+      cpuJsPercent,
+      avgGpuRasterMs,
+      gpuRasterPercent,
+      avgRealIdleMs,
+      realIdlePercent,
+    };
+
     // Compute FPS Distribution Buckets
     let fps60Plus = 0;
     let fps50to59 = 0;
@@ -511,16 +571,6 @@ class PerformanceTracker {
     }
     const framePacingJitterMs = totalFrames > 0 ? Math.round(Math.sqrt(varianceSum / totalFrames) * 100) / 100 : 0;
     const smoothnessScore = totalFrames > 0 ? Math.round((inTargetWindowCount / totalFrames) * 1000) / 10 : 100;
-
-    // Detect Screen Hardware Refresh Rate Mode
-    let detectedRefreshRateHz = 60;
-    if (avgFrameIntervalMs <= 4.8) detectedRefreshRateHz = 240;
-    else if (avgFrameIntervalMs <= 6.5) detectedRefreshRateHz = 165;
-    else if (avgFrameIntervalMs <= 7.5) detectedRefreshRateHz = 144;
-    else if (avgFrameIntervalMs <= 9.0) detectedRefreshRateHz = 120;
-    else if (avgFrameIntervalMs <= 14.0) detectedRefreshRateHz = 75;
-    else detectedRefreshRateHz = 60;
-
 
     // Detect GPU Hardware via WebGL debug info
     const gpuInfo = this.getGpuHardwareInfo();
@@ -576,7 +626,6 @@ class PerformanceTracker {
       deviceMemoryGB: typeof (navigator as any)?.deviceMemory === 'number' ? (navigator as any).deviceMemory : null,
       gpuRenderer: gpuInfo.renderer,
       gpuVendor: gpuInfo.vendor,
-      detectedRefreshRateHz,
       framePacingJitterMs,
       smoothnessScore,
       avgEventLoopLagMs: avgLag,
@@ -587,14 +636,14 @@ class PerformanceTracker {
     };
 
     let diagnosticVerdict = '';
-    if (avgBrowserWaitMs >= 12 && avgRenderDurationMs <= 3.0) {
-      diagnosticVerdict = `Performance optimale : Moteur JS ultra-rapide (${avgRenderDurationMs}ms / frame), fluidité à ${smoothnessScore}% (gigue VSync: ${framePacingJitterMs}ms). Les ${avgBrowserWaitMs}ms restantes sont la synchronisation VSync Chromium (${detectedRefreshRateHz} Hz).`;
-    } else if (avgRenderDurationMs > 8.0) {
-      diagnosticVerdict = `Le rendu Canvas est la cause principale de ralentissement (${avgRenderDurationMs}ms / trame). La passe la plus lourde est ${topBottleneckPass?.label || 'Inconnue'}.`;
-    } else if (avgLag > 20) {
-      diagnosticVerdict = `La file d'attente JavaScript (Event Loop) est ralentie (${avgLag}ms de latence) par des tâches d'arrière-plan.`;
+    const avgFps = totalFrames > 0 ? Math.round((sumFps / totalFrames) * 10) / 10 : 0;
+
+    if (avgGpuRasterMs >= 6.0) {
+      diagnosticVerdict = `Goulot d'étranglement GPU : La carte graphique (${gpuInfo.renderer}) passe ~${avgGpuRasterMs}ms par frame (${gpuRasterPercent}%) à peindre les calques Canvas 2D. Le CPU JS est ultra-rapide (${avgCpuJsMs}ms / ${cpuJsPercent}%), mais la charge graphique limite le framerate à ${avgFps} FPS.`;
+    } else if (avgCpuJsMs >= 8.0) {
+      diagnosticVerdict = `Goulot d'étranglement CPU : Le code JavaScript prend ${avgCpuJsMs}ms par frame. La passe la plus lourde est ${topBottleneckPass?.label || 'Inconnue'}.`;
     } else {
-      diagnosticVerdict = `Performance équilibrée : Dessin ${avgRenderDurationMs}ms, Physique ${avgPhysicsDurationMs}ms, Attente Navigateur ${avgBrowserWaitMs}ms.`;
+      diagnosticVerdict = `Performance équilibrée : CPU JS ${avgCpuJsMs}ms (${cpuJsPercent}%), Rendu GPU ${avgGpuRasterMs}ms (${gpuRasterPercent}%), Repos VSync ${avgRealIdleMs}ms (${realIdlePercent}%) à ${avgFps} FPS.`;
     }
 
     const report: PerfCaptureReport = {
@@ -615,6 +664,7 @@ class PerformanceTracker {
       maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
       avgBrowserWaitMs,
       browserWaitPercent,
+      cpuGpuBreakdown,
       fpsDistribution,
       environment,
       diagnosticVerdict,

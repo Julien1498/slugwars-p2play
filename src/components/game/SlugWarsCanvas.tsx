@@ -1299,19 +1299,32 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       // 5. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
       const pDecorStart = performance.now();
-      renderDecorItems(ctx, terrain, decorItems, animTime);
+      renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
       perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);
 
       const pMinesStart = performance.now();
-      renderMines(ctx, curState.mines);
+      if (curState.mines) {
+        const visibleMines = (viewLeft !== undefined && viewRight !== undefined)
+          ? curState.mines.filter((m) => m.x >= viewLeft - 40 && m.x <= viewRight + 40)
+          : curState.mines;
+        renderMines(ctx, visibleMines);
+      }
       perfTracker.recordRenderPass('decor_mines', performance.now() - pMinesStart);
 
       const pHelisStart = performance.now();
-      renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
+      if (curState.helicopters) {
+        const visibleHelis = (viewLeft !== undefined && viewRight !== undefined)
+          ? curState.helicopters.filter((h) => h.x >= viewLeft - 100 && h.x <= viewRight + 100)
+          : curState.helicopters;
+        renderHelicopters(ctx, visibleHelis, curState, animTime, isMyTurnRef.current);
+      }
       perfTracker.recordRenderPass('decor_helicopters', performance.now() - pHelisStart);
 
       const pTombsStart = performance.now();
-      renderTombstones(ctx, curState.slugs, waterLevel);
+      const visibleTombSlugs = (viewLeft !== undefined && viewRight !== undefined)
+        ? curState.slugs.filter((s) => s.x >= viewLeft - 60 && s.x <= viewRight + 60)
+        : curState.slugs;
+      renderTombstones(ctx, visibleTombSlugs, waterLevel);
       perfTracker.recordRenderPass('decor_tombstones', performance.now() - pTombsStart);
 
       // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering (0 GC allocations)
@@ -1441,13 +1454,19 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       renderAllSlugs({ ctx, gameState: visualState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
       perfTracker.recordRenderPass('slugs_rendering', performance.now() - pSlugsStart);
 
-      // 7. Supply Crates, Projectiles & Particles FX
+      // 7. Supply Crates, Projectiles & Particles FX (With Viewport Culling)
       const pCratesStart = performance.now();
-      renderSupplyCrates(ctx, renderedCrates, animTime);
+      const visibleCrates = (viewLeft !== undefined && viewRight !== undefined)
+        ? renderedCrates.filter((c) => c.x >= viewLeft - 50 && c.x <= viewRight + 50)
+        : renderedCrates;
+      renderSupplyCrates(ctx, visibleCrates, animTime);
       perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
 
       const pProjStart = performance.now();
-      renderProjectiles({ ctx, projectiles: renderedProjectiles, animTime });
+      const visibleProjectiles = (viewLeft !== undefined && viewRight !== undefined)
+        ? renderedProjectiles.filter((p) => p.x >= viewLeft - 80 && p.x <= viewRight + 80)
+        : renderedProjectiles;
+      renderProjectiles({ ctx, projectiles: visibleProjectiles, animTime });
       perfTracker.recordRenderPass('projectiles', performance.now() - pProjStart);
 
       const pPartsStart = performance.now();
@@ -1467,15 +1486,24 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           }
         }
       }
-      renderParticles(ctx, clientParticlesRef.current);
+      const visibleParticles = (viewLeft !== undefined && viewRight !== undefined)
+        ? clientParticlesRef.current.filter((p) => p.x >= viewLeft - 50 && p.x <= viewRight + 50)
+        : clientParticlesRef.current;
+      renderParticles(ctx, visibleParticles);
       perfTracker.recordRenderPass('particles_fx', performance.now() - pPartsStart);
 
       const pExplosionsStart = performance.now();
-      renderClientExplosions(ctx, clientExplosionsRef.current);
+      const visibleExplosions = (viewLeft !== undefined && viewRight !== undefined)
+        ? clientExplosionsRef.current.filter((e) => e.x >= viewLeft - 120 && e.x <= viewRight + 120)
+        : clientExplosionsRef.current;
+      renderClientExplosions(ctx, visibleExplosions);
       perfTracker.recordRenderPass('explosions_fx', performance.now() - pExplosionsStart);
 
       const pDamagesStart = performance.now();
-      renderFloatingDamages(ctx, clientFloatingDamagesRef.current);
+      const visibleDamages = (viewLeft !== undefined && viewRight !== undefined)
+        ? clientFloatingDamagesRef.current.filter((d) => d.x >= viewLeft - 60 && d.x <= viewRight + 60)
+        : clientFloatingDamagesRef.current;
+      renderFloatingDamages(ctx, visibleDamages);
       perfTracker.recordRenderPass('floating_damages', performance.now() - pDamagesStart);
 
       // 8. Aim Guides, Holograms & Placement Preview

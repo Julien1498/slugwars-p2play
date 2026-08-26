@@ -5,12 +5,18 @@ export function renderDecorItems(
   ctx: CanvasRenderingContext2D,
   terrain: DestructibleTerrain,
   decorItems: DecorItem[] | undefined,
-  animTime: number
+  animTime: number,
+  viewLeft?: number,
+  viewRight?: number
 ) {
   if (!decorItems) return;
 
   for (const item of decorItems) {
     if (item.destroyed) continue;
+
+    if (viewLeft !== undefined && viewRight !== undefined) {
+      if (item.x < viewLeft - 60 || item.x > viewRight + 60) continue;
+    }
 
     if (item.type === 'hanging_leaf') {
       // Verify ceiling anchor is still solid (disappears if ceiling is destroyed!)

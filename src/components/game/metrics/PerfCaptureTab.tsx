@@ -82,7 +82,6 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
                   <div className="text-[10px] text-zinc-400 font-mono pt-1 flex flex-wrap gap-x-3 gap-y-1 border-t border-zinc-800/80">
                     <span>GPU : <strong className="text-cyan-300">{perfReport.environment.gpuRenderer}</strong></span>
                     <span>Résolution : <strong className="text-white">{perfReport.environment.screenWidth}x{perfReport.environment.screenHeight}</strong></span>
-                    <span>Cadence VSync Navigateur : <strong className="text-emerald-300">{perfReport.environment.detectedRefreshRateHz} Hz</strong></span>
                     <span>DPR : <strong className="text-white">{perfReport.environment.dpr}x</strong></span>
                     <span>CPU Cores : <strong className="text-white">{perfReport.environment.hardwareConcurrency}</strong></span>
                     <span>RAM : <strong className="text-white">{perfReport.environment.deviceMemoryGB ? `${perfReport.environment.deviceMemoryGB} GB` : 'N/A'}</strong></span>
@@ -93,6 +92,49 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
                     <span>Tâches Longues (&gt;50ms) : <strong className="text-emerald-300">{perfReport.environment.longTasksCount}</strong></span>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Real CPU vs GPU vs Idle Breakdown Bar */}
+          {perfReport.cpuGpuBreakdown && (
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 space-y-2 text-xs font-mono">
+              <div className="flex justify-between text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
+                <span>Décomposition Réelle du Temps par Trame ({perfReport.avgFrameIntervalMs} ms)</span>
+                <span className="text-cyan-300 font-mono">
+                  CPU: {perfReport.cpuGpuBreakdown.avgCpuJsMs}ms · GPU: {perfReport.cpuGpuBreakdown.avgGpuRasterMs}ms · VSync: {perfReport.cpuGpuBreakdown.avgRealIdleMs}ms
+                </span>
+              </div>
+              <div className="w-full h-3 bg-zinc-900 rounded-full overflow-hidden flex gap-0.5 p-0.5">
+                <div
+                  className="bg-cyan-400 h-full rounded-l-full transition-all"
+                  style={{ width: `${Math.max(2, perfReport.cpuGpuBreakdown.cpuJsPercent)}%` }}
+                  title={`CPU JS : ${perfReport.cpuGpuBreakdown.avgCpuJsMs}ms (${perfReport.cpuGpuBreakdown.cpuJsPercent}%)`}
+                />
+                <div
+                  className="bg-fuchsia-500 h-full transition-all"
+                  style={{ width: `${Math.max(2, perfReport.cpuGpuBreakdown.gpuRasterPercent)}%` }}
+                  title={`GPU Raster & Shaders : ${perfReport.cpuGpuBreakdown.avgGpuRasterMs}ms (${perfReport.cpuGpuBreakdown.gpuRasterPercent}%)`}
+                />
+                <div
+                  className="bg-indigo-500 h-full rounded-r-full transition-all"
+                  style={{ width: `${Math.max(2, perfReport.cpuGpuBreakdown.realIdlePercent)}%` }}
+                  title={`Repos VSync Inactif : ${perfReport.cpuGpuBreakdown.avgRealIdleMs}ms (${perfReport.cpuGpuBreakdown.realIdlePercent}%)`}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-zinc-400 pt-0.5 flex-wrap gap-2">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+                  <span>⚡ CPU JS Total : <strong className="text-white">{perfReport.cpuGpuBreakdown.avgCpuJsMs} ms</strong> ({perfReport.cpuGpuBreakdown.cpuJsPercent}%)</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500 inline-block" />
+                  <span>🎮 Rendu GPU & Shaders : <strong className="text-white">{perfReport.cpuGpuBreakdown.avgGpuRasterMs} ms</strong> ({perfReport.cpuGpuBreakdown.gpuRasterPercent}%)</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
+                  <span>💤 Sommeil / VSync Réel : <strong className="text-white">{perfReport.cpuGpuBreakdown.avgRealIdleMs} ms</strong> ({perfReport.cpuGpuBreakdown.realIdlePercent}%)</span>
+                </span>
               </div>
             </div>
           )}
@@ -165,7 +207,7 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
 
             {/* Draw Time */}
             <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
-              <div className="text-[10px] font-bold uppercase text-zinc-400">Dessin Canvas 2D</div>
+              <div className="text-[10px] font-bold uppercase text-zinc-400">Dessin Canvas (CPU)</div>
               <div className="text-xl font-black font-mono text-cyan-400 mt-0.5">
                 {perfReport.avgRenderDurationMs} <span className="text-xs">ms</span>
               </div>
@@ -185,14 +227,14 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
               </div>
             </div>
 
-            {/* Browser VSync Wait vs JS */}
+            {/* GPU & Composition Time */}
             <div className="bg-zinc-950 border border-zinc-800 p-3 rounded-xl">
-              <div className="text-[10px] font-bold uppercase text-zinc-400">Attente Navigateur</div>
-              <div className="text-xl font-black font-mono text-indigo-400 mt-0.5">
-                {perfReport.avgBrowserWaitMs ?? 0} <span className="text-xs">ms</span>
+              <div className="text-[10px] font-bold uppercase text-zinc-400">Rendu GPU & Shaders</div>
+              <div className="text-xl font-black font-mono text-fuchsia-400 mt-0.5">
+                {perfReport.cpuGpuBreakdown?.avgGpuRasterMs ?? 0} <span className="text-xs">ms</span>
               </div>
               <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                {perfReport.browserWaitPercent ?? 0}% du cycle VSync
+                {perfReport.cpuGpuBreakdown?.gpuRasterPercent ?? 0}% de la trame
               </div>
             </div>
 

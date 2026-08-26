@@ -140,15 +140,15 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   return (
     <div className="fixed inset-0 h-[100dvh] w-screen overflow-hidden overscroll-none touch-none bg-zinc-950 text-zinc-100 select-none relative">
       {/* Top Header - Floating transparent on mobile, new edge-to-edge floating cluster on PC */}
-      <Profiler id="TurnHeader" onRender={perfTracker.onReactRender}>
-        <div
-          className={
-            isTouch
-              ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.35rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]'
-              : 'absolute top-0 inset-x-0 z-30 pointer-events-none'
-          }
-        >
-          {isTouch ? (
+      <div
+        className={
+          isTouch
+            ? 'absolute top-0 inset-x-0 z-30 pointer-events-none p-1.5 pt-[max(0.35rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]'
+            : 'absolute top-0 inset-x-0 z-30 pointer-events-none'
+        }
+      >
+        {isTouch ? (
+          <Profiler id="TurnHeader" onRender={perfTracker.onReactRender}>
             <TurnHeader
               gameState={gameState}
               hostPeerId={hostPeerId}
@@ -163,7 +163,9 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               onRestartGame={onRestartGame}
               onExit={onExit}
             />
-          ) : (
+          </Profiler>
+        ) : (
+          <Profiler id="DesktopTopHeader" onRender={perfTracker.onReactRender}>
             <DesktopTopHeader
               gameState={gameState}
               hostPeerId={hostPeerId}
@@ -176,9 +178,9 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
               onRestartGame={onRestartGame}
               onExit={onExit}
             />
-          )}
-        </div>
-      </Profiler>
+          </Profiler>
+        )}
+      </div>
 
       {/* Main Canvas Area - Fullscreen behind floating HUD on both mobile and PC */}
       <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden w-full h-full">

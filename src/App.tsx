@@ -56,6 +56,24 @@ export const App: React.FC<AppProps> = ({
   const isConnected = status === 'CONNECTED' || (status as string) === 'connected';
   const isConnecting = status === 'CONNECTING' || (status as string) === 'connecting';
 
+  const handleRestartGame = React.useCallback(() => sendAction('RESTART_GAME'), [sendAction]);
+  const handleFire = React.useCallback((targetPoint?: any) => sendAction('FIRE', { targetPoint }), [sendAction]);
+  const handlePlaceSlug = React.useCallback((point: any) => sendAction('PLACE_SLUG', { point }), [sendAction]);
+  const handleUpdateAim = React.useCallback((aimAngle: number, aimPower: number, facing: 'left' | 'right', targetPoint?: any) => sendAction('AIM', { aimAngle, aimPower, facing, targetPoint }), [sendAction]);
+  const handleSelectWeapon = React.useCallback((weaponId: string) => sendAction('SELECT_WEAPON', { weaponId }), [sendAction]);
+  const handleSetFuseTimer = React.useCallback((seconds: number) => sendAction('SET_FUSE_TIMER', { seconds }), [sendAction]);
+  const handleStartMove = React.useCallback((dir: 'left' | 'right') => sendAction('START_MOVE', { dir }), [sendAction]);
+  const handleStopMove = React.useCallback(() => sendAction('STOP_MOVE'), [sendAction]);
+  const handleJump = React.useCallback(() => sendAction('JUMP'), [sendAction]);
+  const handleStartSteer = React.useCallback((dir: 'left' | 'right') => sendAction('START_STEER', { dir }), [sendAction]);
+  const handleStopSteer = React.useCallback(() => sendAction('STOP_STEER'), [sendAction]);
+  const handleStartCharge = React.useCallback((targetPoint?: any) => sendAction('START_CHARGE', { targetPoint }), [sendAction]);
+  const handleReleaseCharge = React.useCallback((targetPoint?: any) => sendAction('RELEASE_CHARGE', { targetPoint }), [sendAction]);
+  const handleDetonate = React.useCallback(() => sendAction('DETONATE'), [sendAction]);
+  const handleEnterVehicle = React.useCallback(() => sendAction('ENTER_VEHICLE'), [sendAction]);
+  const handleExitVehicle = React.useCallback(() => sendAction('EXIT_VEHICLE'), [sendAction]);
+  const handleSteerVehicle = React.useCallback((dir: any) => sendAction('STEER_VEHICLE', { dir }), [sendAction]);
+
   // Standalone Mode: If not connected to a room and not embedded in Hub, render stylish SlugWars connection & landing screen
   if (!isEmbedded && !isConnected) {
     return (
@@ -102,23 +120,23 @@ export const App: React.FC<AppProps> = ({
         myPeerId={myPeerId}
         hostPeerId={hostPeerId}
         isHost={isHost}
-        onFire={(targetPoint) => sendAction('FIRE', { targetPoint })}
-        onPlaceSlug={(point) => sendAction('PLACE_SLUG', { point })}
-        onUpdateAim={(aimAngle, aimPower, facing, targetPoint) => sendAction('AIM', { aimAngle, aimPower, facing, targetPoint })}
-        onSelectWeapon={(weaponId) => sendAction('SELECT_WEAPON', { weaponId })}
-        onSetFuseTimer={(seconds) => sendAction('SET_FUSE_TIMER', { seconds })}
-        onStartMove={(dir) => sendAction('START_MOVE', { dir })}
-        onStopMove={() => sendAction('STOP_MOVE')}
-        onJump={() => sendAction('JUMP')}
-        onStartSteer={(dir) => sendAction('START_STEER', { dir })}
-        onStopSteer={() => sendAction('STOP_STEER')}
-        onStartCharge={(targetPoint) => sendAction('START_CHARGE', { targetPoint })}
-        onReleaseCharge={(targetPoint) => sendAction('RELEASE_CHARGE', { targetPoint })}
-        onDetonate={() => sendAction('DETONATE')}
-        onEnterVehicle={() => sendAction('ENTER_VEHICLE')}
-        onExitVehicle={() => sendAction('EXIT_VEHICLE')}
-        onSteerVehicle={(dir) => sendAction('STEER_VEHICLE', { dir })}
-        onRestartGame={() => sendAction('RESTART_GAME')}
+        onFire={handleFire}
+        onPlaceSlug={handlePlaceSlug}
+        onUpdateAim={handleUpdateAim}
+        onSelectWeapon={handleSelectWeapon}
+        onSetFuseTimer={handleSetFuseTimer}
+        onStartMove={handleStartMove}
+        onStopMove={handleStopMove}
+        onJump={handleJump}
+        onStartSteer={handleStartSteer}
+        onStopSteer={handleStopSteer}
+        onStartCharge={handleStartCharge}
+        onReleaseCharge={handleReleaseCharge}
+        onDetonate={handleDetonate}
+        onEnterVehicle={handleEnterVehicle}
+        onExitVehicle={handleExitVehicle}
+        onSteerVehicle={handleSteerVehicle}
+        onRestartGame={handleRestartGame}
         onExit={onExit}
       />
     </div>
