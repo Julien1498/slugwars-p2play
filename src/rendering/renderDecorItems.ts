@@ -1,6 +1,51 @@
 import { DecorItem } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
 
+function createPath(fn: (p: Path2D) => void): Path2D {
+  if (typeof Path2D === 'undefined') return {} as Path2D;
+  const p = new Path2D();
+  fn(p);
+  return p;
+}
+
+// --- PRE-COMPILED VECTOR GEOMETRIES FOR DECOR (Instant GPU Execution) ---
+const VINE_STEM = createPath((p) => {
+  p.moveTo(0, 0);
+  p.quadraticCurveTo(-4, 10, 2, 20);
+  p.quadraticCurveTo(6, 28, 0, 36);
+});
+
+const VINE_ALL_LEAVES = createPath((p) => {
+  const leaves = [
+    { x: -3, y: 7, rx: -0.4, size: 4 },
+    { x: 3, y: 13, rx: 0.5, size: 4.5 },
+    { x: -2, y: 19, rx: -0.6, size: 4 },
+    { x: 4, y: 26, rx: 0.4, size: 3.5 },
+    { x: 0, y: 36, rx: 0.1, size: 3 },
+  ];
+  for (const leaf of leaves) {
+    p.ellipse(leaf.x, leaf.y, leaf.size, leaf.size * 0.4, leaf.rx, 0, Math.PI * 2);
+  }
+});
+
+const BUTTERFLY_WINGS = createPath((p) => {
+  p.ellipse(-5, -2, 5, 3.5, -0.4, 0, Math.PI * 2);
+  p.ellipse(5, -2, 5, 3.5, 0.4, 0, Math.PI * 2);
+});
+
+const BUTTERFLY_SPOTS = createPath((p) => {
+  p.arc(-5, -2, 1.2, 0, Math.PI * 2);
+  p.moveTo(5 + 1.2, -2);
+  p.arc(5, -2, 1.2, 0, Math.PI * 2);
+});
+
+const BUTTERFLY_ANTENNAE = createPath((p) => {
+  p.moveTo(-0.5, -4);
+  p.lineTo(-2.5, -7);
+  p.moveTo(0.5, -4);
+  p.lineTo(2.5, -7);
+});
+
 export function renderDecorItems(
   ctx: CanvasRenderingContext2D,
   terrain: DestructibleTerrain,
@@ -48,30 +93,14 @@ export function renderDecorItems(
       // 2. Main Thin Vine Stem
       ctx.strokeStyle = '#15803d';
       ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(-4, 10, 2, 20);
-      ctx.quadraticCurveTo(6, 28, 0, 36);
-      ctx.stroke();
+      ctx.stroke(VINE_STEM);
 
-      // 3. Alternating Teardrop Tropical Leaves
-      const leaves = [
-        { x: -3, y: 7, rx: -0.4, size: 4 },
-        { x: 3, y: 13, rx: 0.5, size: 4.5 },
-        { x: -2, y: 19, rx: -0.6, size: 4 },
-        { x: 4, y: 26, rx: 0.4, size: 3.5 },
-        { x: 0, y: 36, rx: 0.1, size: 3 },
-      ];
-
+      // 3. Alternating Teardrop Tropical Leaves (Single Batch Call for all 5 leaves)
       ctx.fillStyle = '#22c55e';
       ctx.strokeStyle = '#166534';
       ctx.lineWidth = 0.8;
-      for (const leaf of leaves) {
-        ctx.beginPath();
-        ctx.ellipse(leaf.x, leaf.y, leaf.size, leaf.size * 0.4, leaf.rx, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
+      ctx.fill(VINE_ALL_LEAVES);
+      ctx.stroke(VINE_ALL_LEAVES);
 
       ctx.restore();
     } else if (item.type === 'butterfly') {
@@ -95,24 +124,13 @@ export function renderDecorItems(
       ctx.strokeStyle = '#09090b';
       ctx.lineWidth = 0.8;
 
-      // Left wing
-      ctx.beginPath();
-      ctx.ellipse(-5, -2, 5, 3.5, -0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      // Both wings (Single Batch Call)
+      ctx.fill(BUTTERFLY_WINGS);
+      ctx.stroke(BUTTERFLY_WINGS);
 
-      // Right wing
-      ctx.beginPath();
-      ctx.ellipse(5, -2, 5, 3.5, 0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Wing inner pattern spots
+      // Wing inner pattern spots (Single Batch Call)
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(-5, -2, 1.2, 0, Math.PI * 2);
-      ctx.arc(5, -2, 1.2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fill(BUTTERFLY_SPOTS);
 
       ctx.restore();
 
@@ -122,12 +140,7 @@ export function renderDecorItems(
 
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 0.7;
-      ctx.beginPath();
-      ctx.moveTo(-0.5, -4);
-      ctx.lineTo(-2.5, -7);
-      ctx.moveTo(0.5, -4);
-      ctx.lineTo(2.5, -7);
-      ctx.stroke();
+      ctx.stroke(BUTTERFLY_ANTENNAE);
 
       ctx.restore();
     }

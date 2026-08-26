@@ -158,6 +158,495 @@ function getLampGlowGrad(ctx: CanvasRenderingContext2D): CanvasGradient {
   return _cachedLampGlow;
 }
 
+function createPath(fn: (p: Path2D) => void): Path2D {
+  if (typeof Path2D === 'undefined') return {} as Path2D;
+  const p = new Path2D();
+  fn(p);
+  return p;
+}
+
+// --- PRE-COMPILED PATH2D VECTOR GEOMETRIES (Zero Garbage Collection, Instant GPU Execution) ---
+
+// 1. Hedgehog
+const HEDGEHOG_DARK_SPIKES = createPath((p) => {
+  const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
+  for (const a of spikeAngles) {
+    const sx = Math.cos(a - 0.7) * 14;
+    const sy = Math.sin(a - 0.7) * 11 - 10;
+    p.moveTo(sx * 0.5, sy * 0.5 - 6);
+    p.lineTo(sx * 1.35, sy * 1.35);
+    p.lineTo(sx * 0.5 + 3, sy * 0.5 - 6);
+    p.closePath();
+  }
+});
+
+const HEDGEHOG_FG_SPIKES = createPath((p) => {
+  const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
+  for (const a of spikeAngles) {
+    const sx = Math.cos(a - 0.75) * 12;
+    const sy = Math.sin(a - 0.75) * 9 - 10;
+    p.moveTo(sx * 0.4, sy * 0.4 - 5);
+    p.lineTo(sx * 1.2, sy * 1.2);
+    p.lineTo(sx * 0.4 + 2, sy * 0.4 - 5);
+    p.closePath();
+  }
+});
+
+const HEDGEHOG_BODY = createPath((p) => {
+  p.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
+});
+
+const HEDGEHOG_FACE = createPath((p) => {
+  p.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
+  p.moveTo(8, -10);
+  p.lineTo(13, -7);
+  p.lineTo(8, -4);
+  p.closePath();
+});
+
+const HEDGEHOG_BLUSH = createPath((p) => {
+  p.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
+});
+
+const HEDGEHOG_NOSE_EYE = createPath((p) => {
+  p.arc(13, -7, 1.8, 0, Math.PI * 2);
+  p.moveTo(7 + 2.2, -10);
+  p.arc(7, -10, 2.2, 0, Math.PI * 2);
+});
+
+const HEDGEHOG_SPARKLE = createPath((p) => {
+  p.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
+});
+
+const HEDGEHOG_EAR = createPath((p) => {
+  p.arc(-2, -14, 2.5, 0, Math.PI * 2);
+});
+
+const HEDGEHOG_PAWS = createPath((p) => {
+  p.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
+  p.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
+});
+
+// 2. Chick
+const CHICK_BODY = createPath((p) => {
+  p.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
+});
+
+const CHICK_WING = createPath((p) => {
+  p.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
+});
+
+const CHICK_BEAK = createPath((p) => {
+  p.moveTo(10, -14);
+  p.lineTo(17, -11);
+  p.lineTo(10, -8);
+  p.closePath();
+});
+
+const CHICK_EYE = createPath((p) => {
+  p.arc(7, -15, 2.2, 0, Math.PI * 2);
+});
+
+const CHICK_SPARKLE = createPath((p) => {
+  p.rect(7.5, -16, 1, 1);
+});
+
+// 3. Mushroom
+const MUSHROOM_GRASS = createPath((p) => {
+  p.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
+  p.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
+});
+
+const MUSHROOM_STEM = createPath((p) => {
+  p.moveTo(-4, -16);
+  p.quadraticCurveTo(-6, -6, -7, 0);
+  p.lineTo(7, 0);
+  p.quadraticCurveTo(6, -6, 4, -16);
+  p.closePath();
+});
+
+const MUSHROOM_VEIL = createPath((p) => {
+  p.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
+});
+
+const MUSHROOM_SHADOW = createPath((p) => {
+  p.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
+});
+
+const MUSHROOM_CAP = createPath((p) => {
+  p.moveTo(-14, -16);
+  p.quadraticCurveTo(-15, -28, 0, -28);
+  p.quadraticCurveTo(15, -28, 14, -16);
+  p.quadraticCurveTo(0, -13, -14, -16);
+  p.closePath();
+});
+
+const MUSHROOM_DOTS = createPath((p) => {
+  p.arc(0, -21, 2.8, 0, Math.PI * 2);
+  p.moveTo(-7 + 2.2, -20);
+  p.arc(-7, -20, 2.2, 0, Math.PI * 2);
+  p.moveTo(7 + 2.4, -19);
+  p.arc(7, -19, 2.4, 0, Math.PI * 2);
+  p.moveTo(-2 + 1.8, -25);
+  p.arc(-2, -25, 1.8, 0, Math.PI * 2);
+});
+
+// 4. Flower
+const FLOWER_STEM = createPath((p) => {
+  p.rect(-1.5, -14, 3, 14);
+});
+
+const FLOWER_PETALS = createPath((p) => {
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+    const cx = Math.cos(a) * 7;
+    const cy = -16 + Math.sin(a) * 7;
+    p.moveTo(cx + 4.5, cy);
+    p.arc(cx, cy, 4.5, 0, Math.PI * 2);
+  }
+});
+
+const FLOWER_CENTER = createPath((p) => {
+  p.arc(0, -16, 5, 0, Math.PI * 2);
+});
+
+// 5. Tree
+const TREE_TRUNK = createPath((p) => {
+  p.moveTo(-7, 0);
+  p.lineTo(-4, -20);
+  p.lineTo(-8, -32);
+  p.lineTo(-5, -33);
+  p.lineTo(-2, -22);
+  p.lineTo(2, -22);
+  p.lineTo(6, -31);
+  p.lineTo(8, -30);
+  p.lineTo(4, -20);
+  p.lineTo(7, 0);
+  p.closePath();
+});
+
+const TREE_BARK = createPath((p) => {
+  p.moveTo(-2, -5);
+  p.lineTo(-1, -18);
+  p.moveTo(2, -8);
+  p.lineTo(3, -16);
+});
+
+const PINE_TIER_0 = createPath((p) => {
+  p.moveTo(0, -16 - 16);
+  p.lineTo(18, -16);
+  p.lineTo(-18, -16);
+  p.closePath();
+});
+
+const PINE_TIER_1 = createPath((p) => {
+  p.moveTo(0, -26 - 14);
+  p.lineTo(15, -26);
+  p.lineTo(-15, -26);
+  p.closePath();
+});
+
+const PINE_TIER_2 = createPath((p) => {
+  p.moveTo(0, -35 - 12);
+  p.lineTo(12, -35);
+  p.lineTo(-12, -35);
+  p.closePath();
+});
+
+const PINE_TIER_3 = createPath((p) => {
+  p.moveTo(0, -43 - 10);
+  p.lineTo(8, -43);
+  p.lineTo(-8, -43);
+  p.closePath();
+});
+
+const PINE_CONES = createPath((p) => {
+  p.arc(-8, -20, 2.5, 0, Math.PI * 2);
+  p.moveTo(7 + 2.2, -28);
+  p.arc(7, -28, 2.2, 0, Math.PI * 2);
+});
+
+const OAK_DARK_CLUSTERS = createPath((p) => {
+  p.arc(-11, -28, 14, 0, Math.PI * 2);
+  p.moveTo(11 + 14, -28);
+  p.arc(11, -28, 14, 0, Math.PI * 2);
+});
+
+const OAK_MID_CLUSTERS = createPath((p) => {
+  p.arc(-7, -38, 13, 0, Math.PI * 2);
+  p.moveTo(7 + 13, -38);
+  p.arc(7, -38, 13, 0, Math.PI * 2);
+});
+
+const OAK_LIGHT_TOP = createPath((p) => {
+  p.arc(0, -44, 11, 0, Math.PI * 2);
+});
+
+const OAK_APPLES = createPath((p) => {
+  p.arc(-8, -32, 2.2, 0, Math.PI * 2);
+  p.moveTo(6 + 2.0, -36);
+  p.arc(6, -36, 2.0, 0, Math.PI * 2);
+  p.moveTo(-2 + 2.3, -42);
+  p.arc(-2, -42, 2.3, 0, Math.PI * 2);
+});
+
+// 6. Bunker
+const BUNKER_BODY = createPath((p) => {
+  p.moveTo(-18, 0);
+  p.lineTo(-15, -22);
+  p.lineTo(15, -22);
+  p.lineTo(18, 0);
+  p.closePath();
+});
+
+const BUNKER_SANDBAGS = createPath((p) => {
+  p.ellipse(-14, -3, 5, 3, 0.1, 0, Math.PI * 2);
+  p.ellipse(-13, -7, 4.5, 2.5, -0.1, 0, Math.PI * 2);
+  p.ellipse(14, -3, 5, 3, -0.1, 0, Math.PI * 2);
+  p.ellipse(13, -7, 4.5, 2.5, 0.1, 0, Math.PI * 2);
+});
+
+const BUNKER_VISOR = createPath((p) => {
+  p.rect(-10, -16, 20, 5);
+});
+
+const BUNKER_RADAR = createPath((p) => {
+  p.arc(0, -13.5, 1.8, 0, Math.PI * 2);
+});
+
+const BUNKER_STRIPES = createPath((p) => {
+  p.rect(-8, -10, 4, 3);
+  p.rect(4, -10, 4, 3);
+});
+
+const BUNKER_HATCH = createPath((p) => {
+  p.rect(-6, -24, 12, 2.5);
+});
+
+const BUNKER_ANTENNA_LINE = createPath((p) => {
+  p.moveTo(8, -22);
+  p.lineTo(8, -34);
+});
+
+const BUNKER_ANTENNA_TIP = createPath((p) => {
+  p.arc(8, -34, 1.8, 0, Math.PI * 2);
+});
+
+// 7. Totem
+const TOTEM_BODY = createPath((p) => {
+  p.moveTo(-11, 0);
+  p.lineTo(-12, -26);
+  p.lineTo(-8, -34);
+  p.lineTo(8, -34);
+  p.lineTo(12, -26);
+  p.lineTo(11, 0);
+  p.closePath();
+});
+
+const TOTEM_BROW = createPath((p) => {
+  p.rect(-10, -28, 20, 4);
+});
+
+const TOTEM_EYES = createPath((p) => {
+  p.arc(-5, -22, 2.2, 0, Math.PI * 2);
+  p.moveTo(5 + 2.2, -22);
+  p.arc(5, -22, 2.2, 0, Math.PI * 2);
+});
+
+const TOTEM_PUPILS = createPath((p) => {
+  p.arc(-5, -22, 1, 0, Math.PI * 2);
+  p.moveTo(5 + 1, -22);
+  p.arc(5, -22, 1, 0, Math.PI * 2);
+});
+
+const TOTEM_NOSE = createPath((p) => {
+  p.moveTo(-3, -24);
+  p.lineTo(3, -24);
+  p.lineTo(4, -13);
+  p.lineTo(-4, -13);
+  p.closePath();
+});
+
+const TOTEM_MOUTH = createPath((p) => {
+  p.rect(-6, -9, 12, 3);
+});
+
+const TOTEM_MOSS = createPath((p) => {
+  p.ellipse(-6, -33, 4, 2, 0.2, 0, Math.PI * 2);
+  p.ellipse(7, -31, 3.5, 2, -0.3, 0, Math.PI * 2);
+});
+
+const TOTEM_FISSURE = createPath((p) => {
+  p.moveTo(-7, -18);
+  p.lineTo(-9, -12);
+  p.lineTo(-7, -6);
+});
+
+// 8. Cactus
+const CACTUS_TRUNK = createPath((p) => {
+  if (p.roundRect) {
+    p.roundRect(-5.5, -36, 11, 36, [5, 5, 0, 0]);
+  } else {
+    p.rect(-5.5, -36, 11, 36);
+  }
+});
+
+const CACTUS_LEFT_ARM = createPath((p) => {
+  p.moveTo(-5.5, -18);
+  p.lineTo(-11, -18);
+  p.lineTo(-11, -29);
+  p.arc(-8.5, -29, 2.5, Math.PI, 0);
+  p.lineTo(-6, -14);
+  p.lineTo(-5.5, -14);
+  p.closePath();
+});
+
+const CACTUS_RIGHT_ARM = createPath((p) => {
+  p.moveTo(5.5, -22);
+  p.lineTo(11, -22);
+  p.lineTo(11, -33);
+  p.arc(8.5, -33, 2.5, 0, Math.PI);
+  p.lineTo(6, -18);
+  p.lineTo(5.5, -18);
+  p.closePath();
+});
+
+const CACTUS_RIBS = createPath((p) => {
+  p.moveTo(-2, -34);
+  p.lineTo(-2, -1);
+  p.moveTo(2, -34);
+  p.lineTo(2, -1);
+});
+
+const CACTUS_NEEDLES = createPath((p) => {
+  const needlesY = [-30, -24, -18, -12, -6];
+  for (const ny of needlesY) {
+    p.rect(-7, ny, 2, 1);
+    p.rect(5.5, ny, 2, 1);
+  }
+});
+
+const CACTUS_FLOWERS = createPath((p) => {
+  p.arc(0, -36, 3.5, 0, Math.PI * 2);
+  p.moveTo(-2.5 + 2, -38);
+  p.arc(-2.5, -38, 2, 0, Math.PI * 2);
+  p.moveTo(2.5 + 2, -38);
+  p.arc(2.5, -38, 2, 0, Math.PI * 2);
+});
+
+// 9. Crystal
+const CRYSTAL_BASE = createPath((p) => {
+  p.moveTo(-13, 0);
+  p.lineTo(-14, -6);
+  p.lineTo(-7, -9);
+  p.lineTo(6, -9);
+  p.lineTo(14, -6);
+  p.lineTo(13, 0);
+  p.closePath();
+});
+
+const CRYSTAL_SHARDS_DATA = [
+  { x: 0, y: -8, h: 22, w: 7, angle: 0 },
+  { x: -6, y: -7, h: 17, w: 5.5, angle: -0.25 },
+  { x: 6, y: -7, h: 18, w: 5.5, angle: 0.22 },
+  { x: -10, y: -5, h: 12, w: 4.5, angle: -0.45 },
+  { x: 10, y: -5, h: 13, w: 4.5, angle: 0.42 },
+];
+
+const CRYSTAL_SHARD_PATHS = CRYSTAL_SHARDS_DATA.map((s) =>
+  createPath((p) => {
+    p.moveTo(-s.w / 2, 0);
+    p.lineTo(-s.w / 2, -s.h * 0.7);
+    p.lineTo(0, -s.h);
+    p.lineTo(s.w / 2, -s.h * 0.7);
+    p.lineTo(s.w / 2, 0);
+    p.closePath();
+  })
+);
+
+const CRYSTAL_SHARD_CRESTS = CRYSTAL_SHARDS_DATA.map((s) =>
+  createPath((p) => {
+    p.moveTo(0, 0);
+    p.lineTo(0, -s.h);
+  })
+);
+
+const CRYSTAL_GLINTS = createPath((p) => {
+  p.arc(0, -22, 1.8, 0, Math.PI * 2);
+  p.moveTo(-6 + 1.2, -16);
+  p.arc(-6, -16, 1.2, 0, Math.PI * 2);
+});
+
+// 10. Oil Drum
+const DRUM_BODY = createPath((p) => {
+  if (p.roundRect) {
+    p.roundRect(-9, -24, 18, 24, 2);
+  } else {
+    p.rect(-9, -24, 18, 24);
+  }
+});
+
+const DRUM_RINGS = createPath((p) => {
+  p.moveTo(-9, -19);
+  p.lineTo(9, -19);
+  p.moveTo(-9, -12);
+  p.lineTo(9, -12);
+  p.moveTo(-9, -5);
+  p.lineTo(9, -5);
+});
+
+const DRUM_HAZARD_BAND = createPath((p) => {
+  p.rect(-9, -16, 18, 5);
+});
+
+const DRUM_FLAME = createPath((p) => {
+  p.moveTo(-2.5, -12);
+  p.quadraticCurveTo(-4, -14, 0, -16);
+  p.quadraticCurveTo(4, -14, 2.5, -12);
+  p.closePath();
+});
+
+const DRUM_CAP = createPath((p) => {
+  p.rect(-5, -26, 4, 2.5);
+});
+
+// 11. Lamppost
+const LAMP_BASE = createPath((p) => {
+  p.moveTo(-5, 0);
+  p.lineTo(-2, -6);
+  p.lineTo(2, -6);
+  p.lineTo(5, 0);
+  p.closePath();
+});
+
+const LAMP_POLE = createPath((p) => {
+  p.rect(-1.5, -34, 3, 28);
+});
+
+const LAMP_BRACKET = createPath((p) => {
+  p.moveTo(0, -34);
+  p.quadraticCurveTo(6, -35, 6, -38);
+  p.lineTo(0, -38);
+});
+
+const LAMP_GLOW_SPHERE = createPath((p) => {
+  p.arc(0, -32, 16, 0, Math.PI * 2);
+});
+
+const LAMP_GLASS = createPath((p) => {
+  p.moveTo(-5, -28);
+  p.lineTo(-6, -35);
+  p.lineTo(6, -35);
+  p.lineTo(5, -28);
+  p.closePath();
+});
+
+const LAMP_ROOF = createPath((p) => {
+  p.moveTo(-7, -35);
+  p.lineTo(0, -40);
+  p.lineTo(7, -35);
+  p.closePath();
+});
+
 export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
@@ -166,443 +655,229 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
   }
 
   if (sprop.type === 'hedgehog') {
-    const spikeAngles = [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0];
-
-    // Dark Undercoat Spikes
+    // 1. Dark Undercoat Spikes (Single Batch Call)
     ctx.fillStyle = '#451a03';
-    for (const a of spikeAngles) {
-      const sx = Math.cos(a - 0.7) * 14;
-      const sy = Math.sin(a - 0.7) * 11 - 10;
-      ctx.beginPath();
-      ctx.moveTo(sx * 0.5, sy * 0.5 - 6);
-      ctx.lineTo(sx * 1.35, sy * 1.35);
-      ctx.lineTo(sx * 0.5 + 3, sy * 0.5 - 6);
-      ctx.closePath();
-      ctx.fill();
-    }
+    ctx.fill(HEDGEHOG_DARK_SPIKES);
 
-    // Golden/Brown Foreground Spikes
+    // 2. Golden/Brown Foreground Spikes (Single Batch Call)
     ctx.fillStyle = '#b45309';
     ctx.strokeStyle = '#f59e0b';
     ctx.lineWidth = 0.8;
-    for (const a of spikeAngles) {
-      const sx = Math.cos(a - 0.75) * 12;
-      const sy = Math.sin(a - 0.75) * 9 - 10;
-      ctx.beginPath();
-      ctx.moveTo(sx * 0.4, sy * 0.4 - 5);
-      ctx.lineTo(sx * 1.2, sy * 1.2);
-      ctx.lineTo(sx * 0.4 + 2, sy * 0.4 - 5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
+    ctx.fill(HEDGEHOG_FG_SPIKES);
+    ctx.stroke(HEDGEHOG_FG_SPIKES);
 
-    // Plump Brown Body
+    // 3. Plump Brown Body
     ctx.fillStyle = '#78350f';
-    ctx.beginPath();
-    ctx.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_BODY);
 
-    // Soft Peach Face & Snout
+    // 4. Soft Peach Face & Snout
     ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_FACE);
 
-    // Snout Tip Point
-    ctx.beginPath();
-    ctx.moveTo(8, -10);
-    ctx.lineTo(13, -7);
-    ctx.lineTo(8, -4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Pink Cheek Blush
+    // 5. Pink Cheek Blush
     ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
-    ctx.beginPath();
-    ctx.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_BLUSH);
 
-    // Black Button Nose
+    // 6. Black Button Nose & Eye
     ctx.fillStyle = '#09090b';
-    ctx.beginPath();
-    ctx.arc(13, -7, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_NOSE_EYE);
 
-    // Glossy Eye with White Sparkle
-    ctx.fillStyle = '#09090b';
-    ctx.beginPath();
-    ctx.arc(7, -10, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-
+    // 7. Glossy Eye White Sparkle
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_SPARKLE);
 
-    // Cute Ear
+    // 8. Cute Ear
     ctx.fillStyle = '#fde047';
     ctx.strokeStyle = '#78350f';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(-2, -14, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(HEDGEHOG_EAR);
+    ctx.stroke(HEDGEHOG_EAR);
 
-    // Cute Dark Paws on Ground
+    // 9. Cute Dark Paws on Ground
     ctx.fillStyle = '#542608';
-    ctx.beginPath();
-    ctx.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
-    ctx.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(HEDGEHOG_PAWS);
   } else if (sprop.type === 'chick') {
-    // Bright Yellow Chick
+    // Bright Yellow Chick Body
     ctx.fillStyle = '#eab308';
-    ctx.beginPath();
-    ctx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(CHICK_BODY);
 
+    // Wing
     ctx.fillStyle = '#ca8a04';
-    ctx.beginPath();
-    ctx.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(CHICK_WING);
 
+    // Beak
     ctx.fillStyle = '#f97316';
-    ctx.beginPath();
-    ctx.moveTo(10, -14);
-    ctx.lineTo(17, -11);
-    ctx.lineTo(10, -8);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fill(CHICK_BEAK);
 
+    // Eye
     ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(7, -15, 2.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(CHICK_EYE);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(7.5, -16, 1, 1);
+    ctx.fill(CHICK_SPARKLE);
   } else if (sprop.type === 'mushroom') {
     const isPurple = sprop.variant === 1;
     const isGold = sprop.variant === 2;
 
     // Grass Tufts at Base
     ctx.fillStyle = '#22c55e';
-    ctx.beginPath();
-    ctx.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
-    ctx.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(MUSHROOM_GRASS);
 
     // Organic Curved Stem
     ctx.fillStyle = getMushroomStemGrad(ctx);
     ctx.strokeStyle = '#a16207';
     ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-4, -16);
-    ctx.quadraticCurveTo(-6, -6, -7, 0);
-    ctx.lineTo(7, 0);
-    ctx.quadraticCurveTo(6, -6, 4, -16);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(MUSHROOM_STEM);
+    ctx.stroke(MUSHROOM_STEM);
 
     // Ring Veil under cap
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(MUSHROOM_VEIL);
 
     // Dark Shadow under Cap Gills
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(MUSHROOM_SHADOW);
 
     // Plump 3D Umbrella Dome Cap
     ctx.fillStyle = getMushroomCapGrad(ctx, sprop.variant);
-    ctx.beginPath();
-    ctx.moveTo(-14, -16);
-    ctx.quadraticCurveTo(-15, -28, 0, -28);
-    ctx.quadraticCurveTo(15, -28, 14, -16);
-    ctx.quadraticCurveTo(0, -13, -14, -16);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fill(MUSHROOM_CAP);
 
     // Polka Dots
     ctx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, -21, 2.8, 0, Math.PI * 2);
-    ctx.arc(-7, -20, 2.2, 0, Math.PI * 2);
-    ctx.arc(7, -19, 2.4, 0, Math.PI * 2);
-    ctx.arc(-2, -25, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(MUSHROOM_DOTS);
   } else if (sprop.type === 'flower') {
-    // Colorful Flower
+    // Colorful Flower Stem
     ctx.fillStyle = '#15803d';
-    ctx.fillRect(-1.5, -14, 3, 14);
+    ctx.fill(FLOWER_STEM);
 
+    // Petals (Single Combined Batch)
     ctx.fillStyle = sprop.variant === 1 ? '#ec4899' : sprop.variant === 2 ? '#3b82f6' : '#c084fc';
-    for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * 7, -16 + Math.sin(a) * 7, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fill(FLOWER_PETALS);
 
+    // Center
     ctx.fillStyle = '#facc15';
-    ctx.beginPath();
-    ctx.arc(0, -16, 5, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(FLOWER_CENTER);
   } else if (sprop.type === 'tree') {
     const isPine = sprop.variant === 1;
 
     // Wood Trunk & Flared Roots
     ctx.fillStyle = getTreeTrunkGrad(ctx);
-
-    ctx.beginPath();
-    ctx.moveTo(-7, 0);
-    ctx.lineTo(-4, -20);
-    ctx.lineTo(-8, -32);
-    ctx.lineTo(-5, -33);
-    ctx.lineTo(-2, -22);
-    ctx.lineTo(2, -22);
-    ctx.lineTo(6, -31);
-    ctx.lineTo(8, -30);
-    ctx.lineTo(4, -20);
-    ctx.lineTo(7, 0);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fill(TREE_TRUNK);
 
     // Wood Bark Texture Lines
     ctx.strokeStyle = '#27160a';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-2, -5);
-    ctx.lineTo(-1, -18);
-    ctx.moveTo(2, -8);
-    ctx.lineTo(3, -16);
-    ctx.stroke();
+    ctx.stroke(TREE_BARK);
 
     if (isPine) {
-      const pineTiers = [
-        { y: -16, r: 18, h: 16, color: '#064e3b' },
-        { y: -26, r: 15, h: 14, color: '#047857' },
-        { y: -35, r: 12, h: 12, color: '#10b981' },
-        { y: -43, r: 8, h: 10, color: '#34d399' },
-      ];
-      for (const tier of pineTiers) {
-        ctx.fillStyle = tier.color;
-        ctx.beginPath();
-        ctx.moveTo(0, tier.y - tier.h);
-        ctx.lineTo(tier.r, tier.y);
-        ctx.lineTo(-tier.r, tier.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.fillStyle = '#78350f';
-      ctx.beginPath();
-      ctx.arc(-8, -20, 2.5, 0, Math.PI * 2);
-      ctx.arc(7, -28, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = '#064e3b'; ctx.fill(PINE_TIER_0);
+      ctx.fillStyle = '#047857'; ctx.fill(PINE_TIER_1);
+      ctx.fillStyle = '#10b981'; ctx.fill(PINE_TIER_2);
+      ctx.fillStyle = '#34d399'; ctx.fill(PINE_TIER_3);
+      ctx.fillStyle = '#78350f'; ctx.fill(PINE_CONES);
     } else {
-      const oakClusters = [
-        { x: -11, y: -28, r: 14, color: '#14532d' },
-        { x: 11, y: -28, r: 14, color: '#14532d' },
-        { x: -7, y: -38, r: 13, color: '#15803d' },
-        { x: 7, y: -38, r: 13, color: '#15803d' },
-        { x: 0, y: -44, r: 11, color: '#22c55e' },
-      ];
-      for (const c of oakClusters) {
-        ctx.fillStyle = c.color;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(-8, -32, 2.2, 0, Math.PI * 2);
-      ctx.arc(6, -36, 2.0, 0, Math.PI * 2);
-      ctx.arc(-2, -42, 2.3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = '#14532d'; ctx.fill(OAK_DARK_CLUSTERS);
+      ctx.fillStyle = '#15803d'; ctx.fill(OAK_MID_CLUSTERS);
+      ctx.fillStyle = '#22c55e'; ctx.fill(OAK_LIGHT_TOP);
+      ctx.fillStyle = '#ef4444'; ctx.fill(OAK_APPLES);
     }
   } else if (sprop.type === 'bunker') {
-    // --- FORTIFIED MILITARY REINFORCED CONCRETE BUNKER ---
+    // Fortified Concrete Structure
     ctx.fillStyle = getBunkerGrad(ctx);
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1.5;
+    ctx.fill(BUNKER_BODY);
+    ctx.stroke(BUNKER_BODY);
 
-    ctx.beginPath();
-    ctx.moveTo(-18, 0);
-    ctx.lineTo(-15, -22);
-    ctx.lineTo(15, -22);
-    ctx.lineTo(18, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Sandbag Bulwarks at base
+    // Sandbag Bulwarks
     ctx.fillStyle = '#b45309';
     ctx.strokeStyle = '#78350f';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.ellipse(-14, -3, 5, 3, 0.1, 0, Math.PI * 2);
-    ctx.ellipse(-13, -7, 4.5, 2.5, -0.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.ellipse(14, -3, 5, 3, -0.1, 0, Math.PI * 2);
-    ctx.ellipse(13, -7, 4.5, 2.5, 0.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(BUNKER_SANDBAGS);
+    ctx.stroke(BUNKER_SANDBAGS);
 
     // Firing Slit Visor Window
     ctx.fillStyle = '#09090b';
-    ctx.fillRect(-10, -16, 20, 5);
     ctx.strokeStyle = '#18181b';
     ctx.lineWidth = 1;
-    ctx.strokeRect(-10, -16, 20, 5);
+    ctx.fill(BUNKER_VISOR);
+    ctx.stroke(BUNKER_VISOR);
 
     // Scanning Radar Light inside visor
     ctx.fillStyle = '#22c55e';
-    ctx.beginPath();
-    ctx.arc(0, -13.5, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(BUNKER_RADAR);
 
     // Yellow/Black Hazard Stripes
     ctx.fillStyle = '#eab308';
-    ctx.fillRect(-8, -10, 4, 3);
-    ctx.fillRect(4, -10, 4, 3);
+    ctx.fill(BUNKER_STRIPES);
 
     // Steel Top Hatch & Antenna
     ctx.fillStyle = '#334155';
-    ctx.fillRect(-6, -24, 12, 2.5);
+    ctx.fill(BUNKER_HATCH);
+
     ctx.strokeStyle = '#18181b';
     ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(8, -22);
-    ctx.lineTo(8, -34);
-    ctx.stroke();
+    ctx.stroke(BUNKER_ANTENNA_LINE);
 
     ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(8, -34, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(BUNKER_ANTENNA_TIP);
   } else if (sprop.type === 'totem') {
-    // --- ANCIENT MYSTICAL CARVED STONE MOAI / TIKI IDOL ---
+    // Ancient Mystical Carved Stone Moai
     ctx.fillStyle = getTotemGrad(ctx);
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1.5;
-
-    ctx.beginPath();
-    ctx.moveTo(-11, 0);
-    ctx.lineTo(-12, -26);
-    ctx.lineTo(-8, -34);
-    ctx.lineTo(8, -34);
-    ctx.lineTo(12, -26);
-    ctx.lineTo(11, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(TOTEM_BODY);
+    ctx.stroke(TOTEM_BODY);
 
     ctx.fillStyle = '#334155';
-    ctx.fillRect(-10, -28, 20, 4);
+    ctx.fill(TOTEM_BROW);
 
     const eyeGlow = sprop.variant === 1 ? '#06b6d4' : '#facc15';
     ctx.fillStyle = eyeGlow;
-    ctx.beginPath();
-    ctx.arc(-5, -22, 2.2, 0, Math.PI * 2);
-    ctx.arc(5, -22, 2.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(TOTEM_EYES);
+
     ctx.fillStyle = '#09090b';
-    ctx.beginPath();
-    ctx.arc(-5, -22, 1, 0, Math.PI * 2);
-    ctx.arc(5, -22, 1, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(TOTEM_PUPILS);
 
     ctx.fillStyle = '#475569';
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-3, -24);
-    ctx.lineTo(3, -24);
-    ctx.lineTo(4, -13);
-    ctx.lineTo(-4, -13);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(TOTEM_NOSE);
+    ctx.stroke(TOTEM_NOSE);
 
     ctx.fillStyle = '#09090b';
-    ctx.fillRect(-6, -9, 12, 3);
+    ctx.fill(TOTEM_MOUTH);
 
     ctx.fillStyle = '#15803d';
-    ctx.beginPath();
-    ctx.ellipse(-6, -33, 4, 2, 0.2, 0, Math.PI * 2);
-    ctx.ellipse(7, -31, 3.5, 2, -0.3, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(TOTEM_MOSS);
 
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-7, -18);
-    ctx.lineTo(-9, -12);
-    ctx.lineTo(-7, -6);
-    ctx.stroke();
+    ctx.stroke(TOTEM_FISSURE);
   } else if (sprop.type === 'cactus') {
-    // --- WILD WEST SAGUARO DESERT CACTUS ---
+    // Wild West Saguaro Desert Cactus
     ctx.fillStyle = getCactusGrad(ctx);
     ctx.strokeStyle = '#14532d';
     ctx.lineWidth = 1.4;
+    ctx.fill(CACTUS_TRUNK);
+    ctx.stroke(CACTUS_TRUNK);
 
-    ctx.beginPath();
-    ctx.roundRect(-5.5, -36, 11, 36, [5, 5, 0, 0]);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(CACTUS_LEFT_ARM);
+    ctx.stroke(CACTUS_LEFT_ARM);
 
-    ctx.beginPath();
-    ctx.moveTo(-5.5, -18);
-    ctx.lineTo(-11, -18);
-    ctx.lineTo(-11, -29);
-    ctx.arc(-8.5, -29, 2.5, Math.PI, 0);
-    ctx.lineTo(-6, -14);
-    ctx.lineTo(-5.5, -14);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(5.5, -22);
-    ctx.lineTo(11, -22);
-    ctx.lineTo(11, -33);
-    ctx.arc(8.5, -33, 2.5, 0, Math.PI);
-    ctx.lineTo(6, -18);
-    ctx.lineTo(5.5, -18);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(CACTUS_RIGHT_ARM);
+    ctx.stroke(CACTUS_RIGHT_ARM);
 
     ctx.strokeStyle = '#14532d';
     ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-2, -34);
-    ctx.lineTo(-2, -1);
-    ctx.moveTo(2, -34);
-    ctx.lineTo(2, -1);
-    ctx.stroke();
+    ctx.stroke(CACTUS_RIBS);
 
     ctx.fillStyle = '#fef08a';
-    const needlesY = [-30, -24, -18, -12, -6];
-    for (const ny of needlesY) {
-      ctx.fillRect(-7, ny, 2, 1);
-      ctx.fillRect(5.5, ny, 2, 1);
-    }
+    ctx.fill(CACTUS_NEEDLES);
 
     ctx.fillStyle = sprop.variant === 1 ? '#f43f5e' : '#facc15';
-    ctx.beginPath();
-    ctx.arc(0, -36, 3.5, 0, Math.PI * 2);
-    ctx.arc(-2.5, -38, 2, 0, Math.PI * 2);
-    ctx.arc(2.5, -38, 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(CACTUS_FLOWERS);
   } else if (sprop.type === 'crystal') {
-    // --- LUMINOUS GLOWING CRYSTAL GEODE CLUSTER ---
+    // Luminous Glowing Crystal Geode Cluster
     const isAmethyst = sprop.variant === 0 || sprop.variant === undefined;
     const isCyan = sprop.variant === 1;
     const crystalType: 'amethyst' | 'cyan' | 'emerald' = isAmethyst ? 'amethyst' : isCyan ? 'cyan' : 'emerald';
@@ -610,26 +885,11 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = '#1e293b';
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-13, 0);
-    ctx.lineTo(-14, -6);
-    ctx.lineTo(-7, -9);
-    ctx.lineTo(6, -9);
-    ctx.lineTo(14, -6);
-    ctx.lineTo(13, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(CRYSTAL_BASE);
+    ctx.stroke(CRYSTAL_BASE);
 
-    const shards = [
-      { x: 0, y: -8, h: 22, w: 7, angle: 0 },
-      { x: -6, y: -7, h: 17, w: 5.5, angle: -0.25 },
-      { x: 6, y: -7, h: 18, w: 5.5, angle: 0.22 },
-      { x: -10, y: -5, h: 12, w: 4.5, angle: -0.45 },
-      { x: 10, y: -5, h: 13, w: 4.5, angle: 0.42 },
-    ];
-
-    for (const s of shards) {
+    for (let i = 0; i < CRYSTAL_SHARDS_DATA.length; i++) {
+      const s = CRYSTAL_SHARDS_DATA[i];
       ctx.save();
       ctx.translate(s.x, s.y);
       ctx.rotate(s.angle);
@@ -637,119 +897,68 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
       ctx.fillStyle = getCrystalGrad(ctx, s.h, crystalType);
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 0.8;
-
-      ctx.beginPath();
-      ctx.moveTo(-s.w / 2, 0);
-      ctx.lineTo(-s.w / 2, -s.h * 0.7);
-      ctx.lineTo(0, -s.h);
-      ctx.lineTo(s.w / 2, -s.h * 0.7);
-      ctx.lineTo(s.w / 2, 0);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(CRYSTAL_SHARD_PATHS[i]);
+      ctx.stroke(CRYSTAL_SHARD_PATHS[i]);
 
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, -s.h);
-      ctx.stroke();
+      ctx.stroke(CRYSTAL_SHARD_CRESTS[i]);
 
       ctx.restore();
     }
 
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, -22, 1.8, 0, Math.PI * 2);
-    ctx.arc(-6, -16, 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(CRYSTAL_GLINTS);
   } else if (sprop.type === 'oil_drum') {
-    // --- INDUSTRIAL RUSTED OIL / FUEL DRUM ---
+    // Industrial Rusted Oil / Fuel Drum
     const isRust = sprop.variant === 1;
     ctx.fillStyle = getDrumGrad(ctx, isRust);
     ctx.strokeStyle = '#18181b';
     ctx.lineWidth = 1.4;
-
-    ctx.beginPath();
-    ctx.roundRect(-9, -24, 18, 24, 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(DRUM_BODY);
+    ctx.stroke(DRUM_BODY);
 
     ctx.strokeStyle = '#09090b';
     ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-9, -19);
-    ctx.lineTo(9, -19);
-    ctx.moveTo(-9, -12);
-    ctx.lineTo(9, -12);
-    ctx.moveTo(-9, -5);
-    ctx.lineTo(9, -5);
-    ctx.stroke();
+    ctx.stroke(DRUM_RINGS);
 
     ctx.fillStyle = '#facc15';
-    ctx.fillRect(-9, -16, 18, 5);
+    ctx.fill(DRUM_HAZARD_BAND);
 
     ctx.fillStyle = '#09090b';
-    ctx.beginPath();
-    ctx.moveTo(-2.5, -12);
-    ctx.quadraticCurveTo(-4, -14, 0, -16);
-    ctx.quadraticCurveTo(4, -14, 2.5, -12);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fill(DRUM_FLAME);
 
     ctx.fillStyle = '#64748b';
-    ctx.fillRect(-5, -26, 4, 2.5);
+    ctx.fill(DRUM_CAP);
   } else if (sprop.type === 'lamppost') {
-    // --- VICTORIAN WROUGHT-IRON STREET LAMP ---
+    // Victorian Wrought-Iron Street Lamp
     ctx.fillStyle = '#27272a';
     ctx.strokeStyle = '#09090b';
     ctx.lineWidth = 1.2;
-
-    ctx.beginPath();
-    ctx.moveTo(-5, 0);
-    ctx.lineTo(-2, -6);
-    ctx.lineTo(2, -6);
-    ctx.lineTo(5, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(LAMP_BASE);
+    ctx.stroke(LAMP_BASE);
 
     ctx.fillStyle = '#18181b';
-    ctx.fillRect(-1.5, -34, 3, 28);
-    ctx.strokeRect(-1.5, -34, 3, 28);
+    ctx.strokeStyle = '#09090b';
+    ctx.fill(LAMP_POLE);
+    ctx.stroke(LAMP_POLE);
 
     ctx.strokeStyle = '#18181b';
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, -34);
-    ctx.quadraticCurveTo(6, -35, 6, -38);
-    ctx.lineTo(0, -38);
-    ctx.stroke();
+    ctx.stroke(LAMP_BRACKET);
 
     ctx.fillStyle = getLampGlowGrad(ctx);
-    ctx.beginPath();
-    ctx.arc(0, -32, 16, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(LAMP_GLOW_SPHERE);
 
     ctx.fillStyle = '#fef08a';
     ctx.strokeStyle = '#09090b';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-5, -28);
-    ctx.lineTo(-6, -35);
-    ctx.lineTo(6, -35);
-    ctx.lineTo(5, -28);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(LAMP_GLASS);
+    ctx.stroke(LAMP_GLASS);
 
     ctx.fillStyle = '#18181b';
-    ctx.beginPath();
-    ctx.moveTo(-7, -35);
-    ctx.lineTo(0, -40);
-    ctx.lineTo(7, -35);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.strokeStyle = '#09090b';
+    ctx.fill(LAMP_ROOF);
+    ctx.stroke(LAMP_ROOF);
   }
 
   ctx.restore();
