@@ -245,9 +245,15 @@ export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDam
   floatingDamages.length = writeIdx;
 }
 
-export function renderMines(ctx: CanvasRenderingContext2D, mines: Landmine[] | undefined) {
+export function renderMines(
+  ctx: CanvasRenderingContext2D,
+  mines: Landmine[] | undefined,
+  viewLeft?: number,
+  viewRight?: number
+) {
   if (!mines) return;
   for (const mine of mines) {
+    if (viewLeft !== undefined && viewRight !== undefined && (mine.x < viewLeft - 40 || mine.x > viewRight + 40)) continue;
     ctx.fillStyle = '#4b5563';
     ctx.beginPath();
     ctx.ellipse(mine.x, mine.y, 6, 3, 0, 0, Math.PI * 2);
@@ -280,12 +286,15 @@ export function renderHelicopters(
   helicopters: HelicopterVehicle[] | undefined,
   gameState: GameState,
   animTime: number,
-  isMyTurn: boolean
+  isMyTurn: boolean,
+  viewLeft?: number,
+  viewRight?: number
 ) {
   if (!helicopters) return;
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
 
   for (const heli of helicopters) {
+    if (viewLeft !== undefined && viewRight !== undefined && (heli.x < viewLeft - 100 || heli.x > viewRight + 100)) continue;
     ctx.save();
     ctx.translate(heli.x, heli.y);
     if (heli.facing === 'left') ctx.scale(-1, 1);
@@ -467,9 +476,16 @@ export function renderHelicopters(
   }
 }
 
-export function renderTombstones(ctx: CanvasRenderingContext2D, slugs: Slug[], waterLevel: number) {
+export function renderTombstones(
+  ctx: CanvasRenderingContext2D,
+  slugs: Slug[],
+  waterLevel: number,
+  viewLeft?: number,
+  viewRight?: number
+) {
   for (const slug of slugs) {
     if (slug.isAlive || !slug.isPlaced) continue;
+    if (viewLeft !== undefined && viewRight !== undefined && (slug.x < viewLeft - 40 || slug.x > viewRight + 40)) continue;
     if (slug.y < waterLevel + 10) {
       ctx.save();
       ctx.translate(slug.x, slug.y);

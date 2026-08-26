@@ -189,10 +189,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     _cachedSkyKey = skyKey;
   }
 
-  const drawLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
-  const drawRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
-  const drawTop = rc.viewTop !== undefined ? Math.max(worldTop, rc.viewTop - 100) : worldTop;
-  const drawBottom = rc.viewBottom !== undefined ? Math.min(worldBottom, rc.viewBottom + 100) : worldBottom;
+  const drawLeft = viewLeft !== undefined ? viewLeft - 100 : worldLeft;
+  const drawRight = viewRight !== undefined ? viewRight + 100 : worldRight;
+  const drawTop = rc.viewTop !== undefined ? rc.viewTop - 100 : worldTop;
+  const drawBottom = rc.viewBottom !== undefined ? rc.viewBottom + 100 : worldBottom;
 
   if (drawTop < waterY) {
     ctx.fillStyle = _cachedSkyGrad;

@@ -133,9 +133,9 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
     splashes,
   } = rc;
 
-  const clampLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
-  const clampRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
-  const clampBottom = viewBottom !== undefined ? Math.min(worldBottom, viewBottom + 100) : worldBottom;
+  const clampLeft = viewLeft !== undefined ? viewLeft - 100 : worldLeft;
+  const clampRight = viewRight !== undefined ? viewRight + 100 : worldRight;
+  const clampBottom = viewBottom !== undefined ? viewBottom + 100 : worldBottom;
   const span = clampRight - clampLeft;
   const waveStep = Math.max(14, Math.min(30, Math.round(span / 70)));
 

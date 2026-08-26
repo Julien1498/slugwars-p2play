@@ -1031,8 +1031,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#09090b';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Dynamic Action Camera Follow (Projectiles, Explosions, Supply Crates, Moving Slugs, Retreat)
       const isUserDraggingNow = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
@@ -1297,27 +1296,18 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       const pMinesStart = performance.now();
       if (curState.mines) {
-        const visibleMines = (viewLeft !== undefined && viewRight !== undefined)
-          ? curState.mines.filter((m) => m.x >= viewLeft - 40 && m.x <= viewRight + 40)
-          : curState.mines;
-        renderMines(ctx, visibleMines);
+        renderMines(ctx, curState.mines, viewLeft, viewRight);
       }
       perfTracker.recordRenderPass('decor_mines', performance.now() - pMinesStart);
 
       const pHelisStart = performance.now();
       if (curState.helicopters) {
-        const visibleHelis = (viewLeft !== undefined && viewRight !== undefined)
-          ? curState.helicopters.filter((h) => h.x >= viewLeft - 100 && h.x <= viewRight + 100)
-          : curState.helicopters;
-        renderHelicopters(ctx, visibleHelis, curState, animTime, isMyTurnRef.current);
+        renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current, viewLeft, viewRight);
       }
       perfTracker.recordRenderPass('decor_helicopters', performance.now() - pHelisStart);
 
       const pTombsStart = performance.now();
-      const visibleTombSlugs = (viewLeft !== undefined && viewRight !== undefined)
-        ? curState.slugs.filter((s) => s.x >= viewLeft - 60 && s.x <= viewRight + 60)
-        : curState.slugs;
-      renderTombstones(ctx, visibleTombSlugs, waterLevel);
+      renderTombstones(ctx, curState.slugs, waterLevel, viewLeft, viewRight);
       perfTracker.recordRenderPass('decor_tombstones', performance.now() - pTombsStart);
 
       // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering (0 GC allocations)
@@ -1515,16 +1505,18 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
       perfTracker.recordRenderPass('aim_guides', performance.now() - pAimStart);
 
-      const pGhostStart = performance.now();
-      renderPlacementGhost(
-        ctx,
-        curState,
-        terrain,
-        pendingPlacementPoint || mousePosRef.current,
-        isMyTurnRef.current,
-        animTime
-      );
-      perfTracker.recordRenderPass('placement_ghost', performance.now() - pGhostStart);
+      if (curState.phase === 'PLACEMENT' && isMyTurnRef.current) {
+        const pGhostStart = performance.now();
+        renderPlacementGhost(
+          ctx,
+          curState,
+          terrain,
+          pendingPlacementPoint || mousePosRef.current,
+          isMyTurnRef.current,
+          animTime
+        );
+        perfTracker.recordRenderPass('placement_ghost', performance.now() - pGhostStart);
+      }
 
       // 9. Foreground Ocean & Rolling Water Waves (With visible screen culling)
       const pOceanStart = performance.now();
