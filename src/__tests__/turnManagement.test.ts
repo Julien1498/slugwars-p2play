@@ -219,21 +219,26 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     engine.addTeam('team_red', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
-    engine.placeSlug(engine.terrain.data.spawnPoints[0]);
-    engine.placeSlug(engine.terrain.data.spawnPoints[1]);
+    engine.placeSlug({ x: 300, y: 300 });
+    engine.placeSlug({ x: 600, y: 300 });
     engine.state.mines = [];
 
-    for (let i = 0; i < 60; i++) {
-      engine.tick();
-      engine.state.floatingDamages = [];
-    }
-
-    for (const s of engine.state.slugs) {
-      s.isAlive = true;
-      s.hp = 100;
-    }
-
     const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+    const otherSlug = engine.state.slugs.find((s) => s.id !== engine.state.activeSlugId)!;
+    activeSlug.isAlive = true;
+    activeSlug.hp = 100;
+    otherSlug.isAlive = true;
+    otherSlug.hp = 100;
+    otherSlug.vx = 0;
+    otherSlug.vy = 0;
+
+    for (let y = 100; y < engine.terrain.data.waterLevel - 20; y++) {
+      if (engine.terrain.isSolid(otherSlug.x, y)) {
+        otherSlug.y = y - 1;
+        break;
+      }
+    }
+
     const heli = engine.state.helicopters[0];
     heli.pilotSlugId = activeSlug.id;
     heli.vx = 0;

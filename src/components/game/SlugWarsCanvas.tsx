@@ -1236,8 +1236,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const viewLeft = width / 2 - (cRect.width / 2 + panRef.current.x) / totalScale;
       const viewRight = viewLeft + cRect.width / totalScale;
 
-      // 1. Sky, Atmosphere & Deep Background Ocean Swell
-      const pSkyStart = performance.now();
+      // 1. Sky, Atmosphere & Deep Background Ocean Swell (Granular sub-passes recorded inside renderSkyAndAtmosphere)
       renderSkyAndAtmosphere({
         ctx,
         width,
@@ -1254,7 +1253,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         viewLeft,
         viewRight,
       });
-      perfTracker.recordRenderPass('sky_atmosphere', performance.now() - pSkyStart);
 
       // 2. Offscreen Terrain Buffer
       const pTerrainStart = performance.now();
@@ -1265,8 +1263,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       perfTracker.recordRenderPass('terrain_buffer', performance.now() - pTerrainStart);
 
       // 3. Destructible Girders & Solid Props
-      const pPropsStart = performance.now();
       const { grid, solidProps } = terrain.data;
+      const pGirdersStart = performance.now();
       if (curState.girders) {
         for (const g of curState.girders) {
           if (!g.destroyed) {
@@ -1274,6 +1272,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           }
         }
       }
+      perfTracker.recordRenderPass('props_girders', performance.now() - pGirdersStart);
+
+      const pSolidsStart = performance.now();
       if (solidProps) {
         for (const sprop of solidProps) {
           if (!sprop.destroyed) {
@@ -1281,7 +1282,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           }
         }
       }
-      perfTracker.recordRenderPass('props_girders', performance.now() - pPropsStart);
+      perfTracker.recordRenderPass('props_solids', performance.now() - pSolidsStart);
 
       // 4. Subterranean Occlusion Mask
       const pOcclusionStart = performance.now();
@@ -1290,15 +1291,22 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
       perfTracker.recordRenderPass('occlusion_mask', performance.now() - pOcclusionStart);
 
-      // 5. Decor Items (Butterflies & Hanging Leaf Roots) & Landmines & Helicopters
+      // 5. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
       const pDecorStart = performance.now();
       renderDecorItems(ctx, terrain, decorItems, animTime);
+      perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);
+
+      const pMinesStart = performance.now();
       renderMines(ctx, curState.mines);
+      perfTracker.recordRenderPass('decor_mines', performance.now() - pMinesStart);
 
-
+      const pHelisStart = performance.now();
       renderHelicopters(ctx, curState.helicopters, curState, animTime, isMyTurnRef.current);
+      perfTracker.recordRenderPass('decor_helicopters', performance.now() - pHelisStart);
+
+      const pTombsStart = performance.now();
       renderTombstones(ctx, curState.slugs, waterLevel);
-      perfTracker.recordRenderPass('decor_mines', performance.now() - pDecorStart);
+      perfTracker.recordRenderPass('decor_tombstones', performance.now() - pTombsStart);
 
       // Frame-rate independent visual interpolation for buttery smooth 60/144/240 FPS slug rendering (0 GC allocations)
       const now = performance.now();
@@ -1418,17 +1426,25 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       };
       const visualState = visualStateRef.current;
 
-      // 6. Slugs, Ropes
-      const pSlugsStart = performance.now();
+      // 6. Slugs & Ninja Ropes
+      const pRopesStart = performance.now();
       renderNinjaRopes(ctx, renderedSlugs);
+      perfTracker.recordRenderPass('ninja_ropes', performance.now() - pRopesStart);
+
+      const pSlugsStart = performance.now();
       renderAllSlugs({ ctx, gameState: visualState, animTime, slugDeathTimestamps: slugDeathTimestampsRef.current });
-      perfTracker.recordRenderPass('slugs_ropes', performance.now() - pSlugsStart);
+      perfTracker.recordRenderPass('slugs_rendering', performance.now() - pSlugsStart);
 
       // 7. Supply Crates, Projectiles & Particles FX
-      const pFxStart = performance.now();
+      const pCratesStart = performance.now();
       renderSupplyCrates(ctx, renderedCrates, animTime);
-      renderProjectiles({ ctx, projectiles: renderedProjectiles, animTime });
+      perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
 
+      const pProjStart = performance.now();
+      renderProjectiles({ ctx, projectiles: renderedProjectiles, animTime });
+      perfTracker.recordRenderPass('projectiles', performance.now() - pProjStart);
+
+      const pPartsStart = performance.now();
       // Spawn projectile smoke & fire trail particles
       if (renderedProjectiles.length > 0) {
         for (const proj of renderedProjectiles) {
@@ -1445,11 +1461,16 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           }
         }
       }
-
       renderParticles(ctx, clientParticlesRef.current);
+      perfTracker.recordRenderPass('particles_fx', performance.now() - pPartsStart);
+
+      const pExplosionsStart = performance.now();
       renderClientExplosions(ctx, clientExplosionsRef.current);
+      perfTracker.recordRenderPass('explosions_fx', performance.now() - pExplosionsStart);
+
+      const pDamagesStart = performance.now();
       renderFloatingDamages(ctx, clientFloatingDamagesRef.current);
-      perfTracker.recordRenderPass('projectiles_fx', performance.now() - pFxStart);
+      perfTracker.recordRenderPass('floating_damages', performance.now() - pDamagesStart);
 
       // 8. Aim Guides, Holograms & Placement Preview
       const pAimStart = performance.now();
@@ -1465,7 +1486,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           animTime,
         });
       }
+      perfTracker.recordRenderPass('aim_guides', performance.now() - pAimStart);
 
+      const pGhostStart = performance.now();
       renderPlacementGhost(
         ctx,
         curState,
@@ -1474,7 +1497,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         isMyTurnRef.current,
         animTime
       );
-      perfTracker.recordRenderPass('aim_placement', performance.now() - pAimStart);
+      perfTracker.recordRenderPass('placement_ghost', performance.now() - pGhostStart);
 
       // 9. Foreground Ocean & Rolling Water Waves (With visible screen culling)
       const pOceanStart = performance.now();

@@ -1,13 +1,34 @@
 export const RENDER_PASS_LABELS: Record<string, string> = {
-  sky_atmosphere: '🌌 Ciel & Montagnes',
+  // Ciel & Atmosphère
+  sky_gradient: '🌌 Dégradé Ciel Infini',
+  sky_clouds_stars: '☁️ Nuages & Étoiles',
+  sky_celestial: '☀️ Soleil / Lune / Phare',
+  sky_mountains: '🏔️ Montagnes & Collines',
+  sky_back_ocean: '🌊 Océan Arrière-Plan',
+  // Terrain & Masques
   terrain_buffer: '🏜️ Terrain Destructible',
-  props_girders: '🏗️ Poutres & Objets HD',
-  occlusion_mask: '🕳️ Masque Occlusion',
-  decor_mines: '🦋 Décors & Mines',
-  slugs_ropes: '🐌 Limaces & Cordes',
-  projectiles_fx: '🚀 Projectiles & FX',
-  aim_placement: '🎯 Visée & Guides',
-  ocean_waves: '🌊 Océan & Vagues',
+  occlusion_mask: '🕳️ Masque Occlusion Souterraine',
+  // Décors & Poutres
+  props_girders: '🏗️ Poutres Métalliques HD',
+  props_solids: '🌴 Décors Solides (Palmiers, Hérissons, etc.)',
+  decor_foliage: '🦋 Végétation & Papillons',
+  decor_mines: '💣 Mines Terrestres',
+  decor_helicopters: '🚁 Hélicoptères',
+  decor_tombstones: '🪦 Tombes & Âmes',
+  // Limaces & Cordes
+  ninja_ropes: '🪢 Cordes Ninja',
+  slugs_rendering: '🐌 Limaces & Armes',
+  // Projectiles & Effets FX
+  supply_crates: '📦 Caisses de Largage',
+  projectiles: '🚀 Projectiles & Roquettes',
+  particles_fx: '✨ Particules & Fumée',
+  explosions_fx: '💥 Explosions HD',
+  floating_damages: '🔢 Dégâts Flottants',
+  // Visée & Placement
+  aim_guides: '🎯 Guides de Visée & Trajectoires',
+  placement_ghost: '👤 Fantôme de Placement',
+  // Océan & Débogage
+  ocean_waves: '🌊 Vagues Océaniques Avant-Plan',
   debug_hitboxes: '📐 Hitboxes Debug',
 };
 

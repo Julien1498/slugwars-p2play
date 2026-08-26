@@ -1,4 +1,5 @@
 import { MapTheme } from '../core/types';
+import { perfTracker } from '../core/perfTracker';
 
 export interface SkyRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -93,6 +94,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
 
+  const pSkyGradStart = performance.now();
   // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
   const skyGradTop = Math.min(-650, -height * 0.9);
   const skyKey = `${skyGradTop}_${waterY}_${theme}_${isDay}`;
@@ -190,9 +192,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   ctx.fillStyle = _cachedSkyGrad;
   ctx.fillRect(drawLeft, worldTop, drawRight - drawLeft, waterY - worldTop);
-
+  perfTracker.recordRenderPass('sky_gradient', performance.now() - pSkyGradStart);
 
   // 2. Light Rays / Clouds / Atmosphere Particles
+  const pCloudsStart = performance.now();
   if (isDay) {
     if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
       ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
@@ -231,8 +234,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.fillRect(sx, sy, sz, sz);
     }
   }
+  perfTracker.recordRenderPass('sky_clouds_stars', performance.now() - pCloudsStart);
 
   // 3. Iconic Celestial Focus (Sun / Moon / Rift / Searchlight)
+  const pCelestialStart = performance.now();
   if (isDay) {
     if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS' || theme === 'SPIRES' || theme === 'ARCHIPELAGO') {
       const sunX = width * 0.82;
@@ -354,8 +359,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       ctx.restore();
     }
   }
+  perfTracker.recordRenderPass('sky_celestial', performance.now() - pCelestialStart);
 
   // 4. Background Mountain & Ridge Horizons (Theme-Specific Colors)
+  const pMountainsStart = performance.now();
   const mtKey = `${height}_${waterY}_${theme}_${isDay}`;
   if (_cachedMtKey !== mtKey || !_cachedMtGrad) {
     const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
@@ -445,8 +452,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     }
     ctx.stroke();
   }
+  perfTracker.recordRenderPass('sky_mountains', performance.now() - pMountainsStart);
 
   // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
+  const pBackOceanStart = performance.now();
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
 
 
@@ -515,4 +524,5 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
   ctx.stroke();
+  perfTracker.recordRenderPass('sky_back_ocean', performance.now() - pBackOceanStart);
 }
