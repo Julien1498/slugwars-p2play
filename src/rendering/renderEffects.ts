@@ -29,6 +29,7 @@ export interface ClientFloatingDamage {
 }
 
 export function renderParticles(ctx: CanvasRenderingContext2D, particles: ClientParticle[]) {
+  if (particles.length === 0) return;
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx;
@@ -38,15 +39,14 @@ export function renderParticles(ctx: CanvasRenderingContext2D, particles: Client
     if (p.life <= 0) {
       particles.splice(i, 1);
     } else {
-      ctx.save();
       ctx.globalAlpha = Math.max(0, p.life * 0.85);
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
   }
+  ctx.globalAlpha = 1.0;
 }
 
 export function renderClientExplosions(ctx: CanvasRenderingContext2D, explosions: ClientExplosion[]) {
@@ -213,8 +213,15 @@ export function renderSupplyCrates(ctx: CanvasRenderingContext2D, crates: Supply
 }
 
 export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDamages: ClientFloatingDamage[]) {
+  if (floatingDamages.length === 0) return;
   const now = performance.now();
   let writeIdx = 0;
+  ctx.save();
+  ctx.lineWidth = 2.5;
+  ctx.font = 'extrabold 14px Outfit, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.strokeStyle = '#000000';
+
   for (let i = 0; i < floatingDamages.length; i++) {
     const fd = floatingDamages[i];
     const elapsed = now - fd.startTime;
@@ -224,22 +231,17 @@ export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDam
       const alpha = Math.max(0, 1 - progress);
       const floatY = fd.y - progress * 30;
 
-      ctx.save();
       ctx.globalAlpha = alpha;
       const isHeal = fd.damage < 0;
       ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 2.5;
-      ctx.font = 'extrabold 14px Outfit, sans-serif';
-      ctx.textAlign = 'center';
       const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
       ctx.strokeText(text, fd.x, floatY);
       ctx.fillText(text, fd.x, floatY);
-      ctx.restore();
 
       floatingDamages[writeIdx++] = fd;
     }
   }
+  ctx.restore();
   floatingDamages.length = writeIdx;
 }
 

@@ -57,21 +57,14 @@ export function renderDecorItems(
         { x: 0, y: 36, rx: 0.1, size: 3 },
       ];
 
+      ctx.fillStyle = '#22c55e';
+      ctx.strokeStyle = '#166534';
+      ctx.lineWidth = 0.8;
       for (const leaf of leaves) {
-        ctx.save();
-        ctx.translate(leaf.x, leaf.y);
-        ctx.rotate(leaf.rx);
-
-        ctx.fillStyle = '#22c55e';
         ctx.beginPath();
-        ctx.ellipse(0, 0, leaf.size, leaf.size * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(leaf.x, leaf.y, leaf.size, leaf.size * 0.4, leaf.rx, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.strokeStyle = '#166534';
-        ctx.lineWidth = 0.8;
         ctx.stroke();
-
-        ctx.restore();
       }
 
       ctx.restore();

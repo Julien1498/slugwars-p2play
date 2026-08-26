@@ -999,6 +999,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       animId = requestAnimationFrame(render);
 
       const renderStart = performance.now();
+
+      // Mobile Battery & Thermal Saver: Target rock-solid 60 FPS on 120Hz/144Hz high-refresh mobile screens
+      if (isTouch) {
+        const elapsedSinceLastRender = renderStart - (lastRenderTimeRef.current || 0);
+        if (elapsedSinceLastRender < 15.5) {
+          return;
+        }
+      }
+
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
 
@@ -1022,7 +1031,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      const dpr = window.devicePixelRatio || 1;
+      const rawDpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(rawDpr, isTouch ? 1.5 : 2.0);
       const cRect = containerRectRef.current;
 
       const targetW = Math.max(100, Math.round(cRect.width * dpr));
