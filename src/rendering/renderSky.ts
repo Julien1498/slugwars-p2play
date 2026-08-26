@@ -17,44 +17,6 @@ export interface SkyRenderContext {
   viewRight?: number;
 }
 
-// Baked cloud canvas cache
-const _cloudCanvasCache = new Map<number, HTMLCanvasElement>();
-
-function getBakedCloudCanvas(cSize: number): HTMLCanvasElement {
-  let cached = _cloudCanvasCache.get(cSize);
-  if (cached) return cached;
-
-  const pad = Math.ceil(cSize * 1.5);
-  const w = Math.ceil(cSize * 3.5) + pad * 2;
-  const h = Math.ceil(cSize * 2.8) + pad * 2;
-  const originX = pad + cSize * 0.8;
-  const originY = pad + cSize * 0.8;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.beginPath();
-    ctx.arc(originX, originY, cSize, 0, Math.PI * 2);
-    ctx.arc(originX + cSize * 0.7, originY - cSize * 0.25, cSize * 0.8, 0, Math.PI * 2);
-    ctx.arc(originX + cSize * 1.4, originY + cSize * 0.1, cSize * 0.65, 0, Math.PI * 2);
-    ctx.arc(originX - cSize * 0.6, originY + cSize * 0.1, cSize * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  (canvas as any)._originX = originX;
-  (canvas as any)._originY = originY;
-
-  _cloudCanvasCache.set(cSize, canvas);
-  return canvas;
-}
-
-// Baked static hills and mountains canvas cache
-let _cachedHillsCanvas: HTMLCanvasElement | null = null;
-let _cachedHillsKey = '';
-
 // Cached sky gradient
 let _cachedSkyGrad: CanvasGradient | null = null;
 let _cachedSkyKey = '';
@@ -245,13 +207,18 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
         ctx.fill();
       }
     } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       for (let c = 0; c < 12; c++) {
         const cx = (((Date.now() * 0.014 + c * 620) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
         const cy = -250 + (c * 42) % (Math.max(160, height * 0.22) + 250);
         const cSize = 28 + (c * 7) % 18;
 
-        const bakedCloud = getBakedCloudCanvas(cSize);
-        ctx.drawImage(bakedCloud, cx - (bakedCloud as any)._originX, cy - (bakedCloud as any)._originY);
+        ctx.beginPath();
+        ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
+        ctx.arc(cx + cSize * 0.7, cy - cSize * 0.25, cSize * 0.8, 0, Math.PI * 2);
+        ctx.arc(cx + cSize * 1.4, cy + cSize * 0.1, cSize * 0.65, 0, Math.PI * 2);
+        ctx.arc(cx - cSize * 0.6, cy + cSize * 0.1, cSize * 0.6, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   } else {
@@ -388,109 +355,95 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     }
   }
 
-  // 4. Background Mountain & Ridge Horizons (Rendered from pre-baked static buffer)
-  const hillsKey = `${worldLeft}_${worldRight}_${height}_${waterY}_${worldBottom}_${theme}_${isDay}`;
-  if (!_cachedHillsCanvas || _cachedHillsKey !== hillsKey) {
-    const w = Math.max(100, Math.ceil(worldRight - worldLeft + 80));
-    const h = Math.max(100, Math.ceil(worldBottom + 200));
-
-    const hillsCanvas = document.createElement('canvas');
-    hillsCanvas.width = w;
-    hillsCanvas.height = h;
-    const hCtx = hillsCanvas.getContext('2d');
-    if (hCtx) {
-      const mtGrad = hCtx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
-      if (isDay) {
-        if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-          mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
-        } else if (theme === 'NATURAL_ARCHES') {
-          mtGrad.addColorStop(0, 'rgba(194, 65, 12, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(124, 45, 18, 0.95)');
-        } else if (theme === 'SPIRES') {
-          mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(30, 41, 59, 0.95)');
-        } else if (theme === 'FORTRESS') {
-          mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
-        } else if (theme === 'FLOATING_CHAOS') {
-          mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
-        } else {
-          mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
-          mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
-        }
+  // 4. Background Mountain & Ridge Horizons (Theme-Specific Colors)
+  const mtKey = `${height}_${waterY}_${theme}_${isDay}`;
+  if (_cachedMtKey !== mtKey || !_cachedMtGrad) {
+    const mtGrad = ctx.createLinearGradient(0, height * 0.2, 0, waterY + 100);
+    if (isDay) {
+      if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
+        mtGrad.addColorStop(0, 'rgba(180, 83, 9, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(120, 53, 15, 0.95)');
+      } else if (theme === 'NATURAL_ARCHES') {
+        mtGrad.addColorStop(0, 'rgba(194, 65, 12, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(124, 45, 18, 0.95)');
+      } else if (theme === 'SPIRES') {
+        mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(30, 41, 59, 0.95)');
+      } else if (theme === 'FORTRESS') {
+        mtGrad.addColorStop(0, 'rgba(71, 85, 105, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(20, 83, 45, 0.90)');
+      } else if (theme === 'FLOATING_CHAOS') {
+        mtGrad.addColorStop(0, 'rgba(16, 185, 129, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(5, 150, 105, 0.90)');
       } else {
-        if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
-        } else if (theme === 'NATURAL_ARCHES') {
-          mtGrad.addColorStop(0, 'rgba(76, 29, 149, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.95)');
-        } else if (theme === 'SPIRES') {
-          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
-        } else if (theme === 'FORTRESS') {
-          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
-          mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
-        } else if (theme === 'FLOATING_CHAOS') {
-          mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
-        } else {
-          mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-          mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
-        }
+        mtGrad.addColorStop(0, 'rgba(34, 197, 94, 0.75)');
+        mtGrad.addColorStop(1, 'rgba(21, 128, 61, 0.90)');
       }
-
-      hCtx.fillStyle = mtGrad;
-      hCtx.beginPath();
-      hCtx.moveTo(0, waterY + 100);
-      for (let x = worldLeft; x <= worldRight + 40; x += 35) {
-        const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
-        hCtx.lineTo(x - worldLeft, my);
-      }
-      hCtx.lineTo(worldRight - worldLeft, worldBottom);
-      hCtx.lineTo(0, worldBottom);
-      hCtx.closePath();
-      hCtx.fill();
-
-      // Midground Ridge
-      if (isDay) {
-        hCtx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#78350f' : theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#334155' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
+    } else {
+      if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+      } else if (theme === 'NATURAL_ARCHES') {
+        mtGrad.addColorStop(0, 'rgba(76, 29, 149, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(30, 27, 75, 0.95)');
+      } else if (theme === 'SPIRES') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
+      } else if (theme === 'FORTRESS') {
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+        mtGrad.addColorStop(1, 'rgba(9, 13, 22, 0.95)');
+      } else if (theme === 'FLOATING_CHAOS') {
+        mtGrad.addColorStop(0, 'rgba(30, 11, 60, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(8, 3, 19, 0.95)');
       } else {
-        hCtx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#0f172a' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
-      }
-      hCtx.beginPath();
-      hCtx.moveTo(0, waterY + 100);
-      for (let x = worldLeft; x <= worldRight + 40; x += 25) {
-        const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
-        hCtx.lineTo(x - worldLeft, my);
-      }
-      hCtx.lineTo(worldRight - worldLeft, worldBottom);
-      hCtx.lineTo(0, worldBottom);
-      hCtx.closePath();
-      hCtx.fill();
-
-      // Dotted Lush Grass Blade Dashes on Green Hills
-      if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || theme === 'SPIRES' || !theme)) {
-        hCtx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
-        hCtx.lineWidth = 2.2;
-        hCtx.beginPath();
-        for (let x = worldLeft; x <= worldRight; x += 14) {
-          const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
-          hCtx.moveTo(x - worldLeft, by);
-          hCtx.lineTo((x - worldLeft) + Math.sin(x * 0.1) * 3, by - 5 - (Math.abs(x) % 4));
-        }
-        hCtx.stroke();
+        mtGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        mtGrad.addColorStop(1, 'rgba(7, 10, 22, 0.95)');
       }
     }
-
-    _cachedHillsCanvas = hillsCanvas;
-    _cachedHillsKey = hillsKey;
+    _cachedMtGrad = mtGrad;
+    _cachedMtKey = mtKey;
   }
 
-  if (_cachedHillsCanvas) {
-    ctx.drawImage(_cachedHillsCanvas, worldLeft, 0);
+  ctx.fillStyle = _cachedMtGrad;
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, waterY + 100);
+  for (let x = worldLeft; x <= worldRight + 40; x += 35) {
+    const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
+    ctx.lineTo(x, my);
+  }
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(worldLeft, worldBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Midground Ridge
+  if (isDay) {
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#78350f' : theme === 'NATURAL_ARCHES' ? '#7c2d12' : theme === 'SPIRES' ? '#334155' : theme === 'FORTRESS' ? '#14532d' : theme === 'FLOATING_CHAOS' ? '#047857' : '#15803d';
+  } else {
+    ctx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#0f172a' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
+  }
+  ctx.beginPath();
+  ctx.moveTo(worldLeft, waterY + 100);
+  for (let x = worldLeft; x <= worldRight + 40; x += 25) {
+    const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
+    ctx.lineTo(x, my);
+  }
+  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(worldLeft, worldBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Dotted Lush Grass Blade Dashes on Green Hills (Island, Floating Chaos, Fortress, Spires)
+  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || theme === 'SPIRES' || !theme)) {
+    ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let x = worldLeft; x <= worldRight; x += 14) {
+      const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
+      ctx.moveTo(x, by);
+      ctx.lineTo(x + Math.sin(x * 0.1) * 3, by - 5 - (Math.abs(x) % 4));
+    }
+    ctx.stroke();
   }
 
   // 5. Deep Ocean Horizon Backdrop below Water Level (Clean Multi-Layer Rolling Swell)
