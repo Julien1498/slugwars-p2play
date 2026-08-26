@@ -47,7 +47,9 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
             <span>FPS</span>
           </div>
           <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight">{fps}</div>
-          <div className="text-[10px] sm:text-[11px] opacity-80 mt-0.5 font-semibold">Cible: 60</div>
+          <div className="text-[10px] sm:text-[11px] opacity-80 mt-0.5 font-semibold">
+            {fps >= 100 ? '144Hz VSync' : fps >= 70 ? '120Hz VSync' : '60Hz VSync'}
+          </div>
         </div>
 
         {/* Frame Time */}
@@ -57,7 +59,9 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
             <span>Rendu</span>
           </div>
           <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">{frameTime}ms</div>
-          <div className="text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 font-semibold">Budget: 16.6ms</div>
+          <div className="text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 font-semibold">
+            {fps >= 100 ? 'Budget: 6.9ms' : fps >= 70 ? 'Budget: 8.3ms' : 'Budget: 16.6ms'}
+          </div>
         </div>
 
         {/* Network Latency */}
@@ -91,7 +95,7 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-zinc-400 mt-0.5">
-                Pastille discrète 60 FPS sur le terrain.
+                Pastille discrète de FPS en temps réel sur le terrain.
               </p>
             </div>
           </div>
