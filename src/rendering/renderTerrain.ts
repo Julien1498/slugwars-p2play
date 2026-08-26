@@ -28,7 +28,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff3d8015,// #15803d Dark forest green
     surfaceDeep: 0xff2d5314,  // #14532d Deep undercoat shadow
     soilLight: 0xff142842,    // #422814 Balanced rich soil
-    strataA: 0xff050e1c,      // #1c0e05 Very dark clay sandstone band
+    strataA: 0xff0b1a2e,      // #2e1a0b Subtly lightened clay sandstone band
     strataB: 0xff030a14,      // #140a03 Deep dark sedimentary band
     denseRock: 0xff02060d,    // #0d0602 Deep subterranean rock
     bedrock: 0xff010306,      // #060301 Abyssal bedrock
@@ -40,7 +40,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff16a34a,// #4aa316 Rich tropical shadow
     surfaceDeep: 0xff166534,  // #346516 Deep coastal foliage
     soilLight: 0xff203e58,    // #583e20 Balanced coastal loam
-    strataA: 0xff0a1624,      // #24160a Deep sandstone reef band
+    strataA: 0xff14273c,      // #3c2714 Subtly lightened sandstone reef band
     strataB: 0xff060f1a,      // #1a0f06 Dark oceanic strata
     denseRock: 0xff040910,    // #100904 Volcanic trench rock
     bedrock: 0xff020408,      // #080402 Abyssal reef bedrock
@@ -52,7 +52,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff0c41c2,// #c2410c Terracotta red
     surfaceDeep: 0xff122d7c,  // #7c2d12 Deep ironstone
     soilLight: 0xff142448,    // #482414 Balanced desert clay
-    strataA: 0xff050c1c,      // #1c0c05 Deep canyon sandstone band
+    strataA: 0xff0a1632,      // #32160a Subtly lightened canyon sandstone band
     strataB: 0xff040814,      // #140804 Dark canyon stratum
     denseRock: 0xff02050c,    // #0c0502 Heavy iron rock
     bedrock: 0xff010306,      // #060301 Canyon bedrock
@@ -64,7 +64,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff15803d,// #3d8015 Rich pine forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
     soilLight: 0xff3c4856,    // #56483c Balanced granite mountain stone
-    strataA: 0xff1a1f26,      // #261f1a Dark mountain slate band
+    strataA: 0xff2c343e,      // #3e342c Subtly lightened mountain slate band
     strataB: 0xff12161c,      // #1c1612 Dark mountain stratum
     denseRock: 0xff0b0d10,    // #100d0b Deep mountain bedrock
     bedrock: 0xff050608,      // #080605 Abyssal mountain core
@@ -76,7 +76,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff475569,// #695547 Dark slate
     surfaceDeep: 0xff334155,  // #554133 Damp rock
     soilLight: 0xff221824,    // #241822 Balanced amethyst loam
-    strataA: 0xff0e0a10,      // #100a0e Deep purple strata band
+    strataA: 0xff18121c,      // #1c1218 Subtly lightened purple strata band
     strataB: 0xff09060b,      // #0b0609 Dark cavern stratum
     denseRock: 0xff060407,    // #070406 Heavy rock
     bedrock: 0xff030204,      // #040203 Charcoal bedrock
@@ -88,7 +88,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff0953b4,// #b45309 Warm terracotta shadow
     surfaceDeep: 0xff0f3578,  // #78350f Warm subterranean edge
     soilLight: 0xff081630,    // #301608 Balanced amber subterranean earth
-    strataA: 0xff020714,      // #140702 Deep warm rock band
+    strataA: 0xff040e20,      // #200e04 Subtly lightened warm rock band
     strataB: 0xff01040d,      // #0d0401 Dark warm rock stratum
     denseRock: 0xff010308,    // #080301 Deep warm stone
     bedrock: 0xff000104,      // #040100 Solid dark bedrock
@@ -100,7 +100,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff64748b,// #8b7464 Heavy stone masonry
     surfaceDeep: 0xff475569,  // #695547 Deep foundation
     soilLight: 0xff1e242c,    // #2c241e Balanced moat loam
-    strataA: 0xff101318,      // #181310 Deep fortress bedrock band
+    strataA: 0xff151a20,      // #201a15 Subtly lightened fortress bedrock band
     strataB: 0xff0a0d10,      // #100d0a Stratified dungeon rock
     denseRock: 0xff06080a,    // #0a0806 Heavy granite base
     bedrock: 0xff030405,      // #050403 Keep bedrock
@@ -112,7 +112,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceShadow: 0xff15803d,// #3d8015 Rich forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
     soilLight: 0xff162a44,    // #442a16 Balanced earthy brown loam
-    strataA: 0xff070f1c,      // #1c0f07 Deep floating sandstone band
+    strataA: 0xff0c1a30,      // #301a0c Subtly lightened floating sandstone band
     strataB: 0xff050a14,      // #140a05 Dark suspended rock
     denseRock: 0xff03060c,    // #0c0603 Heavy stone core
     bedrock: 0xff020306,      // #060302 Dark basalt underbelly
