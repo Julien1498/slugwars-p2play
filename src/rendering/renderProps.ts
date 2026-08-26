@@ -721,12 +721,12 @@ export function renderHDDestructibleProp(
   }
 
   ctx.save();
-  const clipPath = new Path2D();
-  clipPath.rect(sprop.x - 200, sprop.y - 200, 400, 400);
   for (const c of overlappingCraters) {
-    clipPath.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+    const notCircle = new Path2D();
+    notCircle.rect(sprop.x - 200, sprop.y - 200, 400, 400);
+    notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+    ctx.clip(notCircle, 'evenodd');
   }
-  ctx.clip(clipPath, 'evenodd');
 
   drawSolidPropVector(ctx, sprop, animTime);
   ctx.restore();
@@ -797,12 +797,12 @@ export function renderHDDestructibleGirder(
   ctx.save();
 
   if (overlappingCraters.length > 0) {
-    const clipPath = new Path2D();
-    clipPath.rect(g.x - 200, g.y - 200, 400, 400);
     for (const c of overlappingCraters) {
-      clipPath.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+      const notCircle = new Path2D();
+      notCircle.rect(g.x - 200, g.y - 200, 400, 400);
+      notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+      ctx.clip(notCircle, 'evenodd');
     }
-    ctx.clip(clipPath, 'evenodd');
   }
 
   ctx.translate(g.x, g.y);
