@@ -139,6 +139,18 @@ export function createTerrainBuffers(width: number, height: number): TerrainBuff
   };
 }
 
+export function lerpColor32(c1: number, c2: number, t: number): number {
+  if (t <= 0) return c1;
+  if (t >= 1) return c2;
+  const invT = 1 - t;
+
+  const r = ((c1 & 0xff) * invT + (c2 & 0xff) * t + 0.5) | 0;
+  const g = (((c1 >> 8) & 0xff) * invT + ((c2 >> 8) & 0xff) * t + 0.5) | 0;
+  const b = (((c1 >> 16) & 0xff) * invT + ((c2 >> 16) & 0xff) * t + 0.5) | 0;
+
+  return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+}
+
 export function redrawOffscreenTerrain(
   terrain: DestructibleTerrain,
   buffers: TerrainBuffers,
@@ -229,18 +241,6 @@ export function redrawOffscreenTerrain(
       distMap[idx] = d;
     }
   }
-
-export function lerpColor32(c1: number, c2: number, t: number): number {
-  if (t <= 0) return c1;
-  if (t >= 1) return c2;
-  const invT = 1 - t;
-
-  const r = ((c1 & 0xff) * invT + (c2 & 0xff) * t + 0.5) | 0;
-  const g = (((c1 >> 8) & 0xff) * invT + ((c2 >> 8) & 0xff) * t + 0.5) | 0;
-  const b = (((c1 >> 16) & 0xff) * invT + ((c2 >> 16) & 0xff) * t + 0.5) | 0;
-
-  return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
-}
 
   // Render Multi-Layer Geological Strata inside Dirty Bounding Box
   for (let y = minY; y <= maxY; y++) {
