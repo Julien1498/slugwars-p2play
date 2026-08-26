@@ -92,7 +92,7 @@ function getCachedBgWaterGradient(
 
 export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
-  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width } = rc;
+  const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, worldBottom, animTime, slowTime, width, viewLeft, viewRight } = rc;
 
   const pSkyGradStart = performance.now();
   // 1. Seamless Infinite Atmospheric Sky Horizon Gradient
@@ -187,8 +187,8 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     _cachedSkyKey = skyKey;
   }
 
-  const drawLeft = rc.viewLeft !== undefined ? Math.max(worldLeft, rc.viewLeft - 100) : worldLeft;
-  const drawRight = rc.viewRight !== undefined ? Math.min(worldRight, rc.viewRight + 100) : worldRight;
+  const drawLeft = viewLeft !== undefined ? Math.max(worldLeft, viewLeft - 100) : worldLeft;
+  const drawRight = viewRight !== undefined ? Math.min(worldRight, viewRight + 100) : worldRight;
 
   ctx.fillStyle = _cachedSkyGrad;
   ctx.fillRect(drawLeft, worldTop, drawRight - drawLeft, waterY - worldTop);
@@ -413,13 +413,13 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
 
   ctx.fillStyle = _cachedMtGrad;
   ctx.beginPath();
-  ctx.moveTo(worldLeft, waterY + 100);
-  for (let x = worldLeft; x <= worldRight + 40; x += 35) {
+  ctx.moveTo(drawLeft, waterY + 100);
+  for (let x = drawLeft; x <= drawRight + 40; x += 40) {
     const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(worldRight, worldBottom);
-  ctx.lineTo(worldLeft, worldBottom);
+  ctx.lineTo(drawRight, worldBottom);
+  ctx.lineTo(drawLeft, worldBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -430,13 +430,13 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     ctx.fillStyle = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? '#0d0403' : theme === 'NATURAL_ARCHES' ? '#2e1065' : theme === 'SPIRES' ? '#0f172a' : theme === 'FLOATING_CHAOS' ? '#0b0417' : '#070b16';
   }
   ctx.beginPath();
-  ctx.moveTo(worldLeft, waterY + 100);
-  for (let x = worldLeft; x <= worldRight + 40; x += 25) {
+  ctx.moveTo(drawLeft, waterY + 100);
+  for (let x = drawLeft; x <= drawRight + 40; x += 30) {
     const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(worldRight, worldBottom);
-  ctx.lineTo(worldLeft, worldBottom);
+  ctx.lineTo(drawRight, worldBottom);
+  ctx.lineTo(drawLeft, worldBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -445,7 +445,7 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
     ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
-    for (let x = worldLeft; x <= worldRight; x += 14) {
+    for (let x = drawLeft; x <= drawRight; x += 18) {
       const by = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
       ctx.moveTo(x, by);
       ctx.lineTo(x + Math.sin(x * 0.1) * 3, by - 5 - (Math.abs(x) % 4));
@@ -458,15 +458,14 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   const pBackOceanStart = performance.now();
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
 
-
   // Layer 1: Back Ocean Deep Body Polygon
   ctx.beginPath();
-  ctx.moveTo(worldLeft, worldBottom);
-  for (let x = worldLeft; x <= worldRight; x += 12) {
+  ctx.moveTo(drawLeft, worldBottom);
+  for (let x = drawLeft; x <= drawRight; x += 24) {
     const wy1 = waterY + Math.sin(x * 0.008 + slowTime * 1.5) * 10 + Math.cos(x * 0.016 - slowTime * 1.0) * 4;
     ctx.lineTo(x, wy1);
   }
-  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(drawRight, worldBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -477,24 +476,24 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       : 'rgba(14, 165, 233, 0.55)'
     : 'rgba(30, 58, 138, 0.45)';
   ctx.beginPath();
-  ctx.moveTo(worldLeft, worldBottom);
-  for (let x = worldLeft; x <= worldRight; x += 12) {
+  ctx.moveTo(drawLeft, worldBottom);
+  for (let x = drawLeft; x <= drawRight; x += 24) {
     const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
     ctx.lineTo(x, wy2);
   }
-  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(drawRight, worldBottom);
   ctx.closePath();
   ctx.fill();
 
   // Layer 3 & 4: Single-pass Horizon Surface Wave Computation
-  const neededBgCap = Math.ceil((worldRight - worldLeft) / 12) + 2;
+  const neededBgCap = Math.ceil((drawRight - drawLeft) / 24) + 4;
   if (_bgWaveX.length < neededBgCap) {
     _bgWaveX = new Float32Array(neededBgCap + 64);
     _bgWaveY = new Float32Array(neededBgCap + 64);
   }
 
   let bgPtCount = 0;
-  for (let x = worldLeft; x <= worldRight; x += 12) {
+  for (let x = drawLeft; x <= drawRight; x += 24) {
     _bgWaveX[bgPtCount] = x;
     _bgWaveY[bgPtCount] = waterY + Math.sin(x * 0.010 + slowTime * 1.8) * 9 + Math.cos(x * 0.020 - slowTime * 1.2) * 4;
     bgPtCount++;
@@ -507,22 +506,24 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
       : 'rgba(2, 132, 199, 0.80)'
     : 'rgba(15, 23, 42, 0.80)';
   ctx.beginPath();
-  ctx.moveTo(worldLeft, worldBottom);
+  ctx.moveTo(drawLeft, worldBottom);
   for (let i = 0; i < bgPtCount; i++) {
     ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
-  ctx.lineTo(worldRight, worldBottom);
+  ctx.lineTo(drawRight, worldBottom);
   ctx.closePath();
   ctx.fill();
 
   // Layer 4: Smooth White Foam Crest Line (reusing same computed points)
   ctx.strokeStyle = isDay ? '#ffffff' : '#94a3b8';
   ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.moveTo(_bgWaveX[0], _bgWaveY[0]);
-  for (let i = 1; i < bgPtCount; i++) {
-    ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
+  if (bgPtCount > 0) {
+    ctx.beginPath();
+    ctx.moveTo(_bgWaveX[0], _bgWaveY[0]);
+    for (let i = 1; i < bgPtCount; i++) {
+      ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
+    }
+    ctx.stroke();
   }
-  ctx.stroke();
   perfTracker.recordRenderPass('sky_back_ocean', performance.now() - pBackOceanStart);
 }

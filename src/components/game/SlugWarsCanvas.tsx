@@ -1262,12 +1262,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
       perfTracker.recordRenderPass('terrain_buffer', performance.now() - pTerrainStart);
 
-      // 3. Destructible Girders & Solid Props
+      // 3. Destructible Girders & Solid Props (with Viewport Culling)
       const { grid, solidProps } = terrain.data;
       const pGirdersStart = performance.now();
       if (curState.girders) {
         for (const g of curState.girders) {
           if (!g.destroyed) {
+            if (viewLeft !== undefined && viewRight !== undefined) {
+              if (g.x < viewLeft - 100 || g.x > viewRight + 100) continue;
+            }
             renderHDDestructibleGirder(ctx, g, curState.craters, curState.explosions, grid, width);
           }
         }
@@ -1278,6 +1281,9 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (solidProps) {
         for (const sprop of solidProps) {
           if (!sprop.destroyed) {
+            if (viewLeft !== undefined && viewRight !== undefined) {
+              if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
+            }
             renderHDDestructibleProp(ctx, sprop, curState.craters, curState.explosions, animTime, grid, width);
           }
         }

@@ -1,6 +1,12 @@
 import { GameState, Vector2D } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
 
+let _lastGhostX = -99999;
+let _lastGhostY = -99999;
+let _lastGhostRevision = -1;
+let _cachedPreviewY = 0;
+let _cachedIsValid = false;
+
 export function renderPlacementGhost(
   ctx: CanvasRenderingContext2D,
   gameState: GameState,
@@ -16,32 +22,45 @@ export function renderPlacementGhost(
   const width = terrain.data.width;
   const currentWaterLevel = terrain.data.waterLevel;
   const clampedX = Math.max(20, Math.min(width - 20, Math.round(mousePos.x)));
-  let previewY = Math.max(25, Math.min(currentWaterLevel - 15, Math.round(mousePos.y)));
+  const rawY = Math.max(25, Math.min(currentWaterLevel - 15, Math.round(mousePos.y)));
 
-  const hasClearAir = (x: number, y: number): boolean => {
-    if (x < 15 || x > width - 15 || y < 20 || y >= currentWaterLevel - 5) return false;
-    for (let check = 0; check <= 18; check++) {
-      if (
-        terrain.isSolid(x, y - check) ||
-        terrain.isSolid(x - 4, y - check) ||
-        terrain.isSolid(x + 4, y - check)
-      ) {
-        return false;
+  let previewY = rawY;
+  let isValidPos = false;
+
+  if (_lastGhostX === clampedX && _lastGhostY === rawY && _lastGhostRevision === terrain.revision) {
+    previewY = _cachedPreviewY;
+    isValidPos = _cachedIsValid;
+  } else {
+    const hasClearAir = (x: number, y: number): boolean => {
+      if (x < 15 || x > width - 15 || y < 20 || y >= currentWaterLevel - 5) return false;
+      for (let check = 0; check <= 18; check++) {
+        if (
+          terrain.isSolid(x, y - check) ||
+          terrain.isSolid(x - 4, y - check) ||
+          terrain.isSolid(x + 4, y - check)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    if (!hasClearAir(clampedX, previewY)) {
+      for (let testY = previewY; testY < currentWaterLevel - 15; testY += 2) {
+        if (hasClearAir(clampedX, testY)) {
+          previewY = testY;
+          break;
+        }
       }
     }
-    return true;
-  };
 
-  if (!hasClearAir(clampedX, previewY)) {
-    for (let testY = previewY; testY < currentWaterLevel - 15; testY += 2) {
-      if (hasClearAir(clampedX, testY)) {
-        previewY = testY;
-        break;
-      }
-    }
+    isValidPos = hasClearAir(clampedX, previewY);
+    _lastGhostX = clampedX;
+    _lastGhostY = rawY;
+    _lastGhostRevision = terrain.revision;
+    _cachedPreviewY = previewY;
+    _cachedIsValid = isValidPos;
   }
-
-  const isValidPos = hasClearAir(clampedX, previewY);
 
   ctx.save();
   ctx.translate(clampedX, previewY);
