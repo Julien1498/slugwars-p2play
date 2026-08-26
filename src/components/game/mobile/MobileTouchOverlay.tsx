@@ -501,54 +501,28 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
 
               {/* Angle Nudges + Fire Button row */}
               <div className="flex items-center gap-2">
-                {/* Angle Nudges / Rope Length ▲ / ▼ */}
+                {/* Angle Nudges ▲ / ▼ */}
                 {isMyTurn && !isRetreat && currentWeapon?.id !== 'girder' && (
                   <div className="flex flex-col gap-1.5">
                     <button
                       type="button"
                       className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                      onPointerDown={(e) => {
+                      onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        triggerHaptic(10);
-                        if (activeSlug?.ropeState) {
-                          onStartSteer?.('left');
-                        } else {
-                          handleAngleChange(3);
-                        }
+                        handleAngleChange(3);
                       }}
-                      onPointerUp={(e) => {
-                        e.preventDefault();
-                        if (activeSlug?.ropeState) onStopSteer?.();
-                      }}
-                      onPointerCancel={() => {
-                        if (activeSlug?.ropeState) onStopSteer?.();
-                      }}
-                      title={activeSlug?.ropeState ? "Raccourcir la corde (Monter)" : "Augmenter l'angle"}
                     >
                       ▲
                     </button>
                     <button
                       type="button"
                       className="w-12 h-10 rounded-xl bg-slate-900/90 active:bg-slate-700 border-2 border-slate-700/90 text-slate-200 font-black text-base flex items-center justify-center shadow-xl backdrop-blur-md active:scale-95"
-                      onPointerDown={(e) => {
+                      onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        triggerHaptic(10);
-                        if (activeSlug?.ropeState) {
-                          onStartSteer?.('right');
-                        } else {
-                          handleAngleChange(-3);
-                        }
+                        handleAngleChange(-3);
                       }}
-                      onPointerUp={(e) => {
-                        e.preventDefault();
-                        if (activeSlug?.ropeState) onStopSteer?.();
-                      }}
-                      onPointerCancel={() => {
-                        if (activeSlug?.ropeState) onStopSteer?.();
-                      }}
-                      title={activeSlug?.ropeState ? "Rallonger la corde (Descendre)" : "Diminuer l'angle"}
                     >
                       ▼
                     </button>

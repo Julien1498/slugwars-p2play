@@ -1000,15 +1000,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       const renderStart = performance.now();
 
-      // Mobile Battery & Thermal Saver: Target rock-solid 60 FPS on 120Hz/144Hz high-refresh mobile screens (120Hz = 8.3ms -> skips to 60 FPS, 60Hz = 16.6ms -> never skipped)
-      if (isTouch) {
-        const elapsedSinceLastRender = renderStart - (lastRenderTimeRef.current || 0);
-        if (elapsedSinceLastRender < 10.0) {
-          return;
-        }
-      }
-      lastRenderTimeRef.current = renderStart;
-
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
 
@@ -1321,15 +1312,12 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           visualSlugPositionsRef.current.set(slug.id, visualPos);
         } else {
           const dist = Math.hypot(slug.x - visualPos.x, slug.y - visualPos.y);
-          const isRoping = !!slug.ropeState;
-          const maxSnapDist = isRoping ? 400 : 90;
-          if (dist > maxSnapDist) {
+          if (dist > 64) {
             visualPos.x = slug.x;
             visualPos.y = slug.y;
           } else {
-            const slugAlpha = isRoping ? (1 - Math.exp(-32.0 * dtSec)) : alpha;
-            visualPos.x += (slug.x - visualPos.x) * slugAlpha;
-            visualPos.y += (slug.y - visualPos.y) * slugAlpha;
+            visualPos.x += (slug.x - visualPos.x) * alpha;
+            visualPos.y += (slug.y - visualPos.y) * alpha;
           }
         }
         renderedSlugs[i] = {
