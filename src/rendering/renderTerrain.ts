@@ -27,96 +27,96 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff5ec522,  // #22c55e Rich grass green
     surfaceShadow: 0xff3d8015,// #15803d Dark forest green
     surfaceDeep: 0xff2d5314,  // #14532d Deep undercoat shadow
-    soilLight: 0xff183154,    // #543118 Warm topsoil
-    strataA: 0xff081427,      // #271408 Darker clay sandstone band
-    strataB: 0xff07101e,      // #1e1007 Darker banded sedimentary stone
-    denseRock: 0xff0a1626,    // #26160a Deep dense rock
-    bedrock: 0xff040914,      // #140904 Deep subterranean dark rock
-    seam: 0xff02050b,         // #0b0502 Deep dark soil crack
+    soilLight: 0xff081426,    // #261408 Dark espresso soil
+    strataA: 0xff050e1c,      // #1c0e05 Very dark clay sandstone band
+    strataB: 0xff030a14,      // #140a03 Deep dark sedimentary band
+    denseRock: 0xff02060d,    // #0d0602 Deep subterranean rock
+    bedrock: 0xff010306,      // #060301 Abyssal bedrock
+    seam: 0xff000103,         // #030100 Dark soil crack
   },
   ARCHIPELAGO: {
     highlight: 0xff4ade80,    // #80de4a Tropical palm lime
     surfaceBody: 0xff22c55e,  // #5ec522 Vibrant lagoon green
     surfaceShadow: 0xff16a34a,// #4aa316 Rich tropical shadow
     surfaceDeep: 0xff166534,  // #346516 Deep coastal foliage
-    soilLight: 0xff2d5778,    // #78572d Coastal coral sand/loam
-    strataA: 0xff102338,      // #382310 Darker sandstone reef band
-    strataB: 0xff0d1b2b,      // #2b1b0d Darker oceanic strata
-    denseRock: 0xff0f2030,    // #30200f Volcanic trench rock
-    bedrock: 0xff071018,      // #181007 Abyssal reef bedrock
-    seam: 0xff03080c,         // #0c0803 Coral seam
+    soilLight: 0xff0e1e32,    // #321e0e Dark coastal loam
+    strataA: 0xff0a1624,      // #24160a Deep sandstone reef band
+    strataB: 0xff060f1a,      // #1a0f06 Dark oceanic strata
+    denseRock: 0xff040910,    // #100904 Volcanic trench rock
+    bedrock: 0xff020408,      // #080402 Abyssal reef bedrock
+    seam: 0xff010204,         // #040201 Coral seam
   },
   NATURAL_ARCHES: {
     highlight: 0xff2bf0f5,    // #f5f02b Sunlit golden sand rim
     surfaceBody: 0xff089bf5,  // #f59b08 Rich orange sandstone
     surfaceShadow: 0xff0c41c2,// #c2410c Terracotta red
     surfaceDeep: 0xff122d7c,  // #7c2d12 Deep ironstone
-    soilLight: 0xff182d5a,    // #5a2d18 Desert clay
-    strataA: 0xff09132b,      // #2b1309 Darker canyon sandstone band
-    strataB: 0xff090e1e,      // #1e0e09 Darker canyon stratum
-    denseRock: 0xff0c1328,    // #28130c Heavy iron rock
-    bedrock: 0xff060a17,      // #170a06 Canyon bedrock
-    seam: 0xff03050c,         // #0c0503 Mineral seam
+    soilLight: 0xff081228,    // #281208 Dark desert clay
+    strataA: 0xff050c1c,      // #1c0c05 Deep canyon sandstone band
+    strataB: 0xff040814,      // #140804 Dark canyon stratum
+    denseRock: 0xff02050c,    // #0c0502 Heavy iron rock
+    bedrock: 0xff010306,      // #060301 Canyon bedrock
+    seam: 0xff000103,         // #030100 Mineral seam
   },
   SPIRES: {
     highlight: 0xff86efac,    // #acef86 Alpine grass rim
     surfaceBody: 0xff22c55e,  // #5ec522 Mountain meadow green
     surfaceShadow: 0xff15803d,// #3d8015 Rich pine forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
-    soilLight: 0xff64748b,    // #8b7464 Classic granite mountain stone
-    strataA: 0xff27303d,      // #3d3027 Darker mountain slate band
-    strataB: 0xff1b232e,      // #2e231b Darker granite layer
-    denseRock: 0xff1e293b,    // #3b291e Deep mountain bedrock
-    bedrock: 0xff0f172a,      // #2a170f Abyssal mountain core
-    seam: 0xff080d17,         // #170d08 Subtle granite fissure
+    soilLight: 0xff242c36,    // #362c24 Dark granite mountain stone
+    strataA: 0xff1a1f26,      // #261f1a Dark mountain slate band
+    strataB: 0xff12161c,      // #1c1612 Dark mountain stratum
+    denseRock: 0xff0b0d10,    // #100d0b Deep mountain bedrock
+    bedrock: 0xff050608,      // #080605 Abyssal mountain core
+    seam: 0xff020304,         // #040302 Subtle granite fissure
   },
   CAVERN: {
     highlight: 0xffcbd5e1,    // #e1d5cb Pale subterranean crust
     surfaceBody: 0xff64748b,  // #8b7464 Cool cavern slate
     surfaceShadow: 0xff475569,// #695547 Dark slate
     surfaceDeep: 0xff334155,  // #554133 Damp rock
-    soilLight: 0xff2a2436,    // #36242a Amethyst loam
-    strataA: 0xff120e1a,      // #1a0e12 Darker purple strata band
-    strataB: 0xff0d0a12,      // #120a0d Darker cavern stratum
-    denseRock: 0xff110e17,    // #170e11 Heavy subterranean rock
-    bedrock: 0xff0a080e,      // #0e080a Charcoal bedrock
-    seam: 0xff050407,         // #070405 Deep cave fissure
+    soilLight: 0xff140e16,    // #160e14 Dark amethyst loam
+    strataA: 0xff0e0a10,      // #100a0e Deep purple strata band
+    strataB: 0xff09060b,      // #0b0609 Dark cavern stratum
+    denseRock: 0xff060407,    // #070406 Heavy subterranean rock
+    bedrock: 0xff030204,      // #040203 Charcoal bedrock
+    seam: 0xff010102,         // #020101 Deep cave fissure
   },
   ORGANIC_CAVES: {
     highlight: 0xff24bffb,    // #fbbf24 Golden amber highlight rim
     surfaceBody: 0xff0677d9,  // #d97706 Warm amber ochre tunnel floor
     surfaceShadow: 0xff0953b4,// #b45309 Warm terracotta shadow
     surfaceDeep: 0xff0f3578,  // #78350f Warm subterranean edge
-    soilLight: 0xff081c3d,    // #3d1c08 Warm earthy subterranean rock
-    strataA: 0xff020918,      // #180902 Darker warm rock stratum band
-    strataB: 0xff020711,      // #110702 Darker warm rock band
-    denseRock: 0xff030914,    // #140903 Deep warm stone core
-    bedrock: 0xff02050c,      // #0c0502 Solid dark warm bedrock
-    seam: 0xff010307,         // #070301 Harmonious subtle dark crevice (Zero eye strain)
+    soilLight: 0xff030b1c,    // #1c0b03 Dark amber subterranean earth
+    strataA: 0xff020714,      // #140702 Deep warm rock band
+    strataB: 0xff01040d,      // #0d0401 Dark warm rock stratum
+    denseRock: 0xff010308,    // #080301 Deep warm stone core
+    bedrock: 0xff000104,      // #040100 Solid dark bedrock
+    seam: 0xff000002,         // #020000 Harmonious dark crevice
   },
   FORTRESS: {
     highlight: 0xffa3e635,    // #35e6a3 Rampart moss
     surfaceBody: 0xff94a3b8,  // #b8a394 Ashlar castle stone
     surfaceShadow: 0xff64748b,// #8b7464 Heavy stone masonry
     surfaceDeep: 0xff475569,  // #695547 Deep foundation
-    soilLight: 0xff334155,    // #554133 Moat loam
-    strataA: 0xff131b26,      // #261b13 Darker fortress bedrock band
-    strataB: 0xff0f131a,      // #1a130f Darker dungeon rock
-    denseRock: 0xff141a22,    // #221a14 Heavy granite base
-    bedrock: 0xff0c1015,      // #15100c Keep bedrock
-    seam: 0xff06080b,         // #0b0806 Mortar seam
+    soilLight: 0xff161a20,    // #201a16 Dark moat loam
+    strataA: 0xff101318,      // #181310 Deep fortress bedrock band
+    strataB: 0xff0a0d10,      // #100d0a Stratified dungeon rock
+    denseRock: 0xff06080a,    // #0a0806 Heavy granite base
+    bedrock: 0xff030405,      // #050403 Keep bedrock
+    seam: 0xff010203,         // #030201 Mortar seam
   },
   FLOATING_CHAOS: {
     highlight: 0xff86efac,    // #acef86 Bright mint/emerald moss rim
     surfaceBody: 0xff22c55e,  // #5ec522 Lush floating island grass
     surfaceShadow: 0xff15803d,// #3d8015 Rich forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
-    soilLight: 0xff1e3a5f,    // #5f3a1e Warm earthy brown loam
-    strataA: 0xff091629,      // #291609 Darker floating sandstone band
-    strataB: 0xff09111f,      // #1f1109 Darker suspended rock
-    denseRock: 0xff0c1626,    // #26160c Heavy stone core
-    bedrock: 0xff060a12,      // #120a06 Dark basalt underbelly
-    seam: 0xff03060a,         // #0a0603 Rock fissure
+    soilLight: 0xff0a1628,    // #28160a Dark earthy brown loam
+    strataA: 0xff070f1c,      // #1c0f07 Deep floating sandstone band
+    strataB: 0xff050a14,      // #140a05 Dark suspended rock
+    denseRock: 0xff03060c,    // #0c0603 Heavy stone core
+    bedrock: 0xff020306,      // #060302 Dark basalt underbelly
+    seam: 0xff010103,         // #030101 Rock fissure
   },
 };
 
