@@ -233,7 +233,10 @@ export function renderSkyAndAtmosphere(rc: SkyRenderContext) {
   } else {
     for (let i = 0; i < 180; i++) {
       const sx = worldLeft + ((i * 317 + i * 83) % (worldRight - worldLeft));
+      if (sx < drawLeft - 5 || sx > drawRight + 5) continue;
       const sy = worldTop + ((i * 179 + i * 47) % (waterY - worldTop));
+      if (sy < drawTop - 5 || sy > waterY + 5) continue;
+
       const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
       const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
       ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
