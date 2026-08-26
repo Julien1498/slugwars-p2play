@@ -1000,13 +1000,14 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       const renderStart = performance.now();
 
-      // Mobile Battery & Thermal Saver: Target rock-solid 60 FPS on 120Hz/144Hz high-refresh mobile screens
+      // Mobile Battery & Thermal Saver: Target rock-solid 60 FPS on 120Hz/144Hz high-refresh mobile screens (120Hz = 8.3ms -> skips to 60 FPS, 60Hz = 16.6ms -> never skipped)
       if (isTouch) {
         const elapsedSinceLastRender = renderStart - (lastRenderTimeRef.current || 0);
-        if (elapsedSinceLastRender < 15.5) {
+        if (elapsedSinceLastRender < 10.0) {
           return;
         }
       }
+      lastRenderTimeRef.current = renderStart;
 
       const curState = gameStateRef.current;
       const { width, height, waterLevel, decorItems } = terrain.data;
