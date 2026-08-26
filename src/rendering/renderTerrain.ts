@@ -230,6 +230,18 @@ export function redrawOffscreenTerrain(
     }
   }
 
+export function lerpColor32(c1: number, c2: number, t: number): number {
+  if (t <= 0) return c1;
+  if (t >= 1) return c2;
+  const invT = 1 - t;
+
+  const r = ((c1 & 0xff) * invT + (c2 & 0xff) * t + 0.5) | 0;
+  const g = (((c1 >> 8) & 0xff) * invT + ((c2 >> 8) & 0xff) * t + 0.5) | 0;
+  const b = (((c1 >> 16) & 0xff) * invT + ((c2 >> 16) & 0xff) * t + 0.5) | 0;
+
+  return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+}
+
   // Render Multi-Layer Geological Strata inside Dirty Bounding Box
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
@@ -241,14 +253,14 @@ export function redrawOffscreenTerrain(
       if (grid[idx] === 1) {
         const airDist = distMap[idx];
 
-        if (airDist <= 1.5) {
+        if (airDist <= 1.2) {
           data32[dirtyIdx] = palette.highlight;
-        } else if (airDist <= 3.5) {
-          data32[dirtyIdx] = palette.surfaceBody;
-        } else if (airDist <= 5.5) {
-          data32[dirtyIdx] = palette.surfaceShadow;
-        } else if (airDist <= 7.5) {
-          data32[dirtyIdx] = palette.surfaceDeep;
+        } else if (airDist <= 3.2) {
+          data32[dirtyIdx] = lerpColor32(palette.highlight, palette.surfaceBody, (airDist - 1.2) / 2.0);
+        } else if (airDist <= 5.2) {
+          data32[dirtyIdx] = lerpColor32(palette.surfaceBody, palette.surfaceShadow, (airDist - 3.2) / 2.0);
+        } else if (airDist <= 7.2) {
+          data32[dirtyIdx] = lerpColor32(palette.surfaceShadow, palette.surfaceDeep, (airDist - 5.2) / 2.0);
         } else {
           const bx = (x >> 2);
           const by = (y >> 2);
@@ -257,16 +269,29 @@ export function redrawOffscreenTerrain(
           const isSeam = (x % 4 === 0 && ((y >> 2) % 2 === 0)) || (y % 4 === 0);
           if (isSeam && blockHash % 100 < 30) {
             data32[dirtyIdx] = palette.seam;
-          } else if (airDist <= 18) {
-            data32[dirtyIdx] = palette.soilLight;
-          } else if (airDist <= 42) {
-            // Geological Strata Banding (subtle horizontal layer alternating every 4-8px)
-            const isBand = (y >> 2) & 1;
-            data32[dirtyIdx] = isBand ? palette.strataA : palette.strataB;
-          } else if (airDist <= 80) {
-            data32[dirtyIdx] = palette.denseRock;
           } else {
-            data32[dirtyIdx] = palette.bedrock;
+            // Geological Strata Banding with organic undulating wave
+            const wave = Math.sin(y * 0.35 + Math.sin(x * 0.05) * 1.5);
+            const strataT = 0.5 + 0.5 * wave;
+            const strataColor = lerpColor32(palette.strataA, palette.strataB, strataT);
+
+            if (airDist <= 10.0) {
+              data32[dirtyIdx] = lerpColor32(palette.surfaceDeep, palette.soilLight, (airDist - 7.2) / 2.8);
+            } else if (airDist <= 16.0) {
+              data32[dirtyIdx] = palette.soilLight;
+            } else if (airDist <= 22.0) {
+              data32[dirtyIdx] = lerpColor32(palette.soilLight, strataColor, (airDist - 16.0) / 6.0);
+            } else if (airDist <= 38.0) {
+              data32[dirtyIdx] = strataColor;
+            } else if (airDist <= 48.0) {
+              data32[dirtyIdx] = lerpColor32(strataColor, palette.denseRock, (airDist - 38.0) / 10.0);
+            } else if (airDist <= 72.0) {
+              data32[dirtyIdx] = palette.denseRock;
+            } else if (airDist <= 88.0) {
+              data32[dirtyIdx] = lerpColor32(palette.denseRock, palette.bedrock, (airDist - 72.0) / 16.0);
+            } else {
+              data32[dirtyIdx] = palette.bedrock;
+            }
           }
         }
       } else {

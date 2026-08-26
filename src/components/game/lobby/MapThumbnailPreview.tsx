@@ -114,6 +114,19 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
       }
     }
 
+    const lerpRGB = (c1: [number, number, number], c2: [number, number, number], t: number): [number, number, number] => {
+      const tc = t < 0 ? 0 : t > 1 ? 1 : t;
+      const invT = 1 - tc;
+      return [
+        Math.round(c1[0] * invT + c2[0] * tc),
+        Math.round(c1[1] * invT + c2[1] * tc),
+        Math.round(c1[2] * invT + c2[2] * tc),
+      ];
+    };
+
+    const shadowRGB = hexToRgb(palette.surfaceShadow);
+    const deepRGB = hexToRgb(palette.surfaceDeep);
+
     // 3. Render High-Fidelity Geological Layers
     for (let py = 0; py < previewH; py++) {
       const skyT = py / previewH;
@@ -127,21 +140,32 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
 
         if (solidMap[pIdx] === 1) {
           const d = pDist[pIdx];
+          const wave = Math.sin(py * 0.4 + Math.sin(px * 0.08) * 1.5);
+          const strataT = 0.5 + 0.5 * wave;
+          const strataRGB = lerpRGB(strataARGB, strataBRGB, strataT);
+
           let color = surfaceRGB;
 
-          if (d <= 1.2) {
+          if (d <= 1.0) {
             color = surfaceRGB;
           } else if (d <= 2.2) {
-            color = hexToRgb(palette.surfaceShadow);
-          } else if (d <= 3.2) {
-            color = hexToRgb(palette.surfaceDeep);
-          } else if (d <= 6.5) {
+            color = lerpRGB(surfaceRGB, shadowRGB, (d - 1.0) / 1.2);
+          } else if (d <= 3.5) {
+            color = lerpRGB(shadowRGB, deepRGB, (d - 2.2) / 1.3);
+          } else if (d <= 5.0) {
+            color = lerpRGB(deepRGB, topsoilRGB, (d - 3.5) / 1.5);
+          } else if (d <= 8.0) {
             color = topsoilRGB;
-          } else if (d <= 15.0) {
-            const isBand = (py >> 1) & 1;
-            color = isBand ? strataARGB : strataBRGB;
-          } else if (d <= 28.0) {
+          } else if (d <= 12.0) {
+            color = lerpRGB(topsoilRGB, strataRGB, (d - 8.0) / 4.0);
+          } else if (d <= 20.0) {
+            color = strataRGB;
+          } else if (d <= 26.0) {
+            color = lerpRGB(strataRGB, denseRockRGB, (d - 20.0) / 6.0);
+          } else if (d <= 36.0) {
             color = denseRockRGB;
+          } else if (d <= 45.0) {
+            color = lerpRGB(denseRockRGB, bedrockRGB, (d - 36.0) / 9.0);
           } else {
             color = bedrockRGB;
           }
