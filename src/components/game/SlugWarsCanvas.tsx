@@ -778,8 +778,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const pos = getCanvasMousePos(e);
       mousePosRef.current = pos;
 
-      if (!isMyTurn || gameState.phase !== 'AIMING') return;
-      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      const curGameState = gameStateRef.current;
+      const isMyTurn = isMyTurnRef.current;
+
+      if (!isMyTurn || curGameState.phase !== 'AIMING') return;
+      const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
       if (!activeSlug) return;
 
       if (activeSlug.selectedWeaponId === 'girder') {
@@ -810,7 +813,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         onUpdateAim?.(angle, activeSlug.aimPower, facing);
       }
     },
-    [isMyTurn, gameState, getCanvasMousePos, onUpdateAim]
+    [getCanvasMousePos, onUpdateAim]
   );
 
   const handleContextMenu = useCallback(
@@ -820,8 +823,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         didDragCameraRef.current = false;
         return;
       }
-      if (!isMyTurn || gameState.phase !== 'AIMING') return;
-      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      const curGameState = gameStateRef.current;
+      const isMyTurn = isMyTurnRef.current;
+
+      if (!isMyTurn || curGameState.phase !== 'AIMING') return;
+      const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
@@ -843,7 +849,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       sfx.play('tick');
       onUpdateAim?.(activeSlug.aimAngle, activeSlug.aimPower, activeSlug.facing, pos);
     },
-    [isMyTurn, gameState, getCanvasMousePos, onUpdateAim]
+    [getCanvasMousePos, onUpdateAim]
   );
 
   const handleMouseDown = useCallback(
@@ -860,10 +866,12 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         return;
       }
 
+      const isMyTurn = isMyTurnRef.current;
       if (!isMyTurn || e.button !== 0) return;
       const { x: mouseX, y: mouseY } = getCanvasMousePos(e);
+      const curGameState = gameStateRef.current;
 
-      if (gameState.phase === 'PLACEMENT') {
+      if (curGameState.phase === 'PLACEMENT') {
         if (Date.now() - lastPlacementTimeRef.current > 400) {
           lastPlacementTimeRef.current = Date.now();
           onPlaceSlug?.({ x: mouseX, y: mouseY });
@@ -871,8 +879,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         return;
       }
 
-      if (gameState.phase !== 'AIMING') return;
-      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      if (curGameState.phase !== 'AIMING') return;
+      const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
@@ -910,7 +918,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         onStartCharge?.(targetPt);
       }
     },
-    [isMyTurn, gameState, getCanvasMousePos, onPlaceSlug, onStartCharge, onUpdateAim, onFire]
+    [getCanvasMousePos, onPlaceSlug, onStartCharge, onUpdateAim, onFire]
   );
 
   const handleMouseUp = useCallback(
@@ -923,9 +931,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         if (e.button === 1 || e.button === 2) return;
       }
 
-      if (!isMyTurn || gameState.phase !== 'AIMING' || e.button !== 0) return;
+      const isMyTurn = isMyTurnRef.current;
+      const curGameState = gameStateRef.current;
+      if (!isMyTurn || curGameState.phase !== 'AIMING' || e.button !== 0) return;
       const { x: clickX, y: clickY } = getCanvasMousePos(e);
-      const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
+      const activeSlug = curGameState.slugs.find((s) => s.id === curGameState.activeSlugId);
       if (!activeSlug) return;
       const weapon = getWeapon(activeSlug.selectedWeaponId);
 
@@ -937,7 +947,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         isGirderDraggingRef.current = false;
         return;
       }
-
 
       const usesTargetPoint = weapon.requiresTarget;
       const targetPt = (usesTargetPoint ? lockedTargetRef.current : null) || { x: clickX, y: clickY };
@@ -966,7 +975,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         lockedTargetRef.current = null;
       }
     },
-    [isMyTurn, gameState, getCanvasMousePos, onFire, onReleaseCharge, onUpdateAim]
+    [getCanvasMousePos, onFire, onReleaseCharge, onUpdateAim]
   );
 
 
