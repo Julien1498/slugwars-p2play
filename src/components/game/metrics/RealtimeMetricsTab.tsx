@@ -37,38 +37,38 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
   const livingSlugs = gameState.slugs.filter((s) => s.isAlive).length;
 
   return (
-    <div className="p-6 space-y-5 overflow-y-auto font-sans">
+    <div className="p-3 sm:p-6 space-y-3 sm:space-y-5 overflow-y-auto font-sans">
       {/* Top Metrics Cards: FPS, Frame Time, Latency */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* FPS */}
-        <div className={`p-3.5 rounded-xl border flex flex-col items-center justify-center ${fpsColor}`}>
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-1">
-            <Zap className="w-4 h-4" />
-            <span>Images / Sec</span>
+        <div className={`p-2.5 sm:p-3.5 rounded-xl border flex flex-col items-center justify-center ${fpsColor}`}>
+          <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1">
+            <Zap className="w-3.5 h-3.5" />
+            <span>FPS</span>
           </div>
-          <div className="text-3xl font-black font-mono tracking-tight">{fps}</div>
-          <div className="text-[11px] opacity-80 mt-1 font-semibold">FPS (Target: 60)</div>
+          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight">{fps}</div>
+          <div className="text-[10px] sm:text-[11px] opacity-80 mt-0.5 font-semibold">Cible: 60</div>
         </div>
 
         {/* Frame Time */}
-        <div className="p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1">
-            <Cpu className="w-4 h-4" />
-            <span>Latence Rendu</span>
+        <div className="p-2.5 sm:p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-cyan-400 mb-0.5 sm:mb-1">
+            <Cpu className="w-3.5 h-3.5" />
+            <span>Rendu</span>
           </div>
-          <div className="text-3xl font-black font-mono tracking-tight text-white">{frameTime} ms</div>
-          <div className="text-[11px] text-zinc-400 mt-1 font-semibold">Budget: 16.6 ms</div>
+          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">{frameTime}ms</div>
+          <div className="text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 font-semibold">Budget: 16.6ms</div>
         </div>
 
         {/* Network Latency */}
-        <div className="p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-400 mb-1">
-            <Wifi className="w-4 h-4" />
-            <span>Ping WebRTC</span>
+        <div className="p-2.5 sm:p-3.5 rounded-xl border border-zinc-700/60 bg-zinc-950/70 text-zinc-200 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-violet-400 mb-0.5 sm:mb-1">
+            <Wifi className="w-3.5 h-3.5" />
+            <span>Ping</span>
           </div>
-          <div className="text-3xl font-black font-mono tracking-tight text-emerald-400">{displayPing} ms</div>
-          <div className="text-[11px] text-zinc-400 mt-1 font-semibold">
-            {netStats.realPingMs !== null ? 'Mesure WebRTC RTT' : 'Canal Direct P2P'}
+          <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-400">{displayPing}ms</div>
+          <div className="text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 font-semibold">
+            {netStats.realPingMs !== null ? 'WebRTC RTT' : 'Canal P2P'}
           </div>
         </div>
       </div>

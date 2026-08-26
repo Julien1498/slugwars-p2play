@@ -219,6 +219,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                   {/* Hitboxes Toggle */}
                   {onToggleHitboxes && (
                     <button
+                      type="button"
                       onClick={() => {
                         onToggleHitboxes();
                         setShowMenuPopover(false);
@@ -235,8 +236,44 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
                     </button>
                   )}
 
+                  {/* In-Game FPS HUD Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !fpsHudActive;
+                      perfTracker.setFpsHudEnabled(next);
+                      setFpsHudActive(next);
+                      setShowMenuPopover(false);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center justify-between text-zinc-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Gauge className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Compteur FPS</span>
+                    </div>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${fpsHudActive ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {fpsHudActive ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+
+                  {/* Metrics Monitor Modal Trigger */}
+                  {onOpenMetrics && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenMetrics();
+                        setShowMenuPopover(false);
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-xl text-xs font-semibold hover:bg-zinc-900 transition flex items-center gap-2 text-emerald-300"
+                    >
+                      <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Métriques & Réseau</span>
+                    </button>
+                  )}
+
                   {/* Rules */}
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenRules();
                       setShowMenuPopover(false);
