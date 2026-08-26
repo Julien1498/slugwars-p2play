@@ -1321,12 +1321,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           visualSlugPositionsRef.current.set(slug.id, visualPos);
         } else {
           const dist = Math.hypot(slug.x - visualPos.x, slug.y - visualPos.y);
-          if (dist > 64) {
+          const isRoping = !!slug.ropeState;
+          const maxSnapDist = isRoping ? 400 : 90;
+          if (dist > maxSnapDist) {
             visualPos.x = slug.x;
             visualPos.y = slug.y;
           } else {
-            visualPos.x += (slug.x - visualPos.x) * alpha;
-            visualPos.y += (slug.y - visualPos.y) * alpha;
+            const slugAlpha = isRoping ? (1 - Math.exp(-32.0 * dtSec)) : alpha;
+            visualPos.x += (slug.x - visualPos.x) * slugAlpha;
+            visualPos.y += (slug.y - visualPos.y) * slugAlpha;
           }
         }
         renderedSlugs[i] = {

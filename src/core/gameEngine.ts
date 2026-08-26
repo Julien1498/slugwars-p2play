@@ -495,11 +495,11 @@ export class SlugWarsEngine {
           return;
         }
 
-        const g = 20;
+        const g = 14;
         let alpha = -(g / Math.max(25, rope.length)) * Math.sin(rope.angleRad);
 
-        if (activeSlug.movingDir === 'left') alpha -= 0.15;
-        else if (activeSlug.movingDir === 'right') alpha += 0.15;
+        if (activeSlug.movingDir === 'left') alpha -= 0.07;
+        else if (activeSlug.movingDir === 'right') alpha += 0.07;
 
         const prevAngle = rope.angleRad;
         const prevLength = rope.length;
@@ -507,7 +507,7 @@ export class SlugWarsEngine {
         if (activeSlug.steeringDir === 'left') targetLength = Math.max(25, rope.length - 4);
         else if (activeSlug.steeringDir === 'right') targetLength = Math.min(250, rope.length + 4);
 
-        rope.angularVelocity = (rope.angularVelocity + alpha) * 0.993;
+        rope.angularVelocity = Math.max(-0.20, Math.min(0.20, (rope.angularVelocity + alpha) * 0.992));
         const targetAngle = prevAngle + rope.angularVelocity;
 
         const angleDiff = targetAngle - prevAngle;
@@ -546,7 +546,7 @@ export class SlugWarsEngine {
         }
 
         if (hitWall) {
-          rope.angularVelocity = -rope.angularVelocity * 0.45;
+          rope.angularVelocity = -rope.angularVelocity * 0.35;
           rope.angleRad = finalAngle;
           rope.length = finalLength;
           sfx.play('bounce');
