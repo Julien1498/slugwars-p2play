@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
 import { generateProceduralTerrain } from '../../../core/terrainGenerator';
+import { THEME_PALETTES } from '../../../rendering/renderTerrain';
 
 interface MapThumbnailPreviewProps {
   theme: MapTheme;
@@ -47,78 +48,100 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
-    // Thematic Geological Strata Colors
-    let surfaceRGB = [34, 197, 94];
-    let topsoilRGB = [84, 49, 24];
-    let rockRGB = [38, 22, 10];
-    let bedrockRGB = [20, 9, 4];
+    // Thematic Geological Strata Colors from renderTerrain
+    const palette = THEME_PALETTES[theme || 'ISLAND'] || THEME_PALETTES.ISLAND;
+    const hexToRgb = (c: number): [number, number, number] => [
+      c & 0xff,
+      (c >> 8) & 0xff,
+      (c >> 16) & 0xff,
+    ];
+    const surfaceRGB = hexToRgb(palette.surfaceBody);
+    const topsoilRGB = hexToRgb(palette.soilLight);
+    const strataARGB = hexToRgb(palette.strataA);
+    const strataBRGB = hexToRgb(palette.strataB);
+    const denseRockRGB = hexToRgb(palette.denseRock);
+    const bedrockRGB = hexToRgb(palette.bedrock);
 
-    if (theme === 'ARCHIPELAGO') {
-      surfaceRGB = [74, 222, 128];
-      topsoilRGB = [120, 87, 45];
-      rockRGB = [48, 32, 15];
-      bedrockRGB = [24, 16, 7];
-    } else if (theme === 'CAVERN') {
-      surfaceRGB = [140, 116, 100];
-      topsoilRGB = [54, 36, 42];
-      rockRGB = [32, 19, 23];
-      bedrockRGB = [14, 8, 10];
-    } else if (theme === 'ORGANIC_CAVES') {
-      surfaceRGB = [217, 119, 6];
-      topsoilRGB = [120, 53, 15];
-      rockRGB = [44, 20, 6];
-      bedrockRGB = [16, 7, 2];
-    } else if (theme === 'NATURAL_ARCHES') {
-      surfaceRGB = [245, 155, 8];
-      topsoilRGB = [194, 65, 12];
-      rockRGB = [69, 34, 20];
-      bedrockRGB = [23, 10, 6];
-    } else if (theme === 'SPIRES') {
-      surfaceRGB = [34, 197, 94];
-      topsoilRGB = [100, 116, 139];
-      rockRGB = [51, 65, 85];
-      bedrockRGB = [15, 23, 42];
-    } else if (theme === 'FORTRESS') {
-      surfaceRGB = [163, 230, 53];
-      topsoilRGB = [184, 163, 148];
-      rockRGB = [64, 49, 38];
-      bedrockRGB = [21, 16, 12];
-    } else if (theme === 'FLOATING_CHAOS') {
-      surfaceRGB = [34, 197, 94];
-      topsoilRGB = [95, 58, 30];
-      rockRGB = [38, 22, 12];
-      bedrockRGB = [18, 10, 6];
-    }
-
+    // 1. Build Solid Grid in Preview Resolution
+    const solidMap = new Uint8Array(previewW * previewH);
     for (let py = 0; py < previewH; py++) {
       const srcY = Math.floor((py / previewH) * height);
+      const rowOffset = py * previewW;
+      for (let px = 0; px < previewW; px++) {
+        const srcX = Math.floor((px / previewW) * width);
+        if (grid[srcY * width + srcX] === 1) {
+          solidMap[rowOffset + px] = 1;
+        }
+      }
+    }
+
+    // 2. 2-Pass Distance Transform in Preview Resolution
+    const pDist = new Float32Array(previewW * previewH);
+    pDist.fill(999);
+    for (let y = 0; y < previewH; y++) {
+      const rOff = y * previewW;
+      const prevOff = (y - 1) * previewW;
+      for (let x = 0; x < previewW; x++) {
+        const idx = rOff + x;
+        if (solidMap[idx] === 0) {
+          pDist[idx] = 0;
+        } else {
+          let d = 999;
+          if (x > 0) d = Math.min(d, pDist[idx - 1] + 1);
+          if (y > 0) {
+            d = Math.min(d, pDist[prevOff + x] + 1);
+            if (x > 0) d = Math.min(d, pDist[prevOff + x - 1] + 1.414);
+            if (x < previewW - 1) d = Math.min(d, pDist[prevOff + x + 1] + 1.414);
+          }
+          pDist[idx] = d;
+        }
+      }
+    }
+    for (let y = previewH - 1; y >= 0; y--) {
+      const rOff = y * previewW;
+      const nextOff = (y + 1) * previewW;
+      for (let x = previewW - 1; x >= 0; x--) {
+        const idx = rOff + x;
+        if (solidMap[idx] === 0) continue;
+        let d = pDist[idx];
+        if (x < previewW - 1) d = Math.min(d, pDist[idx + 1] + 1);
+        if (y < previewH - 1) {
+          d = Math.min(d, pDist[nextOff + x] + 1);
+          if (x > 0) d = Math.min(d, pDist[nextOff + x - 1] + 1.414);
+          if (x < previewW - 1) d = Math.min(d, pDist[nextOff + x + 1] + 1.414);
+        }
+        pDist[idx] = d;
+      }
+    }
+
+    // 3. Render High-Fidelity Geological Layers
+    for (let py = 0; py < previewH; py++) {
       const skyT = py / previewH;
       const skyR = Math.round(skyTopRGB[0] + (skyBottomRGB[0] - skyTopRGB[0]) * skyT);
       const skyG = Math.round(skyTopRGB[1] + (skyBottomRGB[1] - skyTopRGB[1]) * skyT);
       const skyB = Math.round(skyTopRGB[2] + (skyBottomRGB[2] - skyTopRGB[2]) * skyT);
 
       for (let px = 0; px < previewW; px++) {
-        const srcX = Math.floor((px / previewW) * width);
-        const isSolid = grid[srcY * width + srcX] === 1;
-        const idx = (py * previewW + px) * 4;
+        const pIdx = py * previewW + px;
+        const idx = pIdx * 4;
 
-        if (isSolid) {
-          // Determine depth from top surface
-          let depth = 0;
-          for (let dy = 1; dy <= 12; dy++) {
-            if (srcY - dy < 0 || grid[(srcY - dy) * width + srcX] === 0) {
-              break;
-            }
-            depth++;
-          }
-
+        if (solidMap[pIdx] === 1) {
+          const d = pDist[pIdx];
           let color = surfaceRGB;
-          if (depth === 0) {
+
+          if (d <= 1.2) {
             color = surfaceRGB;
-          } else if (depth <= 2) {
+          } else if (d <= 2.2) {
+            color = hexToRgb(palette.surfaceShadow);
+          } else if (d <= 3.2) {
+            color = hexToRgb(palette.surfaceDeep);
+          } else if (d <= 6.5) {
             color = topsoilRGB;
-          } else if (depth <= 7) {
-            color = rockRGB;
+          } else if (d <= 15.0) {
+            const isBand = (py >> 1) & 1;
+            color = isBand ? strataARGB : strataBRGB;
+          } else if (d <= 28.0) {
+            color = denseRockRGB;
           } else {
             color = bedrockRGB;
           }
@@ -128,7 +151,6 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
           data[idx + 2] = color[2];
           data[idx + 3] = 255;
         } else {
-          // 100% Opaque High-Contrast Sky Pixel
           data[idx] = skyR;
           data[idx + 1] = skyG;
           data[idx + 2] = skyB;
