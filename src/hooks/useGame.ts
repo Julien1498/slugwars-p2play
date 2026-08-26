@@ -323,7 +323,9 @@ export function useGame(options?: {
     (actionName: string, payload?: any) => {
       const msg: SlugWarsNetworkMessage = { type: 'ACTION', actionName: actionName as any, payload };
       if (isHost) {
-        if (myPeerId) handleHostAction(myPeerId, msg);
+        const senderId = myPeerId || engineRef.current.state.activeTeamId || 'host';
+        handleHostAction(senderId, msg);
+        syncState();
       } else {
         // Optimistic local state update for instantaneous 0ms client responsiveness
         const state = engineRef.current.state;

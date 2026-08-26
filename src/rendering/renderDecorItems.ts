@@ -8,6 +8,18 @@ function createPath(fn: (p: Path2D) => void): Path2D {
   return p;
 }
 
+function addCircle(p: Path2D, cx: number, cy: number, r: number) {
+  p.moveTo(cx + r, cy);
+  p.arc(cx, cy, r, 0, Math.PI * 2);
+}
+
+function addEllipse(p: Path2D, cx: number, cy: number, rx: number, ry: number, rot: number = 0) {
+  const startX = cx + rx * Math.cos(rot);
+  const startY = cy + rx * Math.sin(rot);
+  p.moveTo(startX, startY);
+  p.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
+}
+
 // --- PRE-COMPILED VECTOR GEOMETRIES FOR DECOR (Instant GPU Execution) ---
 const VINE_STEM = createPath((p) => {
   p.moveTo(0, 0);
@@ -24,19 +36,18 @@ const VINE_ALL_LEAVES = createPath((p) => {
     { x: 0, y: 36, rx: 0.1, size: 3 },
   ];
   for (const leaf of leaves) {
-    p.ellipse(leaf.x, leaf.y, leaf.size, leaf.size * 0.4, leaf.rx, 0, Math.PI * 2);
+    addEllipse(p, leaf.x, leaf.y, leaf.size, leaf.size * 0.4, leaf.rx);
   }
 });
 
 const BUTTERFLY_WINGS = createPath((p) => {
-  p.ellipse(-5, -2, 5, 3.5, -0.4, 0, Math.PI * 2);
-  p.ellipse(5, -2, 5, 3.5, 0.4, 0, Math.PI * 2);
+  addEllipse(p, -5, -2, 5, 3.5, -0.4);
+  addEllipse(p, 5, -2, 5, 3.5, 0.4);
 });
 
 const BUTTERFLY_SPOTS = createPath((p) => {
-  p.arc(-5, -2, 1.2, 0, Math.PI * 2);
-  p.moveTo(5 + 1.2, -2);
-  p.arc(5, -2, 1.2, 0, Math.PI * 2);
+  addCircle(p, -5, -2, 1.2);
+  addCircle(p, 5, -2, 1.2);
 });
 
 const BUTTERFLY_ANTENNAE = createPath((p) => {

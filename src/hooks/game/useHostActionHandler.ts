@@ -60,52 +60,52 @@ export function useHostActionHandler(
             }
             break;
           case 'START_MOVE':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
               engine.startMove(msg.payload.dir);
             }
             break;
           case 'STOP_MOVE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.stopMove();
             }
             break;
           case 'JUMP':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.jumpSlug();
             }
             break;
           case 'START_STEER':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
               engine.startSteer(msg.payload.dir);
             }
             break;
           case 'STOP_STEER':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.stopSteer();
             }
             break;
           case 'ENTER_VEHICLE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.enterVehicle();
             }
             break;
           case 'EXIT_VEHICLE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.exitVehicle();
             }
             break;
           case 'STEER_VEHICLE':
-            if (playerId === engine.state.activeTeamId && msg.payload?.dir) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
               engine.steerVehicle(msg.payload.dir);
             }
             break;
           case 'START_CHARGE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               engine.startCharge(msg.payload?.targetPoint);
             }
             break;
           case 'RELEASE_CHARGE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
               if (activeSlug) {
                 if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
@@ -116,9 +116,9 @@ export function useHostActionHandler(
             }
             break;
           case 'AIM': {
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug && activeSlug.teamId === playerId) {
+              if (activeSlug) {
                 if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
                 if (msg.payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
                   activeSlug.aimPower = msg.payload.aimPower;
@@ -130,22 +130,22 @@ export function useHostActionHandler(
             break;
           }
           case 'SELECT_WEAPON': {
-            if (playerId === engine.state.activeTeamId && msg.payload?.weaponId) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.weaponId) {
               engine.selectWeapon(msg.payload.weaponId);
             }
             break;
           }
           case 'SET_FUSE_TIMER': {
-            if (playerId === engine.state.activeTeamId && msg.payload?.seconds !== undefined) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.seconds !== undefined) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug && activeSlug.teamId === playerId) {
+              if (activeSlug) {
                 engine.setFuseTimer(activeSlug.id, msg.payload.seconds);
               }
             }
             break;
           }
           case 'FIRE':
-            if (playerId === engine.state.activeTeamId) {
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
               if (activeSlug) {
                 if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
@@ -156,8 +156,10 @@ export function useHostActionHandler(
             }
             break;
           case 'PLACE_SLUG':
-            if (playerId === engine.state.activeTeamId && msg.payload?.point) {
+            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.point) {
               engine.placeSlug(msg.payload.point);
+              syncState();
+              broadcastState(engine.state);
             }
             break;
           case 'RESTART_GAME':

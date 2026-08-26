@@ -111,7 +111,9 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const myTeam = gameState.teams.find((t) => (t.isHost ? isHost : myPeerId === t.id)) || activeTeam;
-  const isMyTurn = !!(activeTeam && (activeTeam.isHost ? isHost : myPeerId === activeTeam.id));
+  const isMyTurn = gameState.teams.length <= 1
+    ? true
+    : !!(activeTeam && (activeTeam.isHost ? isHost : myPeerId === activeTeam.id));
   const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep');
   const activeWeapon = activeSlug ? getWeapon(activeSlug.selectedWeaponId) : null;
 

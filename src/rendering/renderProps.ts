@@ -165,6 +165,18 @@ function createPath(fn: (p: Path2D) => void): Path2D {
   return p;
 }
 
+function addCircle(p: Path2D, cx: number, cy: number, r: number) {
+  p.moveTo(cx + r, cy);
+  p.arc(cx, cy, r, 0, Math.PI * 2);
+}
+
+function addEllipse(p: Path2D, cx: number, cy: number, rx: number, ry: number, rot: number = 0) {
+  const startX = cx + rx * Math.cos(rot);
+  const startY = cy + rx * Math.sin(rot);
+  p.moveTo(startX, startY);
+  p.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
+}
+
 // --- PRE-COMPILED PATH2D VECTOR GEOMETRIES (Zero Garbage Collection, Instant GPU Execution) ---
 
 // 1. Hedgehog
@@ -193,11 +205,11 @@ const HEDGEHOG_FG_SPIKES = createPath((p) => {
 });
 
 const HEDGEHOG_BODY = createPath((p) => {
-  p.ellipse(-2, -9, 12, 9, 0, 0, Math.PI * 2);
+  addEllipse(p, -2, -9, 12, 9, 0);
 });
 
 const HEDGEHOG_FACE = createPath((p) => {
-  p.ellipse(4, -8, 8, 6.5, 0.2, 0, Math.PI * 2);
+  addEllipse(p, 4, -8, 8, 6.5, 0.2);
   p.moveTo(8, -10);
   p.lineTo(13, -7);
   p.lineTo(8, -4);
@@ -205,35 +217,34 @@ const HEDGEHOG_FACE = createPath((p) => {
 });
 
 const HEDGEHOG_BLUSH = createPath((p) => {
-  p.ellipse(4, -5, 2.5, 1.5, 0, 0, Math.PI * 2);
+  addEllipse(p, 4, -5, 2.5, 1.5, 0);
 });
 
 const HEDGEHOG_NOSE_EYE = createPath((p) => {
-  p.arc(13, -7, 1.8, 0, Math.PI * 2);
-  p.moveTo(7 + 2.2, -10);
-  p.arc(7, -10, 2.2, 0, Math.PI * 2);
+  addCircle(p, 13, -7, 1.8);
+  addCircle(p, 7, -10, 2.2);
 });
 
 const HEDGEHOG_SPARKLE = createPath((p) => {
-  p.arc(7.6, -10.6, 0.8, 0, Math.PI * 2);
+  addCircle(p, 7.6, -10.6, 0.8);
 });
 
 const HEDGEHOG_EAR = createPath((p) => {
-  p.arc(-2, -14, 2.5, 0, Math.PI * 2);
+  addCircle(p, -2, -14, 2.5);
 });
 
 const HEDGEHOG_PAWS = createPath((p) => {
-  p.ellipse(-6, -1, 3.5, 2, 0, 0, Math.PI * 2);
-  p.ellipse(4, -1, 3.5, 2, 0, 0, Math.PI * 2);
+  addEllipse(p, -6, -1, 3.5, 2, 0);
+  addEllipse(p, 4, -1, 3.5, 2, 0);
 });
 
 // 2. Chick
 const CHICK_BODY = createPath((p) => {
-  p.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
+  addEllipse(p, 0, -12, 14, 12, 0);
 });
 
 const CHICK_WING = createPath((p) => {
-  p.ellipse(-4, -10, 6, 4, -0.3, 0, Math.PI * 2);
+  addEllipse(p, -4, -10, 6, 4, -0.3);
 });
 
 const CHICK_BEAK = createPath((p) => {
@@ -244,7 +255,7 @@ const CHICK_BEAK = createPath((p) => {
 });
 
 const CHICK_EYE = createPath((p) => {
-  p.arc(7, -15, 2.2, 0, Math.PI * 2);
+  addCircle(p, 7, -15, 2.2);
 });
 
 const CHICK_SPARKLE = createPath((p) => {
@@ -253,8 +264,8 @@ const CHICK_SPARKLE = createPath((p) => {
 
 // 3. Mushroom
 const MUSHROOM_GRASS = createPath((p) => {
-  p.ellipse(-6, -1, 4, 2, -0.4, 0, Math.PI * 2);
-  p.ellipse(6, -1, 4, 2, 0.4, 0, Math.PI * 2);
+  addEllipse(p, -6, -1, 4, 2, -0.4);
+  addEllipse(p, 6, -1, 4, 2, 0.4);
 });
 
 const MUSHROOM_STEM = createPath((p) => {
@@ -266,11 +277,11 @@ const MUSHROOM_STEM = createPath((p) => {
 });
 
 const MUSHROOM_VEIL = createPath((p) => {
-  p.ellipse(0, -14, 5.5, 2, 0, 0, Math.PI * 2);
+  addEllipse(p, 0, -14, 5.5, 2, 0);
 });
 
 const MUSHROOM_SHADOW = createPath((p) => {
-  p.ellipse(0, -16, 12, 4, 0, 0, Math.PI * 2);
+  addEllipse(p, 0, -16, 12, 4, 0);
 });
 
 const MUSHROOM_CAP = createPath((p) => {
@@ -282,13 +293,10 @@ const MUSHROOM_CAP = createPath((p) => {
 });
 
 const MUSHROOM_DOTS = createPath((p) => {
-  p.arc(0, -21, 2.8, 0, Math.PI * 2);
-  p.moveTo(-7 + 2.2, -20);
-  p.arc(-7, -20, 2.2, 0, Math.PI * 2);
-  p.moveTo(7 + 2.4, -19);
-  p.arc(7, -19, 2.4, 0, Math.PI * 2);
-  p.moveTo(-2 + 1.8, -25);
-  p.arc(-2, -25, 1.8, 0, Math.PI * 2);
+  addCircle(p, 0, -21, 2.8);
+  addCircle(p, -7, -20, 2.2);
+  addCircle(p, 7, -19, 2.4);
+  addCircle(p, -2, -25, 1.8);
 });
 
 // 4. Flower
@@ -300,13 +308,12 @@ const FLOWER_PETALS = createPath((p) => {
   for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
     const cx = Math.cos(a) * 7;
     const cy = -16 + Math.sin(a) * 7;
-    p.moveTo(cx + 4.5, cy);
-    p.arc(cx, cy, 4.5, 0, Math.PI * 2);
+    addCircle(p, cx, cy, 4.5);
   }
 });
 
 const FLOWER_CENTER = createPath((p) => {
-  p.arc(0, -16, 5, 0, Math.PI * 2);
+  addCircle(p, 0, -16, 5);
 });
 
 // 5. Tree
@@ -360,33 +367,28 @@ const PINE_TIER_3 = createPath((p) => {
 });
 
 const PINE_CONES = createPath((p) => {
-  p.arc(-8, -20, 2.5, 0, Math.PI * 2);
-  p.moveTo(7 + 2.2, -28);
-  p.arc(7, -28, 2.2, 0, Math.PI * 2);
+  addCircle(p, -8, -20, 2.5);
+  addCircle(p, 7, -28, 2.2);
 });
 
 const OAK_DARK_CLUSTERS = createPath((p) => {
-  p.arc(-11, -28, 14, 0, Math.PI * 2);
-  p.moveTo(11 + 14, -28);
-  p.arc(11, -28, 14, 0, Math.PI * 2);
+  addCircle(p, -11, -28, 14);
+  addCircle(p, 11, -28, 14);
 });
 
 const OAK_MID_CLUSTERS = createPath((p) => {
-  p.arc(-7, -38, 13, 0, Math.PI * 2);
-  p.moveTo(7 + 13, -38);
-  p.arc(7, -38, 13, 0, Math.PI * 2);
+  addCircle(p, -7, -38, 13);
+  addCircle(p, 7, -38, 13);
 });
 
 const OAK_LIGHT_TOP = createPath((p) => {
-  p.arc(0, -44, 11, 0, Math.PI * 2);
+  addCircle(p, 0, -44, 11);
 });
 
 const OAK_APPLES = createPath((p) => {
-  p.arc(-8, -32, 2.2, 0, Math.PI * 2);
-  p.moveTo(6 + 2.0, -36);
-  p.arc(6, -36, 2.0, 0, Math.PI * 2);
-  p.moveTo(-2 + 2.3, -42);
-  p.arc(-2, -42, 2.3, 0, Math.PI * 2);
+  addCircle(p, -8, -32, 2.2);
+  addCircle(p, 6, -36, 2.0);
+  addCircle(p, -2, -42, 2.3);
 });
 
 // 6. Bunker
@@ -399,10 +401,10 @@ const BUNKER_BODY = createPath((p) => {
 });
 
 const BUNKER_SANDBAGS = createPath((p) => {
-  p.ellipse(-14, -3, 5, 3, 0.1, 0, Math.PI * 2);
-  p.ellipse(-13, -7, 4.5, 2.5, -0.1, 0, Math.PI * 2);
-  p.ellipse(14, -3, 5, 3, -0.1, 0, Math.PI * 2);
-  p.ellipse(13, -7, 4.5, 2.5, 0.1, 0, Math.PI * 2);
+  addEllipse(p, -14, -3, 5, 3, 0.1);
+  addEllipse(p, -13, -7, 4.5, 2.5, -0.1);
+  addEllipse(p, 14, -3, 5, 3, -0.1);
+  addEllipse(p, 13, -7, 4.5, 2.5, 0.1);
 });
 
 const BUNKER_VISOR = createPath((p) => {
@@ -410,7 +412,7 @@ const BUNKER_VISOR = createPath((p) => {
 });
 
 const BUNKER_RADAR = createPath((p) => {
-  p.arc(0, -13.5, 1.8, 0, Math.PI * 2);
+  addCircle(p, 0, -13.5, 1.8);
 });
 
 const BUNKER_STRIPES = createPath((p) => {
@@ -428,7 +430,7 @@ const BUNKER_ANTENNA_LINE = createPath((p) => {
 });
 
 const BUNKER_ANTENNA_TIP = createPath((p) => {
-  p.arc(8, -34, 1.8, 0, Math.PI * 2);
+  addCircle(p, 8, -34, 1.8);
 });
 
 // 7. Totem
@@ -447,15 +449,13 @@ const TOTEM_BROW = createPath((p) => {
 });
 
 const TOTEM_EYES = createPath((p) => {
-  p.arc(-5, -22, 2.2, 0, Math.PI * 2);
-  p.moveTo(5 + 2.2, -22);
-  p.arc(5, -22, 2.2, 0, Math.PI * 2);
+  addCircle(p, -5, -22, 2.2);
+  addCircle(p, 5, -22, 2.2);
 });
 
 const TOTEM_PUPILS = createPath((p) => {
-  p.arc(-5, -22, 1, 0, Math.PI * 2);
-  p.moveTo(5 + 1, -22);
-  p.arc(5, -22, 1, 0, Math.PI * 2);
+  addCircle(p, -5, -22, 1);
+  addCircle(p, 5, -22, 1);
 });
 
 const TOTEM_NOSE = createPath((p) => {
@@ -471,8 +471,8 @@ const TOTEM_MOUTH = createPath((p) => {
 });
 
 const TOTEM_MOSS = createPath((p) => {
-  p.ellipse(-6, -33, 4, 2, 0.2, 0, Math.PI * 2);
-  p.ellipse(7, -31, 3.5, 2, -0.3, 0, Math.PI * 2);
+  addEllipse(p, -6, -33, 4, 2, 0.2);
+  addEllipse(p, 7, -31, 3.5, 2, -0.3);
 });
 
 const TOTEM_FISSURE = createPath((p) => {
@@ -526,11 +526,9 @@ const CACTUS_NEEDLES = createPath((p) => {
 });
 
 const CACTUS_FLOWERS = createPath((p) => {
-  p.arc(0, -36, 3.5, 0, Math.PI * 2);
-  p.moveTo(-2.5 + 2, -38);
-  p.arc(-2.5, -38, 2, 0, Math.PI * 2);
-  p.moveTo(2.5 + 2, -38);
-  p.arc(2.5, -38, 2, 0, Math.PI * 2);
+  addCircle(p, 0, -36, 3.5);
+  addCircle(p, -2.5, -38, 2);
+  addCircle(p, 2.5, -38, 2);
 });
 
 // 9. Crystal
@@ -571,9 +569,8 @@ const CRYSTAL_SHARD_CRESTS = CRYSTAL_SHARDS_DATA.map((s) =>
 );
 
 const CRYSTAL_GLINTS = createPath((p) => {
-  p.arc(0, -22, 1.8, 0, Math.PI * 2);
-  p.moveTo(-6 + 1.2, -16);
-  p.arc(-6, -16, 1.2, 0, Math.PI * 2);
+  addCircle(p, 0, -22, 1.8);
+  addCircle(p, -6, -16, 1.2);
 });
 
 // 10. Oil Drum
@@ -629,7 +626,7 @@ const LAMP_BRACKET = createPath((p) => {
 });
 
 const LAMP_GLOW_SPHERE = createPath((p) => {
-  p.arc(0, -32, 16, 0, Math.PI * 2);
+  addCircle(p, 0, -32, 16);
 });
 
 const LAMP_GLASS = createPath((p) => {

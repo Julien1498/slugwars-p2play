@@ -1290,11 +1290,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
       perfTracker.recordRenderPass('props_solids', performance.now() - pSolidsStart);
 
-      // 4. Subterranean Occlusion Mask
+      // 4. Subterranean Occlusion Mask (Temporarily disabled for testing)
       const pOcclusionStart = performance.now();
-      if (buffers.occlusionCanvas) {
-        ctx.drawImage(buffers.occlusionCanvas, 0, 0);
-      }
+      // if (buffers.occlusionCanvas) {
+      //   ctx.drawImage(buffers.occlusionCanvas, 0, 0);
+      // }
       perfTracker.recordRenderPass('occlusion_mask', performance.now() - pOcclusionStart);
 
       // 5. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
