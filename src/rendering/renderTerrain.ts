@@ -27,7 +27,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff5ec522,  // #22c55e Rich grass green
     surfaceShadow: 0xff3d8015,// #15803d Dark forest green
     surfaceDeep: 0xff2d5314,  // #14532d Deep undercoat shadow
-    soilLight: 0xff081426,    // #261408 Dark espresso soil
+    soilLight: 0xff142842,    // #422814 Balanced rich soil
     strataA: 0xff050e1c,      // #1c0e05 Very dark clay sandstone band
     strataB: 0xff030a14,      // #140a03 Deep dark sedimentary band
     denseRock: 0xff02060d,    // #0d0602 Deep subterranean rock
@@ -39,7 +39,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff22c55e,  // #5ec522 Vibrant lagoon green
     surfaceShadow: 0xff16a34a,// #4aa316 Rich tropical shadow
     surfaceDeep: 0xff166534,  // #346516 Deep coastal foliage
-    soilLight: 0xff0e1e32,    // #321e0e Dark coastal loam
+    soilLight: 0xff203e58,    // #583e20 Balanced coastal loam
     strataA: 0xff0a1624,      // #24160a Deep sandstone reef band
     strataB: 0xff060f1a,      // #1a0f06 Dark oceanic strata
     denseRock: 0xff040910,    // #100904 Volcanic trench rock
@@ -51,7 +51,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff089bf5,  // #f59b08 Rich orange sandstone
     surfaceShadow: 0xff0c41c2,// #c2410c Terracotta red
     surfaceDeep: 0xff122d7c,  // #7c2d12 Deep ironstone
-    soilLight: 0xff081228,    // #281208 Dark desert clay
+    soilLight: 0xff142448,    // #482414 Balanced desert clay
     strataA: 0xff050c1c,      // #1c0c05 Deep canyon sandstone band
     strataB: 0xff040814,      // #140804 Dark canyon stratum
     denseRock: 0xff02050c,    // #0c0502 Heavy iron rock
@@ -63,7 +63,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff22c55e,  // #5ec522 Mountain meadow green
     surfaceShadow: 0xff15803d,// #3d8015 Rich pine forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
-    soilLight: 0xff242c36,    // #362c24 Dark granite mountain stone
+    soilLight: 0xff3c4856,    // #56483c Balanced granite mountain stone
     strataA: 0xff1a1f26,      // #261f1a Dark mountain slate band
     strataB: 0xff12161c,      // #1c1612 Dark mountain stratum
     denseRock: 0xff0b0d10,    // #100d0b Deep mountain bedrock
@@ -75,22 +75,22 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff64748b,  // #8b7464 Cool cavern slate
     surfaceShadow: 0xff475569,// #695547 Dark slate
     surfaceDeep: 0xff334155,  // #554133 Damp rock
-    soilLight: 0xff140e16,    // #160e14 Dark amethyst loam
+    soilLight: 0xff221824,    // #241822 Balanced amethyst loam
     strataA: 0xff0e0a10,      // #100a0e Deep purple strata band
     strataB: 0xff09060b,      // #0b0609 Dark cavern stratum
-    denseRock: 0xff060407,    // #070406 Heavy subterranean rock
+    denseRock: 0xff060407,    // #070406 Heavy rock
     bedrock: 0xff030204,      // #040203 Charcoal bedrock
-    seam: 0xff010102,         // #020101 Deep cave fissure
+    seam: 0xff010102,         // #020101 Cave fissure
   },
   ORGANIC_CAVES: {
     highlight: 0xff24bffb,    // #fbbf24 Golden amber highlight rim
     surfaceBody: 0xff0677d9,  // #d97706 Warm amber ochre tunnel floor
     surfaceShadow: 0xff0953b4,// #b45309 Warm terracotta shadow
     surfaceDeep: 0xff0f3578,  // #78350f Warm subterranean edge
-    soilLight: 0xff030b1c,    // #1c0b03 Dark amber subterranean earth
+    soilLight: 0xff081630,    // #301608 Balanced amber subterranean earth
     strataA: 0xff020714,      // #140702 Deep warm rock band
     strataB: 0xff01040d,      // #0d0401 Dark warm rock stratum
-    denseRock: 0xff010308,    // #080301 Deep warm stone core
+    denseRock: 0xff010308,    // #080301 Deep warm stone
     bedrock: 0xff000104,      // #040100 Solid dark bedrock
     seam: 0xff000002,         // #020000 Harmonious dark crevice
   },
@@ -99,7 +99,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff94a3b8,  // #b8a394 Ashlar castle stone
     surfaceShadow: 0xff64748b,// #8b7464 Heavy stone masonry
     surfaceDeep: 0xff475569,  // #695547 Deep foundation
-    soilLight: 0xff161a20,    // #201a16 Dark moat loam
+    soilLight: 0xff1e242c,    // #2c241e Balanced moat loam
     strataA: 0xff101318,      // #181310 Deep fortress bedrock band
     strataB: 0xff0a0d10,      // #100d0a Stratified dungeon rock
     denseRock: 0xff06080a,    // #0a0806 Heavy granite base
@@ -111,7 +111,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     surfaceBody: 0xff22c55e,  // #5ec522 Lush floating island grass
     surfaceShadow: 0xff15803d,// #3d8015 Rich forest green shadow
     surfaceDeep: 0xff14532d,  // #2d5314 Deep foliage undercoat
-    soilLight: 0xff0a1628,    // #28160a Dark earthy brown loam
+    soilLight: 0xff162a44,    // #442a16 Balanced earthy brown loam
     strataA: 0xff070f1c,      // #1c0f07 Deep floating sandstone band
     strataB: 0xff050a14,      // #140a05 Dark suspended rock
     denseRock: 0xff03060c,    // #0c0603 Heavy stone core
