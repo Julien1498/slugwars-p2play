@@ -1021,8 +1021,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Dynamic Resolution Scaling (DRS):
-      // Layer 1 - Background Canvas (Sky, Mountains, Terrain, Props): DRS DPR scales with zoom (clamped between 0.50 and 1.00)
-      const bgDpr = Math.min(1.0, Math.max(0.50, Math.round(zoomRef.current * 100) / 100));
+      // Layer 1 - Background Canvas (Sky, Mountains, Terrain, Props): DRS DPR scales with zoom + 0.05 (clamped between 0.70 and 1.00)
+      const bgDpr = Math.min(1.0, Math.max(0.70, Math.round((zoomRef.current + 0.05) * 100) / 100));
       perfTracker.setLiveDpr(bgDpr);
       const cRect = containerRectRef.current;
 
