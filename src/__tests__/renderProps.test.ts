@@ -203,5 +203,97 @@ describe('RenderProps - Canvas Context Drawing & Safe Execution', () => {
         }).not.toThrow();
       }
     });
+
+    it('marks prop as destroyed when foundation terrain is missing', () => {
+      const ctx = createMockContext();
+      const emptyGrid = new Uint8Array(1400 * 800); // No solid terrain
+      const prop: SolidProp = {
+        id: 'p_unstable',
+        type: 'tree',
+        x: 400,
+        y: 300,
+        width: 30,
+        height: 40,
+        destroyed: false,
+      };
+
+      renderHDDestructibleProp(ctx, prop, [], [], 0, emptyGrid, 1400, 0);
+
+      expect(prop.destroyed).toBe(true);
+      expect(ctx.save).not.toHaveBeenCalled();
+    });
+
+    it('marks girder as destroyed when foundation terrain is missing', () => {
+      const ctx = createMockContext();
+      const emptyGrid = new Uint8Array(1400 * 800); // No solid terrain
+      const girder: PlacedGirder = {
+        id: 'g_unstable',
+        x: 500,
+        y: 300,
+        angleDeg: 0,
+        length: 80,
+        thickness: 12,
+        destroyed: false,
+      };
+
+      renderHDDestructibleGirder(ctx, girder, [], [], emptyGrid, 1400, 0);
+
+      expect(girder.destroyed).toBe(true);
+      expect(ctx.save).not.toHaveBeenCalled();
+    });
+
+    it('skips rendering already destroyed props and girders without drawing', () => {
+      const ctx = createMockContext();
+      const prop: SolidProp = {
+        id: 'p_dead',
+        type: 'bunker',
+        x: 200,
+        y: 200,
+        width: 30,
+        height: 30,
+        destroyed: true,
+      };
+      const girder: PlacedGirder = {
+        id: 'g_dead',
+        x: 200,
+        y: 200,
+        angleDeg: 0,
+        length: 80,
+        thickness: 12,
+        destroyed: true,
+      };
+
+      renderHDDestructibleProp(ctx, prop, [], [], 0, grid, 1400, 0);
+      renderHDDestructibleGirder(ctx, girder, [], [], grid, 1400, 0);
+
+      expect(ctx.save).not.toHaveBeenCalled();
+    });
+
+    it('ignores older craters on newly placed girders based on initialCraterCount', () => {
+      const ctx = createMockContext();
+      const multipleCraters: CraterRecord[] = [
+        { id: 'c_old1', x: 200, y: 150, radius: 25, createdAt: 1000 },
+        { id: 'c_old2', x: 210, y: 150, radius: 20, createdAt: 2000 },
+        { id: 'c_new', x: 220, y: 150, radius: 30, createdAt: 4000 },
+      ];
+      const girder: PlacedGirder = {
+        id: 'g_new',
+        x: 200,
+        y: 150,
+        angleDeg: 0,
+        length: 80,
+        thickness: 12,
+        destroyed: false,
+        initialCraterCount: 2, // Ignores craters 0 and 1
+      };
+
+      expect(() => {
+        renderHDDestructibleGirder(ctx, girder, multipleCraters, [], grid, 1400, 0);
+      }).not.toThrow();
+
+      // Girder should clip only the 3rd crater (c_new), not crashing
+      expect(ctx.clip).toHaveBeenCalledTimes(1);
+    });
   });
 });
+

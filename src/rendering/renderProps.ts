@@ -954,6 +954,8 @@ export function renderHDDestructibleProp(
   width: number,
   terrainRevision?: number
 ) {
+  if (sprop.destroyed) return;
+
   // Check foundation stability: only re-evaluate pixel scan when terrain has actually been modified
   if (terrainRevision !== undefined && (sprop as any)._lastFoundationRev === terrainRevision) {
     if (!(sprop as any)._isFoundationSolid) {
