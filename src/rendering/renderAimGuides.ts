@@ -92,11 +92,11 @@ export function renderAimGuides(rc: AimGuidesContext) {
     ctx.rotate(animTime * 2);
     ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.8)' : 'rgba(254, 240, 138, 0.8)';
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
     for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
       ctx.arc(0, 0, 7.5, (i * Math.PI) / 2 + 0.25, ((i + 1) * Math.PI) / 2 - 0.25);
+      ctx.stroke();
     }
-    ctx.stroke();
     ctx.restore();
 
     // Center Dot

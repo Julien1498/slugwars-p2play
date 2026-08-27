@@ -41,14 +41,6 @@ SLUG_STALKS_PATH.lineTo(2, -10);
 SLUG_STALKS_PATH.moveTo(6, -5);
 SLUG_STALKS_PATH.lineTo(8, -9);
 
-const SLUG_EYES_WHITE_PATH = new Path2D();
-SLUG_EYES_WHITE_PATH.arc(2, -10, 4.2, 0, Math.PI * 2);
-SLUG_EYES_WHITE_PATH.arc(8, -9, 3.8, 0, Math.PI * 2);
-
-const SLUG_PANIC_EYES_WHITE_PATH = new Path2D();
-SLUG_PANIC_EYES_WHITE_PATH.arc(2, -10, 5.2, 0, Math.PI * 2);
-SLUG_PANIC_EYES_WHITE_PATH.arc(8, -9, 4.8, 0, Math.PI * 2);
-
 const SLUG_BLINK_PATH = new Path2D();
 SLUG_BLINK_PATH.moveTo(-1, -10);
 SLUG_BLINK_PATH.lineTo(5, -10);
@@ -298,8 +290,15 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.lineWidth = 1.4;
 
     if (isAirbornePanic) {
-      ctx.fill(SLUG_PANIC_EYES_WHITE_PATH);
-      ctx.stroke(SLUG_PANIC_EYES_WHITE_PATH);
+      ctx.beginPath();
+      ctx.arc(2, -10, 5.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(8, -9, 4.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
 
       const jitterX = Math.sin(animTime * 20) * 0.6;
       const jitterY = Math.cos(animTime * 20) * 0.6;
@@ -309,8 +308,15 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.arc(8.5 + jitterX, -9 + jitterY, 1.1, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.fill(SLUG_EYES_WHITE_PATH);
-      ctx.stroke(SLUG_EYES_WHITE_PATH);
+      ctx.beginPath();
+      ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
 
       if (!isBlinking) {
         const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
