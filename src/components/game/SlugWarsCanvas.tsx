@@ -60,6 +60,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const actionCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const buffersRef = useRef<TerrainBuffers | null>(null);
 
   const lastSeedRef = useRef<string | null>(null);
@@ -981,11 +982,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     }
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const actionCanvas = actionCanvasRef.current;
+    if (!canvas || !actionCanvas) return;
     const ctx = (canvas.getContext('2d', { alpha: false }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
-    if (!ctx) return;
-
-
+    const actionCtx = actionCanvas.getContext('2d') as CanvasRenderingContext2D | null;
+    if (!ctx || !actionCtx) return;
 
     let animId: number;
 
@@ -1020,21 +1021,34 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Dynamic Resolution Scaling (DRS):
-      // DPR scales continuously with zoom (clamped between 0.50 and 1.00)
-      const dpr = Math.min(1.0, Math.max(0.50, Math.round(zoomRef.current * 100) / 100));
-      perfTracker.setLiveDpr(dpr);
+      // Layer 1 - Background Canvas (Sky, Mountains, Terrain, Props): DRS DPR scales with zoom (clamped between 0.50 and 1.00)
+      const bgDpr = Math.min(1.0, Math.max(0.50, Math.round(zoomRef.current * 100) / 100));
+      perfTracker.setLiveDpr(bgDpr);
       const cRect = containerRectRef.current;
 
-      const targetW = Math.max(100, Math.round(cRect.width * dpr));
-      const targetH = Math.max(100, Math.round(cRect.height * dpr));
-      if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW;
-        canvas.height = targetH;
+      const targetW_bg = Math.max(100, Math.round(cRect.width * bgDpr));
+      const targetH_bg = Math.max(100, Math.round(cRect.height * bgDpr));
+      if (canvas.width !== targetW_bg || canvas.height !== targetH_bg) {
+        canvas.width = targetW_bg;
+        canvas.height = targetH_bg;
+      }
+
+      // Layer 2 - Foreground Action Canvas (Slugs, Weapons, Aiming, Particles, Water waves): Crisp 1.0x DPR
+      const actionDpr = 1.0;
+      const targetW_act = Math.max(100, Math.round(cRect.width * actionDpr));
+      const targetH_act = Math.max(100, Math.round(cRect.height * actionDpr));
+      if (actionCanvas.width !== targetW_act || actionCanvas.height !== targetH_act) {
+        actionCanvas.width = targetW_act;
+        actionCanvas.height = targetH_act;
       }
 
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      actionCtx.save();
+      actionCtx.setTransform(1, 0, 0, 1, 0, 0);
+      actionCtx.clearRect(0, 0, actionCanvas.width, actionCanvas.height);
 
       // Dynamic Action Camera Follow (Projectiles, Explosions, Supply Crates, Moving Slugs, Retreat)
       const isUserDraggingNow = isDraggingCameraRef.current || touchGestureRef.current.isPinching || (touchGestureRef.current.singleTouchMoved && !touchGestureRef.current.touchIsAiming);
@@ -1130,16 +1144,24 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
       }
 
-      ctx.scale(dpr, dpr);
       const fitScale = Math.min(cRect.width / width, cRect.height / height);
       const totalScale = fitScale * zoomRef.current;
 
+      // Setup Background Context Transform
+      ctx.scale(bgDpr, bgDpr);
       ctx.translate(cRect.width / 2 + panRef.current.x, cRect.height / 2 + panRef.current.y);
       ctx.scale(totalScale, totalScale);
       ctx.translate(-width / 2, -height / 2);
-
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'low';
+
+      // Setup Foreground Action Context Transform
+      actionCtx.scale(actionDpr, actionDpr);
+      actionCtx.translate(cRect.width / 2 + panRef.current.x, cRect.height / 2 + panRef.current.y);
+      actionCtx.scale(totalScale, totalScale);
+      actionCtx.translate(-width / 2, -height / 2);
+      actionCtx.imageSmoothingEnabled = true;
+      actionCtx.imageSmoothingQuality = 'low';
 
 
       // Damage detection
@@ -1431,14 +1453,14 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       };
       const visualState = visualStateRef.current;
 
-      // 6. Slugs & Ninja Ropes
+      // 6. Slugs & Ninja Ropes (Rendered on Action Layer at Crisp 1.0x DPR)
       const pRopesStart = performance.now();
-      renderNinjaRopes(ctx, renderedSlugs);
+      renderNinjaRopes(actionCtx, renderedSlugs);
       perfTracker.recordRenderPass('ninja_ropes', performance.now() - pRopesStart);
 
       const pSlugsStart = performance.now();
       renderAllSlugs({
-        ctx,
+        ctx: actionCtx,
         gameState: visualState,
         animTime,
         slugDeathTimestamps: slugDeathTimestampsRef.current,
@@ -1449,11 +1471,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       // 7. Supply Crates, Projectiles & Particles FX (With Viewport Culling, 0 GC Array Allocations)
       const pCratesStart = performance.now();
-      renderSupplyCrates(ctx, renderedCrates, animTime, viewLeft, viewRight);
+      renderSupplyCrates(actionCtx, renderedCrates, animTime, viewLeft, viewRight);
       perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
 
       const pProjStart = performance.now();
-      renderProjectiles({ ctx, projectiles: renderedProjectiles, animTime, viewLeft, viewRight });
+      renderProjectiles({ ctx: actionCtx, projectiles: renderedProjectiles, animTime, viewLeft, viewRight });
       perfTracker.recordRenderPass('projectiles', performance.now() - pProjStart);
 
       const pPartsStart = performance.now();
@@ -1473,15 +1495,15 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           }
         }
       }
-      renderParticles(ctx, clientParticlesRef.current, viewLeft, viewRight);
+      renderParticles(actionCtx, clientParticlesRef.current, viewLeft, viewRight);
       perfTracker.recordRenderPass('particles_fx', performance.now() - pPartsStart);
 
       const pExplosionsStart = performance.now();
-      renderClientExplosions(ctx, clientExplosionsRef.current, viewLeft, viewRight);
+      renderClientExplosions(actionCtx, clientExplosionsRef.current, viewLeft, viewRight);
       perfTracker.recordRenderPass('explosions_fx', performance.now() - pExplosionsStart);
 
       const pDamagesStart = performance.now();
-      renderFloatingDamages(ctx, clientFloatingDamagesRef.current, viewLeft, viewRight);
+      renderFloatingDamages(actionCtx, clientFloatingDamagesRef.current, viewLeft, viewRight);
       perfTracker.recordRenderPass('floating_damages', performance.now() - pDamagesStart);
 
       // 8. Aim Guides, Holograms & Placement Preview
@@ -1489,7 +1511,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const activeSlug = renderedSlugs.find((s) => s.id === curState.activeSlugId);
       if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
         renderAimGuides({
-          ctx,
+          ctx: actionCtx,
           activeSlug,
           isMyTurn: isMyTurnRef.current,
           terrain,
@@ -1503,7 +1525,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (curState.phase === 'PLACEMENT' && isMyTurnRef.current) {
         const pGhostStart = performance.now();
         renderPlacementGhost(
-          ctx,
+          actionCtx,
           curState,
           terrain,
           pendingPlacementPoint || mousePosRef.current,
@@ -1517,7 +1539,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       const pOceanStart = performance.now();
 
       renderForegroundOcean({
-        ctx,
+        ctx: actionCtx,
         height,
         waterY,
         theme,
@@ -1541,7 +1563,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (showHitboxesRef.current) {
         const pHitboxStart = performance.now();
         renderHitboxDebugOverlay({
-          ctx,
+          ctx: actionCtx,
           gameState: curState,
           terrain,
           terrainHitboxCanvas: buffers.terrainHitboxCanvas,
@@ -1553,6 +1575,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       ctx.restore();
+      actionCtx.restore();
 
       const dt = performance.now() - renderStart;
       perfTracker.markFrame(dt, {
@@ -1671,10 +1694,27 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         </div>
       </div>
 
+      {/* Layer 1: Background Canvas (Sky, Mountains, Distant Ocean, Offscreen Terrain, Props & Foliage - Dynamic DRS DPR) */}
       <canvas
         ref={canvasRef}
         style={{
+          position: 'absolute',
+          inset: 0,
           contain: 'strict',
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+        }}
+        className="block w-full h-full"
+      />
+
+      {/* Layer 2: Action Canvas (Slugs, Weapons, Aiming, Particles, Explosions, Floating HP, Water Waves - Crisp 1.0x DPR) */}
+      <canvas
+        ref={actionCanvasRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          contain: 'strict',
+          pointerEvents: 'none',
           willChange: 'transform',
           transform: 'translateZ(0)',
         }}
