@@ -7,27 +7,26 @@ import { PeerManagerLike } from 'p2play-core';
 
 const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
-export function useHostActionHandler(
-  engineRef: MutableRefObject<SlugWarsEngine>,
+export function processHostAction(
+  engine: SlugWarsEngine,
   isHost: boolean,
   myPeerId: string,
   peerManager: PeerManagerLike,
   syncState: () => void,
-  broadcastState: (state: GameState) => void
+  broadcastState: (state: GameState) => void,
+  senderPeerId: string,
+  rawMsg: any
 ) {
-  const handleHostAction = useCallback(
-    (senderPeerId: string, rawMsg: any) => {
-      netMetrics.recordDownload(rawMsg);
-      const msg = rawMsg as SlugWarsNetworkMessage;
-      if (!isHost) return;
-      const engine = engineRef.current;
-      const playerId = senderPeerId;
-      const hostId = myPeerId || peerManager.myPeerId;
+  netMetrics.recordDownload(rawMsg);
+  const msg = rawMsg as SlugWarsNetworkMessage;
+  if (!isHost) return;
+  const playerId = senderPeerId;
+  const hostId = myPeerId || peerManager.myPeerId;
 
-      if (msg.type === 'ACTION') {
-        switch (msg.actionName) {
-          case 'JOIN_GAME': {
-            const requestedName = msg.payload?.name?.trim();
+  if (msg.type === 'ACTION') {
+    switch (msg.actionName) {
+      case 'JOIN_GAME': {
+        const requestedName = msg.payload?.name?.trim();
             const isGeneric = (n?: string) => !n || n.startsWith('Joueur-') || n.startsWith('Joueur ') || n.startsWith('Player-');
             const trusted = (!isGeneric(requestedName) ? requestedName : null) || peerManager.getTrustedUsername?.(playerId) || requestedName || `Limace ${playerId.slice(0, 4)}`;
             const existing = engine.state.teams.find((t) => t.id === playerId);
@@ -190,6 +189,27 @@ export function useHostActionHandler(
         }
         syncState();
       }
+    }
+export function useHostActionHandler(
+  engineRef: MutableRefObject<SlugWarsEngine>,
+  isHost: boolean,
+  myPeerId: string,
+  peerManager: PeerManagerLike,
+  syncState: () => void,
+  broadcastState: (state: GameState) => void
+) {
+  const handleHostAction = useCallback(
+    (senderPeerId: string, rawMsg: any) => {
+      processHostAction(
+        engineRef.current,
+        isHost,
+        myPeerId,
+        peerManager,
+        syncState,
+        broadcastState,
+        senderPeerId,
+        rawMsg
+      );
     },
     [isHost, myPeerId, peerManager, syncState, broadcastState, engineRef]
   );
