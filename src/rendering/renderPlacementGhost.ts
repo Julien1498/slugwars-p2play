@@ -10,17 +10,27 @@ let _cachedIsValid = false;
 const DASH_4_4 = [4, 4];
 const DASH_EMPTY: number[] = [];
 
+function createPath(fn: (p: Path2D) => void): Path2D {
+  if (typeof Path2D === 'undefined') return {} as Path2D;
+  const p = new Path2D();
+  fn(p);
+  return p;
+}
+
 // Static vector geometry (Zero reallocation overhead per frame)
-const GHOST_BODY = new Path2D();
-GHOST_BODY.arc(0, -8, 8, 0, Math.PI * 2);
+const GHOST_BODY = createPath((p) => {
+  p.arc(0, -8, 8, 0, Math.PI * 2);
+});
 
-const GHOST_EYES_WHITE = new Path2D();
-GHOST_EYES_WHITE.arc(3, -10, 2.5, 0, Math.PI * 2);
-GHOST_EYES_WHITE.arc(-3, -10, 2.5, 0, Math.PI * 2);
+const GHOST_EYES_WHITE = createPath((p) => {
+  p.arc(3, -10, 2.5, 0, Math.PI * 2);
+  p.arc(-3, -10, 2.5, 0, Math.PI * 2);
+});
 
-const GHOST_PUPILS_BLACK = new Path2D();
-GHOST_PUPILS_BLACK.arc(3, -10, 1.2, 0, Math.PI * 2);
-GHOST_PUPILS_BLACK.arc(-3, -10, 1.2, 0, Math.PI * 2);
+const GHOST_PUPILS_BLACK = createPath((p) => {
+  p.arc(3, -10, 1.2, 0, Math.PI * 2);
+  p.arc(-3, -10, 1.2, 0, Math.PI * 2);
+});
 
 const SPRITE_SCALE = 2;
 const SPRITE_W = 220;
@@ -33,6 +43,9 @@ let _cachedValidCanvas: HTMLCanvasElement | null = null;
 let _cachedInvalidCanvas: HTMLCanvasElement | null = null;
 
 function updateGhostSprites(teamColor: string, slugName: string) {
+  if (typeof document === 'undefined') {
+    return;
+  }
   const key = `${teamColor}_${slugName}`;
   if (_cachedKey === key && _cachedValidCanvas && _cachedInvalidCanvas) {
     return;

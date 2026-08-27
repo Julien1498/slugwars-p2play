@@ -12,28 +12,38 @@ export interface AimGuidesContext {
   animTime: number;
 }
 
-// Static reusable path geometry for tactical reticles
-const TARGET_RETICLE_CORNERS_PATH = new Path2D();
+function createPath(fn: (p: Path2D) => void): Path2D {
+  if (typeof Path2D === 'undefined') return {} as Path2D;
+  const p = new Path2D();
+  fn(p);
+  return p;
+}
+
 const _bSize = 22;
 const _bLen = 6;
-TARGET_RETICLE_CORNERS_PATH.moveTo(-_bSize, -_bSize + _bLen);
-TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize, -_bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize + _bLen, -_bSize);
-TARGET_RETICLE_CORNERS_PATH.moveTo(_bSize - _bLen, -_bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, -_bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, -_bSize + _bLen);
-TARGET_RETICLE_CORNERS_PATH.moveTo(-_bSize, _bSize - _bLen);
-TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize, _bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize + _bLen, _bSize);
-TARGET_RETICLE_CORNERS_PATH.moveTo(_bSize - _bLen, _bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, _bSize);
-TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, _bSize - _bLen);
 
-const TARGET_RETICLE_CROSS_PATH = new Path2D();
-TARGET_RETICLE_CROSS_PATH.moveTo(-10, 0);
-TARGET_RETICLE_CROSS_PATH.lineTo(10, 0);
-TARGET_RETICLE_CROSS_PATH.moveTo(0, -10);
-TARGET_RETICLE_CROSS_PATH.lineTo(0, 10);
+// Static reusable path geometry for tactical reticles
+const TARGET_RETICLE_CORNERS_PATH = createPath((p) => {
+  p.moveTo(-_bSize, -_bSize + _bLen);
+  p.lineTo(-_bSize, -_bSize);
+  p.lineTo(-_bSize + _bLen, -_bSize);
+  p.moveTo(_bSize - _bLen, -_bSize);
+  p.lineTo(_bSize, -_bSize);
+  p.lineTo(_bSize, -_bSize + _bLen);
+  p.moveTo(-_bSize, _bSize - _bLen);
+  p.lineTo(-_bSize, _bSize);
+  p.lineTo(-_bSize + _bLen, _bSize);
+  p.moveTo(_bSize - _bLen, _bSize);
+  p.lineTo(_bSize, _bSize);
+  p.lineTo(_bSize, _bSize - _bLen);
+});
+
+const TARGET_RETICLE_CROSS_PATH = createPath((p) => {
+  p.moveTo(-10, 0);
+  p.lineTo(10, 0);
+  p.moveTo(0, -10);
+  p.lineTo(0, 10);
+});
 
 export function renderAimGuides(rc: AimGuidesContext) {
   const { ctx, activeSlug, isMyTurn, terrain, mousePos, lockedTarget, animTime } = rc;
