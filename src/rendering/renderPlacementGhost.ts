@@ -7,6 +7,41 @@ let _lastGhostRevision = -1;
 let _cachedPreviewY = 0;
 let _cachedIsValid = false;
 
+let _lastSlugLabel = '';
+let _cachedLabelWidth = 0;
+
+const DASH_4_4 = [4, 4];
+const DASH_EMPTY: number[] = [];
+
+// Static vector geometry (Zero reallocation overhead per frame)
+const GHOST_BODY = new Path2D();
+GHOST_BODY.arc(0, -8, 8, 0, Math.PI * 2);
+
+const GHOST_EYES_WHITE = new Path2D();
+GHOST_EYES_WHITE.arc(3, -10, 2.5, 0, Math.PI * 2);
+GHOST_EYES_WHITE.arc(-3, -10, 2.5, 0, Math.PI * 2);
+
+const GHOST_PUPILS_BLACK = new Path2D();
+GHOST_PUPILS_BLACK.arc(3, -10, 1.2, 0, Math.PI * 2);
+GHOST_PUPILS_BLACK.arc(-3, -10, 1.2, 0, Math.PI * 2);
+
+function checkHasClearAir(
+  terrain: DestructibleTerrain,
+  width: number,
+  waterLevel: number,
+  x: number,
+  y: number
+): boolean {
+  if (x < 15 || x > width - 15 || y < 20 || y >= waterLevel - 5) return false;
+  for (let check = 0; check <= 18; check++) {
+    const checkY = y - check;
+    if (terrain.isSolid(x, checkY)) return false;
+    if (terrain.isSolid(x - 4, checkY)) return false;
+    if (terrain.isSolid(x + 4, checkY)) return false;
+  }
+  return true;
+}
+
 export function renderPlacementGhost(
   ctx: CanvasRenderingContext2D,
   gameState: GameState,
@@ -31,30 +66,16 @@ export function renderPlacementGhost(
     previewY = _cachedPreviewY;
     isValidPos = _cachedIsValid;
   } else {
-    const hasClearAir = (x: number, y: number): boolean => {
-      if (x < 15 || x > width - 15 || y < 20 || y >= currentWaterLevel - 5) return false;
-      for (let check = 0; check <= 18; check++) {
-        if (
-          terrain.isSolid(x, y - check) ||
-          terrain.isSolid(x - 4, y - check) ||
-          terrain.isSolid(x + 4, y - check)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    if (!hasClearAir(clampedX, previewY)) {
+    if (!checkHasClearAir(terrain, width, currentWaterLevel, clampedX, previewY)) {
       for (let testY = previewY; testY < currentWaterLevel - 15; testY += 2) {
-        if (hasClearAir(clampedX, testY)) {
+        if (checkHasClearAir(terrain, width, currentWaterLevel, clampedX, testY)) {
           previewY = testY;
           break;
         }
       }
     }
 
-    isValidPos = hasClearAir(clampedX, previewY);
+    isValidPos = checkHasClearAir(terrain, width, currentWaterLevel, clampedX, previewY);
     _lastGhostX = clampedX;
     _lastGhostY = rawY;
     _lastGhostRevision = terrain.revision;
@@ -69,33 +90,25 @@ export function renderPlacementGhost(
   const ringPulse = Math.sin(animTime * 6) * 2;
   ctx.strokeStyle = isValidPos ? '#4ade80' : '#f87171';
   ctx.lineWidth = 1.8;
-  ctx.setLineDash([4, 4]);
+  ctx.setLineDash(DASH_4_4);
   ctx.beginPath();
   ctx.arc(0, -8, 16 + ringPulse, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.setLineDash([]);
+  ctx.setLineDash(DASH_EMPTY);
 
   // Translucent Ghost Slug Body
   ctx.globalAlpha = 0.85;
   ctx.fillStyle = team?.color || '#a855f7';
-  ctx.beginPath();
-  ctx.arc(0, -8, 8, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fill(GHOST_BODY);
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 1.5;
-  ctx.stroke();
+  ctx.stroke(GHOST_BODY);
 
-  // Eyes
+  // Eyes (Single Batch Path2D)
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(3, -10, 2.5, 0, Math.PI * 2);
-  ctx.arc(-3, -10, 2.5, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fill(GHOST_EYES_WHITE);
   ctx.fillStyle = '#000000';
-  ctx.beginPath();
-  ctx.arc(3, -10, 1.2, 0, Math.PI * 2);
-  ctx.arc(-3, -10, 1.2, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fill(GHOST_PUPILS_BLACK);
 
   ctx.restore();
 
@@ -105,9 +118,15 @@ export function renderPlacementGhost(
   ctx.strokeStyle = isValidPos ? '#22c55e' : '#ef4444';
   ctx.lineWidth = 1.2;
   const pLabel = `📍 Placer ${activeSlug?.name || 'Limace'}`;
-  ctx.font = 'bold 11px Outfit, sans-serif';
-  const pMetrics = ctx.measureText(pLabel);
-  const pW = pMetrics.width + 16;
+
+  // Cached font measurement (Avoid OS DirectWrite measurement latency)
+  if (pLabel !== _lastSlugLabel || _cachedLabelWidth === 0) {
+    ctx.font = 'bold 11px Outfit, sans-serif';
+    _cachedLabelWidth = ctx.measureText(pLabel).width + 16;
+    _lastSlugLabel = pLabel;
+  }
+  const pW = _cachedLabelWidth;
+
   ctx.beginPath();
   if (ctx.roundRect) {
     ctx.roundRect(clampedX - pW / 2, previewY - 44, pW, 20, 6);
@@ -120,6 +139,7 @@ export function renderPlacementGhost(
   ctx.fillStyle = isValidPos ? '#4ade80' : '#f87171';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.font = 'bold 11px Outfit, sans-serif';
   ctx.fillText(pLabel, clampedX, previewY - 34);
   ctx.restore();
 }
