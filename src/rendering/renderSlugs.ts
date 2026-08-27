@@ -47,6 +47,68 @@ SLUG_BLINK_PATH.lineTo(5, -10);
 SLUG_BLINK_PATH.moveTo(6, -9);
 SLUG_BLINK_PATH.lineTo(11, -9);
 
+const SLUG_EYES_NORMAL_PATH = new Path2D();
+SLUG_EYES_NORMAL_PATH.arc(2, -10, 4.2, 0, Math.PI * 2);
+SLUG_EYES_NORMAL_PATH.moveTo(8 + 3.8, -9);
+SLUG_EYES_NORMAL_PATH.arc(8, -9, 3.8, 0, Math.PI * 2);
+
+const SLUG_EYES_PANIC_PATH = new Path2D();
+SLUG_EYES_PANIC_PATH.arc(2, -10, 5.2, 0, Math.PI * 2);
+SLUG_EYES_PANIC_PATH.moveTo(8 + 4.8, -9);
+SLUG_EYES_PANIC_PATH.arc(8, -9, 4.8, 0, Math.PI * 2);
+
+const SLUG_PANIC_MOUTH_PATH = new Path2D();
+SLUG_PANIC_MOUTH_PATH.ellipse(6, 0, 3.5, 5, 0.1, 0, Math.PI * 2);
+
+// Hat Path2Ds
+const HAT_MILITARY_CROWN_PATH = new Path2D();
+HAT_MILITARY_CROWN_PATH.moveTo(-3.5, -13);
+HAT_MILITARY_CROWN_PATH.quadraticCurveTo(5, -14, 13, -12.5);
+HAT_MILITARY_CROWN_PATH.lineTo(13.5, -14.5);
+HAT_MILITARY_CROWN_PATH.quadraticCurveTo(9, -19.5, 4, -19);
+HAT_MILITARY_CROWN_PATH.quadraticCurveTo(-2, -18.5, -4, -13.5);
+HAT_MILITARY_CROWN_PATH.closePath();
+
+const HAT_MILITARY_RIM_PATH = new Path2D();
+HAT_MILITARY_RIM_PATH.moveTo(-3.5, -13);
+HAT_MILITARY_RIM_PATH.quadraticCurveTo(5, -14, 13, -12.5);
+HAT_MILITARY_RIM_PATH.lineTo(13.2, -11.7);
+HAT_MILITARY_RIM_PATH.quadraticCurveTo(5, -13.1, -3.8, -12.2);
+HAT_MILITARY_RIM_PATH.closePath();
+
+const HAT_MILITARY_BRAID_PATH = new Path2D();
+HAT_MILITARY_BRAID_PATH.moveTo(-2, -13.3);
+HAT_MILITARY_BRAID_PATH.quadraticCurveTo(5, -14.2, 12.5, -12.8);
+
+const HAT_MILITARY_VISOR_PATH = new Path2D();
+HAT_MILITARY_VISOR_PATH.moveTo(6, -13.2);
+HAT_MILITARY_VISOR_PATH.quadraticCurveTo(10, -13.5, 14.5, -12.2);
+HAT_MILITARY_VISOR_PATH.quadraticCurveTo(10, -12.4, 6, -12.5);
+HAT_MILITARY_VISOR_PATH.closePath();
+
+const HAT_BANDANA_HEADBAND_PATH = new Path2D();
+HAT_BANDANA_HEADBAND_PATH.ellipse(5, -12, 8.5, 3.5, 0.1, 0, Math.PI * 2);
+
+const HAT_CYBER_GOGGLES_PATH = new Path2D();
+if (HAT_CYBER_GOGGLES_PATH.roundRect) {
+  HAT_CYBER_GOGGLES_PATH.roundRect(-1.5, -13.5, 7, 7, 2);
+  HAT_CYBER_GOGGLES_PATH.roundRect(5, -12.5, 6.5, 7, 2);
+} else {
+  HAT_CYBER_GOGGLES_PATH.rect(-1.5, -13.5, 7, 7);
+  HAT_CYBER_GOGGLES_PATH.rect(5, -12.5, 6.5, 7);
+}
+
+const HAT_CYBER_LENSES_PATH = new Path2D();
+HAT_CYBER_LENSES_PATH.arc(2, -10, 2.2, 0, Math.PI * 2);
+HAT_CYBER_LENSES_PATH.moveTo(8 + 2.0, -9);
+HAT_CYBER_LENSES_PATH.arc(8, -9, 2.0, 0, Math.PI * 2);
+
+const HAT_COWBOY_PATH = new Path2D();
+HAT_COWBOY_PATH.moveTo(-4, -10);
+HAT_COWBOY_PATH.quadraticCurveTo(0, -18, 12, -13);
+HAT_COWBOY_PATH.quadraticCurveTo(8, -8, -4, -10);
+HAT_COWBOY_PATH.closePath();
+
 // Weapon static Path2Ds
 const WEAPON_BAT_PATH = new Path2D();
 WEAPON_BAT_PATH.moveTo(1, 2);
@@ -96,6 +158,30 @@ function getTeamBodyGrad(ctx: CanvasRenderingContext2D, teamColor: string): Canv
     _cachedTeamBodyGrads[teamColor] = g;
   }
   return _cachedTeamBodyGrads[teamColor];
+}
+
+let _cachedMilitaryCapGrad: CanvasGradient | null = null;
+function getMilitaryCapGrad(ctx: CanvasRenderingContext2D): CanvasGradient {
+  if (!_cachedMilitaryCapGrad) {
+    const g = ctx.createLinearGradient(0, -19, 8, -13);
+    g.addColorStop(0, '#4d7c0f');
+    g.addColorStop(0.55, '#365314');
+    g.addColorStop(1, '#1a2e05');
+    _cachedMilitaryCapGrad = g;
+  }
+  return _cachedMilitaryCapGrad;
+}
+
+let _cachedGrenadeGrad: CanvasGradient | null = null;
+function getGrenadeGrad(ctx: CanvasRenderingContext2D): CanvasGradient {
+  if (!_cachedGrenadeGrad) {
+    const g = ctx.createRadialGradient(7, -1, 1, 8, 0, 5);
+    g.addColorStop(0, '#65a30d');
+    g.addColorStop(0.6, '#3f6212');
+    g.addColorStop(1, '#1a2e05');
+    _cachedGrenadeGrad = g;
+  }
+  return _cachedGrenadeGrad;
 }
 
 let _cachedGhostGrad: CanvasGradient | null = null;
@@ -180,6 +266,10 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
   const { ctx, gameState, animTime, slugDeathTimestamps, viewLeft, viewRight } = rc;
 
   renderGhostSpirits(ctx, gameState.slugs, animTime, slugDeathTimestamps);
+
+  ctx.font = 'bold 9.5px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
 
   for (const slug of gameState.slugs) {
     if (!slug.isAlive || !slug.isPlaced) continue;
@@ -290,15 +380,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.lineWidth = 1.4;
 
     if (isAirbornePanic) {
-      ctx.beginPath();
-      ctx.arc(2, -10, 5.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(8, -9, 4.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_EYES_PANIC_PATH);
+      ctx.stroke(SLUG_EYES_PANIC_PATH);
 
       const jitterX = Math.sin(animTime * 20) * 0.6;
       const jitterY = Math.cos(animTime * 20) * 0.6;
@@ -308,15 +391,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.arc(8.5 + jitterX, -9 + jitterY, 1.1, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.beginPath();
-      ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_EYES_NORMAL_PATH);
+      ctx.stroke(SLUG_EYES_NORMAL_PATH);
 
       if (!isBlinking) {
         const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
@@ -345,59 +421,30 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.save();
 
       // 1. Cap Crown (Dôme vert militaire d'officier avec dégradé d'ombre)
-      const capGrad = ctx.createLinearGradient(0, -19, 8, -13);
-      capGrad.addColorStop(0, '#4d7c0f');
-      capGrad.addColorStop(0.55, '#365314');
-      capGrad.addColorStop(1, '#1a2e05');
-      ctx.fillStyle = capGrad;
+      ctx.fillStyle = getMilitaryCapGrad(ctx);
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 1.3;
-
-      ctx.beginPath();
-      // Base line along top of brow (laisse les yeux totalement dégagés)
-      ctx.moveTo(-3.5, -13);
-      ctx.quadraticCurveTo(5, -14, 13, -12.5);
-      // Front upward peak
-      ctx.lineTo(13.5, -14.5);
-      ctx.quadraticCurveTo(9, -19.5, 4, -19);
-      // Back downward slope
-      ctx.quadraticCurveTo(-2, -18.5, -4, -13.5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_MILITARY_CROWN_PATH);
+      ctx.stroke(HAT_MILITARY_CROWN_PATH);
 
       // 2. Leather Finished Base Rim (Bandeau de finition bas propre)
       ctx.fillStyle = '#0f172a';
       ctx.strokeStyle = '#020617';
       ctx.lineWidth = 0.9;
-      ctx.beginPath();
-      ctx.moveTo(-3.5, -13);
-      ctx.quadraticCurveTo(5, -14, 13, -12.5);
-      ctx.lineTo(13.2, -11.7);
-      ctx.quadraticCurveTo(5, -13.1, -3.8, -12.2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_MILITARY_RIM_PATH);
+      ctx.stroke(HAT_MILITARY_RIM_PATH);
 
       // 3. Golden Braid Cord (Galon doré au-dessus de la visière)
       ctx.strokeStyle = '#facc15';
       ctx.lineWidth = 1.1;
-      ctx.beginPath();
-      ctx.moveTo(-2, -13.3);
-      ctx.quadraticCurveTo(5, -14.2, 12.5, -12.8);
-      ctx.stroke();
+      ctx.stroke(HAT_MILITARY_BRAID_PATH);
 
       // 4. Subtle Glossy Visor (Visière noire fine pointant vers l'avant au front)
       ctx.fillStyle = '#09090b';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 0.9;
-      ctx.beginPath();
-      ctx.moveTo(6, -13.2);
-      ctx.quadraticCurveTo(10, -13.5, 14.5, -12.2);
-      ctx.quadraticCurveTo(10, -12.4, 6, -12.5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_MILITARY_VISOR_PATH);
+      ctx.stroke(HAT_MILITARY_VISOR_PATH);
 
       // 5. Golden Corporal Insignia (Étoile / Cocarde dorée de caporal)
       ctx.fillStyle = '#fde047';
@@ -417,10 +464,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.fillStyle = '#dc2626';
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.ellipse(5, -12, 8.5, 3.5, 0.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_BANDANA_HEADBAND_PATH);
+      ctx.stroke(HAT_BANDANA_HEADBAND_PATH);
       ctx.beginPath();
       ctx.moveTo(-3, -12);
       ctx.lineTo(-11 + Math.sin(animTime * 6) * 2, -15);
@@ -432,31 +477,17 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.fillStyle = '#1e293b';
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.roundRect(-1.5, -13.5, 7, 7, 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.roundRect(5, -12.5, 6.5, 7, 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_CYBER_GOGGLES_PATH);
+      ctx.stroke(HAT_CYBER_GOGGLES_PATH);
 
       ctx.fillStyle = '#10b981';
-      ctx.beginPath();
-      ctx.arc(2, -10, 2.2, 0, Math.PI * 2);
-      ctx.arc(8, -9, 2.0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fill(HAT_CYBER_LENSES_PATH);
     } else {
       ctx.fillStyle = teamColor;
       ctx.strokeStyle = '#18181b';
       ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(-4, -10);
-      ctx.quadraticCurveTo(0, -18, 12, -13);
-      ctx.quadraticCurveTo(8, -8, -4, -10);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(HAT_COWBOY_PATH);
+      ctx.stroke(HAT_COWBOY_PATH);
 
       ctx.fillStyle = '#facc15';
       ctx.beginPath();
@@ -469,10 +500,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.fillStyle = '#09090b';
       ctx.strokeStyle = '#831843';
       ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.ellipse(6, 0, 3.5, 5, 0.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_PANIC_MOUTH_PATH);
+      ctx.stroke(SLUG_PANIC_MOUTH_PATH);
     } else {
       ctx.strokeStyle = '#831843';
       ctx.lineWidth = 1.2;
@@ -521,11 +550,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fill();
       } else if (weaponId === 'grenade') {
         // --- ARMY GREEN PINEAPPLE FRAG GRENADE ---
-        const grenGrad = ctx.createRadialGradient(7, -1, 1, 8, 0, 5);
-        grenGrad.addColorStop(0, '#65a30d');
-        grenGrad.addColorStop(0.6, '#3f6212');
-        grenGrad.addColorStop(1, '#1a2e05');
-        ctx.fillStyle = grenGrad;
+        ctx.fillStyle = getGrenadeGrad(ctx);
         ctx.strokeStyle = '#14532d';
         ctx.lineWidth = 1.2;
         ctx.fill(WEAPON_GRENADE_PATH);
@@ -759,9 +784,6 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.stroke();
 
     ctx.fillStyle = '#f8fafc';
-    ctx.font = 'bold 9.5px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
     ctx.fillText(`${slug.hp}`, slug.x, badgeY + badgeH / 2);
   }
 }
