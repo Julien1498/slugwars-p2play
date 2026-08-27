@@ -34,6 +34,66 @@ SLUG_ARROW_PATH.lineTo(2, 0);
 SLUG_ARROW_PATH.lineTo(6, 0);
 SLUG_ARROW_PATH.closePath();
 
+// Eyestalks and Eye Path2Ds
+const SLUG_STALKS_PATH = new Path2D();
+SLUG_STALKS_PATH.moveTo(1, -6);
+SLUG_STALKS_PATH.lineTo(2, -10);
+SLUG_STALKS_PATH.moveTo(6, -5);
+SLUG_STALKS_PATH.lineTo(8, -9);
+
+const SLUG_EYES_WHITE_PATH = new Path2D();
+SLUG_EYES_WHITE_PATH.arc(2, -10, 4.2, 0, Math.PI * 2);
+SLUG_EYES_WHITE_PATH.arc(8, -9, 3.8, 0, Math.PI * 2);
+
+const SLUG_PANIC_EYES_WHITE_PATH = new Path2D();
+SLUG_PANIC_EYES_WHITE_PATH.arc(2, -10, 5.2, 0, Math.PI * 2);
+SLUG_PANIC_EYES_WHITE_PATH.arc(8, -9, 4.8, 0, Math.PI * 2);
+
+const SLUG_BLINK_PATH = new Path2D();
+SLUG_BLINK_PATH.moveTo(-1, -10);
+SLUG_BLINK_PATH.lineTo(5, -10);
+SLUG_BLINK_PATH.moveTo(6, -9);
+SLUG_BLINK_PATH.lineTo(11, -9);
+
+// Weapon static Path2Ds
+const WEAPON_BAT_PATH = new Path2D();
+WEAPON_BAT_PATH.moveTo(1, 2);
+WEAPON_BAT_PATH.lineTo(4, 2);
+WEAPON_BAT_PATH.lineTo(18, -2.5);
+WEAPON_BAT_PATH.lineTo(16, -6);
+WEAPON_BAT_PATH.lineTo(1, 0);
+WEAPON_BAT_PATH.closePath();
+
+const WEAPON_BANANA_PATH = new Path2D();
+WEAPON_BANANA_PATH.ellipse(8, 0, 7.5, 3.8, 0.4, 0, Math.PI * 2);
+
+const WEAPON_GRENADE_PATH = new Path2D();
+WEAPON_GRENADE_PATH.ellipse(8, 0, 5.5, 4.2, 0, 0, Math.PI * 2);
+
+const WEAPON_GRENADE_GRID_PATH = new Path2D();
+WEAPON_GRENADE_GRID_PATH.moveTo(4, 0);
+WEAPON_GRENADE_GRID_PATH.lineTo(12, 0);
+WEAPON_GRENADE_GRID_PATH.moveTo(8, -3.5);
+WEAPON_GRENADE_GRID_PATH.lineTo(8, 3.5);
+
+const WEAPON_PIGEON_BODY_PATH = new Path2D();
+WEAPON_PIGEON_BODY_PATH.ellipse(7, 0, 5.5, 3.8, 0, 0, Math.PI * 2);
+
+const WEAPON_PIGEON_BEAK_PATH = new Path2D();
+WEAPON_PIGEON_BEAK_PATH.moveTo(12, -1);
+WEAPON_PIGEON_BEAK_PATH.lineTo(15, 0);
+WEAPON_PIGEON_BEAK_PATH.lineTo(12, 1);
+WEAPON_PIGEON_BEAK_PATH.closePath();
+
+const WEAPON_BAZOOKA_ROCKET_NOSE_PATH = new Path2D();
+WEAPON_BAZOOKA_ROCKET_NOSE_PATH.moveTo(17, -2.5);
+WEAPON_BAZOOKA_ROCKET_NOSE_PATH.lineTo(21, 0);
+WEAPON_BAZOOKA_ROCKET_NOSE_PATH.lineTo(17, 2.5);
+WEAPON_BAZOOKA_ROCKET_NOSE_PATH.closePath();
+
+const WEAPON_HOLY_GRENADE_PATH = new Path2D();
+WEAPON_HOLY_GRENADE_PATH.arc(8, 0, 5.2, 0, Math.PI * 2);
+
 const _cachedTeamBodyGrads: Record<string, CanvasGradient> = {};
 function getTeamBodyGrad(ctx: CanvasRenderingContext2D, teamColor: string): CanvasGradient {
   if (!_cachedTeamBodyGrads[teamColor]) {
@@ -229,12 +289,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     // Eyestalks
     ctx.strokeStyle = teamColor;
     ctx.lineWidth = 2.4;
-    ctx.beginPath();
-    ctx.moveTo(1, -6);
-    ctx.lineTo(2, -10);
-    ctx.moveTo(6, -5);
-    ctx.lineTo(8, -9);
-    ctx.stroke();
+    ctx.stroke(SLUG_STALKS_PATH);
 
     // Eyes
     const isBlinking = !isAirbornePanic && !isDangerNear && Math.sin(animTime * 1.5 + (slug.id.charCodeAt(0) % 10)) > 0.94;
@@ -243,15 +298,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.lineWidth = 1.4;
 
     if (isAirbornePanic) {
-      ctx.beginPath();
-      ctx.arc(2, -10, 5.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(8, -9, 4.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_PANIC_EYES_WHITE_PATH);
+      ctx.stroke(SLUG_PANIC_EYES_WHITE_PATH);
 
       const jitterX = Math.sin(animTime * 20) * 0.6;
       const jitterY = Math.cos(animTime * 20) * 0.6;
@@ -261,15 +309,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.arc(8.5 + jitterX, -9 + jitterY, 1.1, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.beginPath();
-      ctx.arc(2, -10, 4.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(8, -9, 3.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_EYES_WHITE_PATH);
+      ctx.stroke(SLUG_EYES_WHITE_PATH);
 
       if (!isBlinking) {
         const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
@@ -289,12 +330,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       } else {
         ctx.strokeStyle = '#18181b';
         ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(-1, -10);
-        ctx.lineTo(5, -10);
-        ctx.moveTo(6, -9);
-        ctx.lineTo(11, -9);
-        ctx.stroke();
+        ctx.stroke(SLUG_BLINK_PATH);
       }
     }
 
@@ -457,12 +493,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillRect(9, -3.5, 2.5, 6);
         // Rocket Nose loaded inside
         ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.moveTo(17, -2.5);
-        ctx.lineTo(21, 0);
-        ctx.lineTo(17, 2.5);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fill(WEAPON_BAZOOKA_ROCKET_NOSE_PATH);
         // Top Sight
         ctx.fillStyle = '#18181b';
         ctx.fillRect(4, -5.5, 4, 2);
@@ -491,17 +522,12 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillStyle = grenGrad;
         ctx.strokeStyle = '#14532d';
         ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(8, 0, 5.5, 4.2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(WEAPON_GRENADE_PATH);
+        ctx.stroke(WEAPON_GRENADE_PATH);
         // Fragmentation grid
         ctx.strokeStyle = '#1a2e05';
         ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(4, 0); ctx.lineTo(12, 0);
-        ctx.moveTo(8, -3.5); ctx.lineTo(8, 3.5);
-        ctx.stroke();
+        ctx.stroke(WEAPON_GRENADE_GRID_PATH);
         // Silver spoon lever & pin
         ctx.fillStyle = '#94a3b8';
         ctx.fillRect(6.5, -5.5, 3, 2);
@@ -515,10 +541,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillStyle = '#facc15';
         ctx.strokeStyle = '#854d0e';
         ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(8, 0, 7.5, 3.8, 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(WEAPON_BANANA_PATH);
+        ctx.stroke(WEAPON_BANANA_PATH);
         // Green tip & brown stalk
         ctx.fillStyle = '#65a30d';
         ctx.fillRect(2, 2, 2, 2);
@@ -543,10 +567,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillStyle = '#facc15';
         ctx.strokeStyle = '#a16207';
         ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(8, 0, 5.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(WEAPON_HOLY_GRENADE_PATH);
+        ctx.stroke(WEAPON_HOLY_GRENADE_PATH);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(7, -7.5, 2, 5.5);
         ctx.fillRect(5.5, -5.5, 5, 2);
@@ -568,15 +590,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillStyle = '#d97706';
         ctx.strokeStyle = '#78350f';
         ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(1, 2);
-        ctx.lineTo(4, 2);
-        ctx.lineTo(18, -2.5);
-        ctx.lineTo(16, -6);
-        ctx.lineTo(1, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(WEAPON_BAT_PATH);
+        ctx.stroke(WEAPON_BAT_PATH);
         // White Grip Tape
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(2, 0, 4, 2.5);
@@ -635,16 +650,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.fillStyle = '#94a3b8';
         ctx.strokeStyle = '#334155';
         ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.ellipse(7, 0, 5.5, 3.8, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(WEAPON_PIGEON_BODY_PATH);
+        ctx.stroke(WEAPON_PIGEON_BODY_PATH);
         // Beak
         ctx.fillStyle = '#f97316';
-        ctx.beginPath();
-        ctx.moveTo(12, -1); ctx.lineTo(15, 0); ctx.lineTo(12, 1);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fill(WEAPON_PIGEON_BEAK_PATH);
         // Aviator Goggles
         ctx.fillStyle = '#0284c7';
         ctx.beginPath();

@@ -12,6 +12,29 @@ export interface AimGuidesContext {
   animTime: number;
 }
 
+// Static reusable path geometry for tactical reticles
+const TARGET_RETICLE_CORNERS_PATH = new Path2D();
+const _bSize = 22;
+const _bLen = 6;
+TARGET_RETICLE_CORNERS_PATH.moveTo(-_bSize, -_bSize + _bLen);
+TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize, -_bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize + _bLen, -_bSize);
+TARGET_RETICLE_CORNERS_PATH.moveTo(_bSize - _bLen, -_bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, -_bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, -_bSize + _bLen);
+TARGET_RETICLE_CORNERS_PATH.moveTo(-_bSize, _bSize - _bLen);
+TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize, _bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(-_bSize + _bLen, _bSize);
+TARGET_RETICLE_CORNERS_PATH.moveTo(_bSize - _bLen, _bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, _bSize);
+TARGET_RETICLE_CORNERS_PATH.lineTo(_bSize, _bSize - _bLen);
+
+const TARGET_RETICLE_CROSS_PATH = new Path2D();
+TARGET_RETICLE_CROSS_PATH.moveTo(-10, 0);
+TARGET_RETICLE_CROSS_PATH.lineTo(10, 0);
+TARGET_RETICLE_CROSS_PATH.moveTo(0, -10);
+TARGET_RETICLE_CROSS_PATH.lineTo(0, 10);
+
 export function renderAimGuides(rc: AimGuidesContext) {
   const { ctx, activeSlug, isMyTurn, terrain, mousePos, lockedTarget, animTime } = rc;
 
@@ -69,11 +92,11 @@ export function renderAimGuides(rc: AimGuidesContext) {
     ctx.rotate(animTime * 2);
     ctx.strokeStyle = activeSlug.isChargingPower ? 'rgba(239, 68, 68, 0.8)' : 'rgba(254, 240, 138, 0.8)';
     ctx.lineWidth = 1.5;
+    ctx.beginPath();
     for (let i = 0; i < 4; i++) {
-      ctx.beginPath();
       ctx.arc(0, 0, 7.5, (i * Math.PI) / 2 + 0.25, ((i + 1) * Math.PI) / 2 - 0.25);
-      ctx.stroke();
     }
+    ctx.stroke();
     ctx.restore();
 
     // Center Dot
@@ -270,32 +293,11 @@ export function renderAimGuides(rc: AimGuidesContext) {
     ctx.arc(0, 0, 16, 0, Math.PI * 2);
     ctx.stroke();
 
-    const bSize = 22;
-    const bLen = 6;
     ctx.lineWidth = 2.2;
-    // Corners
-    ctx.beginPath();
-    ctx.moveTo(-bSize, -bSize + bLen);
-    ctx.lineTo(-bSize, -bSize);
-    ctx.lineTo(-bSize + bLen, -bSize);
-    ctx.moveTo(bSize - bLen, -bSize);
-    ctx.lineTo(bSize, -bSize);
-    ctx.lineTo(bSize, -bSize + bLen);
-    ctx.moveTo(-bSize, bSize - bLen);
-    ctx.lineTo(-bSize, bSize);
-    ctx.lineTo(-bSize + bLen, bSize);
-    ctx.moveTo(bSize - bLen, bSize);
-    ctx.lineTo(bSize, bSize);
-    ctx.lineTo(bSize, bSize - bLen);
-    ctx.stroke();
+    ctx.stroke(TARGET_RETICLE_CORNERS_PATH);
 
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-10, 0);
-    ctx.lineTo(10, 0);
-    ctx.moveTo(0, -10);
-    ctx.lineTo(0, 10);
-    ctx.stroke();
+    ctx.stroke(TARGET_RETICLE_CROSS_PATH);
 
     ctx.fillStyle = retColor;
     ctx.beginPath();
@@ -309,7 +311,7 @@ export function renderAimGuides(rc: AimGuidesContext) {
     const label = isLocked
       ? '🎯 CIBLE VERROUILLÉE (CLIC GAUCHE = TIRER)'
       : '🎯 POSITIONNER CIBLE (CLIC DROIT / GAUCHE)';
-    ctx.fillText(label, 0, -bSize - 5);
+    ctx.fillText(label, 0, -_bSize - 5);
 
     ctx.restore();
   }
