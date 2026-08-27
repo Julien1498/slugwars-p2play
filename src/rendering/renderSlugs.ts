@@ -47,15 +47,17 @@ SLUG_BLINK_PATH.lineTo(5, -10);
 SLUG_BLINK_PATH.moveTo(6, -9);
 SLUG_BLINK_PATH.lineTo(11, -9);
 
-const SLUG_EYES_NORMAL_PATH = new Path2D();
-SLUG_EYES_NORMAL_PATH.arc(2, -10, 4.2, 0, Math.PI * 2);
-SLUG_EYES_NORMAL_PATH.moveTo(8 + 3.8, -9);
-SLUG_EYES_NORMAL_PATH.arc(8, -9, 3.8, 0, Math.PI * 2);
+const SLUG_LEFT_EYE_NORMAL_PATH = new Path2D();
+SLUG_LEFT_EYE_NORMAL_PATH.arc(2, -10, 4.2, 0, Math.PI * 2);
 
-const SLUG_EYES_PANIC_PATH = new Path2D();
-SLUG_EYES_PANIC_PATH.arc(2, -10, 5.2, 0, Math.PI * 2);
-SLUG_EYES_PANIC_PATH.moveTo(8 + 4.8, -9);
-SLUG_EYES_PANIC_PATH.arc(8, -9, 4.8, 0, Math.PI * 2);
+const SLUG_RIGHT_EYE_NORMAL_PATH = new Path2D();
+SLUG_RIGHT_EYE_NORMAL_PATH.arc(8, -9, 3.8, 0, Math.PI * 2);
+
+const SLUG_LEFT_EYE_PANIC_PATH = new Path2D();
+SLUG_LEFT_EYE_PANIC_PATH.arc(2, -10, 5.2, 0, Math.PI * 2);
+
+const SLUG_RIGHT_EYE_PANIC_PATH = new Path2D();
+SLUG_RIGHT_EYE_PANIC_PATH.arc(8, -9, 4.8, 0, Math.PI * 2);
 
 const SLUG_PANIC_MOUTH_PATH = new Path2D();
 SLUG_PANIC_MOUTH_PATH.ellipse(6, 0, 3.5, 5, 0.1, 0, Math.PI * 2);
@@ -380,8 +382,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.lineWidth = 1.4;
 
     if (isAirbornePanic) {
-      ctx.fill(SLUG_EYES_PANIC_PATH);
-      ctx.stroke(SLUG_EYES_PANIC_PATH);
+      // Left eye first, then right eye in front (depth layer ordering)
+      ctx.fill(SLUG_LEFT_EYE_PANIC_PATH);
+      ctx.stroke(SLUG_LEFT_EYE_PANIC_PATH);
+      ctx.fill(SLUG_RIGHT_EYE_PANIC_PATH);
+      ctx.stroke(SLUG_RIGHT_EYE_PANIC_PATH);
 
       const jitterX = Math.sin(animTime * 20) * 0.6;
       const jitterY = Math.cos(animTime * 20) * 0.6;
@@ -391,8 +396,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.arc(8.5 + jitterX, -9 + jitterY, 1.1, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.fill(SLUG_EYES_NORMAL_PATH);
-      ctx.stroke(SLUG_EYES_NORMAL_PATH);
+      // Left eye first, then right eye in front (depth layer ordering)
+      ctx.fill(SLUG_LEFT_EYE_NORMAL_PATH);
+      ctx.stroke(SLUG_LEFT_EYE_NORMAL_PATH);
+      ctx.fill(SLUG_RIGHT_EYE_NORMAL_PATH);
+      ctx.stroke(SLUG_RIGHT_EYE_NORMAL_PATH);
 
       if (!isBlinking) {
         const pupilOffX = isAiming ? Math.cos(aimRad) * 1.4 : Math.sin(animTime * 1.2) * 0.8;
