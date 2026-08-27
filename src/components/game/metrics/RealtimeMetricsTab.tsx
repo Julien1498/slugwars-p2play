@@ -10,6 +10,7 @@ interface RealtimeMetricsTabProps {
   fpsColor: string;
   netStats: NetworkStats;
   memoryUsage: { usedMB: number; totalMB: number } | null;
+  liveDpr?: number;
   gameState: GameState;
   isFpsHudActive: boolean;
   onToggleFpsHud: () => void;
@@ -24,6 +25,7 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
   fpsColor,
   netStats,
   memoryUsage,
+  liveDpr = 1.0,
   gameState,
   isFpsHudActive,
   onToggleFpsHud,
@@ -233,7 +235,7 @@ export const RealtimeMetricsTab: React.FC<RealtimeMetricsTabProps> = ({
           <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 rounded-lg flex justify-between items-center">
             <span className="text-zinc-400">DPR Rendu (Écran) :</span>
             <span className="font-mono font-bold text-white">
-              1.0x{' '}
+              {liveDpr.toFixed(2)}x{' '}
               <span className="text-[10px] text-emerald-400 font-normal">
                 ({typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1}x natif)
               </span>

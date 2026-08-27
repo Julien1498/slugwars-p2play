@@ -1020,9 +1020,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Dynamic Resolution Scaling (DRS):
-      // When zoomed out (< 0.85), DPR reduces to 0.80 (~36% fewer pixels to rasterize for the GPU).
-      // When at normal/close-up zoom (>= 0.85), DPR runs at native 1.0.
-      const dpr = zoomRef.current < 0.85 ? 0.80 : 1.0;
+      // DPR scales continuously with zoom (clamped between 0.50 and 1.00)
+      const dpr = Math.min(1.0, Math.max(0.50, Math.round(zoomRef.current * 100) / 100));
       perfTracker.setLiveDpr(dpr);
       const cRect = containerRectRef.current;
 
