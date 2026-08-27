@@ -267,7 +267,20 @@ export function renderGhostSpirits(
 export function renderAllSlugs(rc: SlugsRenderContext) {
   const { ctx, gameState, animTime, slugDeathTimestamps, viewLeft, viewRight } = rc;
 
-  renderGhostSpirits(ctx, gameState.slugs, animTime, slugDeathTimestamps);
+  if (slugDeathTimestamps.size > 0) {
+    renderGhostSpirits(ctx, gameState.slugs, animTime, slugDeathTimestamps);
+  }
+
+  // Fast zero-cost early exit if no slugs are placed yet (e.g. during PLACEMENT phase)
+  let hasLivingPlaced = false;
+  for (let i = 0; i < gameState.slugs.length; i++) {
+    const s = gameState.slugs[i];
+    if (s.isAlive && s.isPlaced) {
+      hasLivingPlaced = true;
+      break;
+    }
+  }
+  if (!hasLivingPlaced) return;
 
   ctx.font = 'bold 9.5px monospace';
   ctx.textAlign = 'center';
