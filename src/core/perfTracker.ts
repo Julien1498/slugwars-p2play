@@ -1,193 +1,60 @@
-export const RENDER_PASS_LABELS: Record<string, string> = {
-  // Ciel & Atmosphère
-  sky_gradient: '🌌 Dégradé Ciel Infini',
-  sky_clouds_stars: '☁️ Nuages & Étoiles',
-  sky_celestial: '☀️ Soleil / Lune / Phare',
-  sky_mountains: '🏔️ Montagnes & Collines',
-  sky_back_ocean: '🌊 Océan Arrière-Plan',
-  // Terrain
-  terrain_buffer: '🏜️ Terrain Destructible',
-  // Décors & Poutres
-  props_girders: '🏗️ Poutres Métalliques HD',
-  props_solids: '🌴 Décors Solides (Palmiers, Hérissons, etc.)',
-  decor_foliage: '🦋 Végétation & Papillons',
-  decor_mines: '💣 Mines Terrestres',
-  decor_helicopters: '🚁 Hélicoptères',
-  decor_tombstones: '🪦 Tombes & Âmes',
-  // Limaces & Cordes
-  ninja_ropes: '🪢 Cordes Ninja',
-  slugs_rendering: '🐌 Limaces & Armes',
-  // Projectiles & Effets FX
-  supply_crates: '📦 Caisses de Largage',
-  projectiles: '🚀 Projectiles & Roquettes',
-  particles_fx: '✨ Particules & Fumée',
-  explosions_fx: '💥 Explosions HD',
-  floating_damages: '🔢 Dégâts Flottants',
-  // Visée & Placement
-  aim_guides: '🎯 Guides de Visée & Trajectoires',
-  placement_ghost: '👤 Fantôme de Placement',
-  // Océan & Débogage
-  ocean_waves: '🌊 Vagues Océaniques Avant-Plan',
-  debug_hitboxes: '📐 Hitboxes Debug',
+import {
+  RENDER_PASS_LABELS,
+  RenderPassMetric,
+  FrameLogEntry,
+  ReactComponentPerf,
+  FpsDistribution,
+  EnvironmentMetrics,
+  CpuGpuBreakdown,
+  PerfCaptureReport,
+} from './perf/perfTypes';
+import {
+  CaptureSessionState,
+  startCaptureSession,
+  finishCaptureSession,
+} from './perf/captureSession';
+
+export {
+  RENDER_PASS_LABELS,
+};
+export type {
+  RenderPassMetric,
+  FrameLogEntry,
+  ReactComponentPerf,
+  FpsDistribution,
+  EnvironmentMetrics,
+  CpuGpuBreakdown,
+  PerfCaptureReport,
 };
 
-export interface RenderPassMetric {
-  passId: string;
-  label: string;
-  totalDurationMs: number;
-  avgDurationMs: number;
-  maxDurationMs: number;
-  percentOfRender: number;
-  callCount: number;
-}
-
-export interface FrameLogEntry {
-  frameId: number;
-  timeOffsetMs: number;
-  frameIntervalMs: number;
-  renderDurationMs: number;
-  physicsDurationMs: number;
-  reactRenderDurationMs: number;
-  cpuJsMs: number;
-  gpuRasterMs: number;
-  realIdleWaitMs: number;
-  browserWaitMs: number;
-  fpsInstant: number;
-  isJank: boolean;
-  isCriticalJank: boolean;
-  memoryMB: number | null;
-  entities: {
-    slugs: number;
-    livingSlugs: number;
-    projectiles: number;
-    explosions: number;
-    particles: number;
-    mines: number;
-    crates: number;
-  };
-  renderPasses?: Record<string, number>;
-}
-
-export interface ReactComponentPerf {
-  componentId: string;
-  renderCount: number;
-  totalDurationMs: number;
-  avgDurationMs: number;
-  maxDurationMs: number;
-}
-
-export interface FpsDistribution {
-  fps60PlusCount: number;
-  fps60PlusPercent: number;
-  fps50to59Count: number;
-  fps50to59Percent: number;
-  fps30to49Count: number;
-  fps30to49Percent: number;
-  fpsBelow30Count: number;
-  fpsBelow30Percent: number;
-}
-
-export interface EnvironmentMetrics {
-  dpr: number;
-  dprBg?: number;
-  dprAction?: number;
-  screenWidth: number;
-  screenHeight: number;
-  windowInnerWidth: number;
-  windowInnerHeight: number;
-  isWindowFocused: boolean;
-  isTabVisible: boolean;
-  hardwareConcurrency: number;
-  deviceMemoryGB: number | null;
-  gpuRenderer: string;
-  gpuVendor: string;
-  framePacingJitterMs: number;
-  smoothnessScore: number;
-  avgEventLoopLagMs: number;
-  maxEventLoopLagMs: number;
-  longTasksCount: number;
-  longTasksTotalMs: number;
-  heapSizeLimitMB: number | null;
-}
-
-export interface CpuGpuBreakdown {
-  avgCpuJsMs: number;
-  cpuJsPercent: number;
-  avgGpuRasterMs: number;
-  gpuRasterPercent: number;
-  avgRealIdleMs: number;
-  realIdlePercent: number;
-}
-
-export interface PerfCaptureReport {
-  durationMs: number;
-  totalFrames: number;
-  avgFps: number;
-  minFps: number;
-  maxFps: number;
-  p1LowFps: number;
-  avgFrameIntervalMs: number;
-  avgRenderDurationMs: number;
-  maxRenderDurationMs: number;
-  avgPhysicsDurationMs: number;
-  maxPhysicsDurationMs: number;
-  totalPhysicsTicks: number;
-  totalReactRenders: number;
-  avgReactRenderMs: number;
-  maxReactRenderMs: number;
-  avgBrowserWaitMs: number;
-  browserWaitPercent: number;
-  cpuGpuBreakdown: CpuGpuBreakdown;
-  fpsDistribution: FpsDistribution;
-  environment: EnvironmentMetrics;
-  diagnosticVerdict: string;
-  reactComponents: ReactComponentPerf[];
-  renderPasses: RenderPassMetric[];
-  topBottleneckPass: RenderPassMetric | null;
-  jankFrameCount: number;
-  criticalJankCount: number;
-  jankPercent: number;
-  memoryStartMB: number | null;
-  memoryEndMB: number | null;
-  memoryDeltaMB: number | null;
-  frames: FrameLogEntry[];
-  topWorstFrames: FrameLogEntry[];
-}
-
 class PerformanceTracker {
-  private isCapturing = false;
-  private captureStartTime = 0;
-  private capturePlannedMs = 5000;
-  private capturedFrames: FrameLogEntry[] = [];
-  private nextFrameId = 1;
+  private sessionState: CaptureSessionState = {
+    isCapturing: false,
+    captureStartTime: 0,
+    capturePlannedMs: 5000,
+    capturedFrames: [],
+    nextFrameId: 1,
+    lastReport: null,
+    memoryStartMB: null,
+    longTasksCount: 0,
+    longTasksTotalMs: 0,
+    longTaskObserver: null,
+    eventLoopLags: [],
+    eventLoopTimerId: null,
+    physicsTickCount: 0,
+    sumPhysicsDurationMs: 0,
+    maxPhysicsDurationMs: 0,
+    currentFrameReactDurationMs: 0,
+    totalReactRendersCount: 0,
+    sumReactDurationMs: 0,
+    maxReactDurationMs: 0,
+    reactStatsMap: new Map(),
+    currentFramePasses: {},
+    renderPassStatsMap: new Map(),
+  };
+
   private lastRafTime = 0;
   private captureListeners: ((report: PerfCaptureReport | null, remainingSeconds: number) => void)[] = [];
-  private lastReport: PerfCaptureReport | null = null;
-  private memoryStartMB: number | null = null;
-
-  // Environment & Diagnostic Tracking
-  private longTasksCount = 0;
-  private longTasksTotalMs = 0;
-  private longTaskObserver: PerformanceObserver | null = null;
-  private eventLoopLags: number[] = [];
-  private eventLoopTimerId: any = null;
-
-  // Physics Profiling
-  private lastPhysicsDurationMs = 0;
-  private physicsTickCount = 0;
-  private sumPhysicsDurationMs = 0;
-  private maxPhysicsDurationMs = 0;
-
-  // React Re-render Profiling
-  private currentFrameReactDurationMs = 0;
-  private totalReactRendersCount = 0;
-  private sumReactDurationMs = 0;
-  private maxReactDurationMs = 0;
-  private reactStatsMap = new Map<string, { count: number; totalMs: number; maxMs: number }>();
-
-  // Render Passes Profiling
-  private currentFramePasses: Record<string, number> = {};
-  private renderPassStatsMap = new Map<string, { count: number; totalMs: number; maxMs: number }>();
   public liveTopPasses: { id: string; label: string; ms: number }[] = [];
 
   // In-Game Permanent Zero-Cost FPS HUD Toggle
@@ -205,6 +72,7 @@ class PerformanceTracker {
   public liveDpr = 1.0;
   public liveBgDpr = 1.0;
   public liveActionDpr = 1.0;
+  private lastSampledIdleMs = 0;
 
   public setLiveDprs(bgDpr: number, actionDpr: number): void {
     this.liveBgDpr = bgDpr;
@@ -218,26 +86,26 @@ class PerformanceTracker {
   }
 
   public recordPhysicsTick(durationMs: number): void {
-    this.lastPhysicsDurationMs = Math.round(durationMs * 100) / 100;
-    this.currentPhysicsDurationMs = this.lastPhysicsDurationMs;
+    const rounded = Math.round(durationMs * 100) / 100;
+    this.currentPhysicsDurationMs = rounded;
 
-    if (this.isCapturing) {
-      this.physicsTickCount++;
-      this.sumPhysicsDurationMs += durationMs;
-      this.maxPhysicsDurationMs = Math.max(this.maxPhysicsDurationMs, durationMs);
+    if (this.sessionState.isCapturing) {
+      this.sessionState.physicsTickCount++;
+      this.sessionState.sumPhysicsDurationMs += durationMs;
+      this.sessionState.maxPhysicsDurationMs = Math.max(this.sessionState.maxPhysicsDurationMs, durationMs);
     }
   }
 
   public recordRenderPass(passId: string, durationMs: number): void {
     const roundedMs = Math.round(durationMs * 1000) / 1000;
-    this.currentFramePasses[passId] = roundedMs;
+    this.sessionState.currentFramePasses[passId] = roundedMs;
 
-    if (this.isCapturing) {
-      const existing = this.renderPassStatsMap.get(passId) || { count: 0, totalMs: 0, maxMs: 0 };
+    if (this.sessionState.isCapturing) {
+      const existing = this.sessionState.renderPassStatsMap.get(passId) || { count: 0, totalMs: 0, maxMs: 0 };
       existing.count++;
       existing.totalMs += durationMs;
       existing.maxMs = Math.max(existing.maxMs, durationMs);
-      this.renderPassStatsMap.set(passId, existing);
+      this.sessionState.renderPassStatsMap.set(passId, existing);
     }
   }
 
@@ -246,28 +114,27 @@ class PerformanceTracker {
     phase: 'mount' | 'update' | 'nested-update',
     actualDuration: number
   ): void {
-    this.currentFrameReactDurationMs += actualDuration;
+    this.sessionState.currentFrameReactDurationMs += actualDuration;
     this.currentReactDurationMs = Math.round(actualDuration * 100) / 100;
 
-    if (this.isCapturing) {
+    if (this.sessionState.isCapturing) {
       const isActualWork = phase === 'mount' || actualDuration > 0.02;
       if (isActualWork) {
-        this.totalReactRendersCount++;
+        this.sessionState.totalReactRendersCount++;
       }
-      this.sumReactDurationMs += actualDuration;
-      this.maxReactDurationMs = Math.max(this.maxReactDurationMs, actualDuration);
+      this.sessionState.sumReactDurationMs += actualDuration;
+      this.sessionState.maxReactDurationMs = Math.max(this.sessionState.maxReactDurationMs, actualDuration);
 
-      const existing = this.reactStatsMap.get(componentId) || { count: 0, totalMs: 0, maxMs: 0 };
+      const existing = this.sessionState.reactStatsMap.get(componentId) || { count: 0, totalMs: 0, maxMs: 0 };
       if (isActualWork) {
         existing.count++;
       }
       existing.totalMs += actualDuration;
       existing.maxMs = Math.max(existing.maxMs, actualDuration);
-      this.reactStatsMap.set(componentId, existing);
+      this.sessionState.reactStatsMap.set(componentId, existing);
     }
   }
 
-  // React Profiler onRender standard callback
   public onReactRender = (
     id: string,
     phase: 'mount' | 'update' | 'nested-update',
@@ -276,7 +143,6 @@ class PerformanceTracker {
     this.recordReactRender(id, phase, actualDuration);
   };
 
-  // Track each frame inside requestAnimationFrame
   public markFrame(
     renderDurationMs: number,
     entities: {
@@ -299,11 +165,10 @@ class PerformanceTracker {
     this.currentFrameTimeMs = Math.round(frameIntervalMs * 10) / 10;
     this.currentRenderDurationMs = Math.round(renderDurationMs * 100) / 100;
 
-    const reactDuration = Math.round(this.currentFrameReactDurationMs * 100) / 100;
-    this.currentFrameReactDurationMs = 0; // reset for next frame
+    const reactDuration = Math.round(this.sessionState.currentFrameReactDurationMs * 100) / 100;
+    this.sessionState.currentFrameReactDurationMs = 0;
 
-    // Update real-time live top 3 slowest passes
-    const passEntries = Object.entries(this.currentFramePasses).map(([id, ms]) => ({
+    const passEntries = Object.entries(this.sessionState.currentFramePasses).map(([id, ms]) => ({
       id,
       label: RENDER_PASS_LABELS[id] || id,
       ms,
@@ -311,12 +176,12 @@ class PerformanceTracker {
     passEntries.sort((a, b) => b.ms - a.ms);
     this.liveTopPasses = passEntries.slice(0, 3);
 
-    const framePasses = { ...this.currentFramePasses };
-    this.currentFramePasses = {}; // reset for next frame
+    const framePasses = { ...this.sessionState.currentFramePasses };
+    this.sessionState.currentFramePasses = {};
 
-    if (!this.isCapturing) return;
+    if (!this.sessionState.isCapturing) return;
 
-    const timeOffsetMs = Math.round(now - this.captureStartTime);
+    const timeOffsetMs = Math.round(now - this.sessionState.captureStartTime);
     const isJank = frameIntervalMs > 20.0;
     const isCriticalJank = frameIntervalMs > 33.3;
 
@@ -326,9 +191,7 @@ class PerformanceTracker {
       memoryMB = Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
     }
 
-    const cpuJsMs = Math.round((renderDurationMs + this.lastPhysicsDurationMs + reactDuration) * 100) / 100;
-    
-    // Sample real idle remaining via requestIdleCallback
+    const cpuJsMs = Math.round((renderDurationMs + this.currentPhysicsDurationMs + reactDuration) * 100) / 100;
     const sampledIdle = this.lastSampledIdleMs;
     const maxPossibleIdle = Math.max(0, frameIntervalMs - cpuJsMs);
     const realIdleWaitMs = Math.min(sampledIdle > 0 ? sampledIdle : (frameIntervalMs > 15 ? Math.max(0, 16.6 - cpuJsMs - 4) : 0), maxPossibleIdle);
@@ -343,12 +206,12 @@ class PerformanceTracker {
       } catch {}
     }
 
-    const frameEntry: FrameLogEntry = {
-      frameId: this.nextFrameId++,
+    this.sessionState.capturedFrames.push({
+      frameId: this.sessionState.nextFrameId++,
       timeOffsetMs,
       frameIntervalMs: Math.round(frameIntervalMs * 100) / 100,
       renderDurationMs: Math.round(renderDurationMs * 100) / 100,
-      physicsDurationMs: this.lastPhysicsDurationMs,
+      physicsDurationMs: this.currentPhysicsDurationMs,
       reactRenderDurationMs: reactDuration,
       cpuJsMs,
       gpuRasterMs,
@@ -360,348 +223,25 @@ class PerformanceTracker {
       memoryMB,
       entities: { ...entities },
       renderPasses: framePasses,
-    };
+    });
 
-    this.capturedFrames.push(frameEntry);
-
-    if (timeOffsetMs >= this.capturePlannedMs) {
-      this.finishCapture();
+    if (timeOffsetMs >= this.sessionState.capturePlannedMs) {
+      finishCaptureSession(
+        this.sessionState,
+        (rep) => this.notifyFinished(rep),
+        () => ({ bgDpr: this.liveBgDpr, actionDpr: this.liveActionDpr })
+      );
     }
   }
-
-  private lastSampledIdleMs = 0;
 
   public startCapture(durationSeconds: number = 5): void {
-    if (this.isCapturing) return;
-    this.isCapturing = true;
-    this.capturePlannedMs = durationSeconds * 1000;
-    this.captureStartTime = performance.now();
-    this.capturedFrames = [];
-    this.nextFrameId = 1;
-    this.lastReport = null;
-    this.lastSampledIdleMs = 0;
-
-    this.longTasksCount = 0;
-    this.longTasksTotalMs = 0;
-    this.eventLoopLags = [];
-
-    // Long Tasks Observer
-    try {
-      if (typeof PerformanceObserver !== 'undefined' && PerformanceObserver.supportedEntryTypes?.includes('longtask')) {
-        this.longTaskObserver = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            this.longTasksCount++;
-            this.longTasksTotalMs += entry.duration;
-          }
-        });
-        this.longTaskObserver.observe({ entryTypes: ['longtask'] });
-      }
-    } catch {
-      this.longTaskObserver = null;
-    }
-
-    // Event Loop Lag Sampler (Measures main thread queue congestion)
-    let lastLagCheck = performance.now();
-    this.eventLoopTimerId = setInterval(() => {
-      const nowLag = performance.now();
-      const delay = nowLag - lastLagCheck - 50; // Expected 50ms interval
-      if (delay > 0) {
-        this.eventLoopLags.push(delay);
-      }
-      lastLagCheck = nowLag;
-    }, 50);
-
-    this.physicsTickCount = 0;
-    this.sumPhysicsDurationMs = 0;
-    this.maxPhysicsDurationMs = 0;
-
-    this.currentFrameReactDurationMs = 0;
-    this.totalReactRendersCount = 0;
-    this.sumReactDurationMs = 0;
-    this.maxReactDurationMs = 0;
-    this.reactStatsMap.clear();
-
-    this.currentFramePasses = {};
-    this.renderPassStatsMap.clear();
-
-    const mem = (performance as any)?.memory;
-    this.memoryStartMB = mem?.usedJSHeapSize
-      ? Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10
-      : null;
-
-    let remaining = durationSeconds;
-    this.notifyProgress(remaining);
-
-    const timer = setInterval(() => {
-      remaining--;
-      if (remaining <= 0 || !this.isCapturing) {
-        clearInterval(timer);
-        if (this.isCapturing) {
-          this.finishCapture();
-        }
-      } else {
-        this.notifyProgress(remaining);
-      }
-    }, 1000);
-  }
-
-  private finishCapture(): void {
-    if (!this.isCapturing) return;
-    this.isCapturing = false;
-
-    if (this.eventLoopTimerId) {
-      clearInterval(this.eventLoopTimerId);
-      this.eventLoopTimerId = null;
-    }
-    if (this.longTaskObserver) {
-      try {
-        this.longTaskObserver.disconnect();
-      } catch {}
-      this.longTaskObserver = null;
-    }
-
-    const actualDurationMs = Math.round(performance.now() - this.captureStartTime);
-
-    const frames = [...this.capturedFrames];
-    const totalFrames = frames.length;
-
-    let sumFps = 0;
-    let minFps = 999;
-    let maxFps = 0;
-    let sumInterval = 0;
-    let minInterval = 999;
-    let sumRender = 0;
-    let maxRender = 0;
-    let sumCpuJs = 0;
-    let sumGpuRaster = 0;
-    let sumRealIdle = 0;
-    let sumBrowserWait = 0;
-    let jankCount = 0;
-    let criticalJankCount = 0;
-
-    const fpsList: number[] = [];
-
-    for (const f of frames) {
-      sumFps += f.fpsInstant;
-      minFps = Math.min(minFps, f.fpsInstant);
-      maxFps = Math.max(maxFps, f.fpsInstant);
-      sumInterval += f.frameIntervalMs;
-      minInterval = Math.min(minInterval, f.frameIntervalMs);
-      sumRender += f.renderDurationMs;
-      maxRender = Math.max(maxRender, f.renderDurationMs);
-      sumCpuJs += f.cpuJsMs;
-      sumGpuRaster += f.gpuRasterMs;
-      sumRealIdle += f.realIdleWaitMs;
-      sumBrowserWait += f.browserWaitMs;
-      if (f.isJank) jankCount++;
-      if (f.isCriticalJank) criticalJankCount++;
-      fpsList.push(f.fpsInstant);
-    }
-
-    fpsList.sort((a, b) => a - b);
-    const p1Index = Math.max(0, Math.floor(fpsList.length * 0.01));
-    const p1LowFps = fpsList.length > 0 ? fpsList[p1Index] : 0;
-
-    const mem = (performance as any)?.memory;
-    const memoryEndMB = mem?.usedJSHeapSize
-      ? Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10
-      : null;
-    const memoryDeltaMB =
-      this.memoryStartMB !== null && memoryEndMB !== null
-        ? Math.round((memoryEndMB - this.memoryStartMB) * 10) / 10
-        : null;
-    const heapSizeLimitMB = mem?.jsHeapSizeLimit
-      ? Math.round((mem.jsHeapSizeLimit / (1024 * 1024)) * 10) / 10
-      : null;
-
-    // Sort worst frames by frame interval
-    const topWorstFrames = [...frames]
-      .sort((a, b) => b.frameIntervalMs - a.frameIntervalMs)
-      .slice(0, 15);
-
-    const avgPhysicsDurationMs =
-      this.physicsTickCount > 0
-        ? Math.round((this.sumPhysicsDurationMs / this.physicsTickCount) * 100) / 100
-        : 0;
-
-    const avgReactRenderMs =
-      this.totalReactRendersCount > 0
-        ? Math.round((this.sumReactDurationMs / this.totalReactRendersCount) * 100) / 100
-        : 0;
-
-    const avgRenderDurationMs = totalFrames > 0 ? Math.round((sumRender / totalFrames) * 100) / 100 : 0;
-    const avgFrameIntervalMs = totalFrames > 0 ? Math.round((sumInterval / totalFrames) * 10) / 10 : 0;
-    const avgBrowserWaitMs = totalFrames > 0 ? Math.round((sumBrowserWait / totalFrames) * 10) / 10 : 0;
-    const browserWaitPercent = sumInterval > 0 ? Math.round((sumBrowserWait / sumInterval) * 1000) / 10 : 0;
-
-    // Real CPU vs GPU vs Idle Breakdown
-    const avgCpuJsMs = totalFrames > 0 ? Math.round((sumCpuJs / totalFrames) * 100) / 100 : 0;
-    const cpuJsPercent = sumInterval > 0 ? Math.round((sumCpuJs / sumInterval) * 1000) / 10 : 0;
-    const avgGpuRasterMs = totalFrames > 0 ? Math.round((sumGpuRaster / totalFrames) * 100) / 100 : 0;
-    const gpuRasterPercent = sumInterval > 0 ? Math.round((sumGpuRaster / sumInterval) * 1000) / 10 : 0;
-    const avgRealIdleMs = totalFrames > 0 ? Math.round((sumRealIdle / totalFrames) * 100) / 100 : 0;
-    const realIdlePercent = sumInterval > 0 ? Math.round((sumRealIdle / sumInterval) * 1000) / 10 : 0;
-
-    const cpuGpuBreakdown: CpuGpuBreakdown = {
-      avgCpuJsMs,
-      cpuJsPercent,
-      avgGpuRasterMs,
-      gpuRasterPercent,
-      avgRealIdleMs,
-      realIdlePercent,
-    };
-
-    // Compute FPS Distribution Buckets
-    let fps60Plus = 0;
-    let fps50to59 = 0;
-    let fps30to49 = 0;
-    let fpsBelow30 = 0;
-    for (const f of frames) {
-      if (f.fpsInstant >= 58) fps60Plus++;
-      else if (f.fpsInstant >= 50) fps50to59++;
-      else if (f.fpsInstant >= 30) fps30to49++;
-      else fpsBelow30++;
-    }
-
-    const fpsDistribution: FpsDistribution = {
-      fps60PlusCount: fps60Plus,
-      fps60PlusPercent: totalFrames > 0 ? Math.round((fps60Plus / totalFrames) * 1000) / 10 : 0,
-      fps50to59Count: fps50to59,
-      fps50to59Percent: totalFrames > 0 ? Math.round((fps50to59 / totalFrames) * 1000) / 10 : 0,
-      fps30to49Count: fps30to49,
-      fps30to49Percent: totalFrames > 0 ? Math.round((fps30to49 / totalFrames) * 1000) / 10 : 0,
-      fpsBelow30Count: fpsBelow30,
-      fpsBelow30Percent: totalFrames > 0 ? Math.round((fpsBelow30 / totalFrames) * 1000) / 10 : 0,
-    };
-
-    // Calculate Frame Pacing Jitter (Standard Deviation of Frame Interval)
-    let varianceSum = 0;
-    let inTargetWindowCount = 0;
-    for (const f of frames) {
-      const diff = f.frameIntervalMs - avgFrameIntervalMs;
-      varianceSum += diff * diff;
-      if (Math.abs(diff) <= 3.5) {
-        inTargetWindowCount++;
-      }
-    }
-    const framePacingJitterMs = totalFrames > 0 ? Math.round(Math.sqrt(varianceSum / totalFrames) * 100) / 100 : 0;
-    const smoothnessScore = totalFrames > 0 ? Math.round((inTargetWindowCount / totalFrames) * 1000) / 10 : 100;
-
-    // Detect GPU Hardware via WebGL debug info
-    const gpuInfo = this.getGpuHardwareInfo();
-
-    const reactComponents: ReactComponentPerf[] = [];
-    this.reactStatsMap.forEach((val, key) => {
-      reactComponents.push({
-        componentId: key,
-        renderCount: val.count,
-        totalDurationMs: Math.round(val.totalMs * 100) / 100,
-        avgDurationMs: Math.round((val.totalMs / val.count) * 100) / 100,
-        maxDurationMs: Math.round(val.maxMs * 100) / 100,
-      });
-    });
-    reactComponents.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
-
-    // Compute Render Passes breakdown
-    const totalRenderSum = sumRender > 0 ? sumRender : 1;
-    const renderPasses: RenderPassMetric[] = [];
-    this.renderPassStatsMap.forEach((val, key) => {
-      const avgMs = Math.round((val.totalMs / val.count) * 100) / 100;
-      const maxMs = Math.round(val.maxMs * 100) / 100;
-      const percentOfRender = Math.round((val.totalMs / totalRenderSum) * 1000) / 10;
-      renderPasses.push({
-        passId: key,
-        label: RENDER_PASS_LABELS[key] || key,
-        totalDurationMs: Math.round(val.totalMs * 100) / 100,
-        avgDurationMs: avgMs,
-        maxDurationMs: maxMs,
-        percentOfRender,
-        callCount: val.count,
-      });
-    });
-    renderPasses.sort((a, b) => b.totalDurationMs - a.totalDurationMs);
-    const topBottleneckPass = renderPasses.length > 0 ? renderPasses[0] : null;
-
-    const avgLag =
-      this.eventLoopLags.length > 0
-        ? Math.round((this.eventLoopLags.reduce((a, b) => a + b, 0) / this.eventLoopLags.length) * 10) / 10
-        : 0;
-    const maxLag =
-      this.eventLoopLags.length > 0 ? Math.round(Math.max(...this.eventLoopLags) * 10) / 10 : 0;
-
-    const environment: EnvironmentMetrics = {
-      dpr: this.liveBgDpr || (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
-      dprBg: this.liveBgDpr,
-      dprAction: this.liveActionDpr,
-      screenWidth: typeof window !== 'undefined' ? window.screen?.width || 0 : 0,
-      screenHeight: typeof window !== 'undefined' ? window.screen?.height || 0 : 0,
-      windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth || 0 : 0,
-      windowInnerHeight: typeof window !== 'undefined' ? window.innerHeight || 0 : 0,
-      isWindowFocused: typeof document !== 'undefined' ? document.hasFocus() : true,
-      isTabVisible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
-      hardwareConcurrency: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4,
-      deviceMemoryGB: typeof (navigator as any)?.deviceMemory === 'number' ? (navigator as any).deviceMemory : null,
-      gpuRenderer: gpuInfo.renderer,
-      gpuVendor: gpuInfo.vendor,
-      framePacingJitterMs,
-      smoothnessScore,
-      avgEventLoopLagMs: avgLag,
-      maxEventLoopLagMs: maxLag,
-      longTasksCount: this.longTasksCount,
-      longTasksTotalMs: Math.round(this.longTasksTotalMs * 10) / 10,
-      heapSizeLimitMB,
-    };
-
-    let diagnosticVerdict = '';
-    const avgFps = totalFrames > 0 ? Math.round((sumFps / totalFrames) * 10) / 10 : 0;
-
-    if (avgGpuRasterMs >= 6.0) {
-      diagnosticVerdict = `Goulot d'étranglement GPU : La carte graphique (${gpuInfo.renderer}) passe ~${avgGpuRasterMs}ms par frame (${gpuRasterPercent}%) à peindre les calques Canvas 2D. Le CPU JS est ultra-rapide (${avgCpuJsMs}ms / ${cpuJsPercent}%), mais la charge graphique limite le framerate à ${avgFps} FPS.`;
-    } else if (avgCpuJsMs >= 8.0) {
-      diagnosticVerdict = `Goulot d'étranglement CPU : Le code JavaScript prend ${avgCpuJsMs}ms par frame. La passe la plus lourde est ${topBottleneckPass?.label || 'Inconnue'}.`;
-    } else {
-      diagnosticVerdict = `Performance équilibrée : CPU JS ${avgCpuJsMs}ms (${cpuJsPercent}%), Rendu GPU ${avgGpuRasterMs}ms (${gpuRasterPercent}%), Repos VSync ${avgRealIdleMs}ms (${realIdlePercent}%) à ${avgFps} FPS.`;
-    }
-
-    const report: PerfCaptureReport = {
-      durationMs: actualDurationMs,
-      totalFrames,
-      avgFps: totalFrames > 0 ? Math.round((sumFps / totalFrames) * 10) / 10 : 0,
-      minFps: minFps === 999 ? 0 : minFps,
-      maxFps,
-      p1LowFps,
-      avgFrameIntervalMs,
-      avgRenderDurationMs,
-      maxRenderDurationMs: Math.round(maxRender * 100) / 100,
-      avgPhysicsDurationMs,
-      maxPhysicsDurationMs: Math.round(this.maxPhysicsDurationMs * 100) / 100,
-      totalPhysicsTicks: this.physicsTickCount,
-      totalReactRenders: this.totalReactRendersCount,
-      avgReactRenderMs,
-      maxReactRenderMs: Math.round(this.maxReactDurationMs * 100) / 100,
-      avgBrowserWaitMs,
-      browserWaitPercent,
-      cpuGpuBreakdown,
-      fpsDistribution,
-      environment,
-      diagnosticVerdict,
-      reactComponents,
-      renderPasses,
-      topBottleneckPass,
-      jankFrameCount: jankCount,
-      criticalJankCount,
-      jankPercent: totalFrames > 0 ? Math.round((jankCount / totalFrames) * 1000) / 10 : 0,
-      memoryStartMB: this.memoryStartMB,
-      memoryEndMB,
-      memoryDeltaMB,
-      frames,
-      topWorstFrames,
-    };
-
-    this.lastReport = report;
-    for (const listener of this.captureListeners) {
-      listener(report, 0);
-    }
+    startCaptureSession(
+      this.sessionState,
+      durationSeconds,
+      (rem) => this.notifyProgress(rem),
+      (rep) => this.notifyFinished(rep),
+      () => ({ bgDpr: this.liveBgDpr, actionDpr: this.liveActionDpr })
+    );
   }
 
   private notifyProgress(secondsRemaining: number): void {
@@ -710,12 +250,18 @@ class PerformanceTracker {
     }
   }
 
+  private notifyFinished(report: PerfCaptureReport): void {
+    for (const listener of this.captureListeners) {
+      listener(report, 0);
+    }
+  }
+
   public onCaptureUpdate(
     cb: (report: PerfCaptureReport | null, progressSecondsRemaining: number) => void
   ): () => void {
     this.captureListeners.push(cb);
-    if (this.lastReport) {
-      cb(this.lastReport, 0);
+    if (this.sessionState.lastReport) {
+      cb(this.sessionState.lastReport, 0);
     }
     return () => {
       this.captureListeners = this.captureListeners.filter((l) => l !== cb);
@@ -723,11 +269,11 @@ class PerformanceTracker {
   }
 
   public getLastReport(): PerfCaptureReport | null {
-    return this.lastReport;
+    return this.sessionState.lastReport;
   }
 
   public isRecording(): boolean {
-    return this.isCapturing;
+    return this.sessionState.isCapturing;
   }
 
   public getFpsHudEnabled(): boolean {
@@ -776,28 +322,6 @@ class PerformanceTracker {
     return () => {
       this.fpsHudAdvancedListeners = this.fpsHudAdvancedListeners.filter((l) => l !== listener);
     };
-  }
-
-  private getGpuHardwareInfo(): { renderer: string; vendor: string } {
-    if (typeof document === 'undefined') return { renderer: 'Inconnu (SSR)', vendor: 'Inconnu (SSR)' };
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || (canvas.getContext('experimental-webgl') as any);
-      if (!gl) return { renderer: 'Non disponible (Software)', vendor: 'Non disponible' };
-      const dbgRenderInfo = gl.getExtension('WEBGL_debug_renderer_info');
-      if (dbgRenderInfo) {
-        return {
-          renderer: gl.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL) || 'Inconnu',
-          vendor: gl.getParameter(dbgRenderInfo.UNMASKED_VENDOR_WEBGL) || 'Inconnu',
-        };
-      }
-      return {
-        renderer: gl.getParameter(gl.RENDERER) || 'Inconnu',
-        vendor: gl.getParameter(gl.VENDOR) || 'Inconnu',
-      };
-    } catch {
-      return { renderer: 'Accès restreint par le navigateur', vendor: 'Inconnu' };
-    }
   }
 }
 
