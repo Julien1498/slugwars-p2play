@@ -453,9 +453,10 @@ const TOTEM_EYES = createPath((p) => {
   addCircle(p, 5, -22, 2.2);
 });
 
-const TOTEM_PUPILS = createPath((p) => {
+const TOTEM_BLACK_DETAILS = createPath((p) => {
   addCircle(p, -5, -22, 1);
   addCircle(p, 5, -22, 1);
+  p.rect(-6, -9, 12, 3);
 });
 
 const TOTEM_NOSE = createPath((p) => {
@@ -464,10 +465,6 @@ const TOTEM_NOSE = createPath((p) => {
   p.lineTo(4, -13);
   p.lineTo(-4, -13);
   p.closePath();
-});
-
-const TOTEM_MOUTH = createPath((p) => {
-  p.rect(-6, -9, 12, 3);
 });
 
 const TOTEM_MOSS = createPath((p) => {
@@ -482,15 +479,13 @@ const TOTEM_FISSURE = createPath((p) => {
 });
 
 // 8. Cactus
-const CACTUS_TRUNK = createPath((p) => {
+const CACTUS_FULL_BODY = createPath((p) => {
   if (p.roundRect) {
     p.roundRect(-5.5, -36, 11, 36, [5, 5, 0, 0]);
   } else {
     p.rect(-5.5, -36, 11, 36);
   }
-});
-
-const CACTUS_LEFT_ARM = createPath((p) => {
+  // Left arm
   p.moveTo(-5.5, -18);
   p.lineTo(-11, -18);
   p.lineTo(-11, -29);
@@ -498,9 +493,7 @@ const CACTUS_LEFT_ARM = createPath((p) => {
   p.lineTo(-6, -14);
   p.lineTo(-5.5, -14);
   p.closePath();
-});
-
-const CACTUS_RIGHT_ARM = createPath((p) => {
+  // Right arm
   p.moveTo(5.5, -22);
   p.lineTo(11, -22);
   p.lineTo(11, -33);
@@ -550,23 +543,42 @@ const CRYSTAL_SHARDS_DATA = [
   { x: 10, y: -5, h: 13, w: 4.5, angle: 0.42 },
 ];
 
-const CRYSTAL_SHARD_PATHS = CRYSTAL_SHARDS_DATA.map((s) =>
-  createPath((p) => {
-    p.moveTo(-s.w / 2, 0);
-    p.lineTo(-s.w / 2, -s.h * 0.7);
-    p.lineTo(0, -s.h);
-    p.lineTo(s.w / 2, -s.h * 0.7);
-    p.lineTo(s.w / 2, 0);
+const CRYSTAL_ALL_SHARDS = createPath((p) => {
+  for (const s of CRYSTAL_SHARDS_DATA) {
+    const cos = Math.cos(s.angle);
+    const sin = Math.sin(s.angle);
+    const tPt = (lx: number, ly: number) => [
+      lx * cos - ly * sin + s.x,
+      lx * sin + ly * cos + s.y,
+    ];
+    const [p0x, p0y] = tPt(-s.w / 2, 0);
+    const [p1x, p1y] = tPt(-s.w / 2, -s.h * 0.7);
+    const [p2x, p2y] = tPt(0, -s.h);
+    const [p3x, p3y] = tPt(s.w / 2, -s.h * 0.7);
+    const [p4x, p4y] = tPt(s.w / 2, 0);
+    p.moveTo(p0x, p0y);
+    p.lineTo(p1x, p1y);
+    p.lineTo(p2x, p2y);
+    p.lineTo(p3x, p3y);
+    p.lineTo(p4x, p4y);
     p.closePath();
-  })
-);
+  }
+});
 
-const CRYSTAL_SHARD_CRESTS = CRYSTAL_SHARDS_DATA.map((s) =>
-  createPath((p) => {
-    p.moveTo(0, 0);
-    p.lineTo(0, -s.h);
-  })
-);
+const CRYSTAL_ALL_CRESTS = createPath((p) => {
+  for (const s of CRYSTAL_SHARDS_DATA) {
+    const cos = Math.cos(s.angle);
+    const sin = Math.sin(s.angle);
+    const tPt = (lx: number, ly: number) => [
+      lx * cos - ly * sin + s.x,
+      lx * sin + ly * cos + s.y,
+    ];
+    const [p0x, p0y] = tPt(0, 0);
+    const [p1x, p1y] = tPt(0, -s.h);
+    p.moveTo(p0x, p0y);
+    p.lineTo(p1x, p1y);
+  }
+});
 
 const CRYSTAL_GLINTS = createPath((p) => {
   addCircle(p, 0, -22, 1.8);
@@ -607,16 +619,20 @@ const DRUM_CAP = createPath((p) => {
 });
 
 // 11. Lamppost
-const LAMP_BASE = createPath((p) => {
+const LAMP_IRON_STRUCTURE = createPath((p) => {
+  // Base
   p.moveTo(-5, 0);
   p.lineTo(-2, -6);
   p.lineTo(2, -6);
   p.lineTo(5, 0);
   p.closePath();
-});
-
-const LAMP_POLE = createPath((p) => {
+  // Pole
   p.rect(-1.5, -34, 3, 28);
+  // Roof
+  p.moveTo(-7, -35);
+  p.lineTo(0, -40);
+  p.lineTo(7, -35);
+  p.closePath();
 });
 
 const LAMP_BRACKET = createPath((p) => {
@@ -634,13 +650,6 @@ const LAMP_GLASS = createPath((p) => {
   p.lineTo(-6, -35);
   p.lineTo(6, -35);
   p.lineTo(5, -28);
-  p.closePath();
-});
-
-const LAMP_ROOF = createPath((p) => {
-  p.moveTo(-7, -35);
-  p.lineTo(0, -40);
-  p.lineTo(7, -35);
   p.closePath();
 });
 
@@ -832,9 +841,6 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = eyeGlow;
     ctx.fill(TOTEM_EYES);
 
-    ctx.fillStyle = '#09090b';
-    ctx.fill(TOTEM_PUPILS);
-
     ctx.fillStyle = '#475569';
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 1;
@@ -842,7 +848,7 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.stroke(TOTEM_NOSE);
 
     ctx.fillStyle = '#09090b';
-    ctx.fill(TOTEM_MOUTH);
+    ctx.fill(TOTEM_BLACK_DETAILS);
 
     ctx.fillStyle = '#15803d';
     ctx.fill(TOTEM_MOSS);
@@ -851,18 +857,12 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.lineWidth = 0.8;
     ctx.stroke(TOTEM_FISSURE);
   } else if (sprop.type === 'cactus') {
-    // Wild West Saguaro Desert Cactus
+    // Wild West Saguaro Desert Cactus (Micro-batched body)
     ctx.fillStyle = getCactusGrad(ctx);
     ctx.strokeStyle = '#14532d';
     ctx.lineWidth = 1.4;
-    ctx.fill(CACTUS_TRUNK);
-    ctx.stroke(CACTUS_TRUNK);
-
-    ctx.fill(CACTUS_LEFT_ARM);
-    ctx.stroke(CACTUS_LEFT_ARM);
-
-    ctx.fill(CACTUS_RIGHT_ARM);
-    ctx.stroke(CACTUS_RIGHT_ARM);
+    ctx.fill(CACTUS_FULL_BODY);
+    ctx.stroke(CACTUS_FULL_BODY);
 
     ctx.strokeStyle = '#14532d';
     ctx.lineWidth = 0.8;
@@ -874,7 +874,7 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = sprop.variant === 1 ? '#f43f5e' : '#facc15';
     ctx.fill(CACTUS_FLOWERS);
   } else if (sprop.type === 'crystal') {
-    // Luminous Glowing Crystal Geode Cluster
+    // Luminous Glowing Crystal Geode Cluster (Pre-computed micro-batched geometry)
     const isAmethyst = sprop.variant === 0 || sprop.variant === undefined;
     const isCyan = sprop.variant === 1;
     const crystalType: 'amethyst' | 'cyan' | 'emerald' = isAmethyst ? 'amethyst' : isCyan ? 'cyan' : 'emerald';
@@ -885,23 +885,14 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fill(CRYSTAL_BASE);
     ctx.stroke(CRYSTAL_BASE);
 
-    for (let i = 0; i < CRYSTAL_SHARDS_DATA.length; i++) {
-      const s = CRYSTAL_SHARDS_DATA[i];
-      ctx.save();
-      ctx.translate(s.x, s.y);
-      ctx.rotate(s.angle);
+    ctx.fillStyle = getCrystalGrad(ctx, 22, crystalType);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 0.8;
+    ctx.fill(CRYSTAL_ALL_SHARDS);
+    ctx.stroke(CRYSTAL_ALL_SHARDS);
 
-      ctx.fillStyle = getCrystalGrad(ctx, s.h, crystalType);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 0.8;
-      ctx.fill(CRYSTAL_SHARD_PATHS[i]);
-      ctx.stroke(CRYSTAL_SHARD_PATHS[i]);
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.stroke(CRYSTAL_SHARD_CRESTS[i]);
-
-      ctx.restore();
-    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.stroke(CRYSTAL_ALL_CRESTS);
 
     ctx.fillStyle = '#ffffff';
     ctx.fill(CRYSTAL_GLINTS);
@@ -927,17 +918,12 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = '#64748b';
     ctx.fill(DRUM_CAP);
   } else if (sprop.type === 'lamppost') {
-    // Victorian Wrought-Iron Street Lamp
-    ctx.fillStyle = '#27272a';
-    ctx.strokeStyle = '#09090b';
-    ctx.lineWidth = 1.2;
-    ctx.fill(LAMP_BASE);
-    ctx.stroke(LAMP_BASE);
-
+    // Victorian Wrought-Iron Street Lamp (Micro-batched iron structure)
     ctx.fillStyle = '#18181b';
     ctx.strokeStyle = '#09090b';
-    ctx.fill(LAMP_POLE);
-    ctx.stroke(LAMP_POLE);
+    ctx.lineWidth = 1.2;
+    ctx.fill(LAMP_IRON_STRUCTURE);
+    ctx.stroke(LAMP_IRON_STRUCTURE);
 
     ctx.strokeStyle = '#18181b';
     ctx.lineWidth = 1.5;
@@ -951,11 +937,6 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.lineWidth = 1;
     ctx.fill(LAMP_GLASS);
     ctx.stroke(LAMP_GLASS);
-
-    ctx.fillStyle = '#18181b';
-    ctx.strokeStyle = '#09090b';
-    ctx.fill(LAMP_ROOF);
-    ctx.stroke(LAMP_ROOF);
   }
 
   ctx.restore();
