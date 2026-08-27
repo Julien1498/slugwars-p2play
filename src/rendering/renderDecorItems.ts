@@ -63,9 +63,11 @@ export function renderDecorItems(
   decorItems: DecorItem[] | undefined,
   animTime: number,
   viewLeft?: number,
-  viewRight?: number
+  viewRight?: number,
+  cameraScale: number = 1.0
 ) {
   if (!decorItems) return;
+  const isHighDetail = cameraScale >= 0.75;
 
   for (const item of decorItems) {
     if (item.destroyed) continue;
@@ -108,10 +110,12 @@ export function renderDecorItems(
 
       // 3. Alternating Teardrop Tropical Leaves (Single Batch Call for all 5 leaves)
       ctx.fillStyle = '#22c55e';
-      ctx.strokeStyle = '#166534';
-      ctx.lineWidth = 0.8;
       ctx.fill(VINE_ALL_LEAVES);
-      ctx.stroke(VINE_ALL_LEAVES);
+      if (isHighDetail) {
+        ctx.strokeStyle = '#166534';
+        ctx.lineWidth = 0.8;
+        ctx.stroke(VINE_ALL_LEAVES);
+      }
 
       ctx.restore();
     } else if (item.type === 'butterfly') {
@@ -139,9 +143,11 @@ export function renderDecorItems(
       ctx.fill(BUTTERFLY_WINGS);
       ctx.stroke(BUTTERFLY_WINGS);
 
-      // Wing inner pattern spots (Single Batch Call)
-      ctx.fillStyle = '#ffffff';
-      ctx.fill(BUTTERFLY_SPOTS);
+      if (isHighDetail) {
+        // Wing inner pattern spots (Single Batch Call)
+        ctx.fillStyle = '#ffffff';
+        ctx.fill(BUTTERFLY_SPOTS);
+      }
 
       ctx.restore();
 
@@ -149,9 +155,11 @@ export function renderDecorItems(
       ctx.fillStyle = '#18181b';
       ctx.fillRect(-1, -4, 2, 7);
 
-      ctx.strokeStyle = '#18181b';
-      ctx.lineWidth = 0.7;
-      ctx.stroke(BUTTERFLY_ANTENNAE);
+      if (isHighDetail) {
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 0.7;
+        ctx.stroke(BUTTERFLY_ANTENNAE);
+      }
 
       ctx.restore();
     }

@@ -644,7 +644,13 @@ const LAMP_ROOF = createPath((p) => {
   p.closePath();
 });
 
-export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
+export function drawSolidPropVector(
+  ctx: CanvasRenderingContext2D,
+  sprop: SolidProp,
+  _animTime: number = 0,
+  scale: number = 1.0
+) {
+  const isHighDetail = scale >= 0.75;
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
   if (sprop.angleRad) {
@@ -671,24 +677,30 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = '#fef08a';
     ctx.fill(HEDGEHOG_FACE);
 
-    // 5. Pink Cheek Blush
-    ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
-    ctx.fill(HEDGEHOG_BLUSH);
+    if (isHighDetail) {
+      // 5. Pink Cheek Blush
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.6)';
+      ctx.fill(HEDGEHOG_BLUSH);
+    }
 
     // 6. Black Button Nose & Eye
     ctx.fillStyle = '#09090b';
     ctx.fill(HEDGEHOG_NOSE_EYE);
 
-    // 7. Glossy Eye White Sparkle
-    ctx.fillStyle = '#ffffff';
-    ctx.fill(HEDGEHOG_SPARKLE);
+    if (isHighDetail) {
+      // 7. Glossy Eye White Sparkle
+      ctx.fillStyle = '#ffffff';
+      ctx.fill(HEDGEHOG_SPARKLE);
+    }
 
     // 8. Cute Ear
     ctx.fillStyle = '#fde047';
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 1;
     ctx.fill(HEDGEHOG_EAR);
-    ctx.stroke(HEDGEHOG_EAR);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1;
+      ctx.stroke(HEDGEHOG_EAR);
+    }
 
     // 9. Cute Dark Paws on Ground
     ctx.fillStyle = '#542608';
@@ -709,26 +721,32 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     // Eye
     ctx.fillStyle = '#000000';
     ctx.fill(CHICK_EYE);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill(CHICK_SPARKLE);
+    if (isHighDetail) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fill(CHICK_SPARKLE);
+    }
   } else if (sprop.type === 'mushroom') {
     const isPurple = sprop.variant === 1;
     const isGold = sprop.variant === 2;
 
-    // Grass Tufts at Base
-    ctx.fillStyle = '#22c55e';
-    ctx.fill(MUSHROOM_GRASS);
+    if (isHighDetail) {
+      // Grass Tufts at Base
+      ctx.fillStyle = '#22c55e';
+      ctx.fill(MUSHROOM_GRASS);
+    }
 
     // Organic Curved Stem
     ctx.fillStyle = getMushroomStemGrad(ctx);
-    ctx.strokeStyle = '#a16207';
-    ctx.lineWidth = 1.2;
     ctx.fill(MUSHROOM_STEM);
-    ctx.stroke(MUSHROOM_STEM);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#a16207';
+      ctx.lineWidth = 1.2;
+      ctx.stroke(MUSHROOM_STEM);
 
-    // Ring Veil under cap
-    ctx.fillStyle = '#ffffff';
-    ctx.fill(MUSHROOM_VEIL);
+      // Ring Veil under cap
+      ctx.fillStyle = '#ffffff';
+      ctx.fill(MUSHROOM_VEIL);
+    }
 
     // Dark Shadow under Cap Gills
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
@@ -760,22 +778,28 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = getTreeTrunkGrad(ctx);
     ctx.fill(TREE_TRUNK);
 
-    // Wood Bark Texture Lines
-    ctx.strokeStyle = '#27160a';
-    ctx.lineWidth = 1;
-    ctx.stroke(TREE_BARK);
+    if (isHighDetail) {
+      // Wood Bark Texture Lines
+      ctx.strokeStyle = '#27160a';
+      ctx.lineWidth = 1;
+      ctx.stroke(TREE_BARK);
+    }
 
     if (isPine) {
       ctx.fillStyle = '#064e3b'; ctx.fill(PINE_TIER_0);
       ctx.fillStyle = '#047857'; ctx.fill(PINE_TIER_1);
       ctx.fillStyle = '#10b981'; ctx.fill(PINE_TIER_2);
       ctx.fillStyle = '#34d399'; ctx.fill(PINE_TIER_3);
-      ctx.fillStyle = '#78350f'; ctx.fill(PINE_CONES);
+      if (isHighDetail) {
+        ctx.fillStyle = '#78350f'; ctx.fill(PINE_CONES);
+      }
     } else {
       ctx.fillStyle = '#14532d'; ctx.fill(OAK_DARK_CLUSTERS);
       ctx.fillStyle = '#15803d'; ctx.fill(OAK_MID_CLUSTERS);
       ctx.fillStyle = '#22c55e'; ctx.fill(OAK_LIGHT_TOP);
-      ctx.fillStyle = '#ef4444'; ctx.fill(OAK_APPLES);
+      if (isHighDetail) {
+        ctx.fillStyle = '#ef4444'; ctx.fill(OAK_APPLES);
+      }
     }
   } else if (sprop.type === 'bunker') {
     // Fortified Concrete Structure
@@ -799,9 +823,11 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fill(BUNKER_VISOR);
     ctx.stroke(BUNKER_VISOR);
 
-    // Scanning Radar Light inside visor
-    ctx.fillStyle = '#22c55e';
-    ctx.fill(BUNKER_RADAR);
+    if (isHighDetail) {
+      // Scanning Radar Light inside visor
+      ctx.fillStyle = '#22c55e';
+      ctx.fill(BUNKER_RADAR);
+    }
 
     // Yellow/Black Hazard Stripes
     ctx.fillStyle = '#eab308';
@@ -811,12 +837,14 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = '#334155';
     ctx.fill(BUNKER_HATCH);
 
-    ctx.strokeStyle = '#18181b';
-    ctx.lineWidth = 1.2;
-    ctx.stroke(BUNKER_ANTENNA_LINE);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1.2;
+      ctx.stroke(BUNKER_ANTENNA_LINE);
 
-    ctx.fillStyle = '#ef4444';
-    ctx.fill(BUNKER_ANTENNA_TIP);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill(BUNKER_ANTENNA_TIP);
+    }
   } else if (sprop.type === 'totem') {
     // Ancient Mystical Carved Stone Moai
     ctx.fillStyle = getTotemGrad(ctx);
@@ -844,12 +872,14 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fillStyle = '#09090b';
     ctx.fill(TOTEM_MOUTH);
 
-    ctx.fillStyle = '#15803d';
-    ctx.fill(TOTEM_MOSS);
+    if (isHighDetail) {
+      ctx.fillStyle = '#15803d';
+      ctx.fill(TOTEM_MOSS);
 
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 0.8;
-    ctx.stroke(TOTEM_FISSURE);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 0.8;
+      ctx.stroke(TOTEM_FISSURE);
+    }
   } else if (sprop.type === 'cactus') {
     // Wild West Saguaro Desert Cactus
     ctx.fillStyle = getCactusGrad(ctx);
@@ -864,12 +894,14 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fill(CACTUS_RIGHT_ARM);
     ctx.stroke(CACTUS_RIGHT_ARM);
 
-    ctx.strokeStyle = '#14532d';
-    ctx.lineWidth = 0.8;
-    ctx.stroke(CACTUS_RIBS);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#14532d';
+      ctx.lineWidth = 0.8;
+      ctx.stroke(CACTUS_RIBS);
 
-    ctx.fillStyle = '#fef08a';
-    ctx.fill(CACTUS_NEEDLES);
+      ctx.fillStyle = '#fef08a';
+      ctx.fill(CACTUS_NEEDLES);
+    }
 
     ctx.fillStyle = sprop.variant === 1 ? '#f43f5e' : '#facc15';
     ctx.fill(CACTUS_FLOWERS);
@@ -897,14 +929,18 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
       ctx.fill(CRYSTAL_SHARD_PATHS[i]);
       ctx.stroke(CRYSTAL_SHARD_PATHS[i]);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.stroke(CRYSTAL_SHARD_CRESTS[i]);
+      if (isHighDetail) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.stroke(CRYSTAL_SHARD_CRESTS[i]);
+      }
 
       ctx.restore();
     }
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fill(CRYSTAL_GLINTS);
+    if (isHighDetail) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fill(CRYSTAL_GLINTS);
+    }
   } else if (sprop.type === 'oil_drum') {
     // Industrial Rusted Oil / Fuel Drum
     const isRust = sprop.variant === 1;
@@ -914,9 +950,11 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fill(DRUM_BODY);
     ctx.stroke(DRUM_BODY);
 
-    ctx.strokeStyle = '#09090b';
-    ctx.lineWidth = 1.2;
-    ctx.stroke(DRUM_RINGS);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#09090b';
+      ctx.lineWidth = 1.2;
+      ctx.stroke(DRUM_RINGS);
+    }
 
     ctx.fillStyle = '#facc15';
     ctx.fill(DRUM_HAZARD_BAND);
@@ -939,9 +977,11 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
     ctx.fill(LAMP_POLE);
     ctx.stroke(LAMP_POLE);
 
-    ctx.strokeStyle = '#18181b';
-    ctx.lineWidth = 1.5;
-    ctx.stroke(LAMP_BRACKET);
+    if (isHighDetail) {
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke(LAMP_BRACKET);
+    }
 
     ctx.fillStyle = getLampGlowGrad(ctx);
     ctx.fill(LAMP_GLOW_SPHERE);
@@ -971,7 +1011,8 @@ export function renderHDDestructibleProp(
   animTime: number,
   grid: Uint8Array,
   width: number,
-  terrainRevision?: number
+  terrainRevision?: number,
+  scale: number = 1.0
 ) {
   // Check foundation stability: only re-evaluate pixel scan when terrain has actually been modified
   if (terrainRevision !== undefined && (sprop as any)._lastFoundationRev === terrainRevision) {
@@ -1024,7 +1065,7 @@ export function renderHDDestructibleProp(
   }
 
   if (_overlappingCratersBuffer.length === 0) {
-    drawSolidPropVector(ctx, sprop, animTime);
+    drawSolidPropVector(ctx, sprop, animTime, scale);
     return;
   }
 
@@ -1037,7 +1078,7 @@ export function renderHDDestructibleProp(
     ctx.clip(notCircle, 'evenodd');
   }
 
-  drawSolidPropVector(ctx, sprop, animTime);
+  drawSolidPropVector(ctx, sprop, animTime, scale);
   ctx.restore();
 }
 

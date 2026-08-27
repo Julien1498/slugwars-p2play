@@ -1283,7 +1283,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
             if (viewLeft !== undefined && viewRight !== undefined) {
               if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
             }
-            renderHDDestructibleProp(ctx, sprop, curState.craters, curState.explosions, animTime, grid, width, terrain.revision);
+            renderHDDestructibleProp(ctx, sprop, curState.craters, curState.explosions, animTime, grid, width, terrain.revision, totalScale);
           }
         }
       }
@@ -1291,7 +1291,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
       // 4. Decor Items (Butterflies & Foliage), Landmines, Helicopters & Tombstones
       const pDecorStart = performance.now();
-      renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
+      renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight, totalScale);
       perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);
 
       const pMinesStart = performance.now();
