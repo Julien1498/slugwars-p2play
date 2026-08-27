@@ -1021,8 +1021,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }
 
       // Dynamic Resolution Scaling (DRS):
-      // Layer 1 - Background Canvas (Sky, Mountains, Terrain, Props): DRS DPR scales with zoom + 0.05 (clamped between 0.70 and 1.00)
-      const bgDpr = Math.min(1.0, Math.max(0.70, Math.round((zoomRef.current + 0.05) * 100) / 100));
+      // Layer 1 - Background Canvas (Sky, Mountains, Terrain, Props): DRS DPR scales with zoom + 0.07 (clamped between 0.70 and 1.00)
+      const bgDpr = Math.min(1.0, Math.max(0.70, Math.round((zoomRef.current + 0.07) * 100) / 100));
       perfTracker.setLiveDpr(bgDpr);
       const cRect = containerRectRef.current;
 
@@ -1033,8 +1033,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         canvas.height = targetH_bg;
       }
 
-      // Layer 2 - Foreground Action Canvas (Slugs, Weapons, Aiming, Particles, Water waves): Crisp 1.0x DPR
-      const actionDpr = 1.0;
+      // Layer 2 - Foreground Action Canvas (Slugs, Weapons, Aiming, Particles, Water waves): Gentle DRS DPR with zoom + 0.07 (clamped between 0.85 and 1.00)
+      const actionDpr = Math.min(1.0, Math.max(0.85, Math.round((zoomRef.current + 0.07) * 100) / 100));
       const targetW_act = Math.max(100, Math.round(cRect.width * actionDpr));
       const targetH_act = Math.max(100, Math.round(cRect.height * actionDpr));
       if (actionCanvas.width !== targetW_act || actionCanvas.height !== targetH_act) {
