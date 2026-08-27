@@ -1,49 +1,38 @@
 import { SolidProp, CraterRecord, ExplosionEvent } from '../../core/types';
 import { drawTreeProp, drawMushroomProp, drawFlowerProp, drawCactusProp } from './renderVegetationProps';
-import { drawBunkerProp, drawTotemProp, drawOilDrumProp, drawCrystalProp, drawLamppostProp } from './renderStructuralAndMineralProps';
+import { drawBunkerProp, drawTotemProp, drawOilDrumProp, drawLamppostProp } from './renderStructuralProps';
+import { drawCrystalProp } from './renderMineralProps';
 import { drawHedgehogProp, drawChickProp } from './renderCritterProps';
 
-export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, animTime: number = 0) {
+export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
   if (sprop.angleRad) {
     ctx.rotate(sprop.angleRad);
   }
 
-  switch (sprop.type) {
-    case 'hedgehog':
-      drawHedgehogProp(ctx);
-      break;
-    case 'chick':
-      drawChickProp(ctx);
-      break;
-    case 'mushroom':
-      drawMushroomProp(ctx, sprop);
-      break;
-    case 'tree':
-      drawTreeProp(ctx, animTime);
-      break;
-    case 'flower':
-      drawFlowerProp(ctx, animTime);
-      break;
-    case 'bunker':
-      drawBunkerProp(ctx, animTime);
-      break;
-    case 'totem':
-      drawTotemProp(ctx, animTime);
-      break;
-    case 'cactus':
-      drawCactusProp(ctx);
-      break;
-    case 'crystal':
-      drawCrystalProp(ctx, sprop, animTime);
-      break;
-    case 'oil_drum':
-      drawOilDrumProp(ctx, sprop);
-      break;
-    case 'lamppost':
-      drawLamppostProp(ctx);
-      break;
+  if (sprop.type === 'hedgehog') {
+    drawHedgehogProp(ctx);
+  } else if (sprop.type === 'chick') {
+    drawChickProp(ctx);
+  } else if (sprop.type === 'mushroom') {
+    drawMushroomProp(ctx, sprop);
+  } else if (sprop.type === 'flower') {
+    drawFlowerProp(ctx, sprop);
+  } else if (sprop.type === 'tree') {
+    drawTreeProp(ctx, sprop);
+  } else if (sprop.type === 'bunker') {
+    drawBunkerProp(ctx);
+  } else if (sprop.type === 'totem') {
+    drawTotemProp(ctx, sprop);
+  } else if (sprop.type === 'cactus') {
+    drawCactusProp(ctx, sprop);
+  } else if (sprop.type === 'crystal') {
+    drawCrystalProp(ctx, sprop);
+  } else if (sprop.type === 'oil_drum') {
+    drawOilDrumProp(ctx, sprop);
+  } else if (sprop.type === 'lamppost') {
+    drawLamppostProp(ctx);
   }
 
   ctx.restore();

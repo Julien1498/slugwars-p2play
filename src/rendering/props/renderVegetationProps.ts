@@ -9,255 +9,268 @@ import {
   getCactusGrad,
 } from './propGradients';
 
-// 1. Tree Paths
-const TREE_TRUNK = createPath((p) => {
-  p.moveTo(-6, 0);
-  p.lineTo(-9, -2);
-  p.lineTo(-4, -14);
-  p.lineTo(-3, -36);
-  p.lineTo(3, -36);
-  p.lineTo(4, -14);
-  p.lineTo(9, -2);
-  p.lineTo(6, 0);
-  p.closePath();
-  p.moveTo(-2, -26);
-  p.lineTo(-9, -33);
-  p.lineTo(-7, -35);
-  p.lineTo(-1, -29);
-  p.closePath();
-  p.moveTo(2, -24);
-  p.lineTo(10, -32);
-  p.lineTo(8, -34);
-  p.lineTo(1, -27);
-  p.closePath();
-});
-
-const TREE_FOLIAGE_BACK = createPath((p) => {
-  addEllipse(p, 0, -42, 28, 22);
-  addEllipse(p, -14, -38, 16, 16);
-  addEllipse(p, 14, -38, 16, 16);
-});
-
-const TREE_FOLIAGE_MID = createPath((p) => {
-  addEllipse(p, 0, -46, 24, 19);
-  addEllipse(p, -11, -43, 14, 14);
-  addEllipse(p, 11, -43, 14, 14);
-});
-
-const TREE_FOLIAGE_FRONT = createPath((p) => {
-  addEllipse(p, -5, -48, 14, 11, -0.2);
-  addEllipse(p, 7, -46, 12, 10, 0.2);
-});
-
-const TREE_APPLES = createPath((p) => {
-  addCircle(p, -12, -45, 2.5);
-  addCircle(p, 11, -42, 2.5);
-  addCircle(p, -3, -52, 2.2);
-  addCircle(p, 6, -50, 2.2);
-});
-
-// 2. Mushroom Paths
+// 3. Mushroom
 const MUSHROOM_GRASS = createPath((p) => {
-  p.moveTo(-10, 0);
-  p.lineTo(-12, -7);
-  p.lineTo(-8, -1);
-  p.lineTo(-5, -9);
-  p.lineTo(-3, 0);
-  p.lineTo(4, -8);
-  p.lineTo(7, -2);
-  p.lineTo(11, -7);
-  p.lineTo(9, 0);
-  p.closePath();
+  addEllipse(p, -6, -1, 4, 2, -0.4);
+  addEllipse(p, 6, -1, 4, 2, 0.4);
 });
 
 const MUSHROOM_STEM = createPath((p) => {
-  p.moveTo(-6, 0);
-  p.quadraticCurveTo(-7, -8, -4, -16);
-  p.lineTo(4, -16);
-  p.quadraticCurveTo(7, -8, 6, 0);
+  p.moveTo(-4, -16);
+  p.quadraticCurveTo(-6, -6, -7, 0);
+  p.lineTo(7, 0);
+  p.quadraticCurveTo(6, -6, 4, -16);
   p.closePath();
 });
 
 const MUSHROOM_VEIL = createPath((p) => {
-  p.moveTo(-6, -11);
-  p.quadraticCurveTo(0, -9, 6, -11);
-  p.quadraticCurveTo(0, -13, -6, -11);
-  p.closePath();
+  addEllipse(p, 0, -14, 5.5, 2, 0);
 });
 
 const MUSHROOM_SHADOW = createPath((p) => {
-  addEllipse(p, 0, -15, 17, 4.5);
+  addEllipse(p, 0, -16, 12, 4, 0);
 });
 
 const MUSHROOM_CAP = createPath((p) => {
-  p.moveTo(-18, -15);
-  p.quadraticCurveTo(-19, -24, -11, -29);
-  p.quadraticCurveTo(0, -32, 11, -29);
-  p.quadraticCurveTo(19, -24, 18, -15);
-  p.quadraticCurveTo(0, -12, -18, -15);
+  p.moveTo(-14, -16);
+  p.quadraticCurveTo(-15, -28, 0, -28);
+  p.quadraticCurveTo(15, -28, 14, -16);
+  p.quadraticCurveTo(0, -13, -14, -16);
   p.closePath();
 });
 
-const MUSHROOM_SPOTS = createPath((p) => {
-  addEllipse(p, 0, -26, 4.5, 3.2);
-  addEllipse(p, -9, -22, 3.5, 3.8, -0.3);
-  addEllipse(p, 9, -22, 3.5, 3.8, 0.3);
-  addCircle(p, -14, -17, 2);
-  addCircle(p, 14, -17, 2);
-  addCircle(p, 0, -17, 2.2);
+const MUSHROOM_DOTS = createPath((p) => {
+  addCircle(p, 0, -21, 2.8);
+  addCircle(p, -7, -20, 2.2);
+  addCircle(p, 7, -19, 2.4);
+  addCircle(p, -2, -25, 1.8);
 });
 
-// 3. Flower Paths
+// 4. Flower
 const FLOWER_STEM = createPath((p) => {
-  p.moveTo(-1, 0);
-  p.quadraticCurveTo(-3, -12, 0, -22);
-  p.lineTo(1.5, -22);
-  p.quadraticCurveTo(-1.5, -12, 1, 0);
-  p.closePath();
-});
-
-const FLOWER_LEAF_L = createPath((p) => {
-  p.moveTo(-1, -8);
-  p.quadraticCurveTo(-10, -12, -8, -6);
-  p.quadraticCurveTo(-4, -5, -1, -8);
-  p.closePath();
-});
-
-const FLOWER_LEAF_R = createPath((p) => {
-  p.moveTo(1, -12);
-  p.quadraticCurveTo(10, -16, 8, -10);
-  p.quadraticCurveTo(4, -9, 1, -12);
-  p.closePath();
+  p.rect(-1.5, -14, 3, 14);
 });
 
 const FLOWER_PETALS = createPath((p) => {
-  for (let i = 0; i < 5; i++) {
-    const a = (i * Math.PI * 2) / 5;
-    addEllipse(p, Math.cos(a) * 8, -22 + Math.sin(a) * 8, 5, 3.5, a);
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+    const cx = Math.cos(a) * 7;
+    const cy = -16 + Math.sin(a) * 7;
+    addCircle(p, cx, cy, 4.5);
   }
 });
 
 const FLOWER_CENTER = createPath((p) => {
-  addCircle(p, 0, -22, 4.5);
+  addCircle(p, 0, -16, 5);
 });
 
-// 4. Cactus Paths
-const CACTUS_MAIN = createPath((p) => {
+// 5. Tree
+const TREE_TRUNK = createPath((p) => {
   p.moveTo(-7, 0);
-  p.lineTo(-7, -36);
-  p.arc(0, -36, 7, Math.PI, 0);
+  p.lineTo(-4, -20);
+  p.lineTo(-8, -32);
+  p.lineTo(-5, -33);
+  p.lineTo(-2, -22);
+  p.lineTo(2, -22);
+  p.lineTo(6, -31);
+  p.lineTo(8, -30);
+  p.lineTo(4, -20);
   p.lineTo(7, 0);
   p.closePath();
 });
 
-const CACTUS_ARM_L = createPath((p) => {
-  p.moveTo(-7, -16);
-  p.lineTo(-14, -16);
-  p.lineTo(-14, -28);
-  p.arc(-11, -28, 3, Math.PI, 0);
-  p.lineTo(-8, -20);
-  p.lineTo(-7, -20);
+const TREE_BARK = createPath((p) => {
+  p.moveTo(-2, -5);
+  p.lineTo(-1, -18);
+  p.moveTo(2, -8);
+  p.lineTo(3, -16);
+});
+
+const PINE_TIER_0 = createPath((p) => {
+  p.moveTo(0, -16 - 16);
+  p.lineTo(18, -16);
+  p.lineTo(-18, -16);
   p.closePath();
 });
 
-const CACTUS_ARM_R = createPath((p) => {
-  p.moveTo(7, -22);
-  p.lineTo(15, -22);
-  p.lineTo(15, -32);
-  p.arc(12, -32, 3, 0, Math.PI, true);
-  p.lineTo(9, -25);
-  p.lineTo(7, -25);
+const PINE_TIER_1 = createPath((p) => {
+  p.moveTo(0, -26 - 14);
+  p.lineTo(15, -26);
+  p.lineTo(-15, -26);
+  p.closePath();
+});
+
+const PINE_TIER_2 = createPath((p) => {
+  p.moveTo(0, -35 - 12);
+  p.lineTo(12, -35);
+  p.lineTo(-12, -35);
+  p.closePath();
+});
+
+const PINE_TIER_3 = createPath((p) => {
+  p.moveTo(0, -43 - 10);
+  p.lineTo(8, -43);
+  p.lineTo(-8, -43);
+  p.closePath();
+});
+
+const PINE_CONES = createPath((p) => {
+  addCircle(p, -8, -20, 2.5);
+  addCircle(p, 7, -28, 2.2);
+});
+
+const OAK_DARK_CLUSTERS = createPath((p) => {
+  addCircle(p, -11, -28, 14);
+  addCircle(p, 11, -28, 14);
+});
+
+const OAK_MID_CLUSTERS = createPath((p) => {
+  addCircle(p, -7, -38, 13);
+  addCircle(p, 7, -38, 13);
+});
+
+const OAK_LIGHT_TOP = createPath((p) => {
+  addCircle(p, 0, -44, 11);
+});
+
+const OAK_APPLES = createPath((p) => {
+  addCircle(p, -8, -32, 2.2);
+  addCircle(p, 6, -36, 2.0);
+  addCircle(p, -2, -42, 2.3);
+});
+
+// 8. Cactus
+const CACTUS_FULL_BODY = createPath((p) => {
+  if (p.roundRect) {
+    p.roundRect(-5.5, -36, 11, 36, [5, 5, 0, 0]);
+  } else {
+    p.rect(-5.5, -36, 11, 36);
+  }
+  // Left arm
+  p.moveTo(-5.5, -18);
+  p.lineTo(-11, -18);
+  p.lineTo(-11, -29);
+  p.arc(-8.5, -29, 2.5, Math.PI, 0);
+  p.lineTo(-6, -14);
+  p.lineTo(-5.5, -14);
+  p.closePath();
+  // Right arm
+  p.moveTo(5.5, -22);
+  p.lineTo(11, -22);
+  p.lineTo(11, -33);
+  p.arc(8.5, -33, 2.5, 0, Math.PI);
+  p.lineTo(6, -18);
+  p.lineTo(5.5, -18);
   p.closePath();
 });
 
 const CACTUS_RIBS = createPath((p) => {
-  p.moveTo(-2.5, -34);
-  p.lineTo(-2.5, 0);
-  p.moveTo(2.5, -34);
-  p.lineTo(2.5, 0);
+  p.moveTo(-2, -34);
+  p.lineTo(-2, -1);
+  p.moveTo(2, -34);
+  p.lineTo(2, -1);
 });
 
-const CACTUS_FLOWER = createPath((p) => {
-  addCircle(p, 0, -44, 3.5);
-  addCircle(p, -2.5, -45, 2.5);
-  addCircle(p, 2.5, -45, 2.5);
+const CACTUS_NEEDLES = createPath((p) => {
+  const needlesY = [-30, -24, -18, -12, -6];
+  for (const ny of needlesY) {
+    p.rect(-7, ny, 2, 1);
+    p.rect(5.5, ny, 2, 1);
+  }
 });
 
-export function drawTreeProp(ctx: CanvasRenderingContext2D, animTime: number) {
-  ctx.fillStyle = getTreeTrunkGrad(ctx);
-  ctx.fill(TREE_TRUNK);
-
-  const sway = Math.sin(animTime * 0.002) * 2;
-  ctx.save();
-  ctx.translate(sway, 0);
-
-  ctx.fillStyle = '#14532d';
-  ctx.fill(TREE_FOLIAGE_BACK);
-
-  ctx.fillStyle = '#16a34a';
-  ctx.fill(TREE_FOLIAGE_MID);
-
-  ctx.fillStyle = '#22c55e';
-  ctx.fill(TREE_FOLIAGE_FRONT);
-
-  ctx.fillStyle = '#ef4444';
-  ctx.fill(TREE_APPLES);
-
-  ctx.restore();
-}
+const CACTUS_FLOWERS = createPath((p) => {
+  addCircle(p, 0, -36, 3.5);
+  addCircle(p, -2.5, -38, 2);
+  addCircle(p, 2.5, -38, 2);
+});
 
 export function drawMushroomProp(ctx: CanvasRenderingContext2D, sprop: SolidProp) {
+  const isPurple = sprop.variant === 1;
+  const isGold = sprop.variant === 2;
+
+  // Grass Tufts at Base
   ctx.fillStyle = '#22c55e';
   ctx.fill(MUSHROOM_GRASS);
 
+  // Organic Curved Stem
   ctx.fillStyle = getMushroomStemGrad(ctx);
   ctx.strokeStyle = '#a16207';
   ctx.lineWidth = 1.2;
   ctx.fill(MUSHROOM_STEM);
   ctx.stroke(MUSHROOM_STEM);
 
+  // Ring Veil under cap
   ctx.fillStyle = '#ffffff';
   ctx.fill(MUSHROOM_VEIL);
 
+  // Dark Shadow under Cap Gills
   ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
   ctx.fill(MUSHROOM_SHADOW);
 
+  // Plump 3D Umbrella Dome Cap
   ctx.fillStyle = getMushroomCapGrad(ctx, sprop.variant);
   ctx.fill(MUSHROOM_CAP);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fill(MUSHROOM_SPOTS);
+  // Polka Dots
+  ctx.fillStyle = isPurple ? '#f472b6' : isGold ? '#fef3c7' : '#ffffff';
+  ctx.fill(MUSHROOM_DOTS);
 }
 
-export function drawFlowerProp(ctx: CanvasRenderingContext2D, animTime: number) {
-  const sway = Math.sin(animTime * 0.003) * 1.5;
-  ctx.save();
-  ctx.translate(sway, 0);
-
-  ctx.fillStyle = '#16a34a';
+export function drawFlowerProp(ctx: CanvasRenderingContext2D, sprop: SolidProp) {
+  // Colorful Flower Stem
+  ctx.fillStyle = '#15803d';
   ctx.fill(FLOWER_STEM);
-  ctx.fill(FLOWER_LEAF_L);
-  ctx.fill(FLOWER_LEAF_R);
 
-  ctx.fillStyle = '#ec4899';
+  // Petals (Single Combined Batch)
+  ctx.fillStyle = sprop.variant === 1 ? '#ec4899' : sprop.variant === 2 ? '#3b82f6' : '#c084fc';
   ctx.fill(FLOWER_PETALS);
 
+  // Center
   ctx.fillStyle = '#facc15';
   ctx.fill(FLOWER_CENTER);
-
-  ctx.restore();
 }
 
-export function drawCactusProp(ctx: CanvasRenderingContext2D) {
+export function drawTreeProp(ctx: CanvasRenderingContext2D, sprop: SolidProp) {
+  const isPine = sprop.variant === 1;
+
+  // Wood Trunk & Flared Roots
+  ctx.fillStyle = getTreeTrunkGrad(ctx);
+  ctx.fill(TREE_TRUNK);
+
+  // Wood Bark Texture Lines
+  ctx.strokeStyle = '#27160a';
+  ctx.lineWidth = 1;
+  ctx.stroke(TREE_BARK);
+
+  if (isPine) {
+    ctx.fillStyle = '#064e3b'; ctx.fill(PINE_TIER_0);
+    ctx.fillStyle = '#047857'; ctx.fill(PINE_TIER_1);
+    ctx.fillStyle = '#10b981'; ctx.fill(PINE_TIER_2);
+    ctx.fillStyle = '#34d399'; ctx.fill(PINE_TIER_3);
+    ctx.fillStyle = '#78350f'; ctx.fill(PINE_CONES);
+  } else {
+    ctx.fillStyle = '#14532d'; ctx.fill(OAK_DARK_CLUSTERS);
+    ctx.fillStyle = '#15803d'; ctx.fill(OAK_MID_CLUSTERS);
+    ctx.fillStyle = '#22c55e'; ctx.fill(OAK_LIGHT_TOP);
+    ctx.fillStyle = '#ef4444'; ctx.fill(OAK_APPLES);
+  }
+}
+
+export function drawCactusProp(ctx: CanvasRenderingContext2D, sprop: SolidProp) {
+  // Wild West Saguaro Desert Cactus (Micro-batched body)
   ctx.fillStyle = getCactusGrad(ctx);
-  ctx.fill(CACTUS_MAIN);
-  ctx.fill(CACTUS_ARM_L);
-  ctx.fill(CACTUS_ARM_R);
+  ctx.strokeStyle = '#14532d';
+  ctx.lineWidth = 1.4;
+  ctx.fill(CACTUS_FULL_BODY);
+  ctx.stroke(CACTUS_FULL_BODY);
 
   ctx.strokeStyle = '#14532d';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 0.8;
   ctx.stroke(CACTUS_RIBS);
 
-  ctx.fillStyle = '#f43f5e';
-  ctx.fill(CACTUS_FLOWER);
+  ctx.fillStyle = '#fef08a';
+  ctx.fill(CACTUS_NEEDLES);
+
+  ctx.fillStyle = sprop.variant === 1 ? '#f43f5e' : '#facc15';
+  ctx.fill(CACTUS_FLOWERS);
 }

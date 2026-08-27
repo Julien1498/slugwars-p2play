@@ -32,9 +32,12 @@ export {
   drawBunkerProp,
   drawTotemProp,
   drawOilDrumProp,
-  drawCrystalProp,
   drawLamppostProp,
-} from './props/renderStructuralAndMineralProps';
+} from './props/renderStructuralProps';
+
+export {
+  drawCrystalProp,
+} from './props/renderMineralProps';
 
 export {
   drawHedgehogProp,
