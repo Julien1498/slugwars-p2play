@@ -117,3 +117,54 @@ export function lerpCamera(current: Vector2D, target: Vector2D, factor: number =
     y: current.y + (target.y - current.y) * factor,
   };
 }
+
+/**
+ * Shortest-arc angle linear interpolation that correctly wraps around -PI and +PI.
+ */
+export function shortestArcAngleLerp(currentAngle: number, targetAngle: number, alpha: number): number {
+  if (!Number.isFinite(targetAngle) || !Number.isFinite(currentAngle)) return currentAngle;
+  let angleDiff = targetAngle - currentAngle;
+  while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+  while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+  return currentAngle + angleDiff * alpha;
+}
+
+/**
+ * Smooth position interpolation with snap-distance threshold.
+ */
+export function interpolatePosition(
+  current: Vector2D,
+  target: Vector2D,
+  alpha: number,
+  maxSnapDist: number = 64
+): Vector2D {
+  const dist = Math.hypot(target.x - current.x, target.y - current.y);
+  if (dist > maxSnapDist) {
+    return { x: target.x, y: target.y };
+  }
+  return {
+    x: current.x + (target.x - current.x) * alpha,
+    y: current.y + (target.y - current.y) * alpha,
+  };
+}
+
+/**
+ * Calculates focal-point invariant zoom and new pan offset when zooming with mouse wheel.
+ */
+export function calculateFocalZoom(
+  currentZoom: number,
+  zoomFactor: number,
+  mouseRelPos: Vector2D,
+  currentPan: Vector2D,
+  minZoom: number = 0.5,
+  maxZoom: number = 3.0
+): { newZoom: number; newPan: Vector2D } {
+  const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom * zoomFactor));
+  const scaleChange = newZoom / currentZoom;
+  const newPanX = mouseRelPos.x - (mouseRelPos.x - currentPan.x) * scaleChange;
+  const newPanY = mouseRelPos.y - (mouseRelPos.y - currentPan.y) * scaleChange;
+  return {
+    newZoom,
+    newPan: { x: newPanX, y: newPanY },
+  };
+}
