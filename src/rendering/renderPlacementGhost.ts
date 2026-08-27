@@ -7,9 +7,6 @@ let _lastGhostRevision = -1;
 let _cachedPreviewY = 0;
 let _cachedIsValid = false;
 
-let _lastSlugLabel = '';
-let _cachedLabelWidth = 0;
-
 const DASH_4_4 = [4, 4];
 const DASH_EMPTY: number[] = [];
 
@@ -24,6 +21,87 @@ GHOST_EYES_WHITE.arc(-3, -10, 2.5, 0, Math.PI * 2);
 const GHOST_PUPILS_BLACK = new Path2D();
 GHOST_PUPILS_BLACK.arc(3, -10, 1.2, 0, Math.PI * 2);
 GHOST_PUPILS_BLACK.arc(-3, -10, 1.2, 0, Math.PI * 2);
+
+const SPRITE_W = 220;
+const SPRITE_H = 70;
+const ANCHOR_X = 110;
+const ANCHOR_Y = 54;
+
+let _cachedKey = '';
+let _cachedValidCanvas: HTMLCanvasElement | null = null;
+let _cachedInvalidCanvas: HTMLCanvasElement | null = null;
+
+function updateGhostSprites(teamColor: string, slugName: string) {
+  const key = `${teamColor}_${slugName}`;
+  if (_cachedKey === key && _cachedValidCanvas && _cachedInvalidCanvas) {
+    return;
+  }
+  _cachedKey = key;
+
+  if (!_cachedValidCanvas) {
+    _cachedValidCanvas = document.createElement('canvas');
+    _cachedValidCanvas.width = SPRITE_W;
+    _cachedValidCanvas.height = SPRITE_H;
+  }
+  if (!_cachedInvalidCanvas) {
+    _cachedInvalidCanvas = document.createElement('canvas');
+    _cachedInvalidCanvas.width = SPRITE_W;
+    _cachedInvalidCanvas.height = SPRITE_H;
+  }
+
+  const pLabel = `📍 Placer ${slugName}`;
+
+  for (const isValid of [true, false]) {
+    const canvas = isValid ? _cachedValidCanvas : _cachedInvalidCanvas;
+    const sCtx = canvas.getContext('2d');
+    if (!sCtx) continue;
+
+    sCtx.clearRect(0, 0, SPRITE_W, SPRITE_H);
+
+    sCtx.save();
+    sCtx.translate(ANCHOR_X, ANCHOR_Y);
+
+    // Translucent Ghost Slug Body
+    sCtx.globalAlpha = 0.85;
+    sCtx.fillStyle = teamColor;
+    sCtx.fill(GHOST_BODY);
+    sCtx.strokeStyle = '#ffffff';
+    sCtx.lineWidth = 1.5;
+    sCtx.stroke(GHOST_BODY);
+
+    // Eyes
+    sCtx.fillStyle = '#ffffff';
+    sCtx.fill(GHOST_EYES_WHITE);
+    sCtx.fillStyle = '#000000';
+    sCtx.fill(GHOST_PUPILS_BLACK);
+    sCtx.globalAlpha = 1.0;
+
+    // Tactical Placement Tooltip Badge
+    sCtx.font = 'bold 11px Outfit, sans-serif';
+    const textW = sCtx.measureText(pLabel).width;
+    const pW = textW + 16;
+
+    sCtx.fillStyle = 'rgba(9, 9, 11, 0.90)';
+    sCtx.strokeStyle = isValid ? '#22c55e' : '#ef4444';
+    sCtx.lineWidth = 1.2;
+
+    sCtx.beginPath();
+    if (sCtx.roundRect) {
+      sCtx.roundRect(-pW / 2, -44, pW, 20, 6);
+    } else {
+      sCtx.rect(-pW / 2, -44, pW, 20);
+    }
+    sCtx.fill();
+    sCtx.stroke();
+
+    sCtx.fillStyle = isValid ? '#4ade80' : '#f87171';
+    sCtx.textAlign = 'center';
+    sCtx.textBaseline = 'middle';
+    sCtx.fillText(pLabel, 0, -34);
+
+    sCtx.restore();
+  }
+}
 
 function checkHasClearAir(
   terrain: DestructibleTerrain,
@@ -83,63 +161,23 @@ export function renderPlacementGhost(
     _cachedIsValid = isValidPos;
   }
 
-  ctx.save();
-  ctx.translate(clampedX, previewY);
-
   // Pulsing Tactical Placement Ring
   const ringPulse = Math.sin(animTime * 6) * 2;
   ctx.strokeStyle = isValidPos ? '#4ade80' : '#f87171';
   ctx.lineWidth = 1.8;
   ctx.setLineDash(DASH_4_4);
   ctx.beginPath();
-  ctx.arc(0, -8, 16 + ringPulse, 0, Math.PI * 2);
+  ctx.arc(clampedX, previewY - 8, 16 + ringPulse, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash(DASH_EMPTY);
 
-  // Translucent Ghost Slug Body
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = team?.color || '#a855f7';
-  ctx.fill(GHOST_BODY);
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.5;
-  ctx.stroke(GHOST_BODY);
+  // Draw cached ghost & tooltip sprite in a single GPU-accelerated blit (Zero font parsing or path overhead per frame)
+  const teamColor = team?.color || '#a855f7';
+  const slugName = activeSlug?.name || 'Limace';
+  updateGhostSprites(teamColor, slugName);
 
-  // Eyes (Single Batch Path2D)
-  ctx.fillStyle = '#ffffff';
-  ctx.fill(GHOST_EYES_WHITE);
-  ctx.fillStyle = '#000000';
-  ctx.fill(GHOST_PUPILS_BLACK);
-
-  ctx.restore();
-
-  // Tactical Placement Tooltip Badge
-  ctx.save();
-  ctx.fillStyle = 'rgba(9, 9, 11, 0.90)';
-  ctx.strokeStyle = isValidPos ? '#22c55e' : '#ef4444';
-  ctx.lineWidth = 1.2;
-  const pLabel = `📍 Placer ${activeSlug?.name || 'Limace'}`;
-
-  // Cached font measurement (Avoid OS DirectWrite measurement latency)
-  if (pLabel !== _lastSlugLabel || _cachedLabelWidth === 0) {
-    ctx.font = 'bold 11px Outfit, sans-serif';
-    _cachedLabelWidth = ctx.measureText(pLabel).width + 16;
-    _lastSlugLabel = pLabel;
+  const sprite = isValidPos ? _cachedValidCanvas : _cachedInvalidCanvas;
+  if (sprite) {
+    ctx.drawImage(sprite, clampedX - ANCHOR_X, previewY - ANCHOR_Y);
   }
-  const pW = _cachedLabelWidth;
-
-  ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(clampedX - pW / 2, previewY - 44, pW, 20, 6);
-  } else {
-    ctx.rect(clampedX - pW / 2, previewY - 44, pW, 20);
-  }
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = isValidPos ? '#4ade80' : '#f87171';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 11px Outfit, sans-serif';
-  ctx.fillText(pLabel, clampedX, previewY - 34);
-  ctx.restore();
 }
