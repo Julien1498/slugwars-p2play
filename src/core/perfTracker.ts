@@ -89,6 +89,8 @@ export interface FpsDistribution {
 
 export interface EnvironmentMetrics {
   dpr: number;
+  dprBg?: number;
+  dprAction?: number;
   screenWidth: number;
   screenHeight: number;
   windowInnerWidth: number;
@@ -201,9 +203,18 @@ class PerformanceTracker {
   public currentPhysicsDurationMs = 0.5;
   public currentReactDurationMs = 0.5;
   public liveDpr = 1.0;
+  public liveBgDpr = 1.0;
+  public liveActionDpr = 1.0;
+
+  public setLiveDprs(bgDpr: number, actionDpr: number): void {
+    this.liveBgDpr = bgDpr;
+    this.liveActionDpr = actionDpr;
+    this.liveDpr = bgDpr;
+  }
 
   public setLiveDpr(dpr: number): void {
     this.liveDpr = dpr;
+    this.liveBgDpr = dpr;
   }
 
   public recordPhysicsTick(durationMs: number): void {
@@ -619,7 +630,9 @@ class PerformanceTracker {
       this.eventLoopLags.length > 0 ? Math.round(Math.max(...this.eventLoopLags) * 10) / 10 : 0;
 
     const environment: EnvironmentMetrics = {
-      dpr: this.liveDpr || (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
+      dpr: this.liveBgDpr || (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
+      dprBg: this.liveBgDpr,
+      dprAction: this.liveActionDpr,
       screenWidth: typeof window !== 'undefined' ? window.screen?.width || 0 : 0,
       screenHeight: typeof window !== 'undefined' ? window.screen?.height || 0 : 0,
       windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth || 0 : 0,

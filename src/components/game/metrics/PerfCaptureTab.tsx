@@ -82,7 +82,8 @@ export const PerfCaptureTab: React.FC<PerfCaptureTabProps> = ({
                   <div className="text-[10px] text-zinc-400 font-mono pt-1 flex flex-wrap gap-x-3 gap-y-1 border-t border-zinc-800/80">
                     <span>GPU : <strong className="text-cyan-300">{perfReport.environment.gpuRenderer}</strong></span>
                     <span>Résolution : <strong className="text-white">{perfReport.environment.screenWidth}x{perfReport.environment.screenHeight}</strong></span>
-                    <span>DPR : <strong className="text-white">{perfReport.environment.dpr}x</strong></span>
+                    <span>DPR Fond : <strong className="text-amber-300">{(perfReport.environment.dprBg ?? perfReport.environment.dpr).toFixed(2)}x</strong></span>
+                    <span>DPR Action : <strong className="text-emerald-300">{(perfReport.environment.dprAction ?? 1.0).toFixed(2)}x</strong></span>
                     <span>CPU Cores : <strong className="text-white">{perfReport.environment.hardwareConcurrency}</strong></span>
                     <span>RAM : <strong className="text-white">{perfReport.environment.deviceMemoryGB ? `${perfReport.environment.deviceMemoryGB} GB` : 'N/A'}</strong></span>
                     {perfReport.environment.heapSizeLimitMB && (

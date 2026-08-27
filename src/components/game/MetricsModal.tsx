@@ -25,7 +25,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
   const [memoryUsage, setMemoryUsage] = useState<{ usedMB: number; totalMB: number } | null>(null);
   const [simPing, setSimPing] = useState(18);
   const [netStats, setNetStats] = useState<NetworkStats>(netMetrics.getStats());
-  const [liveDpr, setLiveDpr] = useState<number>(perfTracker.liveDpr || 1.0);
+  const [liveBgDpr, setLiveBgDpr] = useState<number>(perfTracker.liveBgDpr || 1.0);
+  const [liveActionDpr, setLiveActionDpr] = useState<number>(perfTracker.liveActionDpr || 1.0);
 
   // Performance Profiler State
   const [isPerfRecording, setIsPerfRecording] = useState(false);
@@ -63,7 +64,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
       setFrameTime(perfTracker.currentFrameTimeMs);
       setSimPing(Math.round(14 + Math.random() * 8));
       setNetStats(netMetrics.getStats());
-      setLiveDpr(perfTracker.liveDpr || 1.0);
+      setLiveBgDpr(perfTracker.liveBgDpr || 1.0);
+      setLiveActionDpr(perfTracker.liveActionDpr || 1.0);
 
       const memory = (performance as any).memory;
       if (memory) {
@@ -240,7 +242,8 @@ export const MetricsModal: React.FC<MetricsModalProps> = React.memo(({
             fpsColor={fpsColor}
             netStats={netStats}
             memoryUsage={memoryUsage}
-            liveDpr={liveDpr}
+            liveBgDpr={liveBgDpr}
+            liveActionDpr={liveActionDpr}
             gameState={gameState}
             isFpsHudActive={isFpsHudActive}
             onToggleFpsHud={handleToggleFpsHud}
