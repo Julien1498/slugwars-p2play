@@ -961,6 +961,8 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
   ctx.restore();
 }
 
+const _overlappingCratersBuffer: { x: number; y: number; radius: number }[] = [];
+
 export function renderHDDestructibleProp(
   ctx: CanvasRenderingContext2D,
   sprop: SolidProp,
@@ -968,53 +970,67 @@ export function renderHDDestructibleProp(
   explosions: ExplosionEvent[] | undefined,
   animTime: number,
   grid: Uint8Array,
-  width: number
+  width: number,
+  terrainRevision?: number
 ) {
-  const halfW = Math.max(4, Math.floor(sprop.width / 2));
-  let solidFoundationCount = 0;
-  for (let ox = -halfW; ox <= halfW; ox += Math.max(1, Math.floor(halfW / 2))) {
-    const gx = Math.floor(sprop.x + ox);
-    const gy = Math.floor(sprop.y + 1);
-    const idx = gy * width + gx;
-    if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
-      solidFoundationCount++;
+  // Check foundation stability: only re-evaluate pixel scan when terrain has actually been modified
+  if (terrainRevision !== undefined && (sprop as any)._lastFoundationRev === terrainRevision) {
+    if (!(sprop as any)._isFoundationSolid) {
+      sprop.destroyed = true;
+      return;
     }
-  }
+  } else {
+    const halfW = Math.max(4, Math.floor(sprop.width / 2));
+    let solidFoundationCount = 0;
+    for (let ox = -halfW; ox <= halfW; ox += Math.max(1, Math.floor(halfW / 2))) {
+      const gx = Math.floor(sprop.x + ox);
+      const gy = Math.floor(sprop.y + 1);
+      const idx = gy * width + gx;
+      if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
+        solidFoundationCount++;
+      }
+    }
+    (sprop as any)._lastFoundationRev = terrainRevision;
+    (sprop as any)._isFoundationSolid = solidFoundationCount > 0;
 
-  if (solidFoundationCount === 0) {
-    sprop.destroyed = true;
-    return;
+    if (solidFoundationCount === 0) {
+      sprop.destroyed = true;
+      return;
+    }
   }
 
   const propRadius = Math.max(sprop.width, sprop.height) * 0.85;
   const propCenterY = sprop.y - sprop.height / 2;
 
-  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
+  _overlappingCratersBuffer.length = 0;
 
   if (craters) {
-    for (const c of craters) {
+    for (let i = 0; i < craters.length; i++) {
+      const c = craters[i];
       const dist = Math.hypot(c.x - sprop.x, c.y - propCenterY);
       if (dist <= c.radius + propRadius) {
-        overlappingCraters.push(c);
+        _overlappingCratersBuffer.push(c);
       }
     }
   }
   if (explosions) {
-    for (const ex of explosions) {
+    for (let i = 0; i < explosions.length; i++) {
+      const ex = explosions[i];
       const dist = Math.hypot(ex.x - sprop.x, ex.y - propCenterY);
       if (dist <= ex.radius + propRadius) {
-        overlappingCraters.push(ex);
+        _overlappingCratersBuffer.push(ex);
       }
     }
   }
 
-  if (overlappingCraters.length === 0) {
+  if (_overlappingCratersBuffer.length === 0) {
     drawSolidPropVector(ctx, sprop, animTime);
     return;
   }
 
   ctx.save();
-  for (const c of overlappingCraters) {
+  for (let i = 0; i < _overlappingCratersBuffer.length; i++) {
+    const c = _overlappingCratersBuffer[i];
     const notCircle = new Path2D();
     notCircle.rect(sprop.x - 200, sprop.y - 200, 400, 400);
     notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
@@ -1025,13 +1041,16 @@ export function renderHDDestructibleProp(
   ctx.restore();
 }
 
+const _girderCratersBuffer: { x: number; y: number; radius: number }[] = [];
+
 export function renderHDDestructibleGirder(
   ctx: CanvasRenderingContext2D,
   g: PlacedGirder,
   craters: CraterRecord[] | undefined,
   explosions: ExplosionEvent[] | undefined,
   grid: Uint8Array,
-  width: number
+  width: number,
+  terrainRevision?: number
 ) {
   if (g.destroyed) return;
 
@@ -1041,26 +1060,36 @@ export function renderHDDestructibleGirder(
   const halfL = g.length / 2;
   const halfT = g.thickness / 2;
 
-  let solidCount = 0;
-  const totalSamples = 13;
-  for (let s = 0; s < totalSamples; s++) {
-    const t = -halfL + (s / (totalSamples - 1)) * g.length;
-    const px = Math.round(g.x + t * cos);
-    const py = Math.round(g.y + t * sin);
-    const idx = py * width + px;
-    if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
-      solidCount++;
+  // Foundation stability check
+  if (terrainRevision !== undefined && (g as any)._lastFoundationRev === terrainRevision) {
+    if (!(g as any)._isFoundationSolid) {
+      g.destroyed = true;
+      return;
     }
-  }
+  } else {
+    let solidCount = 0;
+    const totalSamples = 13;
+    for (let s = 0; s < totalSamples; s++) {
+      const t = -halfL + (s / (totalSamples - 1)) * g.length;
+      const px = Math.round(g.x + t * cos);
+      const py = Math.round(g.y + t * sin);
+      const idx = py * width + px;
+      if (idx >= 0 && idx < grid.length && grid[idx] > 0) {
+        solidCount++;
+      }
+    }
+    (g as any)._lastFoundationRev = terrainRevision;
+    (g as any)._isFoundationSolid = solidCount > 0;
 
-  if (solidCount === 0) {
-    g.destroyed = true;
-    return;
+    if (solidCount === 0) {
+      g.destroyed = true;
+      return;
+    }
   }
 
   const girderRadius = Math.max(g.length, g.thickness) * 0.65;
 
-  const overlappingCraters: { x: number; y: number; radius: number }[] = [];
+  _girderCratersBuffer.length = 0;
   if (craters) {
     const minIndex = g.initialCraterCount !== undefined ? g.initialCraterCount : 0;
     for (let i = 0; i < craters.length; i++) {
@@ -1073,24 +1102,26 @@ export function renderHDDestructibleGirder(
       }
       const dist = Math.hypot(c.x - g.x, c.y - g.y);
       if (dist <= c.radius + girderRadius) {
-        overlappingCraters.push(c);
+        _girderCratersBuffer.push(c);
       }
     }
   }
 
   if (explosions) {
-    for (const ex of explosions) {
+    for (let i = 0; i < explosions.length; i++) {
+      const ex = explosions[i];
       const dist = Math.hypot(ex.x - g.x, ex.y - g.y);
       if (dist <= ex.radius + girderRadius) {
-        overlappingCraters.push(ex);
+        _girderCratersBuffer.push(ex);
       }
     }
   }
 
   ctx.save();
 
-  if (overlappingCraters.length > 0) {
-    for (const c of overlappingCraters) {
+  if (_girderCratersBuffer.length > 0) {
+    for (let i = 0; i < _girderCratersBuffer.length; i++) {
+      const c = _girderCratersBuffer[i];
       const notCircle = new Path2D();
       notCircle.rect(g.x - 200, g.y - 200, 400, 400);
       notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);

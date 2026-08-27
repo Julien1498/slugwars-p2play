@@ -5,6 +5,57 @@ export interface SlugsRenderContext {
   gameState: GameState;
   animTime: number;
   slugDeathTimestamps: Map<string, number>;
+  viewLeft?: number;
+  viewRight?: number;
+}
+
+// Static reusable vector geometry (Zero CPU allocation & re-evaluation per frame)
+const SLUG_BODY_PATH = new Path2D();
+SLUG_BODY_PATH.moveTo(-11, 4);
+SLUG_BODY_PATH.quadraticCurveTo(-13, -1, -6, -7);
+SLUG_BODY_PATH.quadraticCurveTo(0, -13, 8, -7);
+SLUG_BODY_PATH.quadraticCurveTo(14, 0, 11, 6);
+SLUG_BODY_PATH.quadraticCurveTo(0, 8, -11, 4);
+SLUG_BODY_PATH.closePath();
+
+const SLUG_BELLY_PATH = new Path2D();
+SLUG_BELLY_PATH.ellipse(0, 3, 7.5, 3, -0.1, 0, Math.PI * 2);
+
+const SLUG_SHADOW_PATH = new Path2D();
+SLUG_SHADOW_PATH.ellipse(0, 6, 12, 3.5, 0, 0, Math.PI * 2);
+
+const SLUG_ARROW_PATH = new Path2D();
+SLUG_ARROW_PATH.moveTo(0, 8);
+SLUG_ARROW_PATH.lineTo(-6, 0);
+SLUG_ARROW_PATH.lineTo(-2, 0);
+SLUG_ARROW_PATH.lineTo(-2, -8);
+SLUG_ARROW_PATH.lineTo(2, -8);
+SLUG_ARROW_PATH.lineTo(2, 0);
+SLUG_ARROW_PATH.lineTo(6, 0);
+SLUG_ARROW_PATH.closePath();
+
+const _cachedTeamBodyGrads: Record<string, CanvasGradient> = {};
+function getTeamBodyGrad(ctx: CanvasRenderingContext2D, teamColor: string): CanvasGradient {
+  if (!_cachedTeamBodyGrads[teamColor]) {
+    const g = ctx.createRadialGradient(-3, -3, 2, 0, 2, 14);
+    g.addColorStop(0, '#fef08a');
+    g.addColorStop(0.35, teamColor);
+    g.addColorStop(1, '#180828');
+    _cachedTeamBodyGrads[teamColor] = g;
+  }
+  return _cachedTeamBodyGrads[teamColor];
+}
+
+let _cachedGhostGrad: CanvasGradient | null = null;
+function getGhostGrad(ctx: CanvasRenderingContext2D): CanvasGradient {
+  if (!_cachedGhostGrad) {
+    const g = ctx.createRadialGradient(-2, -6, 2, 0, 0, 12);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.7, '#e0f2fe');
+    g.addColorStop(1, 'rgba(186, 230, 253, 0.4)');
+    _cachedGhostGrad = g;
+  }
+  return _cachedGhostGrad;
 }
 
 export function renderGhostSpirits(
@@ -37,11 +88,7 @@ export function renderGhostSpirits(
           ctx.stroke();
 
           // Ghost Body
-          const ghostGrad = ctx.createRadialGradient(-2, -6, 2, 0, 0, 12);
-          ghostGrad.addColorStop(0, '#ffffff');
-          ghostGrad.addColorStop(0.7, '#e0f2fe');
-          ghostGrad.addColorStop(1, 'rgba(186, 230, 253, 0.4)');
-          ctx.fillStyle = ghostGrad;
+          ctx.fillStyle = getGhostGrad(ctx);
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
           ctx.lineWidth = 1.2;
 
@@ -78,12 +125,14 @@ export function renderGhostSpirits(
 }
 
 export function renderAllSlugs(rc: SlugsRenderContext) {
-  const { ctx, gameState, animTime, slugDeathTimestamps } = rc;
+  const { ctx, gameState, animTime, slugDeathTimestamps, viewLeft, viewRight } = rc;
 
   renderGhostSpirits(ctx, gameState.slugs, animTime, slugDeathTimestamps);
 
   for (const slug of gameState.slugs) {
     if (!slug.isAlive || !slug.isPlaced) continue;
+    if (viewLeft !== undefined && viewRight !== undefined && (slug.x < viewLeft - 60 || slug.x > viewRight + 60)) continue;
+
     const team = gameState.teams.find((t) => t.id === slug.teamId);
     const teamColor = team?.color || '#ec4899';
     const teamIndex = gameState.teams.findIndex((t) => t.id === slug.teamId);
@@ -114,20 +163,14 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     if (isActive) {
       const arrowBounce = Math.sin(animTime * 1.5) * 3;
       const arrowY = slug.y - 46 + arrowBounce;
+      ctx.save();
+      ctx.translate(slug.x, arrowY);
       ctx.fillStyle = '#facc15';
       ctx.strokeStyle = '#09090b';
       ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(slug.x, arrowY + 8);
-      ctx.lineTo(slug.x - 6, arrowY);
-      ctx.lineTo(slug.x - 2, arrowY);
-      ctx.lineTo(slug.x - 2, arrowY - 8);
-      ctx.lineTo(slug.x + 2, arrowY - 8);
-      ctx.lineTo(slug.x + 2, arrowY);
-      ctx.lineTo(slug.x + 6, arrowY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(SLUG_ARROW_PATH);
+      ctx.stroke(SLUG_ARROW_PATH);
+      ctx.restore();
     }
 
     const isAirbornePanic = Math.abs(slug.vy) > 1.6 || speed > 2.5;
@@ -170,34 +213,18 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     // Drop Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    ctx.beginPath();
-    ctx.ellipse(0, 6, 12, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(SLUG_SHADOW_PATH);
 
     // Body
-    const bodyGrad = ctx.createRadialGradient(-3, -3, 2, 0, 2, 14);
-    bodyGrad.addColorStop(0, '#fef08a');
-    bodyGrad.addColorStop(0.35, teamColor);
-    bodyGrad.addColorStop(1, '#180828');
-
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = getTeamBodyGrad(ctx, teamColor);
     ctx.strokeStyle = isActive ? '#facc15' : '#18181b';
     ctx.lineWidth = isActive ? 2.2 : 1.6;
-    ctx.beginPath();
-    ctx.moveTo(-11, 4);
-    ctx.quadraticCurveTo(-13, -1, -6, -7);
-    ctx.quadraticCurveTo(0, -13, 8, -7);
-    ctx.quadraticCurveTo(14, 0, 11, 6);
-    ctx.quadraticCurveTo(0, 8, -11, 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.fill(SLUG_BODY_PATH);
+    ctx.stroke(SLUG_BODY_PATH);
 
     // Belly
     ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.beginPath();
-    ctx.ellipse(0, 3, 7.5, 3, -0.1, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(SLUG_BELLY_PATH);
 
     // Eyestalks
     ctx.strokeStyle = teamColor;

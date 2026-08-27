@@ -28,7 +28,12 @@ export interface ClientFloatingDamage {
   duration: number;
 }
 
-export function renderParticles(ctx: CanvasRenderingContext2D, particles: ClientParticle[]) {
+export function renderParticles(
+  ctx: CanvasRenderingContext2D,
+  particles: ClientParticle[],
+  viewLeft?: number,
+  viewRight?: number
+) {
   if (particles.length === 0) return;
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
@@ -39,6 +44,9 @@ export function renderParticles(ctx: CanvasRenderingContext2D, particles: Client
     if (p.life <= 0) {
       particles.splice(i, 1);
     } else {
+      if (viewLeft !== undefined && viewRight !== undefined && (p.x < viewLeft - 50 || p.x > viewRight + 50)) {
+        continue;
+      }
       ctx.globalAlpha = Math.max(0, p.life * 0.85);
       ctx.fillStyle = p.color;
       ctx.beginPath();
@@ -49,7 +57,12 @@ export function renderParticles(ctx: CanvasRenderingContext2D, particles: Client
   ctx.globalAlpha = 1.0;
 }
 
-export function renderClientExplosions(ctx: CanvasRenderingContext2D, explosions: ClientExplosion[]) {
+export function renderClientExplosions(
+  ctx: CanvasRenderingContext2D,
+  explosions: ClientExplosion[],
+  viewLeft?: number,
+  viewRight?: number
+) {
   const now = performance.now();
   for (let i = explosions.length - 1; i >= 0; i--) {
     const ex = explosions[i];
@@ -57,6 +70,15 @@ export function renderClientExplosions(ctx: CanvasRenderingContext2D, explosions
     const progress = Math.min(1, elapsed / ex.duration);
     const alpha = Math.max(0, 1 - progress);
     const safeRadius = ex.radius;
+
+    if (progress >= 1) {
+      explosions.splice(i, 1);
+      continue;
+    }
+
+    if (viewLeft !== undefined && viewRight !== undefined && (ex.x < viewLeft - 120 || ex.x > viewRight + 120)) {
+      continue;
+    }
 
     // Shockwave
     const shockRadius = safeRadius * (0.3 + progress * 0.9);
@@ -118,9 +140,18 @@ export function renderNinjaRopes(ctx: CanvasRenderingContext2D, slugs: Slug[]) {
   }
 }
 
-export function renderSupplyCrates(ctx: CanvasRenderingContext2D, crates: SupplyCrate[] | undefined, animTime: number = 0) {
+export function renderSupplyCrates(
+  ctx: CanvasRenderingContext2D,
+  crates: SupplyCrate[] | undefined,
+  animTime: number = 0,
+  viewLeft?: number,
+  viewRight?: number
+) {
   if (!crates || crates.length === 0) return;
   for (const crate of crates) {
+    if (viewLeft !== undefined && viewRight !== undefined && (crate.x < viewLeft - 50 || crate.x > viewRight + 50)) {
+      continue;
+    }
     ctx.save();
     ctx.translate(crate.x, crate.y);
 
@@ -212,7 +243,12 @@ export function renderSupplyCrates(ctx: CanvasRenderingContext2D, crates: Supply
   }
 }
 
-export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDamages: ClientFloatingDamage[]) {
+export function renderFloatingDamages(
+  ctx: CanvasRenderingContext2D,
+  floatingDamages: ClientFloatingDamage[],
+  viewLeft?: number,
+  viewRight?: number
+) {
   if (floatingDamages.length === 0) return;
   const now = performance.now();
   let writeIdx = 0;
@@ -228,15 +264,17 @@ export function renderFloatingDamages(ctx: CanvasRenderingContext2D, floatingDam
     const progress = Math.min(1, elapsed / fd.duration);
 
     if (progress < 1) {
-      const alpha = Math.max(0, 1 - progress);
-      const floatY = fd.y - progress * 30;
+      if (viewLeft === undefined || viewRight === undefined || (fd.x >= viewLeft - 60 && fd.x <= viewRight + 60)) {
+        const alpha = Math.max(0, 1 - progress);
+        const floatY = fd.y - progress * 30;
 
-      ctx.globalAlpha = alpha;
-      const isHeal = fd.damage < 0;
-      ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
-      const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
-      ctx.strokeText(text, fd.x, floatY);
-      ctx.fillText(text, fd.x, floatY);
+        ctx.globalAlpha = alpha;
+        const isHeal = fd.damage < 0;
+        ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
+        const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+        ctx.strokeText(text, fd.x, floatY);
+        ctx.fillText(text, fd.x, floatY);
+      }
 
       floatingDamages[writeIdx++] = fd;
     }

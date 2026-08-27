@@ -4,12 +4,15 @@ export interface ProjectilesRenderContext {
   ctx: CanvasRenderingContext2D;
   projectiles: ActiveProjectile[];
   animTime: number;
+  viewLeft?: number;
+  viewRight?: number;
 }
 
 export function renderProjectiles(rc: ProjectilesRenderContext) {
-  const { ctx, projectiles, animTime } = rc;
+  const { ctx, projectiles, animTime, viewLeft, viewRight } = rc;
 
   for (const proj of projectiles) {
+    if (viewLeft !== undefined && viewRight !== undefined && (proj.x < viewLeft - 80 || proj.x > viewRight + 80)) continue;
     ctx.save();
     ctx.translate(proj.x, proj.y);
 
