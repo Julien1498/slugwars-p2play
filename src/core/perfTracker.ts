@@ -200,6 +200,11 @@ class PerformanceTracker {
   public currentRenderDurationMs = 1.0;
   public currentPhysicsDurationMs = 0.5;
   public currentReactDurationMs = 0.5;
+  public liveDpr = 1.0;
+
+  public setLiveDpr(dpr: number): void {
+    this.liveDpr = dpr;
+  }
 
   public recordPhysicsTick(durationMs: number): void {
     this.lastPhysicsDurationMs = Math.round(durationMs * 100) / 100;
@@ -614,7 +619,7 @@ class PerformanceTracker {
       this.eventLoopLags.length > 0 ? Math.round(Math.max(...this.eventLoopLags) * 10) / 10 : 0;
 
     const environment: EnvironmentMetrics = {
-      dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+      dpr: this.liveDpr || (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
       screenWidth: typeof window !== 'undefined' ? window.screen?.width || 0 : 0,
       screenHeight: typeof window !== 'undefined' ? window.screen?.height || 0 : 0,
       windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth || 0 : 0,
