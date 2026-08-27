@@ -22,6 +22,7 @@ const GHOST_PUPILS_BLACK = new Path2D();
 GHOST_PUPILS_BLACK.arc(3, -10, 1.2, 0, Math.PI * 2);
 GHOST_PUPILS_BLACK.arc(-3, -10, 1.2, 0, Math.PI * 2);
 
+const SPRITE_SCALE = 2;
 const SPRITE_W = 220;
 const SPRITE_H = 70;
 const ANCHOR_X = 110;
@@ -40,13 +41,13 @@ function updateGhostSprites(teamColor: string, slugName: string) {
 
   if (!_cachedValidCanvas) {
     _cachedValidCanvas = document.createElement('canvas');
-    _cachedValidCanvas.width = SPRITE_W;
-    _cachedValidCanvas.height = SPRITE_H;
+    _cachedValidCanvas.width = SPRITE_W * SPRITE_SCALE;
+    _cachedValidCanvas.height = SPRITE_H * SPRITE_SCALE;
   }
   if (!_cachedInvalidCanvas) {
     _cachedInvalidCanvas = document.createElement('canvas');
-    _cachedInvalidCanvas.width = SPRITE_W;
-    _cachedInvalidCanvas.height = SPRITE_H;
+    _cachedInvalidCanvas.width = SPRITE_W * SPRITE_SCALE;
+    _cachedInvalidCanvas.height = SPRITE_H * SPRITE_SCALE;
   }
 
   const pLabel = `📍 Placer ${slugName}`;
@@ -56,9 +57,10 @@ function updateGhostSprites(teamColor: string, slugName: string) {
     const sCtx = canvas.getContext('2d');
     if (!sCtx) continue;
 
-    sCtx.clearRect(0, 0, SPRITE_W, SPRITE_H);
+    sCtx.clearRect(0, 0, canvas.width, canvas.height);
 
     sCtx.save();
+    sCtx.scale(SPRITE_SCALE, SPRITE_SCALE);
     sCtx.translate(ANCHOR_X, ANCHOR_Y);
 
     // Translucent Ghost Slug Body
@@ -178,6 +180,16 @@ export function renderPlacementGhost(
 
   const sprite = isValidPos ? _cachedValidCanvas : _cachedInvalidCanvas;
   if (sprite) {
-    ctx.drawImage(sprite, clampedX - ANCHOR_X, previewY - ANCHOR_Y);
+    ctx.drawImage(
+      sprite,
+      0,
+      0,
+      sprite.width,
+      sprite.height,
+      clampedX - ANCHOR_X,
+      previewY - ANCHOR_Y,
+      SPRITE_W,
+      SPRITE_H
+    );
   }
 }
