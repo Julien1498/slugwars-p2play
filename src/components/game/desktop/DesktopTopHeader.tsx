@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { perfTracker } from '../../../core/perfTracker';
 import { useFullscreen } from '../../../hooks/useFullscreen';
-import { RoomCodeBadge } from 'p2play-core';
-import { HeaderOptionsMenu } from '../header/HeaderOptionsMenu';
 import {
   DesktopTopHeaderProps,
   computeDesktopTeamStats,
@@ -11,6 +9,7 @@ import {
 import { ActiveOperativeCard } from './header/ActiveOperativeCard';
 import { TacticalChronoHub } from './header/TacticalChronoHub';
 import { SquadsTelemetryBarometer } from './header/SquadsTelemetryBarometer';
+import { DesktopActionTray } from './header/DesktopActionTray';
 import { ConfirmReturnModal } from './header/ConfirmReturnModal';
 
 export type { DesktopTopHeaderProps };
@@ -61,38 +60,28 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
         {/* 2. TOP-CENTER: UNIFIED TACTICAL HUB (CHRONO & WIND INDICATOR) */}
         <TacticalChronoHub gameState={gameState} />
 
-        {/* 3. TOP-RIGHT: SQUADS HEALTH BAROMETER & TOOL TRAY */}
+        {/* 3. TOP-RIGHT: SQUADS HEALTH BAROMETER & UNIFIED ACTION TRAY */}
         <div className="pointer-events-auto flex items-center gap-2">
           {/* Multi-Team Scoreboard Barometer */}
           <SquadsTelemetryBarometer teamStats={teamStats} />
 
-          {/* Tactical Room Code Badge */}
-          {hostPeerId && (
-            <RoomCodeBadge
-              code={hostPeerId}
-              label="Salon"
-              accentClassName="text-violet-400"
-            />
-          )}
-
-          {/* Options & Settings Dropdown Menu */}
-          <HeaderOptionsMenu
-            showMenuPopover={showMenuPopover}
-            setShowMenuPopover={setShowMenuPopover}
-            fpsHudActive={fpsHudActive}
-            setFpsHudActive={setFpsHudActive}
+          {/* Unified Quick Action Tray (Room Code + Fullscreen + Settings Dropdown Gear) */}
+          <DesktopActionTray
+            hostPeerId={hostPeerId}
             isFullscreen={isFullscreen}
             isFullscreenSupported={isFullscreenSupported}
             toggleFullscreen={toggleFullscreen}
-            isHost={isHost}
             showHitboxes={showHitboxes}
             onToggleHitboxes={onToggleHitboxes}
+            fpsHudActive={fpsHudActive}
+            setFpsHudActive={setFpsHudActive}
+            showMenuPopover={showMenuPopover}
+            setShowMenuPopover={setShowMenuPopover}
             onOpenRules={onOpenRules}
             onOpenMetrics={onOpenMetrics}
-            onRestartGame={onRestartGame}
-            onExit={onExit}
+            isHost={isHost}
             onRequestConfirmLobby={() => setShowConfirmLobby(true)}
-            isTouch={false}
+            onExit={onExit}
           />
         </div>
       </header>
@@ -101,7 +90,10 @@ export const DesktopTopHeader: React.FC<DesktopTopHeaderProps> = React.memo(({
       <ConfirmReturnModal
         isOpen={showConfirmLobby}
         onClose={() => setShowConfirmLobby(false)}
-        onConfirm={() => onRestartGame?.()}
+        onConfirm={() => {
+          setShowConfirmLobby(false);
+          onRestartGame?.();
+        }}
       />
     </>
   );
