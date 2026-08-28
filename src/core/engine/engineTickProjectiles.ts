@@ -76,7 +76,7 @@ export function updateProjectilesInTick(
       } else if (proj.weaponId === 'concrete_donkey') {
         const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
         const curWaterY = state.waterLevel ?? terrain.data.waterLevel;
-        // In Tactical Artillery, the Concrete Donkey pulverizes landmasses but sinks straight into the ocean without bouncing on water!
+        // The Concrete Donkey pulverizes landmasses but sinks straight into the ocean without bouncing on water!
         if (bouncesLeft > 0 && pt.y < curWaterY - 15) {
           proj.x = pt.x + (Math.random() - 0.5) * 4;
           proj.y = pt.y - 14;

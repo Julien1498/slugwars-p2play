@@ -96,11 +96,11 @@ export function carveTerrainFeatures(
     }
   }
 
-  // 2.6 Multi-Agent Continuous Perlin Tactical Artillery Tunnel Network (for ORGANIC_CAVES theme)
+  // 2.6 Multi-Agent Continuous Tunnel Network (for ORGANIC_CAVES theme)
   if (theme === 'ORGANIC_CAVES') {
-    // Swarm of 10 narrow, winding underground tactical artillery (radius 13 to 20px) creating tight labyrinthine tunnels
-    const diggerCount = 10;
-    for (let w = 0; w < diggerCount; w++) {
+    // Swarm of 10 narrow, winding underground tunnels (radius 13 to 20px) creating tight labyrinthine paths
+    const tunnelDiggerCount = 10;
+    for (let w = 0; w < tunnelDiggerCount; w++) {
       let wx = prng.range(width * 0.1, width * 0.9);
       let wy = prng.range(50, waterLevel - 60);
       let angle = prng.range(0, Math.PI * 2);

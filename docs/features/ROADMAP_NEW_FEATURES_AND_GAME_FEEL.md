@@ -3,13 +3,13 @@
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
 > **Catégorie** : Game Design, Roadmap & Nouvelles Idées  
-> **Inspirations officielles** : *Tactical Artillery*, *Tactical Artillery*, *Portal (Valve)*, *Hedgewars*
+> **Inspirations** : Artillerie Balistique 2D, *Portal (Valve)*, Stratégie Tour par Tour
 
 ---
 
-## ⏳ 1. Mécanique Officielle Tactical Artillery : Délais de Tours & Caisses d'Armes
+## ⏳ 1. Mécanique Tactique : Délais de Tours & Caisses d'Armes
 
-Dans *Tactical Artillery* (schéma standard / intermédiaire), **toutes les armes ne sont PAS disponibles au tour 1**. Le système repose sur 3 paramètres par arme :
+Dans les règles de tournoi et de match équilibré, **toutes les armes ne sont PAS disponibles au tour 1**. Le système repose sur 3 paramètres par arme :
 1. **Stock initial** : Quantité de munitions au départ (ou $\infty$ pour le bazooka, la grenade et le skip turn).
 2. **Délai de déblocage (*Turn Delay*)** : Nombre de tours obligatoires avant que l'arme ne devienne sélectionnable dans la roue d'armes (affichée grisée avec un badge `[3]` par exemple).
 3. **Taux d'apparition en caisse (*Crate Probability*)** : Chance qu'une caisse parachutée du ciel contienne cette arme.
@@ -43,13 +43,10 @@ graph TD
 
 ---
 
-## 🌀 2. Le Pistolet à Portails (*Portal Gun*) dans Tactical Artillery
+## 🌀 2. Le Pistolet à Portails (*Portal Gun*)
 
 > [!NOTE]
-> **Oui, le Portal Gun existe officiellement dans *Tactical Artillery* !**  
-> Il a été intégré en collaboration officielle avec Valve dans le pack *Tactical Artillery All-Stars*.
->
-> **Fonctionnement dans Tactical Artillery & Adaptation pour SlugWars** :
+> **Fonctionnement dans l'Arène & Adaptation pour SlugWars** :
 > 1. **Tir 1 (Portail Bleu)** : Le joueur vise une paroi rocheuse et pose l'entrée du portail.
 > 2. **Tir 2 (Portail Orange)** : Le joueur tire la sortie du portail sur un autre point de la carte.
 > 3. **Physique quantique** :
@@ -103,7 +100,7 @@ graph TD
 
 | Fonctionnalité | Fun / Valeur Ajoutée | Complexité Technique | Effort Estimé |
 | :--- | :---: | :---: | :---: |
-| ⏳ **Délais de Tours (*Turn Delay*) façon Tactical Artillery** | ⭐⭐⭐⭐⭐ | 🟢 Faible | ~30 min |
+| ⏳ **Délais de Tours (*Turn Delay*) & Caisses** | ⭐⭐⭐⭐⭐ | 🟢 Faible | ~30 min |
 | 📳 **Screen Shake & Retour Haptique Mobile** | ⭐⭐⭐⭐⭐ | 🟢 Faible | ~45 min |
 | 🕳️ **Le Trou Noir Miniature & Jetpack** | ⭐⭐⭐⭐⭐ | 🟡 Moyenne | ~1h30 |
 | 🎥 **Slow-Motion Finisher Cam** | ⭐⭐⭐⭐ | 🟢 Faible | ~45 min |

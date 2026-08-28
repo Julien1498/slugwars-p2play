@@ -1,6 +1,6 @@
 # Audit Technique Approfondi : Moteur Balistique, Physique 2D & Pipeline de Rendu
 
-> **Projet** : `slugwars-p2play` (Artillerie Balistique au Tour par Tour type *Tactical Artillery* / *Hedgewars*)  
+> **Projet** : `slugwars-p2play` (Artillerie Balistique au Tour par Tour 2D)  
 > **Date** : Août 2026  
 > **Auteur** : Audit Moteur & Architecture  
 > **Validation** : 34 suites de tests unitaires / 373 tests passants (100% de succès)

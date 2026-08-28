@@ -46,9 +46,9 @@ describe('engineManagers - PhaseManager, SupplyDropManager, VehicleManager & Wea
         id: 'team_blue',
         name: 'Blue Team',
         color: '#3b82f6',
-        avatar: 'snail',
-        isHost: false,
-        inventory: { bazooka: -1, grenade: 3 },
+        avatar: 'slug',
+        isHost: true,
+        inventory: { bazooka: 3 },
         stats: { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 },
       },
     ];

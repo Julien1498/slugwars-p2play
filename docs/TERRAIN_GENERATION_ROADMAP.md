@@ -41,9 +41,8 @@ Actuellement, le terrain repose sur une courbe de hauteur 1D ($y = f(x)$) avec q
 * **Impact Gameplay** :
   * Positions idéales pour les tireurs d'élite, mais très vulnérables aux explosions qui peuvent détruire la base du pilier pour faire chuter l'ennemi dans l'eau.
 
-### 🕳️ D. Réseau de Galeries et Tunnels Continus (*Perlin Tactical Artillery*)
-* **Concept** : Remplacer les simples trous ovales par de véritables boyaux souterrains sinueux qui serpentent à travers la montagne et débouchent sur plusieurs sorties.
-* **Mathématiques / Algorithme** :
+### 🕳️ D. Réseau de Galeries et Tunnels Continus (*Perlin Diggers*)
+* **Idée** :
   * Agent autonome (Perlin Digger) qui avance pas à pas en modifiant son angle via un bruit 1D et qui creuse un cercle de rayon $R \in [25, 45]\text{px}$.
 
 ---

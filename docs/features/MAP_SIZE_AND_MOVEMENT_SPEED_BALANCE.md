@@ -3,7 +3,7 @@
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
 > **Catégorie** : Game Design, Équilibrage & Rythme de Jeu  
-> **Objectif** : Aligner les dimensions de cartes et la vitesse des limaces sur l'expérience tactique de *Tactical Artillery*.
+> **Objectif** : Aligner les dimensions de cartes et la vitesse des limaces sur une expérience tactique optimale.
 
 ---
 
@@ -42,9 +42,9 @@
 
 ---
 
-## 📊 3. Comparatif Mathématique : SlugWars vs Tactical Artillery
+## 📊 3. Comparatif Mathématique des Échelles
 
-| Paramètre de Jeu | SlugWars P2Play (Actuel) | Tactical Artillery (Officiel) | SlugWars Rééquilibré (Cible) |
+| Paramètre de Jeu | SlugWars P2Play (Actuel) | Standard du Genre (Classique) | SlugWars Rééquilibré (Cible) |
 | :--- | :---: | :---: | :---: |
 | **Vitesse de reptation** | **$64\text{ px/s}$** ($4.0\text{ corps/s}$) | $\approx 35\text{ px/s}$ ($1.1\text{ corps/s}$) | **$48\text{ px/s}$** ($3.0\text{ corps/s}$) |
 | **Taille Carte Normale** | **$1400 \times 800\text{ px}$** | $2400 \times 1200\text{ px}$ | **$2000 \times 1000\text{ px}$** |

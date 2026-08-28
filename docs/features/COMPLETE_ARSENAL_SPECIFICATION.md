@@ -1,8 +1,8 @@
-# Comparatif de l'Arsenal : Tactical Artillery vs SlugWars P2Play
+# Spécification Complète de l'Arsenal & Comparatif Standard : SlugWars P2Play
 
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
-> **Référence** : *Tactical Artillery* (Team17) vs *SlugWars P2Play*  
+> **Catégorie** : Game Design, Arsenal & Balistique 2D  
 > **État des lieux** : 19 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
 
 ---
@@ -25,11 +25,11 @@
 
 ---
 
-## 🚀 2. Tableau Comparatif Détaillé par Catégorie
+## 🚀 2. Tableau Détaillé par Catégorie
 
 ### A. Armes Balistiques & Explosifs Standards
 
-| Arme | Dans Tactical Artillery | Dans `slugwars-p2play` | Détails & Spécificités |
+| Arme | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Bazooka** | ✅ | ✅ | **Présent** (Tir balistique soumis au vent, 45 dégâts, cratère moyen) |
 | **Grenade Classique** | ✅ | ✅ | **Présent** (Mèche 1-5s réglable, rebonds élastiques, 45 dégâts) |
@@ -48,7 +48,7 @@
 
 ### B. Super-Armes Mythiques & Dévastatrices
 
-| Super-Arme | Dans Tactical Artillery | Dans `slugwars-p2play` | Détails & Spécificités |
+| Super-Arme | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Sainte Grenade (Holy Hand Grenade)** | ✅ | ✅ | **Présent** (Cri *"Alléluia"*, rayon d'explosion massif, 100 dégâts) |
 | **L'Âne en Béton (Concrete Donkey)** | ✅ | ✅ | **Présent** (Tombe du ciel et pilonne le sol verticalement jusqu'à l'eau) |
@@ -61,18 +61,18 @@
 
 ### C. Frappes Aériennes & Support Céleste
 
-| Frappe Aérienne | Dans Tactical Artillery | Dans `slugwars-p2play` | Détails & Spécificités |
+| Frappe Aérienne | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Frappe Aérienne (Air Strike)** | ✅ | ✅ | **Présent** (5 missiles tombant du ciel sur les coordonnées ciblées) |
 | **Bunker Buster** | ✅ | ❌ | *Non présent (Bombe perforante creusant le sol avant d'exploser)* |
 | **Frappe de Mines (Mine Strike)** | ✅ | ❌ | *Non présent (Parachutage de 5 mines actives sur une zone)* |
-| **Kamikaze** | ✅ | ❌ | *Non présent (Propulsion du ver en ligne droite perforant le terrain)* |
+| **Kamikaze** | ✅ | ❌ | *Non présent (Propulsion de l'opératif en ligne droite perforant le terrain)* |
 
 ---
 
 ### D. Mobilité, Corps-à-Corps & Outils Utilitaires
 
-| Outil / Arme | Dans Tactical Artillery | Dans `slugwars-p2play` | Détails & Spécificités |
+| Outil / Arme | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Batte de Baseball** | ✅ | ✅ | **Présent** (Coup de batte au corps-à-corps avec impulsion physique) |
 | **Piquouze (Prod)** | ✅ | ✅ | **Présent** (Pousse légère silencieuse pour éjecter dans l'eau) |
@@ -91,7 +91,7 @@
 
 ### E. Véhicules & Tourelles Montées
 
-| Véhicule / Tourelle | Dans Tactical Artillery | Dans `slugwars-p2play` | Détails & Spécificités |
+| Véhicule / Tourelle | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Hélicoptère (Rocket Copter)** | ✅ | ✅ | **Présent** (Véhicule pilotable par les limaces avec physique et tir) |
 | **Tank d'Assaut (Slug Tank)** | ✅ | ❌ | *Non présent (Blindé écrasant le décor et tirant 6 obus consécutifs)* |
@@ -100,12 +100,12 @@
 
 ---
 
-### F. Armes Spéciales & Crossover DLC (Pack All-Stars)
+### F. Armes Spéciales & Crossovers
 
-| Arme Spéciale | Licence W.M.D | Dans `slugwars-p2play` | Détails & Spécificités |
+| Arme Spéciale | Origine | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | 🌀 **Portal Gun** | **Portal (Valve)** | ❌ *(Roadmap)* | Tire le Portail Bleu (Entrée) et Orange (Sortie) pour téléporter tirs et limaces |
-| ⚡ **Frappe OMG (OMG Laser)** | **W.M.D Original** | ❌ *(Roadmap)* | Rayon laser orbital continu découpant verticalement le terrain jusqu'à l'eau |
+| ⚡ **Frappe OMG (OMG Laser)** | **Original** | ❌ *(Roadmap)* | Rayon laser orbital continu découpant verticalement le terrain jusqu'à l'eau |
 | 🎶 **Dubstep Gun** | **Saints Row** | ❌ | Fait danser les ennemis au rythme de la musique avant de les projeter |
 | 🪓 **Frappe Broforce** | **Broforce** | ❌ | Bombardement cinématique dévastateur |
 | 🔫 **Tourelle Sentry TF2** | **Team Fortress 2** | ❌ | Tourelle automatique de défense de zone |

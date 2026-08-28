@@ -46,7 +46,7 @@ export function generateProceduralTerrain(
   const baseGroundY = generate1DHeightmap(prng, theme, width, height, baseFreq, p1, p2, p3);
   fillInitialTerrainGrid(grid, baseGroundY, prng, theme, width, height, baseFreq, p1, p2, p3, waterLevel);
 
-  // 2. Carve Subterranean Features (Perlin Tactical Artillery, Arches, Caves, Bedrock Ceiling, Tactical Floating Islands)
+  // 2. Carve Subterranean Features (Tunnels, Arches, Caves, Bedrock Ceiling, Tactical Floating Islands)
   carveTerrainFeatures(grid, prng, theme, width, height, waterLevel);
 
   // 3. Place Entities (Safe Spawns, Mines, Destructible Props & Background Decor)
