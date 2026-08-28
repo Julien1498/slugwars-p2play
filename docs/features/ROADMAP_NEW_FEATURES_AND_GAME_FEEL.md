@@ -96,3 +96,18 @@ graph TD
 * 🪦 **Pierres Tombes Physiques** ancrées dans le décor lors de l'élimination d'une limace.
 * 💥 **Screen Shake** : Secousse de caméra proportionnelle à la puissance des explosions.
 * 📳 **Retour Haptique Mobile** : Vibrations smartphone (`navigator.vibrate`) sur les tirs et impacts.
+
+---
+
+## 📋 7. Matrice de Priorisation & Complexité
+
+| Fonctionnalité | Fun / Valeur Ajoutée | Complexité Technique | Effort Estimé |
+| :--- | :---: | :---: | :---: |
+| ⏳ **Délais de Tours (*Turn Delay*) façon Tactical Artillery** | ⭐⭐⭐⭐⭐ | 🟢 Faible | ~30 min |
+| 📳 **Screen Shake & Retour Haptique Mobile** | ⭐⭐⭐⭐⭐ | 🟢 Faible | ~45 min |
+| 🕳️ **Le Trou Noir Miniature & Jetpack** | ⭐⭐⭐⭐⭐ | 🟡 Moyenne | ~1h30 |
+| 🎥 **Slow-Motion Finisher Cam** | ⭐⭐⭐⭐ | 🟢 Faible | ~45 min |
+| 🗣️ **Voix Synthétisées Web Audio (0 Ko)** | ⭐⭐⭐⭐⭐ | 🟡 Moyenne | ~1h15 |
+| 🏰 **Mode "Bastions / Forts"** | ⭐⭐⭐⭐ | 🟢 Faible | ~45 min |
+| 💾 **Système de Replay P2P (.slugreplay)** | ⭐⭐⭐⭐ | 🔴 Élevée | ~2h30 |
+| 🌀 **Le Pistolet à Portails (Portal Gun)** | ⭐⭐⭐⭐⭐ | 🔴 Élevée | ~3h00 |
