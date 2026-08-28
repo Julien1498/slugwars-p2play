@@ -5,107 +5,224 @@ describe('networkMetrics - Bandwidth, Latency & Traffic Inspector', () => {
   beforeEach(() => {
     // Reset tracker state
     netMetrics.setPeerManager(null);
+    netMetrics.realPingMs = null;
   });
 
-  it('records upload and download packets and returns formatted stats', async () => {
-    // Record uploads
-    netMetrics.recordUpload(512);
-    netMetrics.recordUpload(new Uint8Array(128));
-    netMetrics.recordUpload('test-string-payload');
+  describe('Payload Accounting & Data Types', () => {
+    it('accurately records byte counts for numbers, ArrayBuffers, TypedArrays, strings and JSON objects', async () => {
+      // 1. Raw byte number (100 + 64 overhead = 164)
+      netMetrics.recordUpload(100);
 
-    // Record downloads
-    netMetrics.recordDownload(1024);
-    netMetrics.recordDownload({ type: 'STATE_UPDATE', phase: 'AIMING' });
+      // 2. ArrayBuffer (64 bytes + 64 overhead = 128)
+      const buffer = new ArrayBuffer(64);
+      netMetrics.recordUpload(buffer);
 
-    // Trigger sample
-    await netMetrics.sample();
+      // 3. TypedArray (32 bytes + 64 overhead = 96)
+      const view = new Uint8Array(32);
+      netMetrics.recordUpload(view);
 
-    const stats = netMetrics.getStats();
-    expect(stats.uploadKbps).toBeGreaterThanOrEqual(0);
-    expect(stats.downloadKbps).toBeGreaterThanOrEqual(0);
-    expect(stats.packetsPerSec).toBeGreaterThanOrEqual(0);
-    expect(stats.totalSentKB).toBeGreaterThan(0);
-    expect(stats.totalReceivedKB).toBeGreaterThan(0);
+      // 4. String (10 chars + 64 overhead = 74)
+      netMetrics.recordUpload('0123456789');
+
+      // 5. JSON Object (string length + 64 overhead)
+      const obj = { msg: 'hello' };
+      netMetrics.recordDownload(obj);
+
+      await netMetrics.sample();
+      const stats = netMetrics.getStats();
+
+      expect(stats.totalSentKB).toBeGreaterThan(0);
+      expect(stats.totalReceivedKB).toBeGreaterThan(0);
+      expect(stats.packetsPerSec).toBeGreaterThan(0);
+    });
   });
 
-  it('samples WebRTC RTCPeerConnection statistics when available', async () => {
-    const mockGetStats = vi.fn().mockResolvedValue([
-      {
-        type: 'candidate-pair',
-        state: 'succeeded',
-        nominated: true,
-        bytesSent: 50000,
-        bytesReceived: 80000,
-        currentRoundTripTime: 0.042, // 42ms
-      },
-    ]);
+  describe('WebRTC Native getStats() Sampling & Rate Calculations', () => {
+    it('samples WebRTC candidate-pair stats and data-channel fallback', async () => {
+      const mockGetStats = vi.fn().mockResolvedValue([
+        {
+          type: 'candidate-pair',
+          state: 'succeeded',
+          nominated: true,
+          bytesSent: 50000,
+          bytesReceived: 80000,
+          currentRoundTripTime: 0.042, // 42ms
+        },
+      ]);
 
-    const mockPeerManager = {
-      connections: new Map([
-        [
-          'peer_1',
-          {
-            peerConnection: {
-              getStats: mockGetStats,
+      const mockPeerManager = {
+        connections: new Map([
+          [
+            'peer_1',
+            {
+              peerConnection: {
+                getStats: mockGetStats,
+              },
             },
-          },
-        ],
-      ]),
-    };
+          ],
+        ]),
+      };
 
-    netMetrics.setPeerManager(mockPeerManager);
+      netMetrics.setPeerManager(mockPeerManager);
 
-    // First sample establishes baseline
-    await netMetrics.sample();
-    expect(netMetrics.realPingMs).toBe(42);
+      // Baseline sample
+      await netMetrics.sample();
+      expect(netMetrics.realPingMs).toBe(42);
 
-    // Second sample calculates delta rates
-    mockGetStats.mockResolvedValue([
-      {
-        type: 'candidate-pair',
-        state: 'succeeded',
-        nominated: true,
-        bytesSent: 60000,
-        bytesReceived: 100000,
-        currentRoundTripTime: 0.038, // 38ms
-      },
-    ]);
+      // Delta rate sample
+      mockGetStats.mockResolvedValue([
+        {
+          type: 'candidate-pair',
+          state: 'succeeded',
+          nominated: true,
+          bytesSent: 60240,
+          bytesReceived: 102400,
+          currentRoundTripTime: 0.035, // 35ms
+        },
+      ]);
 
-    await netMetrics.sample();
-    expect(netMetrics.realPingMs).toBe(38);
-    expect(netMetrics.totalSentBytes).toBe(60000);
-    expect(netMetrics.totalReceivedBytes).toBe(100000);
+      await netMetrics.sample();
+      expect(netMetrics.realPingMs).toBe(35);
+      expect(netMetrics.totalSentBytes).toBe(60240);
+      expect(netMetrics.totalReceivedBytes).toBe(102400);
+
+      const stats = netMetrics.getStats();
+      expect(stats.uploadKBs).toBeGreaterThanOrEqual(0);
+      expect(stats.downloadKBs).toBeGreaterThanOrEqual(0);
+    });
+
+    it('filters out invalid or out-of-bound RTT values (<= 0 or >= 2000ms)', async () => {
+      const mockGetStats = vi.fn().mockResolvedValue([
+        {
+          type: 'candidate-pair',
+          state: 'succeeded',
+          nominated: true,
+          bytesSent: 1000,
+          bytesReceived: 1000,
+          currentRoundTripTime: 3.5, // 3500ms -> invalid / out of bounds
+        },
+      ]);
+
+      const mockPeerManager = {
+        connections: new Map([
+          [
+            'peer_1',
+            {
+              peerConnection: {
+                getStats: mockGetStats,
+              },
+            },
+          ],
+        ]),
+      };
+
+      netMetrics.setPeerManager(mockPeerManager);
+      await netMetrics.sample();
+
+      expect(netMetrics.realPingMs).toBeNull();
+    });
+
+    it('falls back to data-channel bytes when candidate-pair is absent', async () => {
+      const mockGetStats = vi.fn().mockResolvedValue([
+        {
+          type: 'data-channel',
+          bytesSent: 15000,
+          bytesReceived: 25000,
+        },
+      ]);
+
+      const mockPeerManager = {
+        connections: new Map([
+          [
+            'peer_1',
+            {
+              peerConnection: {
+                getStats: mockGetStats,
+              },
+            },
+          ],
+        ]),
+      };
+
+      netMetrics.setPeerManager(mockPeerManager);
+      await netMetrics.sample();
+
+      expect(netMetrics.totalSentBytes).toBe(15000);
+      expect(netMetrics.totalReceivedBytes).toBe(25000);
+    });
   });
 
-  it('runs a traffic capture session and generates a structured TrafficCaptureReport', async () => {
-    vi.useFakeTimers();
+  describe('Traffic Capture Inspector & Semantic Packet Summaries', () => {
+    it('runs a traffic capture session, tracks progress, and produces structured TrafficCaptureReport', () => {
+      vi.useFakeTimers();
 
-    const listener = vi.fn();
-    const unsubscribe = netMetrics.onCaptureUpdate(listener);
+      const progressUpdates: number[] = [];
+      const unsubscribe = netMetrics.onCaptureUpdate((report, remaining) => {
+        if (remaining > 0) progressUpdates.push(remaining);
+      });
 
-    netMetrics.startCapture(1); // 1-second capture
-    expect(netMetrics.isCaptureRecording()).toBe(true);
+      netMetrics.startCapture(2); // 2-second capture
+      expect(netMetrics.isCaptureRecording()).toBe(true);
 
-    // Send mock packets during capture
-    netMetrics.recordUpload(256, { turnTimer: 45, phase: 'AIMING', slugs: [{ idx: 0 }] });
-    netMetrics.recordDownload(512, { type: 'ACTION', actionName: 'FIRE_WEAPON' });
+      // Second startCapture call should be safely ignored while active
+      netMetrics.startCapture(5);
 
-    // Advance 1000ms
-    vi.advanceTimersByTime(1100);
+      // Record varied packets to test semantic summaries
+      netMetrics.recordUpload(256, {
+        turnTimer: 45,
+        retreatTimer: 4,
+        slugs: [{ id: 's1' }, { id: 's2' }],
+        projectiles: [{ id: 'p1' }],
+        explosions: [{ id: 'e1' }],
+        girders: [{ id: 'g1' }],
+        supplyCrates: [{ id: 'c1' }],
+        mines: [{ id: 'm1' }],
+        phase: 'RETREAT',
+      });
 
-    expect(netMetrics.isCaptureRecording()).toBe(false);
-    const report = netMetrics.getLastCaptureReport();
+      netMetrics.recordDownload(512, { type: 'ACTION', actionName: 'FIRE_WEAPON' });
+      netMetrics.recordDownload(128, {}); // Empty diff state
 
-    expect(report).not.toBeNull();
-    if (report) {
-      expect(report.uploadCount).toBeGreaterThanOrEqual(1);
-      expect(report.downloadCount).toBeGreaterThanOrEqual(1);
-      expect(report.packets.length).toBeGreaterThanOrEqual(2);
-      expect(report.packets[0].summary).toContain('Timer 45s');
-      expect(report.packets[1].summary).toContain('Action: FIRE_WEAPON');
-    }
+      // Advance time by 2.2 seconds
+      vi.advanceTimersByTime(2200);
 
-    unsubscribe();
-    vi.useRealTimers();
+      expect(netMetrics.isCaptureRecording()).toBe(false);
+      const report = netMetrics.getLastCaptureReport();
+
+      expect(report).not.toBeNull();
+      if (report) {
+        expect(report.uploadCount).toBe(1);
+        expect(report.downloadCount).toBe(2);
+        expect(report.packets).toHaveLength(3);
+
+        const summary = report.packets[0].summary;
+        expect(summary).toContain('Timer 45s');
+        expect(summary).toContain('Fuite 4s');
+        expect(summary).toContain('Limaces (2)');
+        expect(summary).toContain('Tirs (1)');
+        expect(summary).toContain('Explosions (1)');
+        expect(summary).toContain('Poutres (1)');
+        expect(summary).toContain('Caisses (1)');
+        expect(summary).toContain('Mines (1)');
+        expect(summary).toContain('Phase: RETREAT');
+
+        expect(report.packets[1].summary).toBe('🎮 Action: FIRE_WEAPON');
+        expect(report.packets[2].summary).toBe('Diff d’état');
+
+        expect(report.avgUploadBytesPerSec).toBeGreaterThan(0);
+        expect(report.avgDownloadBytesPerSec).toBeGreaterThan(0);
+      }
+
+      // Late subscriber should immediately receive the last report
+      let lateReportReceived = false;
+      const unsubscribeLate = netMetrics.onCaptureUpdate((rep) => {
+        if (rep) lateReportReceived = true;
+      });
+      expect(lateReportReceived).toBe(true);
+
+      unsubscribeLate();
+      unsubscribe();
+      vi.useRealTimers();
+    });
   });
 });
