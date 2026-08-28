@@ -2,19 +2,19 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { usePeer } from './usePeer';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { GameState } from '../core/types';
-import { SlugWarsNetworkMessage } from '../network/protocol';
 import { attachPresenceHandlers, createSeatEngine } from 'p2play-core/presence';
 import { syncRoomUrlToAddressBar, type PeerManagerLike } from 'p2play-core';
-import { createWorkerInterval } from '../core/workerTimer';
 import { netMetrics } from '../core/networkMetrics';
-import { perfTracker } from '../core/perfTracker';
-import { sfx } from '../core/audio';
 import { useGameBroadcast } from './game/useGameBroadcast';
 import { useHostActionHandler } from './game/useHostActionHandler';
 import { useGuestStateReceiver } from './game/useGuestStateReceiver';
+import { useGuestLocalTimer } from './game/useGuestLocalTimer';
+import { useHostPhysicsLoop } from './game/useHostPhysicsLoop';
+import { useHostLobbySync } from './game/useHostLobbySync';
+import { useVisibilityRecovery } from './game/useVisibilityRecovery';
+import { useActionDispatcher } from './game/useActionDispatcher';
+import { TEAM_COLORS } from './game/gameActionUtils';
 import { shouldUpdateReactUi } from '../core/uiSyncUtils';
-
-const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export function useGame(options?: {
   isEmbedded?: boolean;
@@ -44,9 +44,6 @@ export function useGame(options?: {
   }
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const lastSentStateRef = useRef<GameState | null>(null);
-  const lastAimSendTimeRef = useRef<number>(0);
-  const pendingAimPayloadRef = useRef<any>(null);
-  const aimThrottleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const lastUiUpdateRef = useRef<number>(0);
   const lastUiStateRef = useRef<GameState | null>(null);
@@ -74,7 +71,7 @@ export function useGame(options?: {
   const { handleHostAction } = useHostActionHandler(engineRef, isHost, myPeerId || '', peerManager, syncState, broadcastState);
   useGuestStateReceiver(engineRef, isHost, peerManager, updateReactState, myPeerId || '');
 
-  // Presence / Reconnect Handlers
+  // 1. Presence / Reconnect Handlers
   useEffect(() => {
     if (!isHost) return;
     const presence = attachPresenceHandlers({
@@ -94,65 +91,74 @@ export function useGame(options?: {
     return () => presence.dispose();
   }, [isHost, peerManager, handleHostAction, broadcastState]);
 
-  // Guest Local Timer Countdown (smooth 50ms countdown between 1 Hz host sync ticks, unthrottled in background)
+  // 2. Guest Local Timer & Countdown Interpolation (50ms worker loop)
+  useGuestLocalTimer({
+    engineRef,
+    isHost,
+    phase: gameState.phase,
+    myPeerId: myPeerId || '',
+    updateReactState,
+  });
+
+  // 3. Host Physics Loop (50ms worker loop & 20Hz delta broadcasting)
+  useHostPhysicsLoop({
+    engineRef,
+    isHost,
+    phase: gameState.phase,
+    broadcastDeltaState,
+    updateReactState,
+  });
+
+  // 4. Host Dynamic Lobby Sync
+  useHostLobbySync({
+    engineRef,
+    isHost,
+    myPeerId,
+    peerManager,
+    syncState,
+    broadcastState,
+    playerName: options?.playerName,
+    playerAvatar: options?.playerAvatar,
+  });
+
+  // 5. Guest Embedded Mount: Send JOIN_GAME & request state from host on mount
   useEffect(() => {
-    if (isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
+    if (options?.isEmbedded && !isHost && peerManager && myPeerId) {
+      const sendJoinAndSync = () => {
+        peerManager.sendToHost('ACTION', {
+          actionName: 'JOIN_GAME',
+          playerId: myPeerId,
+          payload: {
+            name: options.playerName || peerManager.getTrustedUsername?.(myPeerId),
+            avatar: options.playerAvatar || '🐌',
+          },
+        });
+        peerManager.sendToHost('ACTION', {
+          actionName: 'REQUEST_FULL_STATE',
+        });
+      };
+      [100, 400, 1000, 2500].forEach((ms) => setTimeout(sendJoinAndSync, ms));
+    }
+  }, [options?.isEmbedded, isHost, peerManager, myPeerId, options?.playerName, options?.playerAvatar]);
 
-    const stopWorker = createWorkerInterval(() => {
-      const state = engineRef.current.state;
-      let changed = false;
-      if (state.phase === 'AIMING' || state.phase === 'PLACEMENT' || state.phase === 'TURN_START') {
-        if (state.turnTimer > 0) {
-          state.turnTimer = Math.max(0, state.turnTimer - 0.05);
-          changed = true;
-        }
-      } else if (state.phase === 'RETREAT' && state.retreatTimer !== undefined) {
-        if (state.retreatTimer > 0) {
-          state.retreatTimer = Math.max(0, state.retreatTimer - 0.05);
-          changed = true;
-        }
-      }
+  // 6. Tab-Switch / Focus Recovery
+  useVisibilityRecovery({
+    engineRef,
+    isHost,
+    broadcastState,
+    peerManager,
+  });
 
-      // Smooth guest-side countdown for triggered landmines (2.0s -> 0.0s)
-      if (state.mines && state.mines.length > 0) {
-        for (const m of state.mines) {
-          if (m.isTriggered && m.fuseTimerMs !== undefined && m.fuseTimerMs > 0) {
-            m.fuseTimerMs = Math.max(0, m.fuseTimerMs - 50);
-            changed = true;
-          }
-        }
-      }
-
-      // Smooth charge power filling on guest (2.5% per 50ms)
-      const isMyTurn = myPeerId && state.activeTeamId === myPeerId && state.phase === 'AIMING';
-      const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
-      if (activeSlug && activeSlug.isChargingPower) {
-        activeSlug.aimPower = Math.min(100, (activeSlug.aimPower || 0) + 2.5);
-        changed = true;
-      }
-
-      // Smooth continuous descent for falling supply crates on guest (50ms interval)
-      if (state.supplyCrates && state.supplyCrates.length > 0) {
-        for (const crate of state.supplyCrates) {
-          if (!crate.isLanded) {
-            crate.x += state.wind * 0.15;
-            crate.y += (crate.vy || 1.8);
-            if (engineRef.current.terrain.isSolid(crate.x, crate.y + 10) || crate.y >= engineRef.current.terrain.data.waterLevel - 15) {
-              crate.isLanded = true;
-              crate.vy = 0;
-            }
-            changed = true;
-          }
-        }
-      }
-
-      if (changed) {
-        updateReactState(state, true);
-      }
-    }, 50);
-
-    return () => stopWorker();
-  }, [isHost, gameState.phase, myPeerId, updateReactState]);
+  // 7. Action Dispatcher with Optimistic Prediction and 30Hz AIM throttling
+  const { sendAction } = useActionDispatcher({
+    engineRef,
+    isHost,
+    myPeerId,
+    peerManager,
+    handleHostAction,
+    syncState,
+    setGameState,
+  });
 
   // Host room creation wrapper
   const hostRoom = useCallback(
@@ -183,237 +189,6 @@ export function useGame(options?: {
       [200, 800, 2000].forEach((ms) => setTimeout(sendJoin, ms));
     },
     [joinGame, peerManager]
-  );
-
-  // Host: Dynamic lobby sync for newly connected players while in LOBBY phase
-  useEffect(() => {
-    if (!isHost) return;
-
-    const syncLobbyTeams = () => {
-      if (engineRef.current.state.phase !== 'LOBBY') return;
-      let changed = false;
-
-      // Ensure host is present
-      if (myPeerId && !engineRef.current.state.teams.some((t) => t.id === myPeerId)) {
-        const hostName = options?.playerName || peerManager.getTrustedUsername?.(myPeerId) || 'Hôte';
-        const hostAvatar = options?.playerAvatar || '🐌';
-        engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true);
-        changed = true;
-      }
-
-      // Check all lobby players from peerManager
-      if (peerManager.lobbyPlayers) {
-        peerManager.lobbyPlayers.forEach((p) => {
-          if (p.peerId && !engineRef.current.state.teams.some((t) => t.id === p.peerId)) {
-            const isGeneric = !p.username || p.username.startsWith('Joueur-') || p.username.startsWith('Joueur ');
-            const resolvedName = !isGeneric ? p.username : (peerManager.getTrustedUsername?.(p.peerId) || `Limace ${p.peerId.slice(0, 4)}`);
-            const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
-            engineRef.current.addTeam(
-              p.peerId,
-              resolvedName,
-              TEAM_COLORS[colorIdx],
-              p.avatar || '🐌',
-              p.peerId === myPeerId
-            );
-            changed = true;
-          }
-        });
-      }
-
-      // Check all connected peer IDs from peerManager
-      peerManager.connections?.forEach((conn, peerId) => {
-        if (conn.open && !engineRef.current.state.teams.some((t) => t.id === peerId)) {
-          const trusted = peerManager.getTrustedUsername?.(peerId);
-          const isGeneric = !trusted || trusted.startsWith('Joueur-') || trusted.startsWith('Joueur ');
-          const resolvedName = !isGeneric ? trusted : `Limace ${peerId.slice(0, 4)}`;
-          const colorIdx = engineRef.current.state.teams.length % TEAM_COLORS.length;
-          engineRef.current.addTeam(peerId, resolvedName, TEAM_COLORS[colorIdx], '🐌', false);
-          changed = true;
-        }
-      });
-
-      if (changed) {
-        syncState();
-        broadcastState(engineRef.current.state);
-      }
-    };
-
-    syncLobbyTeams();
-
-    const origPeerStatusChange = peerManager.onPeerStatusChange;
-    peerManager.onPeerStatusChange = (peerId, st) => {
-      origPeerStatusChange?.(peerId, st);
-      if (st === 'CONNECTED') {
-        syncLobbyTeams();
-      }
-    };
-
-    const origPlayersUpdate = (peerManager as any).onPlayersUpdate;
-    (peerManager as any).onPlayersUpdate = () => {
-      origPlayersUpdate?.();
-      syncLobbyTeams();
-    };
-
-    return () => {
-      peerManager.onPeerStatusChange = origPeerStatusChange;
-      (peerManager as any).onPlayersUpdate = origPlayersUpdate;
-    };
-  }, [isHost, myPeerId, options?.isEmbedded, options?.playerName, options?.playerAvatar, peerManager, syncState, broadcastState]);
-
-  // Guest Embedded Mount: Send JOIN_GAME & request state from host on mount
-  useEffect(() => {
-    if (options?.isEmbedded && !isHost && peerManager && myPeerId) {
-      const sendJoinAndSync = () => {
-        peerManager.sendToHost('ACTION', {
-          actionName: 'JOIN_GAME',
-          playerId: myPeerId,
-          payload: {
-            name: options.playerName || peerManager.getTrustedUsername?.(myPeerId),
-            avatar: options.playerAvatar || '🐌',
-          },
-        });
-        peerManager.sendToHost('ACTION', {
-          actionName: 'REQUEST_FULL_STATE',
-        });
-      };
-      [100, 400, 1000, 2500].forEach((ms) => setTimeout(sendJoinAndSync, ms));
-    }
-  }, [options?.isEmbedded, isHost, peerManager, myPeerId, options?.playerName, options?.playerAvatar]);
-
-  // Host Physics Loop (Web Worker 50ms / 20 Hz delta broadcasting during gameplay - unthrottled in background tabs!)
-  useEffect(() => {
-    if (!isHost || gameState.phase === 'LOBBY' || gameState.phase === 'GAME_OVER') return;
-
-    const stopWorker = createWorkerInterval(() => {
-      const t0 = performance.now();
-      engineRef.current.tick();
-      const dt = performance.now() - t0;
-      perfTracker.recordPhysicsTick(dt);
-
-      broadcastDeltaState(engineRef.current.state);
-      updateReactState(engineRef.current.state);
-    }, 50);
-
-    return () => stopWorker();
-  }, [isHost, gameState.phase, broadcastDeltaState, updateReactState]);
-
-  // Tab-Switch / Focus Recovery: Instantly re-synchronize full state when tab becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && engineRef.current.state.phase !== 'LOBBY') {
-        if (isHost) {
-          broadcastState(engineRef.current.state);
-        } else {
-          peerManager.sendToHost('ACTION', { actionName: 'REQUEST_FULL_STATE' });
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-    };
-  }, [isHost, broadcastState, peerManager]);
-
-  // Action Sender
-  const sendAction = useCallback(
-    (actionName: string, payload?: any) => {
-      const msg: SlugWarsNetworkMessage = { type: 'ACTION', actionName: actionName as any, payload };
-      if (isHost) {
-        const senderId = myPeerId || engineRef.current.state.activeTeamId || 'host';
-        handleHostAction(senderId, msg);
-        syncState();
-      } else {
-        // Optimistic local state update for instantaneous 0ms client responsiveness
-        const state = engineRef.current.state;
-        const isMyTurn = myPeerId && state.activeTeamId === myPeerId && (state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT');
-        const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
-
-        if (activeSlug) {
-          if (actionName === 'AIM') {
-            if (payload?.aimAngle !== undefined) activeSlug.aimAngle = payload.aimAngle;
-            if (payload?.aimPower !== undefined && !activeSlug.isChargingPower) activeSlug.aimPower = payload.aimPower;
-            if (payload?.facing !== undefined) activeSlug.facing = payload.facing;
-            if (payload?.targetPoint !== undefined) activeSlug.currentTargetPoint = payload.targetPoint;
-            setGameState({ ...state });
-          } else if (actionName === 'SELECT_WEAPON') {
-            if (payload?.weaponId) {
-              activeSlug.selectedWeaponId = payload.weaponId;
-              setGameState({ ...state });
-            }
-          } else if (actionName === 'SET_FUSE_TIMER') {
-            if (payload?.seconds !== undefined) {
-              activeSlug.fuseTimerSec = payload.seconds;
-              setGameState({ ...state });
-            }
-          } else if (actionName === 'START_CHARGE') {
-            activeSlug.isChargingPower = true;
-            activeSlug.aimPower = 5;
-            if (payload?.targetPoint) activeSlug.currentTargetPoint = payload.targetPoint;
-            setGameState({ ...state });
-          } else if (actionName === 'FIRE') {
-            activeSlug.isChargingPower = false;
-            if (activeSlug.selectedWeaponId === 'blowtorch') {
-              activeSlug.isBlowtorching = true;
-            }
-            setGameState({ ...state });
-          } else if (actionName === 'RELEASE_CHARGE') {
-            activeSlug.isChargingPower = false;
-            if (activeSlug.isBlowtorching) {
-              activeSlug.isBlowtorching = false;
-            }
-            setGameState({ ...state });
-          } else if (actionName === 'START_MOVE') {
-            if (payload?.dir) {
-              activeSlug.movingDir = payload.dir;
-              activeSlug.facing = payload.dir;
-              setGameState({ ...state });
-            }
-          } else if (actionName === 'STOP_MOVE') {
-            activeSlug.movingDir = null;
-            setGameState({ ...state });
-          } else if (actionName === 'JUMP') {
-            sfx.play('jump');
-          }
-        }
-
-        // Throttle high-frequency AIM network packets over WebRTC (approx 30Hz / 33ms) to prevent network congestion
-        if (actionName === 'AIM') {
-          pendingAimPayloadRef.current = payload;
-          const now = performance.now();
-          if (now - lastAimSendTimeRef.current >= 33) {
-            lastAimSendTimeRef.current = now;
-            peerManager.sendToHost('ACTION', { actionName, payload });
-            netMetrics.recordUpload(msg);
-          } else if (!aimThrottleTimerRef.current) {
-            aimThrottleTimerRef.current = setTimeout(() => {
-              aimThrottleTimerRef.current = null;
-              if (pendingAimPayloadRef.current) {
-                lastAimSendTimeRef.current = performance.now();
-                peerManager.sendToHost('ACTION', { actionName: 'AIM', payload: pendingAimPayloadRef.current });
-                netMetrics.recordUpload({ type: 'ACTION', actionName: 'AIM', payload: pendingAimPayloadRef.current });
-                pendingAimPayloadRef.current = null;
-              }
-            }, 33);
-          }
-          return;
-        }
-
-        // If firing or charging, flush any pending throttled aim packet immediately
-        if (aimThrottleTimerRef.current) {
-          clearTimeout(aimThrottleTimerRef.current);
-          aimThrottleTimerRef.current = null;
-          pendingAimPayloadRef.current = null;
-        }
-
-        peerManager.sendToHost('ACTION', { actionName, payload });
-        netMetrics.recordUpload(msg);
-      }
-    },
-    [isHost, myPeerId, peerManager, handleHostAction]
   );
 
   const sendChat = useCallback(
