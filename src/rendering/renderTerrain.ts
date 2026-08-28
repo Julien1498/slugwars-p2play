@@ -77,10 +77,11 @@ export function redrawOffscreenTerrain(
   // Retrieve Theme-Specific Geological Stratification Palette
   const palette = THEME_PALETTES[theme || 'ISLAND'] || THEME_PALETTES.ISLAND;
 
-  // 2-Pass Integer/Float Distance Transform
+  // 2-Pass Float Distance Transform
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
     const prevRowOffset = (y - 1) * width;
+    const hasTop = y > minY;
     for (let x = minX; x <= maxX; x++) {
       const idx = rowOffset + x;
       if (grid[idx] === 0) {
@@ -91,15 +92,16 @@ export function redrawOffscreenTerrain(
           const leftD = distMap[idx - 1] + 1;
           if (leftD < d) d = leftD;
         }
-        if (y > minY) {
-          const topD = distMap[prevRowOffset + x] + 1;
+        if (hasTop) {
+          const topIdx = prevRowOffset + x;
+          const topD = distMap[topIdx] + 1;
           if (topD < d) d = topD;
           if (x > minX) {
-            const diag1 = distMap[prevRowOffset + x - 1] + 1.414;
+            const diag1 = distMap[topIdx - 1] + 1.414;
             if (diag1 < d) d = diag1;
           }
           if (x < maxX) {
-            const diag2 = distMap[prevRowOffset + x + 1] + 1.414;
+            const diag2 = distMap[topIdx + 1] + 1.414;
             if (diag2 < d) d = diag2;
           }
         }
@@ -111,6 +113,7 @@ export function redrawOffscreenTerrain(
   for (let y = maxY; y >= minY; y--) {
     const rowOffset = y * width;
     const nextRowOffset = (y + 1) * width;
+    const hasBottom = y < maxY;
     for (let x = maxX; x >= minX; x--) {
       const idx = rowOffset + x;
       if (grid[idx] === 0) continue;
@@ -119,15 +122,16 @@ export function redrawOffscreenTerrain(
         const rightD = distMap[idx + 1] + 1;
         if (rightD < d) d = rightD;
       }
-      if (y < maxY) {
-        const bottomD = distMap[nextRowOffset + x] + 1;
+      if (hasBottom) {
+        const bottomIdx = nextRowOffset + x;
+        const bottomD = distMap[bottomIdx] + 1;
         if (bottomD < d) d = bottomD;
         if (x < maxX) {
-          const diag1 = distMap[nextRowOffset + x + 1] + 1.414;
+          const diag1 = distMap[bottomIdx + 1] + 1.414;
           if (diag1 < d) d = diag1;
         }
         if (x > minX) {
-          const diag2 = distMap[nextRowOffset + x - 1] + 1.414;
+          const diag2 = distMap[bottomIdx - 1] + 1.414;
           if (diag2 < d) d = diag2;
         }
       }
@@ -135,13 +139,21 @@ export function redrawOffscreenTerrain(
     }
   }
 
+  // Precalculate column-invariant trigonometric terms once per width (<0.01ms)
+  const sinXTable = new Float32Array(dirtyW);
+  for (let x = minX; x <= maxX; x++) {
+    sinXTable[x - minX] = Math.sin(x * 0.05) * 1.5;
+  }
+
   // Render Multi-Layer Geological Strata inside Dirty Bounding Box
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
     const dirtyRowOffset = (y - minY) * dirtyW;
+    const yFactor = y * 0.35;
     for (let x = minX; x <= maxX; x++) {
       const idx = rowOffset + x;
-      const dirtyIdx = dirtyRowOffset + (x - minX);
+      const xOffset = x - minX;
+      const dirtyIdx = dirtyRowOffset + xOffset;
 
       if (grid[idx] === 1) {
         const airDist = distMap[idx];
@@ -164,7 +176,7 @@ export function redrawOffscreenTerrain(
             data32[dirtyIdx] = palette.seam;
           } else {
             // Geological Strata Banding with organic undulating wave
-            const wave = Math.sin(y * 0.35 + Math.sin(x * 0.05) * 1.5);
+            const wave = Math.sin(yFactor + sinXTable[xOffset]);
             const strataT = 0.5 + 0.5 * wave;
             const strataColor = lerpColor32(palette.strataA, palette.strataB, strataT);
 

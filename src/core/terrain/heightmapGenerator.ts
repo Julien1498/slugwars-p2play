@@ -84,22 +84,20 @@ export function fillInitialTerrainGrid(
   waterLevel: number
 ) {
   // 1.5 Fill Terrain Grid from Heightmap (Ultra-fast direct memory write)
-  for (let x = 0; x < width; x++) {
-    // Cavern Roof Ceiling
-    if (theme === 'CAVERN') {
-      const roofNoise = prng.harmonicNoise(x, baseFreq * 1.2, p3, p1, p2) * 0.8;
-      const roofY = height * 0.2 + roofNoise;
-      const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
-      for (let y = 0; y < maxRoofY; y++) {
-        grid[y * width + x] = 1;
+  if (theme === 'ORGANIC_CAVES') {
+    grid.fill(1, 16 * width, height * width);
+  } else {
+    for (let x = 0; x < width; x++) {
+      // Cavern Roof Ceiling
+      if (theme === 'CAVERN') {
+        const roofNoise = prng.harmonicNoise(x, baseFreq * 1.2, p3, p1, p2) * 0.8;
+        const roofY = height * 0.2 + roofNoise;
+        const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
+        for (let y = 0; y < maxRoofY; y++) {
+          grid[y * width + x] = 1;
+        }
       }
-    }
 
-    if (theme === 'ORGANIC_CAVES') {
-      for (let y = 16; y < height; y++) {
-        grid[y * width + x] = 1;
-      }
-    } else {
       const startY = Math.max(0, Math.min(height - 1, Math.floor(baseGroundY[x])));
       for (let y = startY; y < height; y++) {
         grid[y * width + x] = 1;
