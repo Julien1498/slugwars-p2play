@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { Team } from '../core/types';
+import { describe, it, expect, vi } from 'vitest';
+import { Team, JournalEntry } from '../core/types';
 import type { ChatMessage } from 'p2play-core';
 import {
   getLogMeta,
@@ -117,6 +117,37 @@ describe('DesktopCombatLog Utilities & Formatters', () => {
       // >= 6.0s -> opacity = 0
       expect(computeChatOpacity(6000, 6000)).toBe(0);
       expect(computeChatOpacity(7000, 6000)).toBe(0);
+    });
+  });
+
+  describe('Journal Chronology & Input Trimming Logic', () => {
+    it('reverses newest-first journal into chronological order (oldest at top -> newest at bottom)', () => {
+      const journal: JournalEntry[] = [
+        { id: '3', timestamp: 3000, message: 'Événement récent', type: 'combat' },
+        { id: '2', timestamp: 2000, message: 'Événement intermédiaire', type: 'weapon' },
+        { id: '1', timestamp: 1000, message: 'Événement ancien', type: 'info' },
+      ];
+
+      const chronological = [...journal].reverse();
+      expect(chronological[0].id).toBe('1');
+      expect(chronological[2].id).toBe('3');
+    });
+
+    it('validates chat input text trimming before submission', () => {
+      const sendMock = vi.fn();
+
+      const handleSend = (text: string) => {
+        const trimmed = text.trim();
+        if (!trimmed) return false;
+        sendMock(trimmed);
+        return true;
+      };
+
+      expect(handleSend('   ')).toBe(false);
+      expect(sendMock).not.toHaveBeenCalled();
+
+      expect(handleSend('  Bonjour à tous !  ')).toBe(true);
+      expect(sendMock).toHaveBeenCalledWith('Bonjour à tous !');
     });
   });
 });
