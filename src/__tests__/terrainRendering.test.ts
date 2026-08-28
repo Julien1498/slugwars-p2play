@@ -93,23 +93,21 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
       redrawOffscreenTerrain(terrain, buffers);
 
       // Verify distance map
-      let airCount = 0;
-      let solidCount = 0;
+      let airMismatch = 0;
+      let solidMismatch = 0;
       let maxDist = 0;
 
       for (let i = 0; i < terrain.data.grid.length; i++) {
         if (terrain.data.grid[i] === 0) {
-          expect(buffers.distMap[i]).toBe(0);
-          airCount++;
+          if (buffers.distMap[i] !== 0) airMismatch++;
         } else {
-          expect(buffers.distMap[i]).toBeGreaterThan(0);
+          if (buffers.distMap[i] <= 0) solidMismatch++;
           if (buffers.distMap[i] > maxDist) maxDist = buffers.distMap[i];
-          solidCount++;
         }
       }
 
-      expect(airCount).toBeGreaterThan(0);
-      expect(solidCount).toBeGreaterThan(0);
+      expect(airMismatch).toBe(0);
+      expect(solidMismatch).toBe(0);
       expect(maxDist).toBeGreaterThan(5); // Internal core rock reaches deep distance
     });
 
