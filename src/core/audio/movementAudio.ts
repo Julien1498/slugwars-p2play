@@ -100,53 +100,56 @@ export function playBounceSound(ctx: AudioContext, dest: AudioNode, pitchRatio: 
 }
 
 export function playOuchSound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
+  // Cartoon Squeak / Pain Yelp
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(320 * pitchRatio, now);
-  osc.frequency.exponentialRampToValueAtTime(180 * pitchRatio, now + 0.12);
+  osc.frequency.setValueAtTime(540 * pitchRatio, now);
+  osc.frequency.exponentialRampToValueAtTime(160 * pitchRatio, now + 0.18);
 
-  gain.gain.setValueAtTime(0.35, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+  gain.gain.setValueAtTime(0.5, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
   osc.connect(gain);
   gain.connect(dest);
   osc.start(now);
-  osc.stop(now + 0.14);
+  osc.stop(now + 0.2);
 }
 
 export function playTickSound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
+  // Crisp Wooden Clock Tick
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = 'sine';
+  osc.type = 'triangle';
   osc.frequency.setValueAtTime(1200 * pitchRatio, now);
-  osc.frequency.exponentialRampToValueAtTime(800 * pitchRatio, now + 0.02);
+  osc.frequency.exponentialRampToValueAtTime(350 * pitchRatio, now + 0.035);
 
-  gain.gain.setValueAtTime(0.2, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+  gain.gain.setValueAtTime(0.22, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
   osc.connect(gain);
   gain.connect(dest);
   osc.start(now);
-  osc.stop(now + 0.025);
+  osc.stop(now + 0.035);
 }
 
 export function playVictorySound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
-  const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+  // Triumph Fanfare Major Triad
+  const notes = [261.63, 329.63, 392.0, 523.25];
   notes.forEach((freq, idx) => {
-    const noteTime = now + idx * 0.12;
+    const startTime = now + idx * 0.11;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq * pitchRatio, noteTime);
+    osc.frequency.setValueAtTime(freq * pitchRatio, startTime);
 
     gain.gain.setValueAtTime(0.0, now);
-    gain.gain.setValueAtTime(0.4, noteTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.35);
+    gain.gain.setValueAtTime(0.35, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
 
     osc.connect(gain);
     gain.connect(dest);
-    osc.start(noteTime);
-    osc.stop(noteTime + 0.35);
+    osc.start(startTime);
+    osc.stop(startTime + 0.35);
   });
 }
