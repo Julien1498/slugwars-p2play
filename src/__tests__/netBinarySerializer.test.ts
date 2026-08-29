@@ -214,4 +214,29 @@ describe('netBinarySerializer - Binary Network State Compression', () => {
     expect(decoded.turnTimer).toBe(25);
     expect(decoded.activeTeamId).toBe('team_blue');
   });
+
+  it('supports re-entrant serialization and dedicated BinaryWriter instances', () => {
+    const deltaA: CompactStateDelta = { turnTimer: 10 };
+    const deltaB: CompactStateDelta = { turnTimer: 20 };
+
+    // Test nested getter that triggers serialize
+    const nestedObj = {
+      get dynamicValue() {
+        const nestedEncoded = encodeBinaryDelta(deltaA);
+        const nestedDecoded = decodeBinaryDelta(nestedEncoded);
+        return nestedDecoded.turnTimer;
+      },
+    };
+
+    const deltaWithNested: any = {
+      ...deltaB,
+      nested: nestedObj,
+    };
+
+    const encoded = encodeBinaryDelta(deltaWithNested);
+    const decoded: any = decodeBinaryDelta(encoded);
+
+    expect(decoded.turnTimer).toBe(20);
+    expect(decoded.nested.dynamicValue).toBe(10);
+  });
 });

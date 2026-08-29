@@ -34,6 +34,12 @@ export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidP
   ctx.restore();
 }
 
+interface FoundationCache {
+  revision: number;
+  isSolid: boolean;
+}
+
+const _propFoundationCache = new WeakMap<SolidProp, FoundationCache>();
 const _overlappingCratersBuffer: { x: number; y: number; radius: number }[] = [];
 
 export function renderHDDestructibleProp(
@@ -49,8 +55,9 @@ export function renderHDDestructibleProp(
   if (sprop.destroyed) return;
 
   // Check foundation stability: only re-evaluate pixel scan when terrain has actually been modified
-  if (terrainRevision !== undefined && (sprop as any)._lastFoundationRev === terrainRevision) {
-    if (!(sprop as any)._isFoundationSolid) {
+  const cached = _propFoundationCache.get(sprop);
+  if (terrainRevision !== undefined && cached && cached.revision === terrainRevision) {
+    if (!cached.isSolid) {
       sprop.destroyed = true;
       return;
     }
@@ -65,10 +72,13 @@ export function renderHDDestructibleProp(
         solidFoundationCount++;
       }
     }
-    (sprop as any)._lastFoundationRev = terrainRevision;
-    (sprop as any)._isFoundationSolid = solidFoundationCount > 0;
+    const isSolid = solidFoundationCount > 0;
+    _propFoundationCache.set(sprop, {
+      revision: terrainRevision ?? 0,
+      isSolid,
+    });
 
-    if (solidFoundationCount === 0) {
+    if (!isSolid) {
       sprop.destroyed = true;
       return;
     }

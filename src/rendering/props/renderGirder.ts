@@ -1,5 +1,11 @@
 import { PlacedGirder, CraterRecord, ExplosionEvent } from '../../core/types';
 
+interface GirderFoundationCache {
+  revision: number;
+  isSolid: boolean;
+}
+
+const _girderFoundationCache = new WeakMap<PlacedGirder, GirderFoundationCache>();
 const _girderCratersBuffer: { x: number; y: number; radius: number }[] = [];
 
 export function renderHDDestructibleGirder(
@@ -20,8 +26,9 @@ export function renderHDDestructibleGirder(
   const halfT = g.thickness / 2;
 
   // Foundation stability check: only re-evaluate pixel scan when terrain has actually been modified
-  if (terrainRevision !== undefined && (g as any)._lastFoundationRev === terrainRevision) {
-    if (!(g as any)._isFoundationSolid) {
+  const cached = _girderFoundationCache.get(g);
+  if (terrainRevision !== undefined && cached && cached.revision === terrainRevision) {
+    if (!cached.isSolid) {
       g.destroyed = true;
       return;
     }
@@ -37,10 +44,13 @@ export function renderHDDestructibleGirder(
         solidCount++;
       }
     }
-    (g as any)._lastFoundationRev = terrainRevision;
-    (g as any)._isFoundationSolid = solidCount > 0;
+    const isSolid = solidCount > 0;
+    _girderFoundationCache.set(g, {
+      revision: terrainRevision ?? 0,
+      isSolid,
+    });
 
-    if (solidCount === 0) {
+    if (!isSolid) {
       g.destroyed = true;
       return;
     }

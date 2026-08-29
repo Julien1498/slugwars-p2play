@@ -54,7 +54,7 @@ export function renderProjectiles(rc: ProjectilesRenderContext) {
     ctx.save();
     ctx.translate(proj.x, proj.y);
 
-    const angle = (proj as any).interpolatedAngle !== undefined ? (proj as any).interpolatedAngle : Math.atan2(proj.vy, proj.vx);
+    const angle = proj.interpolatedAngle !== undefined ? proj.interpolatedAngle : Math.atan2(proj.vy, proj.vx);
     if (Number.isFinite(angle)) {
       ctx.rotate(angle);
     }

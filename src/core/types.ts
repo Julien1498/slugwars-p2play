@@ -219,6 +219,7 @@ export interface ActiveProjectile {
   impactBehavior?: ProjectileImpactBehavior;
   ownerSlugId: SlugId;
   targetPoint?: Vector2D;
+  interpolatedAngle?: number;
   behaviorData?: Record<string, any>;
 }
 

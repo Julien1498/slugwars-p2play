@@ -30,6 +30,7 @@ export interface SlugWarsNetworkPayload {
   color?: string;
   config?: any;
   dir?: 'left' | 'right';
+  steerDir?: 'left' | 'right' | 'up' | 'down';
   aimAngle?: number;
   aimPower?: number;
   facing?: 'left' | 'right';

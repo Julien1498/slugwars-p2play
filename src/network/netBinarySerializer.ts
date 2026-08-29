@@ -6,19 +6,9 @@ import { CompactStateDelta } from './netSerializer';
  * Zero external libraries, zero overhead, 100% lossless.
  */
 
-const TAG_NULL = 0x00;
-const TAG_FALSE = 0x01;
-const TAG_TRUE = 0x02;
-const TAG_INT8 = 0x03;
-const TAG_INT16 = 0x04;
-const TAG_INT32 = 0x05;
-const TAG_FLOAT64 = 0x06;
-const TAG_STRING = 0x07;
-const TAG_ARRAY = 0x08;
-const TAG_OBJECT = 0x09;
-const TAG_UNDEFINED = 0x0a;
-const TAG_FLOAT32 = 0x0b;
-const TAG_KEY_INDEX = 0x0c;
+const TAG_NULL = 0x00, TAG_FALSE = 0x01, TAG_TRUE = 0x02, TAG_INT8 = 0x03, TAG_INT16 = 0x04;
+const TAG_INT32 = 0x05, TAG_FLOAT64 = 0x06, TAG_STRING = 0x07, TAG_ARRAY = 0x08, TAG_OBJECT = 0x09;
+const TAG_UNDEFINED = 0x0a, TAG_FLOAT32 = 0x0b, TAG_KEY_INDEX = 0x0c;
 
 // High-speed static dictionary for common delta keys (1 byte instead of 5-15 bytes per key)
 const KNOWN_KEYS = [
@@ -49,130 +39,146 @@ for (let i = 0; i < KNOWN_KEYS.length; i++) {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-let sharedBuffer = new ArrayBuffer(8192);
-let sharedView = new DataView(sharedBuffer);
-let sharedU8 = new Uint8Array(sharedBuffer);
-let offset = 0;
+export class BinaryWriter {
+  private buffer: ArrayBuffer;
+  private view: DataView;
+  private u8: Uint8Array;
+  private offset: number = 0;
 
-function ensureCapacity(neededBytes: number) {
-  if (offset + neededBytes > sharedBuffer.byteLength) {
-    const newSize = Math.max(sharedBuffer.byteLength * 2, offset + neededBytes + 1024);
-    const newBuffer = new ArrayBuffer(newSize);
-    const newU8 = new Uint8Array(newBuffer);
-    newU8.set(sharedU8);
-    sharedBuffer = newBuffer;
-    sharedView = new DataView(sharedBuffer);
-    sharedU8 = newU8;
+  constructor(initialCapacity = 8192) {
+    this.buffer = new ArrayBuffer(initialCapacity);
+    this.view = new DataView(this.buffer);
+    this.u8 = new Uint8Array(this.buffer);
+  }
+
+  private ensureCapacity(neededBytes: number): void {
+    if (this.offset + neededBytes > this.buffer.byteLength) {
+      const newSize = Math.max(this.buffer.byteLength * 2, this.offset + neededBytes + 1024);
+      const newBuffer = new ArrayBuffer(newSize);
+      const newU8 = new Uint8Array(newBuffer);
+      newU8.set(this.u8);
+      this.buffer = newBuffer;
+      this.view = new DataView(this.buffer);
+      this.u8 = newU8;
+    }
+  }
+
+  public writeValue(val: any): void {
+    if (val === null) {
+      this.ensureCapacity(1);
+      this.view.setUint8(this.offset++, TAG_NULL);
+      return;
+    }
+    if (val === undefined) {
+      this.ensureCapacity(1);
+      this.view.setUint8(this.offset++, TAG_UNDEFINED);
+      return;
+    }
+
+    const type = typeof val;
+
+    if (type === 'boolean') {
+      this.ensureCapacity(1);
+      this.view.setUint8(this.offset++, val ? TAG_TRUE : TAG_FALSE);
+      return;
+    }
+
+    if (type === 'number') {
+      if (Number.isInteger(val)) {
+        if (val >= -128 && val <= 127) {
+          this.ensureCapacity(2);
+          this.view.setUint8(this.offset++, TAG_INT8);
+          this.view.setInt8(this.offset++, val);
+          return;
+        }
+        if (val >= -32768 && val <= 32767) {
+          this.ensureCapacity(3);
+          this.view.setUint8(this.offset++, TAG_INT16);
+          this.view.setInt16(this.offset, val, true);
+          this.offset += 2;
+          return;
+        }
+        if (val >= -2147483648 && val <= 2147483647) {
+          this.ensureCapacity(5);
+          this.view.setUint8(this.offset++, TAG_INT32);
+          this.view.setInt32(this.offset, val, true);
+          this.offset += 4;
+          return;
+        }
+      }
+      // High-precision compact Float32 for game coordinates & velocities (5 bytes vs 9 bytes)
+      this.ensureCapacity(5);
+      this.view.setUint8(this.offset++, TAG_FLOAT32);
+      this.view.setFloat32(this.offset, val, true);
+      this.offset += 4;
+      return;
+    }
+
+    if (type === 'string') {
+      const bytes = encoder.encode(val);
+      this.ensureCapacity(3 + bytes.length);
+      this.view.setUint8(this.offset++, TAG_STRING);
+      this.view.setUint16(this.offset, bytes.length, true);
+      this.offset += 2;
+      this.u8.set(bytes, this.offset);
+      this.offset += bytes.length;
+      return;
+    }
+
+    if (Array.isArray(val)) {
+      this.ensureCapacity(3);
+      this.view.setUint8(this.offset++, TAG_ARRAY);
+      this.view.setUint16(this.offset, val.length, true);
+      this.offset += 2;
+      for (let i = 0; i < val.length; i++) {
+        this.writeValue(val[i]);
+      }
+      return;
+    }
+
+    if (type === 'object') {
+      const keys = Object.keys(val);
+      this.ensureCapacity(3);
+      this.view.setUint8(this.offset++, TAG_OBJECT);
+      this.view.setUint16(this.offset, keys.length, true);
+      this.offset += 2;
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const keyIdx = KEY_TO_INDEX[key];
+        if (keyIdx !== undefined) {
+          // Fast dictionary key (1 byte index)
+          this.ensureCapacity(2);
+          this.view.setUint8(this.offset++, TAG_KEY_INDEX);
+          this.view.setUint8(this.offset++, keyIdx);
+        } else {
+          // Fallback string key
+          const keyBytes = encoder.encode(key);
+          this.ensureCapacity(4 + keyBytes.length);
+          this.view.setUint8(this.offset++, TAG_STRING);
+          this.view.setUint16(this.offset, keyBytes.length, true);
+          this.offset += 2;
+          this.u8.set(keyBytes, this.offset);
+          this.offset += keyBytes.length;
+        }
+
+        this.writeValue(val[key]);
+      }
+      return;
+    }
+
+    // Fallback for unknown types
+    this.ensureCapacity(1);
+    this.view.setUint8(this.offset++, TAG_NULL);
+  }
+
+  public serialize(data: unknown): Uint8Array {
+    this.offset = 0;
+    this.writeValue(data);
+    return this.u8.slice(0, this.offset);
   }
 }
 
-function writeValue(val: any): void {
-  if (val === null) {
-    ensureCapacity(1);
-    sharedView.setUint8(offset++, TAG_NULL);
-    return;
-  }
-  if (val === undefined) {
-    ensureCapacity(1);
-    sharedView.setUint8(offset++, TAG_UNDEFINED);
-    return;
-  }
-
-  const type = typeof val;
-
-  if (type === 'boolean') {
-    ensureCapacity(1);
-    sharedView.setUint8(offset++, val ? TAG_TRUE : TAG_FALSE);
-    return;
-  }
-
-  if (type === 'number') {
-    if (Number.isInteger(val)) {
-      if (val >= -128 && val <= 127) {
-        ensureCapacity(2);
-        sharedView.setUint8(offset++, TAG_INT8);
-        sharedView.setInt8(offset++, val);
-        return;
-      }
-      if (val >= -32768 && val <= 32767) {
-        ensureCapacity(3);
-        sharedView.setUint8(offset++, TAG_INT16);
-        sharedView.setInt16(offset, val, true);
-        offset += 2;
-        return;
-      }
-      if (val >= -2147483648 && val <= 2147483647) {
-        ensureCapacity(5);
-        sharedView.setUint8(offset++, TAG_INT32);
-        sharedView.setInt32(offset, val, true);
-        offset += 4;
-        return;
-      }
-    }
-    // High-precision compact Float32 for game coordinates & velocities (5 bytes vs 9 bytes)
-    ensureCapacity(5);
-    sharedView.setUint8(offset++, TAG_FLOAT32);
-    sharedView.setFloat32(offset, val, true);
-    offset += 4;
-    return;
-  }
-
-  if (type === 'string') {
-    const bytes = encoder.encode(val);
-    ensureCapacity(3 + bytes.length);
-    sharedView.setUint8(offset++, TAG_STRING);
-    sharedView.setUint16(offset, bytes.length, true);
-    offset += 2;
-    sharedU8.set(bytes, offset);
-    offset += bytes.length;
-    return;
-  }
-
-  if (Array.isArray(val)) {
-    ensureCapacity(3);
-    sharedView.setUint8(offset++, TAG_ARRAY);
-    sharedView.setUint16(offset, val.length, true);
-    offset += 2;
-    for (let i = 0; i < val.length; i++) {
-      writeValue(val[i]);
-    }
-    return;
-  }
-
-  if (type === 'object') {
-    const keys = Object.keys(val);
-    ensureCapacity(3);
-    sharedView.setUint8(offset++, TAG_OBJECT);
-    sharedView.setUint16(offset, keys.length, true);
-    offset += 2;
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const keyIdx = KEY_TO_INDEX[key];
-      if (keyIdx !== undefined) {
-        // Fast dictionary key (1 byte index)
-        ensureCapacity(2);
-        sharedView.setUint8(offset++, TAG_KEY_INDEX);
-        sharedView.setUint8(offset++, keyIdx);
-      } else {
-        // Fallback string key
-        const keyBytes = encoder.encode(key);
-        ensureCapacity(4 + keyBytes.length);
-        sharedView.setUint8(offset++, TAG_STRING);
-        sharedView.setUint16(offset, keyBytes.length, true);
-        offset += 2;
-        sharedU8.set(keyBytes, offset);
-        offset += keyBytes.length;
-      }
-
-      writeValue(val[key]);
-    }
-    return;
-  }
-
-  // Fallback for unknown types
-  ensureCapacity(1);
-  sharedView.setUint8(offset++, TAG_NULL);
-}
+export const defaultBinaryWriter = new BinaryWriter();
 
 function readValue(view: DataView, u8: Uint8Array, ptr: { offset: number }): any {
   const tag = view.getUint8(ptr.offset++);
@@ -259,10 +265,15 @@ function readValue(view: DataView, u8: Uint8Array, ptr: { offset: number }): any
 /**
  * Encodes a CompactStateDelta into a pure binary Uint8Array (Zero Dependencies)
  */
-export function encodeBinaryDelta(delta: CompactStateDelta): Uint8Array {
-  offset = 0;
-  writeValue(delta);
-  return sharedU8.slice(0, offset);
+export function encodeBinaryDelta(delta: CompactStateDelta, writer?: BinaryWriter): Uint8Array {
+  return (writer || new BinaryWriter()).serialize(delta);
+}
+
+/**
+ * Encodes any object into a pure binary Uint8Array
+ */
+export function serializeToBinary(data: unknown, writer?: BinaryWriter): Uint8Array {
+  return (writer || new BinaryWriter()).serialize(data);
 }
 
 /**

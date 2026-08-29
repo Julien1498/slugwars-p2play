@@ -184,15 +184,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     updateFpsHud,
   });
 
-  useEffect(() => {
-    (SlugWarsCanvas as any)._updateExternalState = (nextState: GameState) => {
-      gameStateRef.current = nextState;
-    };
-    return () => {
-      delete (SlugWarsCanvas as any)._updateExternalState;
-    };
-  }, []);
-
   return (
     <div
       ref={containerRef}
@@ -264,9 +255,8 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 };
 
 export const SlugWarsCanvas = React.memo(SlugWarsCanvasComponent, (prev, next) => {
-  (SlugWarsCanvas as any)._updateExternalState?.(next.gameState);
-
   return (
+    prev.gameState === next.gameState &&
     prev.terrain === next.terrain &&
     prev.isMyTurn === next.isMyTurn &&
     prev.showHitboxes === next.showHitboxes &&
