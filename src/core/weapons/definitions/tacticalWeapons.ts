@@ -138,6 +138,12 @@ export const homingPigeonWeapon: WeaponDefinition = {
         radius: 5,
         bounces: false,
         windAffected: true,
+        homingConfig: {
+          speed: 7.5,
+          turnSpeed: 0.22,
+          minTargetDist: 15,
+          windFactor: 0.015,
+        },
         ownerSlugId: ctx.ownerSlugId,
         targetPoint: { x: targetX, y: targetY },
       },

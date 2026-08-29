@@ -29,6 +29,9 @@ export const concreteDonkeyWeapon: WeaponDefinition = {
         bounces: true,
         fuseTimerMs: 12000,
         windAffected: false,
+        gravityScale: 1.5,
+        maxVelocityY: 18,
+        impactBehavior: 'EXPLODE',
         ownerSlugId: ctx.ownerSlugId,
         behaviorData: { bouncesLeft: 8 },
       },
@@ -66,6 +69,7 @@ export const superSheepWeapon: WeaponDefinition = {
         fuseTimerMs: 8000,
         bounces: false,
         windAffected: false,
+        gravityScale: 0,
         ownerSlugId: ctx.ownerSlugId,
       },
     ];

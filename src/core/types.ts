@@ -192,6 +192,16 @@ export interface Particle {
   life: number;
 }
 
+export interface HomingPhysicsConfig {
+  speed: number;
+  turnSpeed: number;
+  minTargetDist?: number;
+  delayMs?: number;
+  windFactor?: number;
+}
+
+export type ProjectileImpactBehavior = 'EXPLODE' | 'BOUNCE' | 'REST';
+
 export interface ActiveProjectile {
   id: string;
   weaponId: string;
@@ -203,6 +213,10 @@ export interface ActiveProjectile {
   fuseTimerMs?: number;
   bounces: boolean;
   windAffected: boolean;
+  gravityScale?: number;
+  maxVelocityY?: number;
+  homingConfig?: HomingPhysicsConfig;
+  impactBehavior?: ProjectileImpactBehavior;
   ownerSlugId: SlugId;
   targetPoint?: Vector2D;
   behaviorData?: Record<string, any>;
