@@ -34,8 +34,8 @@ export function useGuestStateReceiver(
       if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {
         try {
           delta = decodeBinaryDelta(payload);
-        } catch (err) {
-          console.warn('Binary decode error:', err);
+        } catch (err: unknown) {
+          console.warn('Binary decode error:', err instanceof Error ? err.message : String(err));
         }
       } else if (payload.isDelta && payload.delta) {
         delta = payload.delta;

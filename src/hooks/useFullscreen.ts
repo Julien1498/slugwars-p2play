@@ -15,8 +15,8 @@ export function toggleFullscreen(): Promise<void> {
 
     if (!isFs) {
       if (elem.requestFullscreen) {
-        return elem.requestFullscreen().catch((err: any) => {
-          console.warn('requestFullscreen failed:', err);
+        return elem.requestFullscreen().catch((err: unknown) => {
+          console.warn('requestFullscreen failed:', err instanceof Error ? err.message : String(err));
         });
       } else if (elem.webkitRequestFullscreen) {
         return Promise.resolve(elem.webkitRequestFullscreen());
@@ -27,8 +27,8 @@ export function toggleFullscreen(): Promise<void> {
       }
     } else {
       if (doc.exitFullscreen) {
-        return doc.exitFullscreen().catch((err: any) => {
-          console.warn('exitFullscreen failed:', err);
+        return doc.exitFullscreen().catch((err: unknown) => {
+          console.warn('exitFullscreen failed:', err instanceof Error ? err.message : String(err));
         });
       } else if (doc.webkitExitFullscreen) {
         return Promise.resolve(doc.webkitExitFullscreen());
@@ -38,8 +38,8 @@ export function toggleFullscreen(): Promise<void> {
         return Promise.resolve(doc.msExitFullscreen());
       }
     }
-  } catch (err) {
-    console.warn('toggleFullscreen error:', err);
+  } catch (err: unknown) {
+    console.warn('toggleFullscreen error:', err instanceof Error ? err.message : String(err));
   }
   return Promise.resolve();
 }
