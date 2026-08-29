@@ -5,12 +5,12 @@ import {
   DesktopTopHeaderProps,
   computeDesktopTeamStats,
   desktopTopHeaderPropsAreEqual,
-} from './header/desktopHeaderUtils';
-import { ActiveOperativeCard } from './header/ActiveOperativeCard';
-import { TacticalChronoHub } from './header/TacticalChronoHub';
-import { SquadsTelemetryBarometer } from './header/SquadsTelemetryBarometer';
-import { DesktopActionTray } from './header/DesktopActionTray';
-import { ConfirmReturnModal } from './header/ConfirmReturnModal';
+} from './topHeader/desktopHeaderUtils';
+import { ActiveOperativeCard } from './topHeader/ActiveOperativeCard';
+import { TacticalChronoHub } from './topHeader/TacticalChronoHub';
+import { SquadsTelemetryBarometer } from './topHeader/SquadsTelemetryBarometer';
+import { DesktopActionTray } from './topHeader/DesktopActionTray';
+import { ConfirmReturnModal } from '../modals/ConfirmReturnModal';
 
 export type { DesktopTopHeaderProps };
 

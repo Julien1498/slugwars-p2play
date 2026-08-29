@@ -1,4 +1,7 @@
 import { Vector2D } from '../core/types';
+import { shortestArcAngleLerp, interpolatePosition } from './interpolationUtils';
+
+export { shortestArcAngleLerp, interpolatePosition };
 
 export interface ViewportRect {
   left: number;
@@ -115,36 +118,6 @@ export function lerpCamera(current: Vector2D, target: Vector2D, factor: number =
   return {
     x: current.x + (target.x - current.x) * factor,
     y: current.y + (target.y - current.y) * factor,
-  };
-}
-
-/**
- * Shortest-arc angle linear interpolation that correctly wraps around -PI and +PI.
- */
-export function shortestArcAngleLerp(currentAngle: number, targetAngle: number, alpha: number): number {
-  if (!Number.isFinite(targetAngle) || !Number.isFinite(currentAngle)) return currentAngle;
-  let angleDiff = targetAngle - currentAngle;
-  while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-  while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-  return currentAngle + angleDiff * alpha;
-}
-
-/**
- * Smooth position interpolation with snap-distance threshold.
- */
-export function interpolatePosition(
-  current: Vector2D,
-  target: Vector2D,
-  alpha: number,
-  maxSnapDist: number = 64
-): Vector2D {
-  const dist = Math.hypot(target.x - current.x, target.y - current.y);
-  if (dist > maxSnapDist) {
-    return { x: target.x, y: target.y };
-  }
-  return {
-    x: current.x + (target.x - current.x) * alpha,
-    y: current.y + (target.y - current.y) * alpha,
   };
 }
 

@@ -6,7 +6,7 @@ import {
   isDesktopTurnTimeUrgent,
   getSlugHpColor,
   desktopTopHeaderPropsAreEqual,
-} from '../components/game/desktop/header/desktopHeaderUtils';
+} from '../components/game/desktop/topHeader/desktopHeaderUtils';
 
 describe('DesktopTopHeader: Calculations & React.memo Selector', () => {
   const createMockGameState = (): GameState => {

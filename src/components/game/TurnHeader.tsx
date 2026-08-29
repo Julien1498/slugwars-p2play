@@ -2,10 +2,10 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { perfTracker } from '../../core/perfTracker';
 import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
 import { useFullscreen } from '../../hooks/useFullscreen';
-import { TurnHeaderProps, computeTeamStats, turnHeaderPropsAreEqual } from './header/turnHeaderUtils';
-import { MobileTurnHeader } from './header/MobileTurnHeader';
-import { DesktopTurnHeader } from './header/DesktopTurnHeader';
-import { ConfirmLobbyModal } from './header/ConfirmLobbyModal';
+import { TurnHeaderProps, computeTeamStats, turnHeaderPropsAreEqual } from './turnHeader/turnHeaderUtils';
+import { MobileTurnHeader } from './turnHeader/MobileTurnHeader';
+import { DesktopTurnHeader } from './turnHeader/DesktopTurnHeader';
+import { ConfirmReturnModal } from './modals/ConfirmReturnModal';
 
 export type { TurnHeaderProps };
 
@@ -23,43 +23,39 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
   onExit,
 }) => {
   const [showConfirmLobby, setShowConfirmLobby] = useState(false);
-  const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
+  const [showMenuPopover, setShowMenuPopover] = useState(false);
   const isTouch = useIsTouchDevice();
-  const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
+  const { isFullscreen, toggleFullscreen, isFullscreenSupported } = useFullscreen();
 
+  const [fps, setFps] = useState(() => Math.round(perfTracker.getFps()));
   useEffect(() => {
-    return perfTracker.onFpsHudToggle((enabled) => setFpsHudActive(enabled));
+    const id = setInterval(() => {
+      setFps(Math.round(perfTracker.getFps()));
+    }, 500);
+    return () => clearInterval(id);
   }, []);
 
-  const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
-  const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
-
-  const teamStats = useMemo(() => {
-    return computeTeamStats(gameState);
-  }, [
-    gameState.teams,
-    gameState.slugs,
-    gameState.config.slugsPerTeam,
-    gameState.config.slugHp,
-    gameState.activeTeamId,
-  ]);
+  const teamStats = useMemo(() => computeTeamStats(gameState), [gameState]);
 
   return (
     <>
       {isTouch ? (
         <MobileTurnHeader
           gameState={gameState}
-          activeTeam={activeTeam}
-          activeSlug={activeSlug}
           teamStats={teamStats}
-          fpsHudActive={fpsHudActive}
-          setFpsHudActive={setFpsHudActive}
+          isMyTurn={isMyTurn}
+          isHost={isHost}
+          hostPeerId={hostPeerId}
+          fps={fps}
+          showHitboxes={showHitboxes}
           isFullscreen={isFullscreen}
           isFullscreenSupported={isFullscreenSupported}
-          toggleFullscreen={toggleFullscreen}
-          isHost={isHost}
-          showHitboxes={showHitboxes}
+          showMenuPopover={showMenuPopover}
+          onToggleMenu={() => setShowMenuPopover((v) => !v)}
+          onCloseMenu={() => setShowMenuPopover(false)}
           onToggleHitboxes={onToggleHitboxes}
+          onToggleFullscreen={toggleFullscreen}
+          onOpenWeaponPicker={onOpenWeaponPicker}
           onOpenRules={onOpenRules}
           onOpenMetrics={onOpenMetrics}
           onRestartGame={onRestartGame}
@@ -69,19 +65,19 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
       ) : (
         <DesktopTurnHeader
           gameState={gameState}
-          hostPeerId={hostPeerId}
-          isMyTurn={isMyTurn}
-          activeTeam={activeTeam}
-          activeSlug={activeSlug}
           teamStats={teamStats}
-          fpsHudActive={fpsHudActive}
-          setFpsHudActive={setFpsHudActive}
+          isMyTurn={isMyTurn}
+          isHost={isHost}
+          hostPeerId={hostPeerId}
+          fps={fps}
+          showHitboxes={showHitboxes}
           isFullscreen={isFullscreen}
           isFullscreenSupported={isFullscreenSupported}
-          toggleFullscreen={toggleFullscreen}
-          isHost={isHost}
-          showHitboxes={showHitboxes}
+          showMenuPopover={showMenuPopover}
+          onToggleMenu={() => setShowMenuPopover((v) => !v)}
+          onCloseMenu={() => setShowMenuPopover(false)}
           onToggleHitboxes={onToggleHitboxes}
+          onToggleFullscreen={toggleFullscreen}
           onOpenWeaponPicker={onOpenWeaponPicker}
           onOpenRules={onOpenRules}
           onOpenMetrics={onOpenMetrics}
@@ -91,7 +87,7 @@ export const TurnHeader: React.FC<TurnHeaderProps> = React.memo(({
         />
       )}
 
-      <ConfirmLobbyModal
+      <ConfirmReturnModal
         isOpen={showConfirmLobby}
         onClose={() => setShowConfirmLobby(false)}
         onConfirm={() => onRestartGame?.()}
