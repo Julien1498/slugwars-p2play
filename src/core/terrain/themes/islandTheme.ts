@@ -1,5 +1,5 @@
-import { ThemeConfig } from '../themeRegistry';
-import { THEME_PALETTES } from '../../../rendering/terrainPalettes';
+import { ThemeConfig } from '../themeTypes';
+import { THEME_PALETTES } from '../terrainPalettes';
 
 export const ISLAND_THEME: ThemeConfig = {
   id: 'ISLAND',

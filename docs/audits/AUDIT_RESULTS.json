@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-29T14:40:34.336Z",
+  "timestamp": "2026-08-29T14:51:06.526Z",
   "environment": {
     "nodeVersion": "v24.19.0",
     "platform": "win32",
@@ -7,9 +7,9 @@
   },
   "metrics": {
     "codeQuality": {
-      "prodFilesCount": 214,
+      "prodFilesCount": 216,
       "testFilesCount": 49,
-      "totalProdLines": 28221,
+      "totalProdLines": 28229,
       "filesOver300Count": 0,
       "hardcodedWeaponsChecksCount": 0,
       "filesWithAnyInProdCount": 65
@@ -18,21 +18,28 @@
       "jsonByteSize": 1146,
       "binaryByteSize": 646,
       "compressionRatio": "43.6",
-      "avgEncodeMicros": "39.89",
-      "avgDecodeMicros": "18.16",
+      "avgEncodeMicros": "81.29",
+      "avgDecodeMicros": "29.57",
       "reentrantSafe": true
     },
     "physics": {
       "themesCount": 8,
       "totalRaycasts": 4000,
       "totalNormals": 3906,
-      "durationMs": "403.9",
+      "durationMs": "768.6",
       "determinismPassed": true
+    },
+    "dependencyGraph": {
+      "totalNodes": 265,
+      "totalEdges": 712,
+      "cyclesCount": 0,
+      "boundaryViolationsCount": 0,
+      "orphanFilesCount": 0
     }
   },
   "verdict": {
     "status": "PASS",
-    "overallScore": "9.72 / 10",
-    "summary": "100% compliant with strict <300 lines rule, zero-alloc physics determinism, and re-entrant binary netcode."
+    "overallScore": "9.85 / 10",
+    "summary": "100% compliant with strict <300 lines rule, DAG dependency tree with 0 cycles, zero-alloc physics determinism, and re-entrant binary netcode."
   }
 }
