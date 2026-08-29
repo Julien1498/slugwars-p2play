@@ -1,9 +1,6 @@
 import React, { Profiler } from 'react';
 import { GameState, Team, Slug } from '../../../core/types';
-import { GameOverStatsModal } from '../GameOverStatsModal';
-import { WeaponPicker } from '../WeaponPicker';
-import { RulesModal } from '../RulesModal';
-import { MetricsModal } from '../MetricsModal';
+import { GameOverStatsModal, WeaponPicker, RulesModal, MetricsModal } from '../modals';
 import { perfTracker } from '../../../core/perfTracker';
 import { sfx } from '../../../core/audio';
 

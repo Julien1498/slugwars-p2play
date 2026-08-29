@@ -6,7 +6,7 @@ import {
   getWaterRiseBadgeText,
   turnHeaderPropsAreEqual,
   TurnHeaderProps,
-} from '../components/game/turnHeader/turnHeaderUtils';
+} from '../components/game/mobile/header/turnHeaderUtils';
 
 describe('TurnHeader: UI Data Processing & React.memo Selector Equality', () => {
   const createMockGameState = (): GameState => {

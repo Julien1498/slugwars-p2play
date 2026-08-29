@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { extractRoomCodeFromUrl, subscribeRoomUrlChanges } from 'p2play-core';
-import { loadProfile, saveProfile } from '../../core/profile';
+import { loadProfile, saveProfile } from '../../../core/profile';
 import { Sparkles, Swords, Zap, Rocket, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
-import { ConnectionBackdropCanvas } from './connection/ConnectionBackdropCanvas';
-import { PlayerProfileCard } from './connection/PlayerProfileCard';
-import { ConnectionActions } from './connection/ConnectionActions';
-import { useFullscreen } from '../../hooks/useFullscreen';
+import { ConnectionBackdropCanvas } from './ConnectionBackdropCanvas';
+import { PlayerProfileCard } from './PlayerProfileCard';
+import { ConnectionActions } from './ConnectionActions';
+import { useFullscreen } from '../../../hooks/useFullscreen';
 
-interface SlugWarsConnectionScreenProps {
+export interface SlugWarsConnectionScreenProps {
   status: string;
   error?: string | null;
   isConnecting?: boolean;
@@ -119,7 +119,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300"
+            className="p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-md active:scale-95 bg-zinc-900/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300 cursor-pointer"
             title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}

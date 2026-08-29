@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
-import { Team } from '../../../core/types';
+import { Team } from '../../../../core/types';
 
 export interface TeamStatItem {
   team: Team;

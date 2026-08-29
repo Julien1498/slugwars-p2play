@@ -14,7 +14,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ onClose }) => {
             <Sparkles className="w-5 h-5 text-violet-400" />
             <h2 className="text-lg font-black text-violet-300">Règles du Jeu - Slug Wars P2P</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition">
+          <button onClick={onClose} className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>

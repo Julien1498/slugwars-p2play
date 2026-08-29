@@ -1,8 +1,6 @@
 import React from 'react';
 import { useGame } from './hooks/useGame';
-import { SlugWarsLobby } from './components/game/SlugWarsLobby';
-import { SlugWarsBoard } from './components/game/SlugWarsBoard';
-import { SlugWarsConnectionScreen } from './components/game/SlugWarsConnectionScreen';
+import { SlugWarsLobby, SlugWarsBoard, SlugWarsConnectionScreen } from './components/game';
 import type { PeerManagerLike } from 'p2play-core';
 import { loadProfile } from './core/profile';
 

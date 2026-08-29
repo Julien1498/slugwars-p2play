@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { GameState, Team, Slug } from '../../../core/types';
-import { WindIndicator } from '../WindIndicator';
-import { HeaderOptionsMenu } from './HeaderOptionsMenu';
-import { TeamStatItem } from './TeamStatsLeaderboard';
-import { isTurnTimeUrgent } from './turnHeaderUtils';
+import { WindIndicator } from '../board/WindIndicator';
+import { HeaderOptionsMenu } from './header/HeaderOptionsMenu';
+import { TeamStatItem } from './header/TeamStatsLeaderboard';
+import { TurnTimerBadge } from './header/TurnTimerBadge';
+import { isTurnTimeUrgent } from './header/turnHeaderUtils';
 import { Clock, Heart, Maximize2, Minimize2 } from 'lucide-react';
 
-interface MobileTurnHeaderProps {
+export interface MobileTurnHeaderProps {
   gameState: GameState;
   activeTeam?: Team;
   activeSlug?: Slug;
@@ -75,23 +76,8 @@ export const MobileTurnHeader: React.FC<MobileTurnHeaderProps> = ({
           </span>
         </button>
 
-        {/* Big glowing Turn Timer */}
-        {gameState.phase === 'RETREAT' ? (
-          <div className="flex items-center gap-1 bg-orange-950/80 border border-orange-500/80 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-orange-300 shadow-lg backdrop-blur-md animate-pulse">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{turnTime}s (Repli)</span>
-          </div>
-        ) : isTimeUrgent ? (
-          <div className="flex items-center gap-1 bg-red-950/80 border border-red-500 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-red-300 shadow-[0_0_12px_#ef4444] backdrop-blur-md animate-ping">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{turnTime}s</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 bg-zinc-950/60 border border-zinc-700/80 px-1.5 sm:px-2 landscape:px-2 py-1 rounded-xl text-xs font-black text-amber-400 shadow-lg backdrop-blur-md">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>{turnTime}s</span>
-          </div>
-        )}
+        {/* Glowing Turn Timer Badge */}
+        <TurnTimerBadge gameState={gameState} />
       </div>
 
       {/* Right: Wind + Scoreboard Toggle + Fullscreen + Menu */}

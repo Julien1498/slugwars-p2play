@@ -1,4 +1,4 @@
-import { GameState, GamePhase } from '../../../core/types';
+import { GameState, GamePhase } from '../../../../core/types';
 
 export interface TurnHeaderProps {
   gameState: GameState;
@@ -59,23 +59,20 @@ export function turnHeaderPropsAreEqual(
   if (pState.activeTeamId !== nState.activeTeamId) return false;
   if (pState.activeSlugId !== nState.activeSlugId) return false;
   if (pState.wind !== nState.wind) return false;
-  if (pState.teams !== nState.teams && pState.teams.length !== nState.teams.length) return false;
+  if (pState.turnCount !== nState.turnCount) return false;
 
-  const pActiveSlug = pState.slugs.find((s) => s.id === pState.activeSlugId);
-  const nActiveSlug = nState.slugs.find((s) => s.id === nState.activeSlugId);
-  if (pActiveSlug?.selectedWeaponId !== nActiveSlug?.selectedWeaponId) return false;
-  if (pActiveSlug?.name !== nActiveSlug?.name) return false;
-  if (pActiveSlug?.fuseTimerSec !== nActiveSlug?.fuseTimerSec) return false;
+  if (pState.slugs.length !== nState.slugs.length) return false;
 
-  if (pState.slugs !== nState.slugs) {
-    if (pState.slugs.length !== nState.slugs.length) return false;
-    for (let i = 0; i < pState.slugs.length; i++) {
-      const ps = pState.slugs[i];
-      const ns = nState.slugs[i];
-      if (ps.hp !== ns.hp || ps.isAlive !== ns.isAlive || ps.teamId !== ns.teamId) {
-        return false;
-      }
-    }
+  const pActive = pState.slugs.find((s) => s.id === pState.activeSlugId);
+  const nActive = nState.slugs.find((s) => s.id === nState.activeSlugId);
+  if (pActive?.selectedWeaponId !== nActive?.selectedWeaponId) return false;
+  if (pActive?.name !== nActive?.name) return false;
+  if (pActive?.fuseTimerSec !== nActive?.fuseTimerSec) return false;
+
+  for (let i = 0; i < pState.slugs.length; i++) {
+    const ps = pState.slugs[i];
+    const ns = nState.slugs[i];
+    if (ps.hp !== ns.hp || ps.isAlive !== ns.isAlive || ps.id !== ns.id) return false;
   }
 
   return true;

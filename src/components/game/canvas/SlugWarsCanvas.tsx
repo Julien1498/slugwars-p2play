@@ -1,13 +1,13 @@
 import React, { useRef, useEffect } from 'react';
-import { GameState, Vector2D } from '../../core/types';
-import { DestructibleTerrain } from '../../core/terrain';
-import { perfTracker } from '../../core/perfTracker';
-import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
-import { useFpsHud } from './canvas/useFpsHud';
-import { useCanvasCamera } from './canvas/useCanvasCamera';
-import { useCanvasTouchGestures } from './canvas/useCanvasTouchGestures';
-import { useCanvasMouseControls } from './canvas/useCanvasMouseControls';
-import { useCanvasRenderLoop } from './canvas/useCanvasRenderLoop';
+import { GameState, Vector2D } from '../../../core/types';
+import { DestructibleTerrain } from '../../../core/terrain';
+import { perfTracker } from '../../../core/perfTracker';
+import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
+import { useFpsHud } from './useFpsHud';
+import { useCanvasCamera } from './useCanvasCamera';
+import { useCanvasTouchGestures } from './useCanvasTouchGestures';
+import { useCanvasMouseControls } from './useCanvasMouseControls';
+import { useCanvasRenderLoop } from './useCanvasRenderLoop';
 
 export interface SlugWarsCanvasProps {
   gameState: GameState;

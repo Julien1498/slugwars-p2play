@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameState } from '../../../../core/types';
-import { WindIndicator } from '../../WindIndicator';
+import { WindIndicator } from '../../board/WindIndicator';
 import { Clock, Flame } from 'lucide-react';
 import { isDesktopTurnTimeUrgent } from './desktopHeaderUtils';
 

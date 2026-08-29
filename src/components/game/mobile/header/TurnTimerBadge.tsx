@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
-import { GameState } from '../../../core/types';
+import { GameState } from '../../../../core/types';
 import { isTurnTimeUrgent } from './turnHeaderUtils';
 
 interface TurnTimerBadgeProps {
@@ -58,7 +58,7 @@ export const TurnTimerBadge: React.FC<TurnTimerBadgeProps> = ({ gameState }) => 
         className={`w-3 h-3 ${urgent ? 'text-red-400 animate-spin' : 'text-amber-400'}`}
         style={{ animationDuration: urgent ? '1s' : '4s' }}
       />
-      <span>{turnTime}s</span>
+      <span className="tabular-nums font-black">{turnTime}s</span>
     </div>
   );
 };

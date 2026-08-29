@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { GameState } from '../../core/types';
-import { netMetrics, NetworkStats, TrafficCaptureReport } from '../../core/networkMetrics';
-import { perfTracker, PerfCaptureReport } from '../../core/perfTracker';
-import { RealtimeMetricsTab } from './metrics/RealtimeMetricsTab';
-import { PerfCaptureTab } from './metrics/PerfCaptureTab';
-import { NetCaptureTab } from './metrics/NetCaptureTab';
-import { MetricsModalHeader } from './metrics/MetricsModalHeader';
+import { GameState } from '../../../core/types';
+import { netMetrics, NetworkStats, TrafficCaptureReport } from '../../../core/networkMetrics';
+import { perfTracker, PerfCaptureReport } from '../../../core/perfTracker';
+import { RealtimeMetricsTab } from '../metrics/RealtimeMetricsTab';
+import { PerfCaptureTab } from '../metrics/PerfCaptureTab';
+import { NetCaptureTab } from '../metrics/NetCaptureTab';
+import { MetricsModalHeader } from '../metrics/MetricsModalHeader';
 
 interface MetricsModalProps {
   isOpen: boolean;

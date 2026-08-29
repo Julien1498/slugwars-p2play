@@ -1,34 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { getWeaponsByCategory, WeaponCategory } from '../core/weapons/registry';
+import { getWeaponsByCategory } from '../core/weapons/registry';
+import { WeaponCategory } from '../core/weapons/types';
 import { GameState } from '../core/types';
 
 describe('Game Modals, Screens & UI Widgets Integrity', () => {
   const createMockGameState = (): GameState => ({
-    phase: 'TURN_ACTIVE',
+    phase: 'AIMING',
     turnTimer: 45,
     retreatTimer: 0,
     wind: 12.5,
     activeTeamId: 'team_alpha',
     activeSlugId: 'slug_1',
-    currentRound: 1,
     turnCount: 3,
-    winnerTeamId: null,
+    winnerTeamId: undefined,
     teams: [
       {
         id: 'team_alpha',
         name: 'Alpha Squad',
         color: '#ef4444',
-        avatar: '🪖',
-        isLocal: true,
-        weapons: { bazooka: 99, grenade: 5, cluster_banana: 2 },
+        avatar: 'slug',
+        isHost: true,
+        inventory: { bazooka: 99, grenade: 5, cluster_banana: 2 },
+        stats: { damageDealt: 120, kills: 1, deaths: 0, damageTaken: 0 },
       },
       {
         id: 'team_bravo',
         name: 'Bravo Squad',
         color: '#3b82f6',
-        avatar: '🤠',
-        isLocal: false,
-        weapons: { bazooka: 99, grenade: 5 },
+        avatar: 'slug',
+        isHost: false,
+        inventory: { bazooka: 99, grenade: 5 },
+        stats: { damageDealt: 50, kills: 0, deaths: 1, damageTaken: 120 },
       },
     ],
     slugs: [
@@ -41,6 +43,7 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
         vx: 0,
         vy: 0,
         hp: 100,
+        maxHp: 100,
         facing: 'right',
         aimAngle: 30,
         aimPower: 75,
@@ -57,6 +60,7 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
         vx: 0,
         vy: 0,
         hp: 80,
+        maxHp: 100,
         facing: 'left',
         aimAngle: 45,
         aimPower: 50,
@@ -68,20 +72,21 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
     projectiles: [],
     explosions: [],
     supplyCrates: [],
-    placedGirders: [],
-    oilDrums: [],
-    stats: {
-      team_alpha: { damageDealt: 120, kills: 1, shotsFired: 3, cratesCollected: 1 },
-      team_bravo: { damageDealt: 50, kills: 0, shotsFired: 2, cratesCollected: 0 },
-    },
+    craters: [],
+    mines: [],
+    helicopters: [],
+    particles: [],
+    floatingDamages: [],
+    journal: [],
     config: {
       mapTheme: 'ISLAND',
-      mapSize: 'MEDIUM',
-      turnTimeLimit: 45,
-      retreatTimeLimit: 5,
+      mapSeed: 12345,
       slugsPerTeam: 1,
       slugHp: 100,
-      scheme: 'NORMAL',
+      turnDuration: 45,
+      windEnabled: true,
+      vehiclesEnabled: true,
+      weaponSetId: 'classic',
     },
   });
 
@@ -106,22 +111,20 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       const state = createMockGameState();
       const activeTeam = state.teams.find((t) => t.id === state.activeTeamId)!;
 
-      expect(activeTeam.weapons.bazooka).toBe(99);
-      expect(activeTeam.weapons.cluster_banana).toBe(2);
-      expect(activeTeam.weapons['super_sheep'] ?? 0).toBe(0);
+      expect(activeTeam.inventory.bazooka).toBe(99);
+      expect(activeTeam.inventory.cluster_banana).toBe(2);
+      expect(activeTeam.inventory['super_sheep'] ?? 0).toBe(0);
     });
   });
 
   describe('GameOver Stats & Leaderboard Telemetry', () => {
     it('computes MVP and team telemetry ranking accurately', () => {
       const state = createMockGameState();
-      const stats = state.stats;
+      const alpha = state.teams.find((t) => t.id === 'team_alpha')!;
+      const bravo = state.teams.find((t) => t.id === 'team_bravo')!;
 
-      const alphaStats = stats.team_alpha;
-      const bravoStats = stats.team_bravo;
-
-      expect(alphaStats.damageDealt).toBeGreaterThan(bravoStats.damageDealt);
-      expect(alphaStats.kills).toBe(1);
+      expect(alpha.stats?.damageDealt ?? 0).toBeGreaterThan(bravo.stats?.damageDealt ?? 0);
+      expect(alpha.stats?.kills).toBe(1);
     });
   });
 

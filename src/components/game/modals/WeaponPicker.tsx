@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { WeaponCategory } from '../../core/weapons/types';
-import { getAllWeapons } from '../../core/weapons/registry';
-import { useIsTouchDevice } from '../../hooks/useIsTouchDevice';
+import { WeaponCategory } from '../../../core/weapons/types';
+import { getAllWeapons } from '../../../core/weapons/registry';
+import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
 import { X, Sparkles } from 'lucide-react';
 import { WeaponCategoryTabs } from './weaponPicker/WeaponCategoryTabs';
 import { WeaponGridCard } from './weaponPicker/WeaponGridCard';
@@ -61,32 +61,40 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   }, [isTouch, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl max-w-3xl w-full p-2.5 sm:p-4 space-y-2 flex flex-col h-[88vh] sm:h-[540px] max-h-[92vh] shadow-[0_0_50px_rgba(124,58,237,0.25)]">
-        {/* Header - Slim and compact */}
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2 shrink-0">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto pointer-events-auto select-none animate-in fade-in duration-150">
+      <div
+        className={`bg-zinc-950 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-2xl shadow-violet-500/10 pointer-events-auto ${
+          isTouch
+            ? 'max-w-md p-3.5 space-y-3 max-h-[90vh]'
+            : 'max-w-4xl p-6 space-y-4 max-h-[85vh]'
+        }`}
+      >
+        {/* Header Title Bar */}
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
-              <Sparkles className="w-4 h-4 text-violet-400" />
+            <div className="p-1.5 bg-violet-600/20 text-violet-400 rounded-lg border border-violet-500/30">
+              <Sparkles className="w-4 h-4" />
             </div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-black text-violet-200 tracking-tight">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-300 via-purple-200 to-indigo-200 uppercase tracking-wider">
                 Arsenal Tactique
               </h2>
-              <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-violet-950 border border-violet-500/60 rounded-full text-violet-300">
-                W.M.D
-              </span>
+              <p className="text-[10px] sm:text-xs text-zinc-400 font-medium">
+                {isTouch
+                  ? 'Touchez une arme pour équiper votre limace'
+                  : 'Sélectionnez votre armement • Raccourcis [1-5] pour naviguer'}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition"
+            className="p-1.5 sm:p-2 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-zinc-400 hover:text-white transition-all cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        {/* Categories Tabs */}
+        {/* Category Tabs */}
         <WeaponCategoryTabs
           isTouch={isTouch}
           activeCategory={activeCategory}
@@ -96,24 +104,28 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
 
         {/* Weapons Grid */}
         <div
-          className={
+          className={`flex-1 overflow-y-auto pr-1 no-scrollbar ${
             isTouch
-              ? 'grid grid-cols-2 landscape:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 overflow-y-auto p-0.5 flex-1 min-h-0 content-start'
-              : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 flex-1 min-h-0 content-start'
-          }
+              ? 'grid grid-cols-1 gap-2'
+              : 'grid grid-cols-2 md:grid-cols-3 gap-3'
+          }`}
         >
           {filtered.map((w) => {
-            const ammo = inventory[w.id] ?? w.defaultAmmo;
+            const count = inventory[w.id] ?? 0;
+            const isSelected = selectedWeaponId === w.id;
+
             return (
               <WeaponGridCard
                 key={w.id}
                 weapon={w}
-                ammo={ammo}
-                isSelected={selectedWeaponId === w.id}
+                ammo={count}
+                isSelected={isSelected}
                 isTouch={isTouch}
                 onSelect={() => {
-                  onSelectWeapon(w.id);
-                  onClose();
+                  if (count !== 0) {
+                    onSelectWeapon(w.id);
+                    onClose();
+                  }
                 }}
               />
             );

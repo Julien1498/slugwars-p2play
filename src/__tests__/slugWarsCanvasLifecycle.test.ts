@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { SlugWarsCanvas, SlugWarsCanvasProps } from '../components/game/SlugWarsCanvas';
+import { describe, it, expect, vi } from 'vitest';
+import { SlugWarsCanvas, SlugWarsCanvasProps } from '../components/game/canvas/SlugWarsCanvas';
 import { GameState } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
 

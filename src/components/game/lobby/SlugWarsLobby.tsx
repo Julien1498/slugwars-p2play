@@ -1,13 +1,13 @@
 import React from 'react';
-import { GameConfig, Team } from '../../core/types';
+import { GameConfig, Team } from '../../../core/types';
 import { RoomCodeBadge } from 'p2play-core';
-import { LobbyBackdropCanvas } from './lobby/LobbyBackdropCanvas';
-import { LobbyMapConfig } from './lobby/LobbyMapConfig';
-import { LobbyTeamList } from './lobby/LobbyTeamList';
+import { LobbyBackdropCanvas } from './LobbyBackdropCanvas';
+import { LobbyMapConfig } from './LobbyMapConfig';
+import { LobbyTeamList } from './LobbyTeamList';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { useFullscreen } from '../../hooks/useFullscreen';
+import { useFullscreen } from '../../../hooks/useFullscreen';
 
-interface SlugWarsLobbyProps {
+export interface SlugWarsLobbyProps {
   isHost: boolean;
   myPeerId: string;
   hostPeerId: string;
@@ -66,7 +66,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300"
+                className="p-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300 cursor-pointer"
                 title={isFullscreen ? "Quitter le plein écran" : "Plein écran immersif"}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4 text-zinc-300" /> : <Maximize2 className="w-4 h-4 text-zinc-300" />}
@@ -78,7 +78,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             {isEmbedded && onExit && (
               <button
                 onClick={onExit}
-                className="px-3 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-xl text-xs font-bold text-red-300 transition"
+                className="px-3 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/50 rounded-xl text-xs font-bold text-red-300 transition cursor-pointer"
               >
                 Quitter
               </button>
