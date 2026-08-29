@@ -1,6 +1,7 @@
 import { GameState } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
 import { getWeapon } from '../core/weapons/registry';
+import { SOLID_PROP_HITBOX_DRAWERS } from './props/propHitboxDrawers';
 
 export interface HitboxRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -61,63 +62,9 @@ export function renderHitboxDebugOverlay(rc: HitboxRenderContext) {
       ctx.fillRect(-1.5, -1.5, 3, 3);
 
       ctx.setLineDash([2, 2]);
-      if (sprop.type === 'tree') {
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-7, -45, 14, 45);
-        ctx.beginPath();
-        ctx.arc(0, -35, 18, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (sprop.type === 'mushroom') {
-        ctx.strokeStyle = '#a855f7';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-6, -16, 12, 16);
-        ctx.beginPath();
-        ctx.ellipse(0, -21, 14, 8, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (sprop.type === 'hedgehog') {
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(-2, -9, 14, 10, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (sprop.type === 'chick') {
-        ctx.strokeStyle = '#eab308';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.ellipse(0, -12, 14, 12, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (sprop.type === 'flower') {
-        ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-2, -14, 4, 14);
-        ctx.beginPath();
-        ctx.arc(0, -16, 8, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (sprop.type === 'bunker') {
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-18, -26, 36, 26);
-      } else if (sprop.type === 'totem') {
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-12, -36, 24, 36);
-      } else if (sprop.type === 'cactus') {
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-11, -38, 22, 38);
-      } else if (sprop.type === 'crystal') {
-        ctx.strokeStyle = '#c084fc';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-13, -26, 26, 26);
-      } else if (sprop.type === 'oil_drum') {
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-9, -24, 18, 24);
-      } else if (sprop.type === 'lamppost') {
-        ctx.strokeStyle = '#facc15';
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-7, -42, 14, 42);
+      const hitboxDrawer = SOLID_PROP_HITBOX_DRAWERS[sprop.type];
+      if (hitboxDrawer) {
+        hitboxDrawer(ctx);
       }
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';

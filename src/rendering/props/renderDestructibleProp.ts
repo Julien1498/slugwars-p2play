@@ -4,37 +4,33 @@ import { drawBunkerProp, drawTotemProp, drawOilDrumProp, drawLamppostProp } from
 import { drawCrystalProp } from './renderMineralProps';
 import { drawHedgehogProp, drawChickProp } from './renderCritterProps';
 
+export const SOLID_PROP_DRAWERS: Record<
+  SolidProp['type'],
+  (ctx: CanvasRenderingContext2D, sprop: SolidProp) => void
+> = {
+  hedgehog: (ctx) => drawHedgehogProp(ctx),
+  chick: (ctx) => drawChickProp(ctx),
+  mushroom: (ctx, sprop) => drawMushroomProp(ctx, sprop),
+  flower: (ctx, sprop) => drawFlowerProp(ctx, sprop),
+  tree: (ctx, sprop) => drawTreeProp(ctx, sprop),
+  bunker: (ctx) => drawBunkerProp(ctx),
+  totem: (ctx, sprop) => drawTotemProp(ctx, sprop),
+  cactus: (ctx, sprop) => drawCactusProp(ctx, sprop),
+  crystal: (ctx, sprop) => drawCrystalProp(ctx, sprop),
+  oil_drum: (ctx, sprop) => drawOilDrumProp(ctx, sprop),
+  lamppost: (ctx) => drawLamppostProp(ctx),
+};
+
 export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
+  const drawer = SOLID_PROP_DRAWERS[sprop.type];
+  if (!drawer) return;
+
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
   if (sprop.angleRad) {
     ctx.rotate(sprop.angleRad);
   }
-
-  if (sprop.type === 'hedgehog') {
-    drawHedgehogProp(ctx);
-  } else if (sprop.type === 'chick') {
-    drawChickProp(ctx);
-  } else if (sprop.type === 'mushroom') {
-    drawMushroomProp(ctx, sprop);
-  } else if (sprop.type === 'flower') {
-    drawFlowerProp(ctx, sprop);
-  } else if (sprop.type === 'tree') {
-    drawTreeProp(ctx, sprop);
-  } else if (sprop.type === 'bunker') {
-    drawBunkerProp(ctx);
-  } else if (sprop.type === 'totem') {
-    drawTotemProp(ctx, sprop);
-  } else if (sprop.type === 'cactus') {
-    drawCactusProp(ctx, sprop);
-  } else if (sprop.type === 'crystal') {
-    drawCrystalProp(ctx, sprop);
-  } else if (sprop.type === 'oil_drum') {
-    drawOilDrumProp(ctx, sprop);
-  } else if (sprop.type === 'lamppost') {
-    drawLamppostProp(ctx);
-  }
-
+  drawer(ctx, sprop);
   ctx.restore();
 }
 
