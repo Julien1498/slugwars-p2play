@@ -41,6 +41,23 @@ import { TerrainPalette, THEME_PALETTES } from './terrainPalettes';
 export type { TerrainPalette };
 export { THEME_PALETTES };
 
+let _sharedDirtyImageData: ImageData | null = null;
+let _sharedDirtyData32: Uint32Array | null = null;
+
+function getSharedDirtyImageData(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number
+): { imgData: ImageData; data32: Uint32Array } {
+  if (!_sharedDirtyImageData || _sharedDirtyImageData.width < w || _sharedDirtyImageData.height < h) {
+    const allocW = Math.max(512, w);
+    const allocH = Math.max(512, h);
+    _sharedDirtyImageData = ctx.createImageData(allocW, allocH);
+    _sharedDirtyData32 = new Uint32Array(_sharedDirtyImageData.data.buffer);
+  }
+  return { imgData: _sharedDirtyImageData, data32: _sharedDirtyData32! };
+}
+
 export function redrawOffscreenTerrain(
   terrain: DestructibleTerrain,
   buffers: TerrainBuffers,
@@ -68,8 +85,8 @@ export function redrawOffscreenTerrain(
 
   const dirtyW = maxX - minX + 1;
   const dirtyH = maxY - minY + 1;
-  const imgData = offCtx.createImageData(dirtyW, dirtyH);
-  const data32 = new Uint32Array(imgData.data.buffer);
+  const { imgData, data32 } = getSharedDirtyImageData(offCtx, dirtyW, dirtyH);
+  const bufWidth = imgData.width;
 
   // Retrieve Theme-Specific Geological Stratification Palette
   const palette = getThemeConfig(theme).rendering.palette;
@@ -145,7 +162,7 @@ export function redrawOffscreenTerrain(
   // Render Multi-Layer Geological Strata inside Dirty Bounding Box
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
-    const dirtyRowOffset = (y - minY) * dirtyW;
+    const dirtyRowOffset = (y - minY) * bufWidth;
     const yFactor = y * 0.35;
     for (let x = minX; x <= maxX; x++) {
       const idx = rowOffset + x;
@@ -201,7 +218,7 @@ export function redrawOffscreenTerrain(
       }
     }
   }
-  offCtx.putImageData(imgData, minX, minY);
+  offCtx.putImageData(imgData, minX, minY, 0, 0, dirtyW, dirtyH);
 
   if (isFullScan) {
     // Pre-render Exact Ground Collision Hitbox Mask

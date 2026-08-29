@@ -1,6 +1,20 @@
 import { TerrainData } from './terrainGenerator';
 import { getThemeConfig } from './terrain/themeRegistry';
 
+export interface RaycastHitResult {
+  hit: boolean;
+  x: number;
+  y: number;
+}
+
+export interface SurfaceNormalResult {
+  nx: number;
+  ny: number;
+}
+
+const _SHARED_RAY_HIT: RaycastHitResult = { hit: false, x: 0, y: 0 };
+const _SHARED_NORMAL: SurfaceNormalResult = { nx: 0, ny: -1 };
+
 export class DestructibleTerrain {
   public data: TerrainData;
   public revision: number = 0;
@@ -144,39 +158,52 @@ export class DestructibleTerrain {
     return { carvedPixels, destroyedOilDrums };
   }
 
-  public raycastSolid(
+  public raycastSolidInto(
     x0: number,
     y0: number,
     x1: number,
-    y1: number
-  ): { hit: boolean; x: number; y: number } {
+    y1: number,
+    out: RaycastHitResult = _SHARED_RAY_HIT
+  ): RaycastHitResult {
     const dx = x1 - x0;
     const dy = y1 - y0;
     const distance = Math.hypot(dx, dy);
     const steps = Math.ceil(distance);
 
-    if (steps === 0) return { hit: this.isSolid(x0, y0), x: x0, y: y0 };
+    if (steps === 0) {
+      out.hit = this.isSolid(x0, y0);
+      out.x = x0;
+      out.y = y0;
+      return out;
+    }
 
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
       const rx = x0 + dx * t;
       const ry = y0 + dy * t;
       if (this.isSolid(rx, ry)) {
-        return { hit: true, x: rx, y: ry };
+        out.hit = true;
+        out.x = rx;
+        out.y = ry;
+        return out;
       }
     }
-    return { hit: false, x: x1, y: y1 };
+    out.hit = false;
+    out.x = x1;
+    out.y = y1;
+    return out;
   }
 
-  /**
-   * Calculates the surface normal vector at a solid impact point (nx, ny).
-   * Points OUTWARD from solid terrain into air/space with unit length 1.0.
-   */
-  public getSurfaceNormal(
+  public raycastSolid(x0: number, y0: number, x1: number, y1: number): RaycastHitResult {
+    return this.raycastSolidInto(x0, y0, x1, y1, { hit: false, x: 0, y: 0 });
+  }
+
+  public getSurfaceNormalInto(
     x: number,
     y: number,
-    sampleRadius: number = 4
-  ): { nx: number; ny: number } {
+    sampleRadius: number = 4,
+    out: SurfaceNormalResult = _SHARED_NORMAL
+  ): SurfaceNormalResult {
     let nx = 0;
     let ny = 0;
     const r = Math.max(2, Math.floor(sampleRadius));
@@ -198,9 +225,24 @@ export class DestructibleTerrain {
 
     const len = Math.hypot(nx, ny);
     if (len > 0.001) {
-      return { nx: nx / len, ny: ny / len };
+      out.nx = nx / len;
+      out.ny = ny / len;
+      return out;
     }
-    // Default fallback: upward normal (flat ground)
-    return { nx: 0, ny: -1 };
+    out.nx = 0;
+    out.ny = -1;
+    return out;
+  }
+
+  /**
+   * Calculates the surface normal vector at a solid impact point (nx, ny).
+   * Points OUTWARD from solid terrain into air/space with unit length 1.0.
+   */
+  public getSurfaceNormal(
+    x: number,
+    y: number,
+    sampleRadius: number = 4
+  ): SurfaceNormalResult {
+    return this.getSurfaceNormalInto(x, y, sampleRadius, { nx: 0, ny: -1 });
   }
 }
