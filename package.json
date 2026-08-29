@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit": "vitest run scripts/audits/runFullAudit.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

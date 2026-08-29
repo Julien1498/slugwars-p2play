@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-08-29T14:40:34.336Z",
+  "environment": {
+    "nodeVersion": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "metrics": {
+    "codeQuality": {
+      "prodFilesCount": 214,
+      "testFilesCount": 49,
+      "totalProdLines": 28221,
+      "filesOver300Count": 0,
+      "hardcodedWeaponsChecksCount": 0,
+      "filesWithAnyInProdCount": 65
+    },
+    "netcode": {
+      "jsonByteSize": 1146,
+      "binaryByteSize": 646,
+      "compressionRatio": "43.6",
+      "avgEncodeMicros": "39.89",
+      "avgDecodeMicros": "18.16",
+      "reentrantSafe": true
+    },
+    "physics": {
+      "themesCount": 8,
+      "totalRaycasts": 4000,
+      "totalNormals": 3906,
+      "durationMs": "403.9",
+      "determinismPassed": true
+    }
+  },
+  "verdict": {
+    "status": "PASS",
+    "overallScore": "9.72 / 10",
+    "summary": "100% compliant with strict <300 lines rule, zero-alloc physics determinism, and re-entrant binary netcode."
+  }
+}
