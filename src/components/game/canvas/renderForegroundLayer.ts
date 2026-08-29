@@ -94,7 +94,7 @@ export function renderForegroundLayer({
   actionCtx.scale(totalScale, totalScale);
   actionCtx.translate(-width / 2, -height / 2);
   actionCtx.imageSmoothingEnabled = true;
-  actionCtx.imageSmoothingQuality = 'low';
+  actionCtx.imageSmoothingQuality = 'high';
 
   // 1. Ninja Ropes & Slugs
   const pRopesStart = performance.now();

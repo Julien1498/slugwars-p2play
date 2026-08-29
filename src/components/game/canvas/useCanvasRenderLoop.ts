@@ -109,9 +109,11 @@ export function useCanvasRenderLoop({
       const curState = gameStateRef.current;
       const { width, height, waterLevel } = terrain.data;
 
-      // Dynamic Resolution Scaling (DRS)
-      const bgDpr = Math.min(1.0, Math.max(0.70, Math.round((zoomRef.current + 0.16) * 100) / 100));
-      const actionDpr = Math.min(1.0, Math.max(0.90, Math.round((zoomRef.current + 0.27) * 100) / 100));
+      // Dynamic Resolution Scaling (DRS) with native HiDPI / Retina devicePixelRatio support
+      const deviceDpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+      const baseDpr = Math.min(2.0, Math.max(1.0, deviceDpr));
+      const bgDpr = Math.round(baseDpr * Math.min(1.0, Math.max(0.75, zoomRef.current * 0.4 + 0.6)) * 100) / 100;
+      const actionDpr = Math.round(baseDpr * Math.min(1.0, Math.max(0.90, zoomRef.current * 0.2 + 0.8)) * 100) / 100;
       perfTracker.setLiveDprs(bgDpr, actionDpr);
       const cRect = containerRectRef.current;
 

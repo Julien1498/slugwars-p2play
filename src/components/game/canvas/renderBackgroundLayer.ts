@@ -58,7 +58,7 @@ export function renderBackgroundLayer({
   ctx.scale(totalScale, totalScale);
   ctx.translate(-width / 2, -height / 2);
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'low';
+  ctx.imageSmoothingQuality = 'high';
 
   const worldLeft = -3500;
   const worldRight = width + 3500;
