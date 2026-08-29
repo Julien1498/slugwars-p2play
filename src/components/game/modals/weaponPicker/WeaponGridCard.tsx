@@ -84,7 +84,7 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
     <button
       disabled={isDisabled}
       onClick={onSelect}
-      className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative overflow-hidden group cursor-pointer ${
+      className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative overflow-hidden group cursor-pointer h-[154px] ${
         isSelected
           ? 'bg-gradient-to-b from-violet-900/60 to-purple-950/80 border-violet-400 ring-2 ring-violet-500/80 shadow-[0_0_25px_rgba(139,92,246,0.4)]'
           : isDisabled

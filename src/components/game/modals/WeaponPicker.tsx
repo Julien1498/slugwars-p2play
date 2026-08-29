@@ -63,14 +63,14 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto pointer-events-auto select-none animate-in fade-in duration-150">
       <div
-        className={`bg-zinc-950 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-2xl shadow-violet-500/10 pointer-events-auto ${
+        className={`bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-[0_0_50px_rgba(124,58,237,0.25)] pointer-events-auto ${
           isTouch
-            ? 'max-w-md p-3.5 space-y-3 max-h-[90vh]'
-            : 'max-w-4xl p-6 space-y-4 max-h-[85vh]'
+            ? 'max-w-lg p-3 sm:p-4 space-y-2.5 h-[88vh] sm:h-[540px] max-h-[92vh]'
+            : 'max-w-4xl p-5 space-y-3.5 h-[560px] max-h-[90vh]'
         }`}
       >
         {/* Header Title Bar */}
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-violet-600/20 text-violet-400 rounded-lg border border-violet-500/30">
               <Sparkles className="w-4 h-4" />
@@ -102,12 +102,12 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           allWeapons={allWeapons}
         />
 
-        {/* Weapons Grid */}
+        {/* Weapons Grid: Fixed content-start with min-h-0 so the frame never shrinks or jumps */}
         <div
-          className={`flex-1 overflow-y-auto pr-1 no-scrollbar ${
+          className={`flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar content-start ${
             isTouch
-              ? 'grid grid-cols-1 gap-2'
-              : 'grid grid-cols-2 md:grid-cols-3 gap-3'
+              ? 'grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-2'
+              : 'grid grid-cols-2 md:grid-cols-3 gap-2.5'
           }`}
         >
           {filtered.map((w) => {
