@@ -5,10 +5,7 @@ import { TurnHeader } from './TurnHeader';
 import { DesktopTopHeader } from './desktop/DesktopTopHeader';
 import { DesktopBottomDock } from './desktop/DesktopBottomDock';
 import { SlugWarsCanvas } from './SlugWarsCanvas';
-import { WeaponPicker } from './WeaponPicker';
-import { RulesModal } from './RulesModal';
-import { MetricsModal } from './MetricsModal';
-import { GameOverStatsModal } from './GameOverStatsModal';
+import { BoardModalsContainer } from './board/BoardModalsContainer';
 import { BoardFuseTimerWidget } from './board/BoardFuseTimerWidget';
 import { BoardBottomDock } from './board/BoardBottomDock';
 import { BoardChatDrawer } from './board/BoardChatDrawer';
@@ -273,46 +270,21 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
       <OrientationLockPrompt />
 
-      {gameState.phase === 'GAME_OVER' && (
-        <Profiler id="GameOverStatsModal" onRender={perfTracker.onReactRender}>
-          <GameOverStatsModal
-            gameState={gameState}
-            isHost={isHost}
-            onRestartGame={onRestartGame}
-          />
-        </Profiler>
-      )}
-
-      {showWeaponPicker && myTeam && (
-        <Profiler id="WeaponPicker" onRender={perfTracker.onReactRender}>
-          <WeaponPicker
-            inventory={myTeam.inventory}
-            selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
-            onSelectWeapon={(wId) => {
-              sfx.play('tick');
-              onSelectWeapon(wId);
-            }}
-            onClose={handleCloseWeaponPicker}
-          />
-        </Profiler>
-      )}
-
-      {showRules && (
-        <Profiler id="RulesModal" onRender={perfTracker.onReactRender}>
-          <RulesModal onClose={handleCloseRules} />
-        </Profiler>
-      )}
-
-      {showMetrics && (
-        <Profiler id="MetricsModal" onRender={perfTracker.onReactRender}>
-          <MetricsModal
-            isOpen={showMetrics}
-            onClose={handleCloseMetrics}
-            gameState={gameState}
-            hostPeerId={hostPeerId}
-          />
-        </Profiler>
-      )}
+      <BoardModalsContainer
+        gameState={gameState}
+        myTeam={myTeam}
+        activeSlug={activeSlug}
+        isHost={isHost}
+        hostPeerId={hostPeerId}
+        showWeaponPicker={showWeaponPicker}
+        showRules={showRules}
+        showMetrics={showMetrics}
+        onRestartGame={onRestartGame}
+        onSelectWeapon={onSelectWeapon}
+        onCloseWeaponPicker={handleCloseWeaponPicker}
+        onCloseRules={handleCloseRules}
+        onCloseMetrics={handleCloseMetrics}
+      />
     </div>
   );
 };

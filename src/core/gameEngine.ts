@@ -25,12 +25,7 @@ import {
   enterVehicle,
   exitVehicle,
   steerVehicle,
-  updateHelicopters,
 } from './engine/vehicleManager';
-import {
-  updateMines,
-  updateSupplyCrates,
-} from './engine/supplyDropManager';
 import { PhaseManager } from './engine/phaseManager';
 import {
   startMove,
@@ -45,19 +40,11 @@ import {
   detonateSheep,
 } from './engine/engineControls';
 import {
-  updateSlugsPhysicsAndDrowning,
-  updateSlugRopeAndCharge,
-  updateBlowtorchTick,
-} from './engine/engineTickSlugs';
-import {
-  updateProjectilesInTick,
-  cleanupExpiredVFX,
-} from './engine/engineTickProjectiles';
-import {
   setupGameStart,
   handlePlaceSlug,
   handleCarveCrater,
 } from './engine/engineLifecycle';
+import { executeEngineTick } from './engine/engineTick';
 
 export class SlugWarsEngine {
   public state: GameState;
@@ -217,103 +204,13 @@ export class SlugWarsEngine {
   }
 
   public tick(): void {
-    const activeSlug = this.state.slugs.find((s) => s.id === this.state.activeSlugId);
-    const activeSlugHpBefore = activeSlug && activeSlug.isAlive ? activeSlug.hp : 0;
-
-    // 1. Slugs physics & water drowning
-    const effectiveWaterY = this.state.waterLevel ?? this.terrain.data.waterLevel;
-    updateSlugsPhysicsAndDrowning(
-      this.state,
-      this.terrain,
-      (msg, type) => this.addLog(msg, type),
-      effectiveWaterY
-    );
-
-    // 2. Active slug death interruption
-    if (
-      activeSlug &&
-      !activeSlug.isAlive &&
-      (this.state.phase === 'AIMING' || this.state.phase === 'PROJECTILE_ACTIVE' || this.state.phase === 'RETREAT')
-    ) {
-      PhaseManager.startResolving(this.state, { settleTimer: 1.2, phaseTimeout: 30.0 });
-    }
-
-    // 3. Ninja rope & power charging
-    if (
-      activeSlug &&
-      activeSlug.isAlive &&
-      (this.state.phase === 'AIMING' || this.state.phase === 'TURN_TIME' || this.state.phase === 'RETREAT')
-    ) {
-      updateSlugRopeAndCharge(
-        this.state,
-        this.terrain,
-        activeSlug,
-        (dir) => this.moveSlug(dir),
-        (tp) => this.fireWeapon(tp),
-        (msg, type) => this.addLog(msg, type)
-      );
-    }
-
-    // 4. Blowtorch tunneling
-    if (activeSlug && activeSlug.isAlive && activeSlug.isBlowtorching) {
-      updateBlowtorchTick(
-        this.state,
-        this.terrain,
-        activeSlug,
-        (x, y, r) => this.carveCrater(x, y, r),
-        (msg, type) => this.addLog(msg, type)
-      );
-    }
-
-    // 5. Super sheep steer
-    const activeSheep = this.state.projectiles.find((p) => p.weaponId === 'super_sheep');
-    if (activeSheep && activeSlug && activeSlug.steeringDir) {
-      this.steerSheep(activeSlug.steeringDir);
-    }
-
-    // 6. Helicopter physics
-    updateHelicopters(this.state, this.terrain, (msg, type) => this.addLog(msg, type));
-
-    // 7. Active slug took damage during aiming -> interrupt turn immediately
-    if (
-      activeSlug &&
-      activeSlug.isAlive &&
-      activeSlug.hp < activeSlugHpBefore &&
-      this.state.phase === 'AIMING'
-    ) {
-      PhaseManager.startResolving(this.state, {
-        settleTimer: 1.2,
-        phaseTimeout: 30.0,
-        reason: `⚡ ${activeSlug.name} a pris des dégâts ! Fin du tour !`,
-        addLog: (msg, type) => this.addLog(msg, type),
-      });
-      return;
-    }
-
-    // 8. Projectiles simulation
-    updateProjectilesInTick(
-      this.state,
-      this.terrain,
-      (x, y, r) => this.carveCrater(x, y, r),
-      (msg, type) => this.addLog(msg, type)
-    );
-
-    // 9. Mines & supply drops
-    updateMines(
-      this.state,
-      this.terrain,
-      (x, y, r) => this.carveCrater(x, y, r),
-      (msg, type) => this.addLog(msg, type)
-    );
-    updateSupplyCrates(this.state, this.terrain, (msg, type) => this.addLog(msg, type));
-
-    // 10. Expired VFX cleanup
-    cleanupExpiredVFX(this.state, Date.now());
-
-    // 11. Phase machine tick
-    PhaseManager.updatePhaseTick(this.state, this.terrain, 0.05, {
+    executeEngineTick(this.state, this.terrain, {
       addLog: (msg, type) => this.addLog(msg, type),
-      advanceToNextTurn: () => this.endTurn(),
+      carveCrater: (x, y, r) => this.carveCrater(x, y, r),
+      moveSlug: (dir) => this.moveSlug(dir),
+      fireWeapon: (tp) => this.fireWeapon(tp),
+      steerSheep: (dir) => this.steerSheep(dir),
+      endTurn: () => this.endTurn(),
     });
   }
 

@@ -24,6 +24,32 @@ import {
 
 export type { SoundEffectType, PlaySoundOptions };
 
+type SoundPlayerFn = (ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number) => void;
+
+const SFX_DISPATCH: Record<string, SoundPlayerFn> = {
+  explosion: playExplosionSound,
+  fire: playFireSound,
+  bazooka_fire: playFireSound,
+  grenade_throw: playGrenadeThrowSound,
+  siren: playSirenSound,
+  melee: playMeleeSound,
+  bat_hit: playMeleeSound,
+  rope_shoot: playRopeShootSound,
+  rope_attach: playRopeAttachSound,
+  splash: playSplashSound,
+  jump: playJumpSound,
+  bounce: playBounceSound,
+  girder: playGirderSound,
+  teleport: playTeleportSound,
+  baah: playBaahSound,
+  sheep_baah: playBaahSound,
+  donkey: playDonkeySound,
+  airdrop: playAirdropSound,
+  ouch: playOuchSound,
+  tick: playTickSound,
+  victory: playVictorySound,
+};
+
 class SoundEffects {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -93,30 +119,9 @@ class SoundEffects {
       const { dest, pitchRatio } = this.createDestination(options);
       const now = ctx.currentTime;
 
-      let resolvedType: string = type;
-      if (type === 'bazooka_fire') resolvedType = 'fire';
-      if (type === 'sheep_baah') resolvedType = 'baah';
-      if (type === 'bat_hit') resolvedType = 'melee';
-
-      switch (resolvedType) {
-        case 'explosion': playExplosionSound(ctx, dest, pitchRatio, now); break;
-        case 'fire': playFireSound(ctx, dest, pitchRatio, now); break;
-        case 'grenade_throw': playGrenadeThrowSound(ctx, dest, pitchRatio, now); break;
-        case 'siren': playSirenSound(ctx, dest, pitchRatio, now); break;
-        case 'melee': playMeleeSound(ctx, dest, pitchRatio, now); break;
-        case 'rope_shoot': playRopeShootSound(ctx, dest, pitchRatio, now); break;
-        case 'rope_attach': playRopeAttachSound(ctx, dest, pitchRatio, now); break;
-        case 'splash': playSplashSound(ctx, dest, pitchRatio, now); break;
-        case 'jump': playJumpSound(ctx, dest, pitchRatio, now); break;
-        case 'bounce': playBounceSound(ctx, dest, pitchRatio, now); break;
-        case 'girder': playGirderSound(ctx, dest, pitchRatio, now); break;
-        case 'teleport': playTeleportSound(ctx, dest, pitchRatio, now); break;
-        case 'baah': playBaahSound(ctx, dest, pitchRatio, now); break;
-        case 'donkey': playDonkeySound(ctx, dest, pitchRatio, now); break;
-        case 'airdrop': playAirdropSound(ctx, dest, pitchRatio, now); break;
-        case 'ouch': playOuchSound(ctx, dest, pitchRatio, now); break;
-        case 'tick': playTickSound(ctx, dest, pitchRatio, now); break;
-        case 'victory': playVictorySound(ctx, dest, pitchRatio, now); break;
+      const player = SFX_DISPATCH[type];
+      if (player) {
+        player(ctx, dest, pitchRatio, now);
       }
     } catch {
       // AudioContext graceful fallback

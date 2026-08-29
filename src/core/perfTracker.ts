@@ -13,6 +13,8 @@ import {
   startCaptureSession,
   finishCaptureSession,
 } from './perf/captureSession';
+import { FpsHudConfigManager } from './perf/fpsHudConfig';
+import { buildFrameLogEntry } from './perf/frameSampler';
 
 export {
   RENDER_PASS_LABELS,
@@ -56,12 +58,7 @@ class PerformanceTracker {
   private lastRafTime = 0;
   private captureListeners: ((report: PerfCaptureReport | null, remainingSeconds: number) => void)[] = [];
   public liveTopPasses: { id: string; label: string; ms: number }[] = [];
-
-  // In-Game Permanent Zero-Cost FPS HUD Toggle
-  private isFpsHudEnabled: boolean = typeof window !== 'undefined' && localStorage.getItem('slugwars_fps_hud_enabled') === 'true';
-  private fpsHudListeners: ((enabled: boolean) => void)[] = [];
-  private isFpsHudAdvancedEnabled: boolean = typeof window !== 'undefined' && localStorage.getItem('slugwars_fps_hud_advanced') === 'true';
-  private fpsHudAdvancedListeners: ((enabled: boolean) => void)[] = [];
+  private fpsHudConfig = new FpsHudConfigManager();
 
   // Real-time live stats
   public currentFps = 60;
@@ -182,21 +179,6 @@ class PerformanceTracker {
     if (!this.sessionState.isCapturing) return;
 
     const timeOffsetMs = Math.round(now - this.sessionState.captureStartTime);
-    const isJank = frameIntervalMs > 20.0;
-    const isCriticalJank = frameIntervalMs > 33.3;
-
-    let memoryMB: number | null = null;
-    const mem = (performance as any)?.memory;
-    if (mem?.usedJSHeapSize) {
-      memoryMB = Math.round((mem.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
-    }
-
-    const cpuJsMs = Math.round((renderDurationMs + this.currentPhysicsDurationMs + reactDuration) * 100) / 100;
-    const sampledIdle = this.lastSampledIdleMs;
-    const maxPossibleIdle = Math.max(0, frameIntervalMs - cpuJsMs);
-    const realIdleWaitMs = Math.min(sampledIdle > 0 ? sampledIdle : (frameIntervalMs > 15 ? Math.max(0, 16.6 - cpuJsMs - 4) : 0), maxPossibleIdle);
-    const gpuRasterMs = Math.max(0, Math.round((frameIntervalMs - cpuJsMs - realIdleWaitMs) * 100) / 100);
-    const browserWaitMs = Math.max(0, Math.round((frameIntervalMs - cpuJsMs) * 100) / 100);
 
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
       try {
@@ -206,24 +188,20 @@ class PerformanceTracker {
       } catch {}
     }
 
-    this.sessionState.capturedFrames.push({
-      frameId: this.sessionState.nextFrameId++,
+    const frameEntry = buildFrameLogEntry(
+      this.sessionState.nextFrameId++,
       timeOffsetMs,
-      frameIntervalMs: Math.round(frameIntervalMs * 100) / 100,
-      renderDurationMs: Math.round(renderDurationMs * 100) / 100,
-      physicsDurationMs: this.currentPhysicsDurationMs,
-      reactRenderDurationMs: reactDuration,
-      cpuJsMs,
-      gpuRasterMs,
-      realIdleWaitMs,
-      browserWaitMs,
+      frameIntervalMs,
+      renderDurationMs,
+      this.currentPhysicsDurationMs,
+      reactDuration,
       fpsInstant,
-      isJank,
-      isCriticalJank,
-      memoryMB,
-      entities: { ...entities },
-      renderPasses: framePasses,
-    });
+      this.lastSampledIdleMs,
+      entities,
+      framePasses
+    );
+
+    this.sessionState.capturedFrames.push(frameEntry);
 
     if (timeOffsetMs >= this.sessionState.capturePlannedMs) {
       finishCaptureSession(
@@ -277,51 +255,27 @@ class PerformanceTracker {
   }
 
   public getFpsHudEnabled(): boolean {
-    return this.isFpsHudEnabled;
+    return this.fpsHudConfig.getFpsHudEnabled();
   }
 
   public setFpsHudEnabled(enabled: boolean): void {
-    this.isFpsHudEnabled = enabled;
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('slugwars_fps_hud_enabled', enabled ? 'true' : 'false');
-      }
-    } catch {}
-    for (const listener of this.fpsHudListeners) {
-      listener(enabled);
-    }
+    this.fpsHudConfig.setFpsHudEnabled(enabled);
   }
 
   public onFpsHudToggle(listener: (enabled: boolean) => void): () => void {
-    this.fpsHudListeners.push(listener);
-    listener(this.isFpsHudEnabled);
-    return () => {
-      this.fpsHudListeners = this.fpsHudListeners.filter((l) => l !== listener);
-    };
+    return this.fpsHudConfig.onFpsHudToggle(listener);
   }
 
   public getFpsHudAdvancedEnabled(): boolean {
-    return this.isFpsHudAdvancedEnabled;
+    return this.fpsHudConfig.getFpsHudAdvancedEnabled();
   }
 
   public setFpsHudAdvancedEnabled(enabled: boolean): void {
-    this.isFpsHudAdvancedEnabled = enabled;
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('slugwars_fps_hud_advanced', enabled ? 'true' : 'false');
-      }
-    } catch {}
-    for (const listener of this.fpsHudAdvancedListeners) {
-      listener(enabled);
-    }
+    this.fpsHudConfig.setFpsHudAdvancedEnabled(enabled);
   }
 
   public onFpsHudAdvancedToggle(listener: (enabled: boolean) => void): () => void {
-    this.fpsHudAdvancedListeners.push(listener);
-    listener(this.isFpsHudAdvancedEnabled);
-    return () => {
-      this.fpsHudAdvancedListeners = this.fpsHudAdvancedListeners.filter((l) => l !== listener);
-    };
+    return this.fpsHudConfig.onFpsHudAdvancedToggle(listener);
   }
 }
 
