@@ -24,6 +24,28 @@ export interface ProjectilesRenderContext {
   viewRight?: number;
 }
 
+type ProjectileDrawerFn = (
+  ctx: CanvasRenderingContext2D,
+  proj: ActiveProjectile,
+  animTime: number,
+  angle: number
+) => void;
+
+export const PROJECTILE_DRAWERS: Record<string, ProjectileDrawerFn> = {
+  bazooka: (ctx, proj, animTime) => renderBazookaOrMissile(ctx, proj, animTime),
+  homing_missile: (ctx, proj, animTime) => renderBazookaOrMissile(ctx, proj, animTime),
+  grenade: (ctx) => renderGrenade(ctx),
+  air_strike: (ctx) => renderAirStrikeBomb(ctx),
+  homing_pigeon: (ctx, _proj, animTime) => renderHomingPigeon(ctx, animTime),
+  cluster_banana: (ctx) => renderClusterBanana(ctx),
+  shotgun: (ctx) => renderBuckshotPellet(ctx),
+  super_sheep: (ctx, _proj, animTime) => renderSuperSheep(ctx, animTime),
+  holy_grenade: (ctx) => renderHolyGrenade(ctx),
+  banana_bomb: (ctx) => renderBananaBomb(ctx),
+  dynamite: (ctx, _proj, animTime) => renderDynamite(ctx, animTime),
+  concrete_donkey: (ctx, _proj, _animTime, angle) => renderConcreteDonkey(ctx, angle),
+};
+
 export function renderProjectiles(rc: ProjectilesRenderContext) {
   const { ctx, projectiles, animTime, viewLeft, viewRight } = rc;
 
@@ -37,29 +59,9 @@ export function renderProjectiles(rc: ProjectilesRenderContext) {
       ctx.rotate(angle);
     }
 
-    const wId = proj.weaponId;
-    if (wId === 'bazooka' || wId === 'homing_missile') {
-      renderBazookaOrMissile(ctx, proj, animTime);
-    } else if (wId === 'grenade') {
-      renderGrenade(ctx);
-    } else if (wId === 'air_strike') {
-      renderAirStrikeBomb(ctx);
-    } else if (wId === 'homing_pigeon') {
-      renderHomingPigeon(ctx, animTime);
-    } else if (wId === 'cluster_banana') {
-      renderClusterBanana(ctx);
-    } else if (wId === 'shotgun') {
-      renderBuckshotPellet(ctx);
-    } else if (wId === 'super_sheep') {
-      renderSuperSheep(ctx, animTime);
-    } else if (wId === 'holy_grenade') {
-      renderHolyGrenade(ctx);
-    } else if (wId === 'banana_bomb') {
-      renderBananaBomb(ctx);
-    } else if (wId === 'dynamite') {
-      renderDynamite(ctx, animTime);
-    } else if (wId === 'concrete_donkey') {
-      renderConcreteDonkey(ctx, angle);
+    const drawer = PROJECTILE_DRAWERS[proj.weaponId];
+    if (drawer) {
+      drawer(ctx, proj, animTime, angle);
     } else {
       renderStandardOrb(ctx, proj);
     }

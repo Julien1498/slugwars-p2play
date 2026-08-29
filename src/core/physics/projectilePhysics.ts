@@ -1,16 +1,23 @@
-import { Slug, ActiveProjectile, Vector2D, HomingPhysicsConfig, ProjectileImpactBehavior } from '../types';
+import { ActiveProjectile, Slug, ProjectileImpactBehavior } from '../types';
 import { DestructibleTerrain } from '../terrain';
-import { sfx } from '../audio';
 
-export const GRAVITY = 0.4;
+export const GRAVITY = 0.28;
+
+export interface ProjectilePhysicsResult {
+  exploded: boolean;
+  collisionPoint?: { x: number; y: number };
+}
 
 export function updateProjectilePhysics(
   proj: ActiveProjectile,
   terrain: DestructibleTerrain,
-  wind: number,
-  slugs: Slug[]
-): { exploded: boolean; collisionPoint?: Vector2D } {
-  // 1. Fuse Timer Expiration
+  arg3?: number | Slug[],
+  arg4?: number | Slug[]
+): ProjectilePhysicsResult {
+  const wind: number = typeof arg3 === 'number' ? arg3 : typeof arg4 === 'number' ? arg4 : 0;
+  const slugs: Slug[] = Array.isArray(arg3) ? arg3 : Array.isArray(arg4) ? arg4 : [];
+
+  // 1. Fuse Countdown
   if (proj.fuseTimerMs !== undefined) {
     proj.fuseTimerMs -= 50;
     if (proj.fuseTimerMs <= 0) {
@@ -19,13 +26,7 @@ export function updateProjectilePhysics(
   }
 
   // 2. Trajectory Dynamics (Homing Guidance or Ballistics with Gravity Scale)
-  const homing: HomingPhysicsConfig | undefined =
-    proj.homingConfig ||
-    (proj.weaponId === 'homing_pigeon'
-      ? { speed: 7.5, turnSpeed: 0.22, minTargetDist: 15, windFactor: 0.015 }
-      : proj.weaponId === 'homing_missile'
-        ? { speed: 13, turnSpeed: 0.28, minTargetDist: 16, delayMs: 500, windFactor: 0.02 }
-        : undefined);
+  const homing = proj.homingConfig;
 
   if (homing && proj.targetPoint) {
     const dx = proj.targetPoint.x - proj.x;
@@ -61,17 +62,9 @@ export function updateProjectilePhysics(
       proj.vx += wind * 0.02;
     }
 
-    const gScale =
-      proj.gravityScale !== undefined
-        ? proj.gravityScale
-        : proj.weaponId === 'super_sheep' || proj.weaponId === 'homing_pigeon' || proj.weaponId === 'homing_missile'
-          ? 0
-          : proj.weaponId === 'concrete_donkey'
-            ? 1.5
-            : 1;
-
+    const gScale = proj.gravityScale ?? 1;
     if (gScale > 0) {
-      const maxVy = proj.maxVelocityY ?? (proj.weaponId === 'concrete_donkey' ? 18 : 100);
+      const maxVy = proj.maxVelocityY ?? 100;
       proj.vy = Math.min(maxVy, proj.vy + GRAVITY * gScale);
     }
   }
@@ -79,14 +72,9 @@ export function updateProjectilePhysics(
   const nextX = proj.x + proj.vx;
   const nextY = proj.y + proj.vy;
 
-  // Resolve impact mode
+  // Resolve impact mode from data
   const impact: ProjectileImpactBehavior =
-    proj.impactBehavior ||
-    (proj.weaponId === 'dynamite'
-      ? 'REST'
-      : proj.bounces && proj.weaponId !== 'concrete_donkey'
-        ? 'BOUNCE'
-        : 'EXPLODE');
+    proj.impactBehavior || (proj.bounces ? 'BOUNCE' : 'EXPLODE');
 
   // 3. Collision with Slugs
   for (const slug of slugs) {
@@ -95,8 +83,8 @@ export function updateProjectilePhysics(
       continue;
     }
 
+    const slugRadius = 10;
     const slugCenterY = slug.y - 8;
-    const slugRadius = 8;
     const distToSlug = Math.hypot(nextX - slug.x, nextY - slugCenterY);
 
     if (distToSlug <= proj.radius + slugRadius) {
@@ -113,20 +101,20 @@ export function updateProjectilePhysics(
 
         const dot = proj.vx * nx + proj.vy * ny;
         if (dot < 0) {
-          const elasticity = 0.65;
-          const friction = 0.85;
-          const vnX = dot * nx;
-          const vnY = dot * ny;
-          const vtX = proj.vx - vnX;
-          const vtY = proj.vy - vnY;
-          proj.vx = vtX * friction - vnX * elasticity;
-          proj.vy = vtY * friction - vnY * elasticity;
+          const elasticity = 0.55;
+          proj.vx = (proj.vx - 2 * dot * nx) * elasticity;
+          proj.vy = (proj.vy - 2 * dot * ny) * elasticity;
         }
 
-        proj.x = slug.x + nx * (proj.radius + slugRadius + 1.2);
-        proj.y = slugCenterY + ny * (proj.radius + slugRadius + 1.2);
+        const pushDist = proj.radius + slugRadius + 1;
+        proj.x = slug.x + nx * pushDist;
+        proj.y = slugCenterY + ny * pushDist;
 
-        sfx.play('bounce');
+        if (Math.hypot(proj.vx, proj.vy) < 0.3) {
+          proj.vx = 0;
+          proj.vy = 0;
+        }
+
         return { exploded: false };
       } else {
         return { exploded: true, collisionPoint: { x: slug.x, y: slugCenterY } };
@@ -151,12 +139,14 @@ export function updateProjectilePhysics(
 
       const dot = proj.vx * nx + proj.vy * ny;
       if (dot < 0) {
-        const elasticity = 0.62;
-        const friction = 0.85;
         const vnX = dot * nx;
         const vnY = dot * ny;
         const vtX = proj.vx - vnX;
         const vtY = proj.vy - vnY;
+
+        const elasticity = 0.65;
+        const friction = 0.88;
+
         proj.vx = vtX * friction - vnX * elasticity;
         proj.vy = vtY * friction - vnY * elasticity;
       }
@@ -169,7 +159,6 @@ export function updateProjectilePhysics(
       proj.x = ray.x + nx * (proj.radius + 1.2);
       proj.y = ray.y + ny * (proj.radius + 1.2);
 
-      sfx.play('bounce');
       return { exploded: false };
     } else {
       return { exploded: true, collisionPoint: { x: ray.x, y: ray.y } };

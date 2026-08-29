@@ -86,7 +86,7 @@ describe('Projectile Physics Engine', () => {
       expect(res.exploded).toBe(false);
       expect(proj.vy).toBeCloseTo(initialVy + GRAVITY);
       expect(proj.x).toBe(105);
-      expect(proj.y).toBeCloseTo(102.4);
+      expect(proj.y).toBeCloseTo(100 + initialVy + GRAVITY);
     });
 
     it('applies custom gravityScale (e.g. 1.5x for heavy projectiles, 0 for flying projectiles)', () => {
