@@ -1,5 +1,6 @@
 import { GameState, Vector2D, SolidProp } from '../types';
 import { DestructibleTerrain } from '../terrain';
+import { getThemeConfig } from '../terrain/themeRegistry';
 import { getWeaponSet } from '../weapons/weaponSets';
 import { PhaseManager } from './phaseManager';
 import { findSafePlacementPoint } from './turnManager';
@@ -69,7 +70,7 @@ export function setupGameStart(
     let spawnX = Math.floor(width * 0.5);
     let spawnY = 150;
     let foundGround = false;
-    const scanStartY = theme === 'CAVERN' ? 70 : 20;
+    const scanStartY = getThemeConfig(theme).physics.searchStartY;
     const candidateOffsets = [0, -100, 100, -200, 200, -300, 300, -400, 400];
 
     for (const offsetX of candidateOffsets) {

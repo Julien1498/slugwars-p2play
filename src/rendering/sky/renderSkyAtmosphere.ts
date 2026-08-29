@@ -1,4 +1,5 @@
 import { MapTheme } from '../../core/types';
+import { getThemeConfig } from '../../core/terrain/themeRegistry';
 
 export interface SkyAtmosphereParams {
   ctx: CanvasRenderingContext2D;
@@ -19,9 +20,10 @@ export interface SkyAtmosphereParams {
 
 export function renderCloudsAndStars(p: SkyAtmosphereParams) {
   const { ctx, height, waterY, theme, isDay, worldLeft, worldRight, worldTop, animTime, drawLeft, drawRight, drawTop } = p;
+  const config = getThemeConfig(theme);
 
   if (isDay) {
-    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
+    if (config.rendering.atmosphere === 'CAVERN_BEAMS') {
       ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
       for (let b = 0; b < 9; b++) {
         const bx = worldLeft + ((b * 750 + 400) % (worldRight - worldLeft));
@@ -65,9 +67,10 @@ export function renderCloudsAndStars(p: SkyAtmosphereParams) {
 
 export function renderCelestialBodies(p: SkyAtmosphereParams) {
   const { ctx, width, height, theme, isDay, animTime, slowTime } = p;
+  const config = getThemeConfig(theme);
 
   if (isDay) {
-    if (theme === 'ISLAND' || theme === 'FORTRESS' || theme === 'FLOATING_CHAOS' || theme === 'SPIRES' || theme === 'ARCHIPELAGO') {
+    if (config.rendering.celestial.day === 'SUN') {
       const sunX = width * 0.82;
       const sunY = height * 0.16;
       const sunR = 28;
@@ -107,7 +110,8 @@ export function renderCelestialBodies(p: SkyAtmosphereParams) {
       ctx.fill();
     }
   } else {
-    if (theme === 'ISLAND' || theme === 'SPIRES' || theme === 'ARCHIPELAGO') {
+    const nightCelestial = config.rendering.celestial.night;
+    if (nightCelestial === 'MOON') {
       const moonX = width * 0.82;
       const moonY = height * 0.16;
       const moonR = 26;
@@ -140,7 +144,7 @@ export function renderCelestialBodies(p: SkyAtmosphereParams) {
       ctx.beginPath();
       ctx.arc(moonX - moonR * 0.45, moonY - moonR * 0.2, moonR * 0.9, 0, Math.PI * 2);
       ctx.fill();
-    } else if (theme === 'FLOATING_CHAOS') {
+    } else if (nightCelestial === 'CHAOS_RIFT') {
       const riftX = width * 0.78;
       const riftY = height * 0.18;
       const riftR = 30;
@@ -164,7 +168,7 @@ export function renderCelestialBodies(p: SkyAtmosphereParams) {
         ctx.arc(sx, sy, 3, 0, Math.PI * 2);
         ctx.fill();
       }
-    } else if (theme === 'FORTRESS') {
+    } else if (nightCelestial === 'SEARCHLIGHT') {
       const beamX = width * 0.22;
       const beamY = height * 0.52;
       const sweepAngle = -0.9 + Math.sin(slowTime * 1.2) * 0.45;

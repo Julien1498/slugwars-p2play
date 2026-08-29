@@ -1,5 +1,6 @@
 import { DestructibleTerrain } from '../core/terrain';
 import { MapTheme } from '../core/types';
+import { getThemeConfig } from '../core/terrain/themeRegistry';
 import { getPixelHash } from './renderProps';
 
 export interface TerrainBuffers {
@@ -7,11 +8,6 @@ export interface TerrainBuffers {
   terrainHitboxCanvas: HTMLCanvasElement;
   distMap: Float32Array;
 }
-
-import { TerrainPalette, THEME_PALETTES } from './terrainPalettes';
-
-export type { TerrainPalette };
-export { THEME_PALETTES };
 
 export function createTerrainBuffers(width: number, height: number): TerrainBuffers {
   const offscreenCanvas = document.createElement('canvas');
@@ -25,11 +21,7 @@ export function createTerrainBuffers(width: number, height: number): TerrainBuff
   const distMap = new Float32Array(width * height);
   distMap.fill(99);
 
-  return {
-    offscreenCanvas,
-    terrainHitboxCanvas,
-    distMap,
-  };
+  return { offscreenCanvas, terrainHitboxCanvas, distMap };
 }
 
 export function lerpColor32(c1: number, c2: number, t: number): number {
@@ -43,6 +35,11 @@ export function lerpColor32(c1: number, c2: number, t: number): number {
 
   return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
 }
+
+import { TerrainPalette, THEME_PALETTES } from './terrainPalettes';
+
+export type { TerrainPalette };
+export { THEME_PALETTES };
 
 export function redrawOffscreenTerrain(
   terrain: DestructibleTerrain,
@@ -75,7 +72,7 @@ export function redrawOffscreenTerrain(
   const data32 = new Uint32Array(imgData.data.buffer);
 
   // Retrieve Theme-Specific Geological Stratification Palette
-  const palette = THEME_PALETTES[theme || 'ISLAND'] || THEME_PALETTES.ISLAND;
+  const palette = getThemeConfig(theme).rendering.palette;
 
   // 2-Pass Float Distance Transform
   for (let y = minY; y <= maxY; y++) {

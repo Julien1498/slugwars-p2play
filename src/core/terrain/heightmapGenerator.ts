@@ -1,5 +1,6 @@
 import { MapTheme } from '../types';
 import { SeededRandom } from './SeededRandom';
+import { getThemeConfig } from './themeRegistry';
 
 export function generate1DHeightmap(
   prng: SeededRandom,
@@ -13,15 +14,18 @@ export function generate1DHeightmap(
 ): Float32Array {
   // 1. Precalculate 1D Terrain Heightmap in a single ultra-fast pass (<0.5ms)
   const baseGroundY = new Float32Array(width);
+  const config = getThemeConfig(theme);
+  const heightmapType = config.topology.heightmapType;
+
   for (let x = 0; x < width; x++) {
     let groundY = height * 0.52;
 
-    if (theme === 'ISLAND') {
+    if (heightmapType === 'HILLS') {
       const distFromCenter = Math.abs(x - width / 2) / (width / 2);
       const edgeDrop = Math.pow(distFromCenter, 2.8) * 550;
       const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3);
       groundY = height * 0.42 + noise + edgeDrop;
-    } else if (theme === 'FORTRESS') {
+    } else if (heightmapType === 'FORTRESS') {
       const centerDist = Math.abs(x - width / 2);
       let castleHeight = 0;
       if (centerDist < 120) {
@@ -31,31 +35,31 @@ export function generate1DHeightmap(
       }
       const noise = prng.harmonicNoise(x, baseFreq * 0.8, p1, p2, p3) * 0.8;
       groundY = height * 0.4 + noise + castleHeight;
-    } else if (theme === 'CAVERN') {
+    } else if (heightmapType === 'CAVERN') {
       const noise = prng.harmonicNoise(x, baseFreq, p1, p2, p3);
       groundY = height * 0.6 + noise * 0.9;
-    } else if (theme === 'ARCHIPELAGO') {
+    } else if (heightmapType === 'ARCHIPELAGO') {
       // 3 clearly separated oceanic islands with deep sea channels
       const noise = prng.harmonicNoise(x, baseFreq * 1.3, p1, p2, p3) * 0.75;
       const islandMask = Math.pow(Math.sin((x / width) * Math.PI * 3 + p2 * 0.5), 2);
       const trench = (1 - islandMask) * 440;
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 3.2) * 500;
       groundY = height * 0.42 + noise + trench + edgeDrop;
-    } else if (theme === 'NATURAL_ARCHES') {
+    } else if (heightmapType === 'ARCHES') {
       // Mountain ridges prepared for massive natural rock bridge arches
       const noise = prng.harmonicNoise(x, baseFreq * 0.9, p1, p2, p3);
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.5) * 400;
       groundY = height * 0.38 + noise + edgeDrop;
-    } else if (theme === 'SPIRES') {
+    } else if (heightmapType === 'SPIRES') {
       // Dramatic narrow vertical stone needles and spires with deep gorges
       const noise = prng.harmonicNoise(x, baseFreq * 2.2, p1, p2, p3) * 0.6;
       const spireHarmonic = Math.pow(Math.sin((x / width) * Math.PI * 5 + p1), 6) * -260;
       const edgeDrop = Math.pow(Math.abs(x - width / 2) / (width / 2), 2.2) * 350;
       groundY = height * 0.56 + noise + spireHarmonic + edgeDrop;
-    } else if (theme === 'ORGANIC_CAVES') {
+    } else if (heightmapType === 'FULL_SLAB') {
       // Solid massive subterranean rock slab
       groundY = 16;
-    } else if (theme === 'FLOATING_CHAOS') {
+    } else if (heightmapType === 'CHAOS') {
       const noise = prng.harmonicNoise(x, baseFreq * 1.4, p1, p2, p3);
       const channel = Math.sin(x * 0.007 + p2) * 200;
       groundY = height * 0.48 + noise + channel;
@@ -83,13 +87,16 @@ export function fillInitialTerrainGrid(
   p3: number,
   waterLevel: number
 ) {
+  const config = getThemeConfig(theme);
+  const { heightmapType, overhangs } = config.topology;
+
   // 1.5 Fill Terrain Grid from Heightmap (Ultra-fast direct memory write)
-  if (theme === 'ORGANIC_CAVES') {
+  if (heightmapType === 'FULL_SLAB') {
     grid.fill(1, 16 * width, height * width);
   } else {
     for (let x = 0; x < width; x++) {
       // Cavern Roof Ceiling
-      if (theme === 'CAVERN') {
+      if (heightmapType === 'CAVERN') {
         const roofNoise = prng.harmonicNoise(x, baseFreq * 1.2, p3, p1, p2) * 0.8;
         const roofY = height * 0.2 + roofNoise;
         const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
@@ -106,8 +113,8 @@ export function fillInitialTerrainGrid(
   }
 
   // 1.8 Dramatic Cliff Overhangs & Rocky Corniches (Surplombs rocheux & corniches en saillie)
-  if (theme !== 'ORGANIC_CAVES') {
-    const overhangCount = theme === 'SPIRES' ? 6 : theme === 'NATURAL_ARCHES' ? 5 : 4;
+  if (overhangs > 0) {
+    const overhangCount = overhangs;
     for (let i = 0; i < overhangCount; i++) {
       const ox = Math.floor(prng.range(160, width - 160));
       const surfaceY = Math.floor(baseGroundY[ox]);
@@ -136,7 +143,7 @@ export function fillInitialTerrainGrid(
     }
 
     // Protruding Rocky Corniche Ledges (Corniches rocheuses horizontales suspendues)
-    const ledgeCount = theme === 'SPIRES' ? 5 : 3;
+    const ledgeCount = overhangs >= 6 ? 5 : 3;
     for (let i = 0; i < ledgeCount; i++) {
       const lx = Math.floor(prng.range(180, width - 180));
       const ly = Math.floor(prng.range(height * 0.35, waterLevel - 90));

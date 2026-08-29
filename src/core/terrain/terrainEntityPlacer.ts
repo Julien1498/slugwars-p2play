@@ -1,5 +1,6 @@
 import { MapTheme, Vector2D } from '../types';
 import { SeededRandom } from './SeededRandom';
+import { getThemeConfig } from './themeRegistry';
 
 export interface DecorItem {
   id: string;
@@ -153,9 +154,10 @@ export function generateDecorItems(
 ): DecorItem[] {
   // 7. Visual Background Decor Items (Hanging Leaf Roots & Floating Butterflies)
   const decorItems: DecorItem[] = [];
+  const config = getThemeConfig(theme);
 
-  // Hanging Leaf Roots under ceiling overhangs (10-16 leaves)
-  const leafCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 8 : 4;
+  // Hanging Leaf Roots under ceiling overhangs
+  const leafCount = config.decor.hangingLeaves;
   for (let i = 0; i < leafCount; i++) {
     const lx = Math.floor(prng.range(100, width - 100));
     for (let ly = searchStartY + 40; ly < waterLevel - 100; ly++) {
@@ -172,8 +174,8 @@ export function generateDecorItems(
     }
   }
 
-  // Floating Butterflies in sky (5-8 butterflies)
-  const bCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(5, 8));
+  // Floating Butterflies in sky
+  const bCount = config.decor.butterflies > 0 ? Math.floor(prng.range(5, 8)) : 0;
   for (let i = 0; i < bCount; i++) {
     decorItems.push({
       id: `bfly_${i}`,

@@ -1,4 +1,5 @@
 import { MapTheme } from '../../core/types';
+import { getThemeConfig } from '../../core/terrain/themeRegistry';
 import { getCachedBgWaterGradient } from './skyGradients';
 
 // Pre-allocated typed arrays for background wave points (Zero-allocation per frame)
@@ -38,12 +39,12 @@ export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
   ctx.closePath();
   ctx.fill();
 
+  const config = getThemeConfig(theme);
+
   // Layer 2: Mid Wave Translucent Swell
   ctx.fillStyle = isDay
-    ? theme === 'CAVERN'
-      ? 'rgba(249, 115, 22, 0.60)'
-      : 'rgba(14, 165, 233, 0.55)'
-    : 'rgba(30, 58, 138, 0.45)';
+    ? config.rendering.water.midWaveColor.day
+    : config.rendering.water.midWaveColor.night;
   ctx.beginPath();
   ctx.moveTo(drawLeft, drawBottom);
   for (let x = waveStartX; x <= drawRight + waveStep * 2; x += waveStep) {
@@ -71,10 +72,8 @@ export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
 
   // Layer 3: Front Horizon Wave
   ctx.fillStyle = isDay
-    ? theme === 'CAVERN'
-      ? 'rgba(220, 38, 38, 0.80)'
-      : 'rgba(2, 132, 199, 0.80)'
-    : 'rgba(15, 23, 42, 0.80)';
+    ? config.rendering.water.frontWaveColor.day
+    : config.rendering.water.frontWaveColor.night;
   ctx.beginPath();
   ctx.moveTo(drawLeft, drawBottom);
   for (let i = 0; i < bgPtCount; i++) {

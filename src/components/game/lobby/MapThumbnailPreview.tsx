@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
 import { generateProceduralTerrain } from '../../../core/terrainGenerator';
-import { THEME_PALETTES } from '../../../rendering/renderTerrain';
+import { getThemeConfig } from '../../../core/terrain/themeRegistry';
 
 interface MapThumbnailPreviewProps {
   theme: MapTheme;
@@ -29,27 +29,30 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
     const { grid, width, height, waterLevel } = terrain;
 
-    // Sky RGB Gradients (top and bottom)
-    let skyTopRGB = [2, 132, 199];      // #0284c7 Crisp bright blue
-    let skyBottomRGB = [240, 249, 255]; // #f0f9ff Luminous atmospheric white-blue
+    const themeConfig = getThemeConfig(theme);
+    const hexStringToRgb = (hex: string): [number, number, number] => {
+      const clean = hex.replace('#', '');
+      const parsed = parseInt(clean, 16);
+      if (clean.length === 3) {
+        const r = parseInt(clean[0] + clean[0], 16);
+        const g = parseInt(clean[1] + clean[1], 16);
+        const b = parseInt(clean[2] + clean[2], 16);
+        return [r, g, b];
+      }
+      return [(parsed >> 16) & 0xff, (parsed >> 8) & 0xff, parsed & 0xff];
+    };
 
-    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-      skyTopRGB = [217, 119, 6];       // #d97706 Warm radiant amber
-      skyBottomRGB = [254, 240, 138];   // #fef08a Glowing golden cavern light
-    } else if (theme === 'NATURAL_ARCHES') {
-      skyTopRGB = [249, 115, 22];      // #f97316 Warm canyon orange
-      skyBottomRGB = [254, 249, 195];   // #fef9c3 Radiant sunset gold
-    } else if (theme === 'FORTRESS') {
-      skyTopRGB = [2, 132, 199];       // #0284c7 Clear blue
-      skyBottomRGB = [224, 242, 254];   // #e0f2fe Soft sky blue
-    }
+    // Sky RGB Gradients directly from themeRegistry
+    const daySky = themeConfig.rendering.sky.day;
+    const skyTopRGB = hexStringToRgb(daySky[0]);
+    const skyBottomRGB = hexStringToRgb(daySky[daySky.length - 1]);
 
     // Terrain Surface & Rock + Opaque Sky Buffer
     const imgData = ctx.createImageData(previewW, previewH);
     const data = imgData.data;
 
-    // Thematic Geological Strata Colors from renderTerrain
-    const palette = THEME_PALETTES[theme || 'ISLAND'] || THEME_PALETTES.ISLAND;
+    // Thematic Geological Strata Colors from themeRegistry
+    const palette = themeConfig.rendering.palette;
     const hexToRgb = (c: number): [number, number, number] => [
       c & 0xff,
       (c >> 8) & 0xff,

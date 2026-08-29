@@ -1,5 +1,6 @@
 import { MapTheme, SolidProp } from '../types';
 import { SeededRandom } from './SeededRandom';
+import { getThemeConfig } from './themeRegistry';
 
 export function generateSolidProps(
   grid: Uint8Array,
@@ -87,12 +88,15 @@ export function generateSolidProps(
     });
   };
 
+  const config = getThemeConfig(theme);
+  const { decor } = config;
+
   const isFarFromProps = (testX: number, minDist: number = 55) => {
     return !solidProps.some((p) => Math.abs(p.x - testX) < minDist);
   };
 
   // 1. Fortified Concrete Bunkers (1-2 bunkers on hills or fortresses)
-  const bunkerCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
+  const bunkerCount = decor.bunkers > 0 ? Math.floor(prng.range(1, 3)) : 0;
   for (let i = 0; i < bunkerCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const bx = Math.floor(prng.range(160 + i * 420, 380 + i * 420));
@@ -108,7 +112,7 @@ export function generateSolidProps(
   }
 
   // 2. Ancient Moai / Tiki Totem Idols (1-2 totems placed on hills or cave alcoves)
-  const totemCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
+  const totemCount = decor.totems > 0 ? Math.floor(prng.range(1, 3)) : 0;
   for (let i = 0; i < totemCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const tx = Math.floor(prng.range(220 + i * 460, 460 + i * 460));
@@ -124,7 +128,7 @@ export function generateSolidProps(
   }
 
   // 3. Saguaro Wild West Cacti (2-4 cacti on hills)
-  const cactusCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(2, 4));
+  const cactusCount = decor.cacti > 0 ? Math.floor(prng.range(2, 4)) : 0;
   for (let i = 0; i < cactusCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const cx = Math.floor(prng.range(120, width - 120));
@@ -140,7 +144,7 @@ export function generateSolidProps(
   }
 
   // 4. Luminous Crystal Geodes (3-5 glowing crystal clusters across subterranean tunnels & chambers)
-  const crystalCount = theme === 'ORGANIC_CAVES' ? 6 : Math.floor(prng.range(3, 5));
+  const crystalCount = decor.crystals > 0 ? (decor.crystals >= 6 ? 6 : Math.floor(prng.range(3, 5))) : 0;
   for (let i = 0; i < crystalCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
@@ -156,7 +160,7 @@ export function generateSolidProps(
   }
 
   // 5. Industrial Hazard Oil Drums (2-4 barrels on surfaces and tunnel routes)
-  const drumCount = theme === 'ORGANIC_CAVES' ? 5 : Math.floor(prng.range(2, 4));
+  const drumCount = decor.oilDrums > 0 ? (decor.oilDrums >= 5 ? 5 : Math.floor(prng.range(2, 4))) : 0;
   for (let i = 0; i < drumCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const dx = Math.floor(prng.range(140, width - 140));
@@ -172,7 +176,7 @@ export function generateSolidProps(
   }
 
   // 6. Vintage Street Lampposts (1-2 lampposts)
-  const lampCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(1, 3));
+  const lampCount = decor.lampposts > 0 ? Math.floor(prng.range(1, 3)) : 0;
   for (let i = 0; i < lampCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const lx = Math.floor(prng.range(150, width - 150));
@@ -188,7 +192,7 @@ export function generateSolidProps(
   }
 
   // 7. Trees (2-4 trees on upper contours)
-  const treeCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(2, 5));
+  const treeCount = decor.trees > 0 ? Math.floor(prng.range(2, 5)) : 0;
   for (let i = 0; i < treeCount; i++) {
     for (let attempts = 0; attempts < 25; attempts++) {
       const tx = Math.floor(prng.range(120 + i * 220, 280 + i * 220));
@@ -204,7 +208,7 @@ export function generateSolidProps(
   }
 
   // 8. Hedgehogs (1-2 hedgehogs)
-  const hedgehogCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
+  const hedgehogCount = decor.hedgehogs > 0 ? Math.floor(prng.range(1, 3)) : 0;
   for (let i = 0; i < hedgehogCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const hx = Math.floor(prng.range(180 + i * 350, 320 + i * 350));
@@ -220,7 +224,7 @@ export function generateSolidProps(
   }
 
   // 9. Chicks (1-2 chicks)
-  const chickCount = theme === 'ORGANIC_CAVES' ? 0 : Math.floor(prng.range(1, 3));
+  const chickCount = decor.chicks > 0 ? Math.floor(prng.range(1, 3)) : 0;
   for (let i = 0; i < chickCount; i++) {
     for (let attempts = 0; attempts < 15; attempts++) {
       const cx = Math.floor(prng.range(220 + i * 360, 380 + i * 360));
@@ -236,7 +240,7 @@ export function generateSolidProps(
   }
 
   // 10. Mushrooms (4-6 mushrooms in caves and subterranean tunnels)
-  const mushroomCount = theme === 'ORGANIC_CAVES' ? 8 : Math.floor(prng.range(4, 7));
+  const mushroomCount = decor.mushrooms > 0 ? (decor.mushrooms >= 8 ? 8 : Math.floor(prng.range(4, 7))) : 0;
   for (let i = 0; i < mushroomCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const rx = Math.floor(prng.range(100, width - 100));
@@ -252,7 +256,7 @@ export function generateSolidProps(
   }
 
   // 11. Flowers (5-8 flowers)
-  const flowerCount = (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') ? 0 : Math.floor(prng.range(5, 9));
+  const flowerCount = decor.flowers > 0 ? Math.floor(prng.range(5, 9)) : 0;
   for (let i = 0; i < flowerCount; i++) {
     for (let attempts = 0; attempts < 20; attempts++) {
       const fx = Math.floor(prng.range(80, width - 80));

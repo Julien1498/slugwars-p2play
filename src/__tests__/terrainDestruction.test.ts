@@ -189,6 +189,19 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
 
     expect(dt.isSolid(300, 10)).toBe(true);
     expect(dt.isSolid(300, -5)).toBe(true);
+
+    // Carve explosion directly on ceiling
+    dt.carveExplosion(300, 10, 25);
+    // Bedrock ceiling (y <= 16) remains solid
+    expect(dt.isSolid(300, 10)).toBe(true);
+    expect(dt.isSolid(300, 15)).toBe(true);
+  });
+
+  it('allows carving top area on open sky themes like ISLAND', () => {
+    const terrainData = generateProceduralTerrain(888, 'ISLAND', 600, 400);
+    const dt = new DestructibleTerrain(terrainData);
+    // Bedrock ceiling does not exist in open sky
+    expect(dt.isSolid(300, -5)).toBe(false);
   });
 
   it('generates massive natural arches and hollow passages in NATURAL_ARCHES theme', () => {

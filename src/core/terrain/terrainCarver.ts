@@ -1,5 +1,6 @@
 import { MapTheme } from '../types';
 import { SeededRandom } from './SeededRandom';
+import { getThemeConfig } from './themeRegistry';
 
 export function carveTerrainFeatures(
   grid: Uint8Array,
@@ -9,10 +10,14 @@ export function carveTerrainFeatures(
   height: number,
   waterLevel: number
 ) {
+  const config = getThemeConfig(theme);
+  const { tunnels, diggers, arches, floatingIslands } = config.topology;
+  const { hasSolidCeiling } = config.physics;
+
   // 2. Organic Cave Tunnels & Natural Chambers
-  if (theme !== 'ORGANIC_CAVES') {
+  if (tunnels > 0) {
     // A. Natural Subterranean Tunnels & Open-Air Cave Portals
-    const tunnelCount = theme === 'CAVERN' ? 8 : theme === 'NATURAL_ARCHES' ? 3 : 4;
+    const tunnelCount = tunnels;
     for (let t = 0; t < tunnelCount; t++) {
       // 65% of tunnels start near mountain slopes/cliffs and carve inwards or breach open air
       const isSurfaceBreaching = prng.next() < 0.65;
@@ -40,7 +45,7 @@ export function carveTerrainFeatures(
 
         const minX = Math.max(0, Math.floor(tx - tunnelRadius));
         const maxX = Math.min(width - 1, Math.ceil(tx + tunnelRadius));
-        const minY = Math.max(theme === 'CAVERN' ? 17 : 0, Math.floor(ty - tunnelRadius));
+        const minY = Math.max(hasSolidCeiling ? 17 : 0, Math.floor(ty - tunnelRadius));
         const maxY = Math.min(height - 1, Math.ceil(ty + tunnelRadius));
         const rSq = tunnelRadius * tunnelRadius;
 
@@ -57,15 +62,15 @@ export function carveTerrainFeatures(
       }
     }
 
-    // B. A Few Natural Round/Oval Pockets & Chambers (3 to 4 chambers)
-    const chamberCount = theme === 'CAVERN' ? 8 : 4;
+    // B. A Few Natural Round/Oval Pockets & Chambers
+    const chamberCount = tunnels >= 8 ? 8 : 4;
     for (let i = 0; i < chamberCount; i++) {
       const cx = Math.floor(prng.range(150, width - 150));
       const cy = Math.floor(prng.range(height * 0.38, waterLevel - 90));
       const rx = Math.floor(prng.range(32, 60));
       const ry = Math.floor(prng.range(24, 45));
 
-      for (let y = Math.max(theme === 'CAVERN' ? 17 : 0, cy - ry); y <= Math.min(height - 1, cy + ry); y++) {
+      for (let y = Math.max(hasSolidCeiling ? 17 : 0, cy - ry); y <= Math.min(height - 1, cy + ry); y++) {
         for (let x = Math.max(0, cx - rx); x <= Math.min(width - 1, cx + rx); x++) {
           const dx = (x - cx) / rx;
           const dy = (y - cy) / ry;
@@ -77,8 +82,8 @@ export function carveTerrainFeatures(
     }
   }
 
-  // 2.5 Monumental Natural Rock Arches Carving (for NATURAL_ARCHES theme)
-  if (theme === 'NATURAL_ARCHES') {
+  // 2.5 Monumental Natural Rock Arches Carving
+  if (arches > 0) {
     const archPositions = [width * 0.32, width * 0.68];
     for (const archX of archPositions) {
       const archY = height * 0.54;
@@ -96,10 +101,9 @@ export function carveTerrainFeatures(
     }
   }
 
-  // 2.6 Multi-Agent Continuous Tunnel Network (for ORGANIC_CAVES theme)
-  if (theme === 'ORGANIC_CAVES') {
-    // Swarm of 10 narrow, winding underground tunnels (radius 13 to 20px) creating tight labyrinthine paths
-    const tunnelDiggerCount = 10;
+  // 2.6 Multi-Agent Continuous Tunnel Network
+  if (diggers > 0) {
+    const tunnelDiggerCount = diggers;
     for (let w = 0; w < tunnelDiggerCount; w++) {
       let wx = prng.range(width * 0.1, width * 0.9);
       let wy = prng.range(50, waterLevel - 60);
@@ -176,7 +180,7 @@ export function carveTerrainFeatures(
       const topDip = (1.0 - uSq) * 0.35 - lip;
       const topY = fy - topDip * ry;
 
-      const rowStart = Math.max(theme === 'CAVERN' ? 17 : 0, Math.floor(topY));
+      const rowStart = Math.max(hasSolidCeiling ? 17 : 0, Math.floor(topY));
       const rowEnd = Math.min(maxY, Math.ceil(bottomY));
 
       for (let y = rowStart; y <= rowEnd; y++) {
@@ -185,40 +189,42 @@ export function carveTerrainFeatures(
     }
   };
 
-  if (theme === 'FLOATING_CHAOS') {
-    // 6 large tactical floating islands (160 to 280px wide) with deep defensive cradles
-    const count = 6;
-    for (let i = 0; i < count; i++) {
-      const fx = Math.floor(prng.range(180, width - 180));
-      const fy = Math.floor(prng.range(height * 0.25, waterLevel - 140));
-      const rx = Math.floor(prng.range(80, 140));
-      const ry = Math.floor(prng.range(32, 55));
-      stampTacticalFloatingIsland(fx, fy, rx, ry);
-    }
-  } else if (theme === 'CAVERN') {
-    // 3 wide suspended subterranean rock shelves inside cavern
-    const count = 3;
-    for (let i = 0; i < count; i++) {
-      const fx = Math.floor(prng.range(220, width - 220));
-      const fy = Math.floor(prng.range(height * 0.42, waterLevel - 120));
-      const rx = Math.floor(prng.range(75, 120));
-      const ry = Math.floor(prng.range(26, 44));
-      stampTacticalFloatingIsland(fx, fy, rx, ry);
-    }
-  } else if (theme !== 'ORGANIC_CAVES') {
-    // 2 to 3 tactical defensive floating nests (130 to 210px wide) at safe mid-altitudes above the main continent
-    const count = Math.floor(prng.range(2, 4));
-    for (let i = 0; i < count; i++) {
-      const fx = Math.floor(prng.range(200 + i * 280, 420 + i * 280));
-      const fy = Math.floor(prng.range(height * 0.32, waterLevel - 160));
-      const rx = Math.floor(prng.range(65, 105));
-      const ry = Math.floor(prng.range(24, 38));
-      stampTacticalFloatingIsland(fx, fy, rx, ry);
+  if (floatingIslands > 0) {
+    if (config.topology.heightmapType === 'CHAOS') {
+      // 6 large tactical floating islands (160 to 280px wide) with deep defensive cradles
+      const count = 6;
+      for (let i = 0; i < count; i++) {
+        const fx = Math.floor(prng.range(180, width - 180));
+        const fy = Math.floor(prng.range(height * 0.25, waterLevel - 140));
+        const rx = Math.floor(prng.range(80, 140));
+        const ry = Math.floor(prng.range(32, 55));
+        stampTacticalFloatingIsland(fx, fy, rx, ry);
+      }
+    } else if (hasSolidCeiling) {
+      // 3 wide suspended subterranean rock shelves inside cavern
+      const count = 3;
+      for (let i = 0; i < count; i++) {
+        const fx = Math.floor(prng.range(220, width - 220));
+        const fy = Math.floor(prng.range(height * 0.42, waterLevel - 120));
+        const rx = Math.floor(prng.range(75, 120));
+        const ry = Math.floor(prng.range(26, 44));
+        stampTacticalFloatingIsland(fx, fy, rx, ry);
+      }
+    } else {
+      // 2 to 3 tactical defensive floating nests (130 to 210px wide) at safe mid-altitudes above the main continent
+      const count = Math.floor(prng.range(2, 4));
+      for (let i = 0; i < count; i++) {
+        const fx = Math.floor(prng.range(200 + i * 280, 420 + i * 280));
+        const fy = Math.floor(prng.range(height * 0.32, waterLevel - 160));
+        const rx = Math.floor(prng.range(65, 105));
+        const ry = Math.floor(prng.range(24, 38));
+        stampTacticalFloatingIsland(fx, fy, rx, ry);
+      }
     }
   }
 
-  // 3.5 Enforce Solid Bedrock Ceiling for CAVERN & ORGANIC_CAVES Maps
-  if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
+  // 3.5 Enforce Solid Bedrock Ceiling for Cavern & Subterranean Maps
+  if (hasSolidCeiling) {
     for (let y = 0; y <= 16; y++) {
       const rowOffset = y * width;
       for (let x = 0; x < width; x++) {

@@ -1,4 +1,5 @@
 import { MapTheme } from '../core/types';
+import { getThemeConfig } from '../core/terrain/themeRegistry';
 
 export interface WaterBubble {
   x: number;
@@ -57,6 +58,18 @@ let _cachedHeight = -99999;
 let _cachedTheme: MapTheme | null = null;
 let _cachedIsDay = true;
 
+function applyStops(grad: CanvasGradient, colors: string[]) {
+  const count = colors.length;
+  if (count === 1) {
+    grad.addColorStop(0, colors[0]);
+    grad.addColorStop(1, colors[0]);
+    return;
+  }
+  for (let i = 0; i < count; i++) {
+    grad.addColorStop(i / (count - 1), colors[i]);
+  }
+}
+
 function getCachedFgWaterGradient(
   ctx: CanvasRenderingContext2D,
   waterY: number,
@@ -75,35 +88,9 @@ function getCachedFgWaterGradient(
   }
 
   const grad = ctx.createLinearGradient(0, waterY, 0, waterY + Math.max(400, height * 0.6));
-  if (isDay) {
-    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-      grad.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
-      grad.addColorStop(0.12, 'rgba(249, 115, 22, 0.88)');
-      grad.addColorStop(0.45, 'rgba(220, 38, 38, 0.94)');
-      grad.addColorStop(1, 'rgba(23, 6, 2, 0.99)');
-    } else if (theme === 'ARCHIPELAGO') {
-      grad.addColorStop(0, 'rgba(20, 184, 166, 0.70)');
-      grad.addColorStop(0.15, 'rgba(13, 148, 136, 0.82)');
-      grad.addColorStop(0.45, 'rgba(15, 118, 110, 0.92)');
-      grad.addColorStop(1, 'rgba(4, 47, 46, 0.99)');
-    } else {
-      grad.addColorStop(0, 'rgba(6, 182, 212, 0.65)');
-      grad.addColorStop(0.15, 'rgba(2, 132, 199, 0.78)');
-      grad.addColorStop(0.45, 'rgba(3, 105, 161, 0.90)');
-      grad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
-    }
-  } else {
-    if (theme === 'CAVERN' || theme === 'ORGANIC_CAVES') {
-      grad.addColorStop(0, 'rgba(239, 68, 68, 0.85)');
-      grad.addColorStop(0.35, 'rgba(153, 27, 27, 0.94)');
-      grad.addColorStop(1, 'rgba(3, 1, 2, 0.99)');
-    } else {
-      grad.addColorStop(0, 'rgba(14, 165, 233, 0.70)');
-      grad.addColorStop(0.20, 'rgba(2, 132, 199, 0.82)');
-      grad.addColorStop(0.45, 'rgba(3, 105, 161, 0.92)');
-      grad.addColorStop(1, 'rgba(2, 6, 23, 0.99)');
-    }
-  }
+  const config = getThemeConfig(theme);
+  const colors = isDay ? config.rendering.water.gradient.day : config.rendering.water.gradient.night;
+  applyStops(grad, colors);
 
   _cachedGrad = grad;
   _cachedWaterY = waterY;
@@ -139,12 +126,12 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
   const span = clampRight - clampLeft;
   const waveStep = Math.max(14, Math.min(30, Math.round(span / 70)));
 
+  const config = getThemeConfig(theme);
+
   // Layer 1: Mid Translucent Rolling Wave
   ctx.fillStyle = isDay
-    ? theme === 'CAVERN'
-      ? 'rgba(249, 115, 22, 0.60)'
-      : 'rgba(14, 165, 233, 0.55)'
-    : 'rgba(30, 58, 138, 0.45)';
+    ? config.rendering.water.midWaveColor.day
+    : config.rendering.water.midWaveColor.night;
   ctx.beginPath();
   ctx.moveTo(clampLeft, clampBottom);
   for (let x = clampLeft; x <= clampRight + waveStep * 2; x += waveStep) {
@@ -192,10 +179,8 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
 
     // Layer 3: Glowing Outer Aqua Rim
     ctx.strokeStyle = isDay
-      ? theme === 'CAVERN'
-        ? 'rgba(253, 224, 71, 0.75)'
-        : 'rgba(56, 189, 248, 0.70)'
-      : 'rgba(56, 189, 248, 0.50)';
+      ? config.rendering.water.outerRimColor.day
+      : config.rendering.water.outerRimColor.night;
     ctx.lineWidth = 5.0;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -203,10 +188,8 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
 
     // Layer 4: Ultra-Crisp Pure White Foam Crest Line (stroking the same active path)
     ctx.strokeStyle = isDay
-      ? theme === 'CAVERN'
-        ? '#ffffff'
-        : '#ffffff'
-      : '#e0f2fe';
+      ? config.rendering.water.foamColor.day
+      : config.rendering.water.foamColor.night;
     ctx.lineWidth = 2.8;
     ctx.stroke();
   }

@@ -1,4 +1,5 @@
 import { MapTheme } from '../../core/types';
+import { getThemeConfig } from '../../core/terrain/themeRegistry';
 import { getCachedMountainGradient } from './skyGradients';
 
 export interface SkyMountainParams {
@@ -14,6 +15,7 @@ export interface SkyMountainParams {
 
 export function renderSkyMountainsAndHills(p: SkyMountainParams) {
   const { ctx, height, waterY, theme, isDay, drawLeft, drawRight, drawBottom } = p;
+  const config = getThemeConfig(theme);
 
   // 1. Distant Mountain Horizons (Anchored to world coordinate grid)
   const mtGrad = getCachedMountainGradient(ctx, height, waterY, theme, isDay);
@@ -33,31 +35,9 @@ export function renderSkyMountainsAndHills(p: SkyMountainParams) {
   ctx.fill();
 
   // 2. Midground Ridge (Anchored to world coordinate grid)
-  if (isDay) {
-    ctx.fillStyle =
-      theme === 'CAVERN' || theme === 'ORGANIC_CAVES'
-        ? '#78350f'
-        : theme === 'NATURAL_ARCHES'
-        ? '#7c2d12'
-        : theme === 'SPIRES'
-        ? '#334155'
-        : theme === 'FORTRESS'
-        ? '#14532d'
-        : theme === 'FLOATING_CHAOS'
-        ? '#047857'
-        : '#15803d';
-  } else {
-    ctx.fillStyle =
-      theme === 'CAVERN' || theme === 'ORGANIC_CAVES'
-        ? '#0d0403'
-        : theme === 'NATURAL_ARCHES'
-        ? '#2e1065'
-        : theme === 'SPIRES'
-        ? '#0f172a'
-        : theme === 'FLOATING_CHAOS'
-        ? '#0b0417'
-        : '#070b16';
-  }
+  ctx.fillStyle = isDay
+    ? config.rendering.mountains.ridgeColor.day
+    : config.rendering.mountains.ridgeColor.night;
 
   const mtStep2 = 30;
   const mtStartX2 = Math.floor(drawLeft / mtStep2) * mtStep2;
@@ -73,8 +53,8 @@ export function renderSkyMountainsAndHills(p: SkyMountainParams) {
   ctx.fill();
 
   // 3. Dotted Lush Grass Blade Dashes on Green Hills
-  if (isDay && (theme === 'ISLAND' || theme === 'FLOATING_CHAOS' || theme === 'FORTRESS' || theme === 'SPIRES' || !theme)) {
-    ctx.strokeStyle = theme === 'FLOATING_CHAOS' ? '#6ee7b7' : '#4ade80';
+  if (isDay && config.rendering.mountains.highlightStroke) {
+    ctx.strokeStyle = config.rendering.mountains.highlightStroke;
     ctx.lineWidth = 2.2;
     ctx.beginPath();
     const grassStep = 14;

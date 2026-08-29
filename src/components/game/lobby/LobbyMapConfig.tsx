@@ -1,19 +1,18 @@
 import React from 'react';
 import { GameConfig, MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
+import { THEME_CONFIGS } from '../../../core/terrain/themeRegistry';
 import { WEAPON_SETS } from '../../../core/weapons/weaponSets';
 import { MapThumbnailPreview } from './MapThumbnailPreview';
 import { Dices, Sparkles, Swords, Rocket } from 'lucide-react';
 
-export const MAP_THEMES: { id: MapTheme; label: string; icon: string; desc: string }[] = [
-  { id: 'ISLAND', label: 'Île Tropicale', icon: '🏝️', desc: 'Collines ouvertes & lagons' },
-  { id: 'ARCHIPELAGO', label: 'Archipel Océan', icon: '🌊', desc: '3 îles séparées par la mer' },
-  { id: 'NATURAL_ARCHES', label: 'Arches & Ponts', icon: '🌉', desc: 'Viaducs rocheux & cavernes' },
-  { id: 'SPIRES', label: 'Aiguilles & Pics', icon: '🏔️', desc: 'Pics verticaux & gouffres' },
-  { id: 'CAVERN', label: 'Grotte Caverne', icon: '🦇', desc: 'Plafond rocheux & tunnels' },
-  { id: 'ORGANIC_CAVES', label: 'Labyrinthe Boyaux', icon: '🕳️', desc: 'Tunnels organiques sinueux' },
-  { id: 'FORTRESS', label: 'Deux Forteresses', icon: '🏰', desc: 'Canyons & châteaux' },
-  { id: 'FLOATING_CHAOS', label: 'Archipel Flottant', icon: '☁️', desc: 'Îlots suspendus & ciel azur' },
-];
+export const MAP_THEMES: { id: MapTheme; label: string; icon: string; desc: string }[] = Object.values(THEME_CONFIGS).map(
+  (c) => ({
+    id: c.id,
+    label: c.label,
+    icon: c.icon,
+    desc: c.desc,
+  })
+);
 
 interface LobbyMapConfigProps {
   config: GameConfig;

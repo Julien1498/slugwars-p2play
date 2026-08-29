@@ -125,4 +125,11 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
       }
     }
   });
+
+  it('gracefully falls back to ISLAND for undefined or custom unknown theme', () => {
+    const terrain = generateProceduralTerrain(444, undefined as any, 1000, 600);
+    expect(terrain).toBeDefined();
+    expect(terrain.grid.length).toBe(1000 * 600);
+    expect(terrain.spawnPoints.length).toBeGreaterThanOrEqual(4);
+  });
 });

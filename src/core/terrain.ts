@@ -1,4 +1,5 @@
 import { TerrainData } from './terrainGenerator';
+import { getThemeConfig } from './terrain/themeRegistry';
 
 export class DestructibleTerrain {
   public data: TerrainData;
@@ -13,8 +14,8 @@ export class DestructibleTerrain {
     const ix = Math.floor(x);
     const iy = Math.floor(y);
     if (ix < 0 || ix >= this.data.width) return false;
-    // Cavern / subterranean map has an impenetrable ceiling border at top
-    if (this.data.theme === 'CAVERN' || this.data.theme === 'ORGANIC_CAVES') {
+    const hasCeiling = getThemeConfig(this.data.theme).physics.hasSolidCeiling;
+    if (hasCeiling) {
       if (iy <= 16) return true;
       if (iy < 0) return true;
     } else {
@@ -40,10 +41,11 @@ export class DestructibleTerrain {
     const maxX = Math.min(this.data.width - 1, Math.ceil(icx + radius));
     const minY = Math.max(0, Math.floor(icy - radius));
     const maxY = Math.min(this.data.height - 1, Math.ceil(icy + radius));
+    const hasCeiling = getThemeConfig(this.data.theme).physics.hasSolidCeiling;
 
     for (let y = minY; y <= maxY; y++) {
-      // In cavern maps, the bedrock ceiling (y <= 16) is indestructible
-      if ((this.data.theme === 'CAVERN' || this.data.theme === 'ORGANIC_CAVES') && y <= 16) continue;
+      // Indestructible bedrock ceiling protection
+      if (hasCeiling && y <= 16) continue;
 
       const dy = y - icy;
       const dySq = dy * dy;
