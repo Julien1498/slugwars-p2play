@@ -53,6 +53,35 @@ describe('Weapon Turn Delays & Supply Crates (Worms Standard)', () => {
       expect(isWeaponLocked(state, 'concrete_donkey', redTeam)).toBe(true); // Delay 8
     });
 
+    it('calculates fair round progression across multi-team matches (3 teams)', () => {
+      const state = engine.state;
+      state.teams.push({
+        id: 'team_green',
+        name: 'Green Team',
+        color: '#22c55e',
+        avatar: '🐌',
+        isHost: false,
+        inventory: {},
+      });
+      // 3 teams: Turn 1,2,3 = Round 0 (Dynamite locked). Turn 4 = Round 1 (Dynamite unlocked!)
+      state.turnCount = 3;
+      expect(isWeaponLocked(state, 'dynamite')).toBe(true);
+      state.turnCount = 4;
+      expect(isWeaponLocked(state, 'dynamite')).toBe(false);
+    });
+
+    it('unlocks all weapons immediately when in UNLIMITED_CHAOS or turnDelaysEnabled is false', () => {
+      const state = engine.state;
+      state.turnCount = 1;
+      state.config.weaponSetId = 'UNLIMITED_CHAOS';
+      expect(isWeaponLocked(state, 'holy_grenade')).toBe(false);
+      expect(isWeaponLocked(state, 'concrete_donkey')).toBe(false);
+
+      state.config.weaponSetId = 'CLASSIC';
+      state.config.turnDelaysEnabled = false;
+      expect(isWeaponLocked(state, 'holy_grenade')).toBe(false);
+    });
+
     it('returns accurate lock details with remaining rounds count', () => {
       const state = engine.state;
       state.turnCount = 1;
@@ -105,27 +134,34 @@ describe('Weapon Turn Delays & Supply Crates (Worms Standard)', () => {
     });
   });
 
-  describe('Supply Crates & Random Content', () => {
+  describe('Supply Crates & In-World Notifications', () => {
     it('generates valid random crate contents with proper weights', () => {
       const content = pickRandomCrateContent();
       expect(['health', 'weapon', 'utility']).toContain(content.crateType);
 
       if (content.crateType === 'health') {
         expect(content.healAmount).toBe(50);
-      } else if (content.crateType === 'weapon' || content.crateType === 'utility') {
+      } else {
         expect(content.weaponId).toBeDefined();
         expect(content.weaponCount).toBeGreaterThan(0);
       }
     });
 
-    it('spawns a new procedural supply crate on the map', () => {
-      const spawned = spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
-      expect(spawned).toBe(true);
+    it('spawns a new procedural supply crate on the map up to max cap of 4', () => {
+      expect(spawnTurnSupplyCrate(engine.state, engine.terrain.data.width)).toBe(true);
       expect(engine.state.supplyCrates?.length).toBe(1);
-      expect(engine.state.supplyCrates?.[0]?.isLanded).toBe(false);
+
+      // Fill up to 4 crates
+      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
+      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
+      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
+      expect(engine.state.supplyCrates?.length).toBe(4);
+
+      // 5th spawn is rejected
+      expect(spawnTurnSupplyCrate(engine.state, engine.terrain.data.width)).toBe(false);
     });
 
-    it('increments team inventory when a weapon crate is collected by a slug', () => {
+    it('creates in-world floating banner with weapon icon and name upon crate collection', () => {
       const logs: string[] = [];
       const addLog = (msg: string) => logs.push(msg);
 
@@ -151,8 +187,13 @@ describe('Weapon Turn Delays & Supply Crates (Worms Standard)', () => {
 
       updateSupplyCrates(engine.state, engine.terrain, undefined, addLog);
 
-      expect(engine.state.supplyCrates.length).toBe(0); // Collected
-      expect(redTeam.inventory['super_sheep']).toBe(1); // Gained +1 ammo!
+      expect(engine.state.supplyCrates.length).toBe(0);
+      expect(redTeam.inventory['super_sheep']).toBe(1);
+
+      // In-world floating banner exists
+      const banner = engine.state.floatingDamages.find((fd) => fd.text?.includes('Super Mouton'));
+      expect(banner).toBeDefined();
+      expect(banner?.color).toBe('#e879f9');
     });
 
     it('detonates supply crate if hit by an explosion', () => {
@@ -174,14 +215,7 @@ describe('Weapon Turn Delays & Supply Crates (Worms Standard)', () => {
 
       // Simulate a nearby explosion at x=410, y=200 with radius 30
       engine.state.explosions = [
-        {
-          id: 'ex_test',
-          x: 410,
-          y: 200,
-          radius: 30,
-          damage: 50,
-          createdAt: Date.now(),
-        },
+        { id: 'ex_test', x: 410, y: 200, radius: 30, damage: 50, createdAt: Date.now() },
       ];
 
       updateSupplyCrates(engine.state, engine.terrain, engine.carveCrater.bind(engine), addLog);
