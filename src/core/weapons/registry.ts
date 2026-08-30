@@ -5,6 +5,7 @@ import { concreteDonkeyWeapon, superSheepWeapon } from './definitions/wackyWeapo
 import { baseballBatWeapon, airStrikeWeapon, teleportWeapon, shotgunWeapon, homingPigeonWeapon, prodWeapon, blowtorchWeapon } from './definitions/tacticalWeapons';
 import { handgunWeapon, uziWeapon } from './definitions/bulletWeapons';
 import { ninjaRopeWeapon, girderWeapon, airdropWeapon, skipTurnWeapon } from './definitions/utilityWeapons';
+import { sheepWeapon, oldLadyWeapon, armageddonWeapon, meteorWeapon } from './definitions/mythicWeapons';
 
 export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   bazooka: bazookaWeapon,
@@ -25,6 +26,10 @@ export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   air_strike: airStrikeWeapon,
   concrete_donkey: concreteDonkeyWeapon,
   super_sheep: superSheepWeapon,
+  sheep: sheepWeapon,
+  old_lady: oldLadyWeapon,
+  armageddon: armageddonWeapon,
+  meteor: meteorWeapon,
   blowtorch: blowtorchWeapon,
   teleport: teleportWeapon,
   ninja_rope: ninjaRopeWeapon,

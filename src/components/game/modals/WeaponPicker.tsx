@@ -28,7 +28,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const isTouch = useIsTouchDevice();
   const [activeCategory, setActiveCategory] = useState<WeaponCategory>('EXPLOSIVE');
   const allWeapons = getAllWeapons();
-  const filtered = allWeapons.filter((w) => w.category === activeCategory);
+  const filtered = allWeapons.filter((w) => w.category === activeCategory && w.craftable !== false);
 
   const totalTeams = Math.max(1, teamsCount);
   const completedRounds = Math.floor(Math.max(0, turnCount - 1) / totalTeams);

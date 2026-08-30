@@ -24,6 +24,10 @@ export type WeaponId =
   | 'ninja_rope'
   | 'girder'
   | 'airdrop'
+  | 'sheep'
+  | 'old_lady'
+  | 'armageddon'
+  | 'meteor'
   | 'skip_turn';
 
 
@@ -47,6 +51,8 @@ export type WeaponBehavior =
   | 'NINJA_ROPE'
   | 'GIRDER'
   | 'AIRDROP'
+  | 'WALKER'
+  | 'GLOBAL_STRIKE'
   | 'SKIP_TURN';
 
 

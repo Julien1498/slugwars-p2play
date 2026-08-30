@@ -1,5 +1,6 @@
 import { ActiveProjectile, Slug, ProjectileImpactBehavior } from '../types';
 import { DestructibleTerrain } from '../terrain';
+import { updateWalkingEntityPhysics } from './walkingEntityPhysics';
 
 export const GRAVITY = 0.28;
 
@@ -16,6 +17,11 @@ export function updateProjectilePhysics(
 ): ProjectilePhysicsResult {
   const wind: number = typeof arg3 === 'number' ? arg3 : typeof arg4 === 'number' ? arg4 : 0;
   const slugs: Slug[] = Array.isArray(arg3) ? arg3 : Array.isArray(arg4) ? arg4 : [];
+
+  // Delegate autonomous walking entities (Sheep, Old Lady)
+  if (proj.behaviorData?.walkerType) {
+    return updateWalkingEntityPhysics(proj, terrain);
+  }
 
   // 1. Fuse Countdown
   if (proj.fuseTimerMs !== undefined) {

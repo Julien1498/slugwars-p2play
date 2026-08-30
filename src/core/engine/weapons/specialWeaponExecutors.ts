@@ -205,3 +205,38 @@ export function executeMeleePush(
   PhaseManager.startResolving(state, { settleTimer: 1.2, phaseTimeout: 30.0 });
   return true;
 }
+
+export function executeArmageddon(
+  state: GameState,
+  terrain: DestructibleTerrain,
+  activeSlug: Slug,
+  addLog: (msg: string, type?: JournalEntry['type']) => void
+): boolean {
+  sfx.play('siren');
+  addLog(`☄️ ${activeSlug.name} a invoqué l'Armageddon ! Pluie de météores apocalyptique !`, 'combat');
+
+  const width = terrain.data.width;
+  const count = 20;
+  const now = Date.now();
+
+  for (let i = 0; i < count; i++) {
+    const startX = 60 + (i / count) * (width - 120) + (Math.random() - 0.5) * 80;
+    const startY = -80 - i * 45;
+    state.projectiles.push({
+      id: `proj_meteor_${now}_${i}_${Math.random()}`,
+      weaponId: 'meteor',
+      x: Math.max(30, Math.min(width - 30, startX)),
+      y: startY,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 10 + Math.random() * 4,
+      radius: 6,
+      bounces: false,
+      windAffected: true,
+      ownerSlugId: activeSlug.id,
+    });
+  }
+
+  PhaseManager.startRetreat(state, 5.0, addLog);
+  return true;
+}
+

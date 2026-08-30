@@ -21,6 +21,7 @@ export type SoundEffectType =
   | 'airdrop'
   | 'gunshot'
   | 'uzi_burst'
+  | 'granny_hum'
   | 'ouch';
 
 export interface PlaySoundOptions {

@@ -274,3 +274,18 @@ export function playUziBurstSound(ctx: AudioContext, dest: AudioNode, pitchRatio
     osc.stop(t + 0.045);
   }
 }
+
+export function playGrannyHumSound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(260 * pitchRatio, now);
+  osc.frequency.linearRampToValueAtTime(330 * pitchRatio, now + 0.12);
+  osc.frequency.linearRampToValueAtTime(220 * pitchRatio, now + 0.28);
+  gain.gain.setValueAtTime(0.35, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+  osc.connect(gain);
+  gain.connect(dest);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}

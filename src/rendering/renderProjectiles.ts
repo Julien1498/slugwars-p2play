@@ -18,6 +18,11 @@ import {
   renderConcreteDonkey,
   renderStandardOrb,
 } from './projectiles/renderSpecialProjectiles';
+import {
+  renderWalkingSheep,
+  renderOldLady,
+  renderMeteor,
+} from './projectiles/renderMythicProjectiles';
 
 export interface ProjectilesRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -47,6 +52,9 @@ export const PROJECTILE_DRAWERS: Record<string, ProjectileDrawerFn> = {
   handgun: (ctx) => renderBullet(ctx, '#facc15'),
   uzi: (ctx) => renderBullet(ctx, '#fb923c'),
   super_sheep: (ctx, _proj, animTime) => renderSuperSheep(ctx, animTime),
+  sheep: (ctx, proj, animTime) => renderWalkingSheep(ctx, proj, animTime),
+  old_lady: (ctx, proj, animTime) => renderOldLady(ctx, proj, animTime),
+  meteor: (ctx, proj, animTime) => renderMeteor(ctx, proj, animTime),
   holy_grenade: (ctx) => renderHolyGrenade(ctx),
   banana_bomb: (ctx) => renderBananaBomb(ctx),
   dynamite: (ctx, _proj, animTime) => renderDynamite(ctx, animTime),

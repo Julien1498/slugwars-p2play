@@ -121,7 +121,7 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       const MAX_ALLOWED_ROWS_WITHOUT_SCROLL = 2;
 
       for (const cat of categories) {
-        const list = getWeaponsByCategory(cat);
+        const list = getWeaponsByCategory(cat).filter((w) => w.craftable !== false);
         const rowsNeeded = Math.ceil(list.length / DESKTOP_COLS);
         expect(rowsNeeded).toBeLessThanOrEqual(MAX_ALLOWED_ROWS_WITHOUT_SCROLL);
       }

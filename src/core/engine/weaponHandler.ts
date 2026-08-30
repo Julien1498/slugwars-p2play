@@ -15,6 +15,7 @@ import {
   executeGirder,
   executeAirdrop,
   executeMeleePush,
+  executeArmageddon,
 } from './weapons/specialWeaponExecutors';
 import { fireBallisticProjectiles } from './weapons/ballisticWeaponFire';
 
@@ -38,6 +39,7 @@ const SPECIAL_BEHAVIOR_EXECUTORS: Partial<Record<string, BehaviorExecutor>> = {
   GIRDER: (state, terrain, activeSlug, _team, _w, tp, addLog) => executeGirder(state, terrain, activeSlug, tp, addLog),
   AIRDROP: (state, _t, _slug, _team, _w, tp, addLog) => executeAirdrop(state, tp, addLog),
   MELEE_PUSH: (state, _t, activeSlug, activeTeam, weapon, _tp, addLog) => executeMeleePush(state, activeSlug, activeTeam, weapon, addLog),
+  GLOBAL_STRIKE: (state, terrain, activeSlug, _team, _w, _tp, addLog) => executeArmageddon(state, terrain, activeSlug, addLog),
 };
 
 export function fireWeapon(

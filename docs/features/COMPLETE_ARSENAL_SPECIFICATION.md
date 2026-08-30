@@ -3,7 +3,7 @@
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
 > **Catégorie** : Game Design, Arsenal & Balistique 2D  
-> **État des lieux** : 22 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
+> **État des lieux** : 25 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
 
 ---
 
@@ -11,12 +11,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       ARSENAL SLUGWARS P2PLAY : 22 ARMES                    │
+│                       ARSENAL SLUGWARS P2PLAY : 25 ARMES                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ✅ Balistique & Explosifs : Bazooka, Grenade, Cluster Bomb, Dynamite,      │
 │     Shotgun, Handgun, Uzi, Homing Missile, Homing Pigeon, Banana Bomb,      │
 │     Mines, Barils de Pétrole                                                │
-│  ✅ Super-Armes Mythiques  : Sainte Grenade, Âne en Béton, Super Mouton     │
+│  ✅ Super-Armes Mythiques  : Sainte Grenade, Âne en Béton, Super Mouton,    │
+│     Mouton au sol, Vieille Dame, Armageddon                                 │
 │  ✅ Support Céleste        : Frappe Aérienne (Air Strike), Caisses de Soin  │
 │  ✅ Corps-à-Corps & Outils : Batte de Baseball, Piquouze, Grappin Ninja,    │
 │     Poutre Métallique, Chalumeau, Téléporteur, Passe-Tour                   │
@@ -54,9 +55,9 @@
 | **Sainte Grenade (Holy Hand Grenade)** | ✅ | ✅ | **Présent** (Cri *"Alléluia"*, rayon d'explosion massif, 100 dégâts) |
 | **L'Âne en Béton (Concrete Donkey)** | ✅ | ✅ | **Présent** (Tombe du ciel et pilonne le sol verticalement jusqu'à l'eau) |
 | **Super Mouton (Super Sheep)** | ✅ | ✅ | **Présent** (Mouton volant pilotable en continu au clavier/touch) |
-| **Mouton Simple au sol (Sheep)** | ✅ | ❌ | *Non présent (Mouton qui sautille au sol avant d'exploser)* |
-| **Vieille Dame (Old Lady)** | ✅ | ❌ | *Non présent (Marche lentement en lâchant du gaz toxique)* |
-| **Armageddon** | ✅ | ❌ | *Non présent (Pluie de météores sur toute la carte)* |
+| **Mouton Simple au sol (Sheep)** | ✅ | ✅ | **Présent** (Mouton qui sautille au sol, saute les bosses, détonation manuelle/8s, 70 dégâts) |
+| **Vieille Dame (Old Lady)** | ✅ | ✅ | **Présent** (Marche lentement au sol, mèche de 5s, détonation massive de 75 dégâts) |
+| **Armageddon** | ✅ | ✅ | **Présent** (Pluie apocalyptique de 20 météores enflammés sur toute la carte, 60 dégâts/météore) |
 
 ---
 

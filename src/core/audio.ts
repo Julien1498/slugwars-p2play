@@ -9,6 +9,7 @@ import {
   playRopeAttachSound,
   playGunshotSound,
   playUziBurstSound,
+  playGrannyHumSound,
 } from './audio/weaponAudio';
 import {
   playSplashSound,
@@ -40,6 +41,7 @@ const SFX_DISPATCH: Record<string, SoundPlayerFn> = {
   rope_attach: playRopeAttachSound,
   gunshot: playGunshotSound,
   uzi_burst: playUziBurstSound,
+  granny_hum: playGrannyHumSound,
   splash: playSplashSound,
   jump: playJumpSound,
   bounce: playBounceSound,

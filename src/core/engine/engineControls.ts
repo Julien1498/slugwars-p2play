@@ -65,6 +65,20 @@ export function startCharge(
   targetPoint?: Vector2D,
   fireWeaponCallback?: (tp?: Vector2D) => void
 ): void {
+  if (state.phase === 'RETREAT' || state.phase === 'PROJECTILE_ACTIVE') {
+    const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+    if (activeSlug) {
+      const activeWalker = state.projectiles.find(
+        (p) => p.ownerSlugId === activeSlug.id && p.behaviorData?.walkerType === 'sheep'
+      );
+      if (activeWalker) {
+        activeWalker.fuseTimerMs = 0;
+        return;
+      }
+    }
+    return;
+  }
+
   if (state.phase !== 'AIMING') return;
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (activeSlug && activeSlug.isAlive) {
