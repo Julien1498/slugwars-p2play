@@ -2,7 +2,7 @@
 
 > **Projet** : `slugwars-p2play` (Artillerie Balistique 2D Multijoueur P2P)  
 > **Dernière mise à jour** : Août 2026  
-> **Statut de Conformité** : **100% Validé (501 tests unitaires passants / 0 régression)**
+> **Statut de Conformité** : **100% Validé (54 suites / 545 tests unitaires passants / 0 régression)**
 
 ---
 
@@ -22,7 +22,7 @@ La présente charte définit les **standards d'ingénierie logicielle non négoc
 graph TD
     P1["1. Règle des < 300 lignes<br/>(100% des fichiers conformes)"]
     P2["2. Clean Architecture en 4 Couches<br/>(Domain / Network / Rendering / UI)"]
-    P3["3. Approche TDD & Tests Exhaustifs<br/>(501 tests unitaires validés)"]
+    P3["3. Approche TDD & Tests Exhaustifs<br/>(54 suites / 545 tests unitaires validés)"]
     P4["4. Moteur Zero-Alloc & Performance V8<br/>(Zéro instanciation dans la boucle physique)"]
     P5["5. Typage Strict & Discriminated Unions<br/>(noImplicitAny: true, GameAction)"]
     P6["6. Architecture Data-Driven O(1)<br/>(Tables de dispatch sans switch)"]
@@ -61,7 +61,7 @@ src/
 ### 3. 🧪 Approche TDD (Test-Driven Development)
 * Toute nouvelle fonctionnalité ou refactorisation doit être encadrée par des tests unitaires préalables écrits avec **Vitest**.
 * Les tests valident le déterminisme mathématique des 8 archétypes procéduraux, les équations balistiques et les encodages binaires.
-* **Commande de test** : `npm test` (49 suites de tests / 501 tests unitaires).
+* **Commande de test** : `npm test` (54 suites de tests / 545 tests unitaires).
 
 ---
 
