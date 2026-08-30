@@ -1,11 +1,7 @@
 import { ActiveProjectile } from '../../core/types';
 
 export function renderBunkerBuster(ctx: CanvasRenderingContext2D, proj: ActiveProjectile, animTime: number) {
-  // Heavy Drill Warhead Bunker Buster Bomb
-  ctx.save();
-  // Pointing straight down or along velocity
-  ctx.rotate(Math.PI / 2);
-
+  // Heavy Drill Warhead Bunker Buster Bomb (Points forward along trajectory +X)
   // 1. Steel Body
   ctx.fillStyle = '#334155';
   ctx.strokeStyle = '#0f172a';
@@ -51,11 +47,12 @@ export function renderBunkerBuster(ctx: CanvasRenderingContext2D, proj: ActivePr
       ctx.fillRect(sx, sy, 2, 2);
     }
   }
-
-  ctx.restore();
 }
 
-export function renderParachuteMine(ctx: CanvasRenderingContext2D, proj: ActiveProjectile, animTime: number) {
+export function renderParachuteMine(ctx: CanvasRenderingContext2D, proj: ActiveProjectile, animTime: number, angle?: number) {
+  if (angle !== undefined && Number.isFinite(angle)) {
+    ctx.rotate(-angle);
+  }
   const isFalling = proj.vy > 0.5;
 
   // 1. Parachute Canopy (visible when falling from sky)
