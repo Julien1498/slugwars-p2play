@@ -155,4 +155,69 @@ describe('144 FPS Visual Interpolation & Angle Lerp', () => {
       expect(angle).toBe(0);
     });
   });
+
+  describe('updateCameraFollow (Free Look & Target Tracking)', () => {
+    it('persists FREE_LOOK without snapping back to active slug when user is not dragging', async () => {
+      const { updateCameraFollow } = await import('../components/game/canvas/useCanvasCameraFollow');
+      const cameraModeRef = { current: 'FREE_LOOK' as const };
+      const panRef = { current: { x: 250, y: -180 } };
+      const targetCameraPanRef = { current: null };
+      const zoomRef = { current: 1.0 };
+
+      const mockState: any = {
+        phase: 'AIMING',
+        activeSlugId: 'slug_1',
+        slugs: [{ id: 'slug_1', isAlive: true, isPlaced: true, x: 500, y: 300, vx: 0.5, vy: 0, movingDir: null, isChargingPower: false }],
+        projectiles: [],
+      };
+
+      updateCameraFollow({
+        curState: mockState,
+        cameraModeRef,
+        panRef,
+        targetCameraPanRef,
+        zoomRef,
+        isUserDraggingNow: false,
+        clientExplosions: [],
+        cRect: { width: 1200, height: 600 },
+        terrainWidth: 1400,
+        terrainHeight: 700,
+      });
+
+      // Pan must remain EXACTLY where the user put it
+      expect(cameraModeRef.current).toBe('FREE_LOOK');
+      expect(panRef.current.x).toBe(250);
+      expect(panRef.current.y).toBe(-180);
+    });
+
+    it('switches to FOLLOW_PROJECTILE when a weapon projectile is active in flight', async () => {
+      const { updateCameraFollow } = await import('../components/game/canvas/useCanvasCameraFollow');
+      const cameraModeRef = { current: 'FREE_LOOK' as const };
+      const panRef = { current: { x: 0, y: 0 } };
+      const targetCameraPanRef = { current: null };
+      const zoomRef = { current: 1.0 };
+
+      const mockState: any = {
+        phase: 'AIMING',
+        activeSlugId: 'slug_1',
+        slugs: [{ id: 'slug_1', isAlive: true, isPlaced: true, x: 500, y: 300, movingDir: null, isChargingPower: false }],
+        projectiles: [{ id: 'p1', x: 800, y: 200, vx: 10, vy: -5 }],
+      };
+
+      updateCameraFollow({
+        curState: mockState,
+        cameraModeRef,
+        panRef,
+        targetCameraPanRef,
+        zoomRef,
+        isUserDraggingNow: false,
+        clientExplosions: [],
+        cRect: { width: 1200, height: 600 },
+        terrainWidth: 1400,
+        terrainHeight: 700,
+      });
+
+      expect(cameraModeRef.current).toBe('FOLLOW_PROJECTILE');
+    });
+  });
 });
