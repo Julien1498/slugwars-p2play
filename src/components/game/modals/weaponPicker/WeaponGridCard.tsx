@@ -13,6 +13,8 @@ interface WeaponGridCardProps {
   onSelect: () => void;
 }
 
+const SUPER_WEAPONS = new Set(['holy_grenade', 'banana_bomb', 'concrete_donkey', 'super_sheep']);
+
 export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
   weapon,
   ammo,
@@ -25,6 +27,7 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
 }) => {
   const isOutOfAmmo = ammo === 0;
   const isDisabled = isOutOfAmmo || isLocked;
+  const isSuperWeapon = SUPER_WEAPONS.has(weapon.id);
 
   if (isTouch) {
     return (
@@ -60,9 +63,9 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
             <span className={`font-bold text-xs truncate ${isLocked ? 'text-zinc-400' : 'text-zinc-100'}`}>
               {weapon.name}
             </span>
-            {weapon.craftable && (
-              <span className="text-[8px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded shrink-0">
-                WMD
+            {isSuperWeapon && (
+              <span className="text-[8px] font-black uppercase bg-purple-950/90 text-purple-300 border border-purple-500/50 px-1 py-0.2 rounded shrink-0">
+                Super ⭐
               </span>
             )}
           </div>
@@ -165,9 +168,9 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
           >
             {weapon.name}
           </h4>
-          {weapon.craftable && (
-            <span className="text-[8px] font-black uppercase bg-amber-950 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded-full shrink-0">
-              Rare
+          {isSuperWeapon && (
+            <span className="text-[8px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-500/40 px-1.5 py-0.2 rounded-full shrink-0">
+              Super-Arme ⭐
             </span>
           )}
         </div>
