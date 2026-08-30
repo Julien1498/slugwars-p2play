@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import {
   Settings,
-  ChevronDown,
   Maximize2,
   Minimize2,
   Eye,
@@ -74,16 +73,14 @@ export const HeaderOptionsMenu: React.FC<HeaderOptionsMenuProps> = ({
       <button
         type="button"
         onClick={() => setShowMenuPopover(!showMenuPopover)}
-        className="flex items-center gap-1 bg-zinc-900/90 hover:bg-zinc-850 active:bg-zinc-800 text-zinc-300 hover:text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-zinc-750/80 transition-all shadow-md active:scale-95"
+        className={`p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-lg backdrop-blur-md cursor-pointer ${
+          showMenuPopover
+            ? 'bg-violet-950/80 border-violet-500 text-white'
+            : 'bg-zinc-950/60 border-zinc-750/80 text-zinc-300 active:scale-95 hover:border-zinc-600'
+        }`}
         title="Menu & Options"
       >
-        <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-violet-400" />
-        <span className="text-xs font-black hidden md:inline tracking-wide">Menu</span>
-        <ChevronDown
-          className={`w-3 h-3 text-zinc-400 transition-transform duration-200 ${
-            showMenuPopover ? 'rotate-180 text-violet-400' : ''
-          }`}
-        />
+        <Settings className="w-4 h-4 text-violet-400" />
       </button>
 
       {showMenuPopover && (
