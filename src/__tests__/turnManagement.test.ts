@@ -16,17 +16,20 @@ describe('Turn Management, Team Rotation & Victory Conditions', () => {
     }
 
     expect(engine.state.phase).toBe('AIMING');
+    expect(engine.state.turnCount).toBe(1);
     const firstTeamId = engine.state.activeTeamId;
     const firstSlugId = engine.state.activeSlugId;
 
     // End current turn -> switches to team_blue
     engine.endTurn();
     expect(engine.state.activeTeamId).not.toBe(firstTeamId);
+    expect(engine.state.turnCount).toBe(2);
 
     // End team_blue turn -> switches back to team_red, selecting the 2nd slug in team_red
     engine.endTurn();
     expect(engine.state.activeTeamId).toBe(firstTeamId);
     expect(engine.state.activeSlugId).not.toBe(firstSlugId);
+    expect(engine.state.turnCount).toBe(3);
   });
 
   it('randomizes wind within valid configuration bounds', () => {

@@ -99,7 +99,8 @@ export function advanceToNextTurn(
     }
   }
 
-  // 6. Randomize wind & start aiming
+  // 6. Increment turn count & Randomize wind & start aiming
+  state.turnCount = (state.turnCount || 0) + 1;
   callbacks.randomizeWind(state);
   startAiming(state);
 }

@@ -35,6 +35,7 @@ export function setupGameStart(
   state.girders = [];
   state.craters = [];
   state.journal = [];
+  state.turnCount = 0;
 
   for (const team of state.teams) {
     for (let i = 0; i < state.config.slugsPerTeam; i++) {

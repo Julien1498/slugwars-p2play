@@ -59,10 +59,10 @@ export const GameOverStatsModal: React.FC<GameOverStatsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden pointer-events-auto select-none animate-in fade-in duration-200">
       <div
-        className="bg-zinc-950/95 border border-amber-500/40 rounded-2xl sm:rounded-3xl w-[96vw] max-w-5xl p-3 sm:p-4 md:p-5 flex flex-col max-h-[96vh] shadow-2xl shadow-amber-500/10 pointer-events-auto space-y-2.5 sm:space-y-3.5"
+        className="bg-zinc-950/95 border border-violet-500/50 rounded-2xl sm:rounded-3xl w-[96vw] max-w-5xl p-3 sm:p-4 md:p-5 flex flex-col max-h-[96vh] shadow-2xl shadow-violet-500/10 pointer-events-auto space-y-2.5 sm:space-y-3.5"
         style={{
           boxShadow: winnerTeam
-            ? `0 0 60px -10px ${winnerTeam.color}33, 0 0 30px rgba(245,158,11,0.2)`
+            ? `0 0 60px -10px ${winnerTeam.color}33, 0 0 30px rgba(139,92,246,0.2)`
             : '0 0 50px rgba(124,58,237,0.25)',
         }}
       >
@@ -80,7 +80,7 @@ export const GameOverStatsModal: React.FC<GameOverStatsModalProps> = ({
               </div>
 
               {/* Title & Subtitle */}
-              <h2 className="text-lg sm:text-2xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 truncate">
+              <h2 className="text-lg sm:text-2xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-yellow-400 truncate">
                 {winnerTeam ? `Victoire : ${winnerTeam.name} !` : 'Match Nul !'}
               </h2>
               <p className="text-[10px] sm:text-xs text-zinc-400 font-medium">
@@ -113,9 +113,9 @@ export const GameOverStatsModal: React.FC<GameOverStatsModalProps> = ({
           {isHost && (
             <button
               onClick={onRestartGame}
-              className="flex items-center gap-1.5 px-5 sm:px-7 py-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 active:scale-95 text-zinc-950 text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-amber-500/25 transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-5 sm:px-7 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 active:scale-95 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-violet-600/30 transition-all cursor-pointer shrink-0"
             >
-              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-950" />
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               Rejouer
             </button>
           )}

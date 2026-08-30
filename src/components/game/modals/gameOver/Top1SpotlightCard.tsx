@@ -15,10 +15,10 @@ export const Top1SpotlightCard: React.FC<Top1SpotlightCardProps> = ({
 
   return (
     <div className="md:col-span-4 landscape:col-span-4 flex flex-col">
-      <div className="bg-gradient-to-b from-amber-950/40 via-zinc-900/90 to-zinc-950/95 border-2 border-amber-500/60 rounded-2xl p-3 sm:p-4 flex flex-col justify-between items-center text-center relative shadow-[0_0_35px_rgba(245,158,11,0.2)] flex-1 min-h-0">
+      <div className="bg-gradient-to-b from-zinc-900/95 via-zinc-950/95 to-zinc-950/95 border border-violet-500/40 rounded-2xl p-3 sm:p-4 flex flex-col justify-between items-center text-center relative shadow-[0_0_25px_rgba(139,92,246,0.15)] flex-1 min-h-0">
         {/* Top badges */}
         <div className="w-full flex items-center justify-between shrink-0">
-          <div className="w-7 h-7 rounded-full bg-amber-400 text-zinc-950 flex items-center justify-center font-black text-xs shadow-md">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-400 text-zinc-950 flex items-center justify-center font-black text-xs shadow-md">
             1
           </div>
           <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-400/50 rounded-full text-amber-300 text-[9px] font-black tracking-wider uppercase shadow-inner">
@@ -30,7 +30,7 @@ export const Top1SpotlightCard: React.FC<Top1SpotlightCardProps> = ({
         {/* Big Slug Mascot with Crown */}
         <div className="my-auto py-1 flex flex-col items-center">
           <div className="relative inline-block mb-1">
-            <span className="text-5xl sm:text-6xl drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+            <span className="text-5xl sm:text-6xl drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
               {topTeam.team.avatar || '🐌'}
             </span>
             <span className="absolute -top-2 -right-2 text-xl animate-bounce">
@@ -61,7 +61,7 @@ export const Top1SpotlightCard: React.FC<Top1SpotlightCardProps> = ({
             </div>
             <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/60">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 to-amber-400 transition-all duration-500 rounded-full"
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
                 style={{ width: `${hpPercent}%` }}
               />
             </div>
@@ -80,7 +80,7 @@ export const Top1SpotlightCard: React.FC<Top1SpotlightCardProps> = ({
               <div className="text-sm sm:text-base font-black text-amber-400">{topTeam.damageDealt}</div>
             </div>
           </div>
-          <div className="text-[9px] text-amber-300/80 font-bold uppercase tracking-wider">
+          <div className="text-[9px] text-violet-300 font-bold uppercase tracking-wider">
             Performance Élite
           </div>
         </div>

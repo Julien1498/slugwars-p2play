@@ -55,6 +55,9 @@ export function startAiming(state: GameState, durationSec?: number): void {
   state.phaseTimer = undefined;
   state.settleTimer = undefined;
   state.retreatTimer = undefined;
+  if (!state.turnCount || state.turnCount < 1) {
+    state.turnCount = 1;
+  }
 
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (activeSlug && activeSlug.isAlive) {
