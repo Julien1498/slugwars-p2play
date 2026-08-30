@@ -256,6 +256,8 @@ export interface FloatingDamage {
   x: number;
   y: number;
   damage: number;
+  text?: string;
+  color?: string;
   createdAt: number;
 }
 

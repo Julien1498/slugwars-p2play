@@ -5,6 +5,8 @@ export interface ClientFloatingDamage {
   x: number;
   y: number;
   damage: number;
+  text?: string;
+  color?: string;
   startTime: number;
   duration: number;
 }
@@ -19,8 +21,6 @@ export function renderFloatingDamages(
   const now = performance.now();
   let writeIdx = 0;
   ctx.save();
-  ctx.lineWidth = 2.5;
-  ctx.font = 'extrabold 14px Outfit, sans-serif';
   ctx.textAlign = 'center';
   ctx.strokeStyle = '#000000';
 
@@ -30,16 +30,27 @@ export function renderFloatingDamages(
     const progress = Math.min(1, elapsed / fd.duration);
 
     if (progress < 1) {
-      if (viewLeft === undefined || viewRight === undefined || (fd.x >= viewLeft - 60 && fd.x <= viewRight + 60)) {
+      if (viewLeft === undefined || viewRight === undefined || (fd.x >= viewLeft - 80 && fd.x <= viewRight + 80)) {
         const alpha = Math.max(0, 1 - progress);
-        const floatY = fd.y - progress * 30;
+        const floatY = fd.y - progress * 35;
 
         ctx.globalAlpha = alpha;
-        const isHeal = fd.damage < 0;
-        ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
-        const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
-        ctx.strokeText(text, fd.x, floatY);
-        ctx.fillText(text, fd.x, floatY);
+
+        if (fd.text) {
+          ctx.lineWidth = 3;
+          ctx.font = 'black 13px Outfit, sans-serif';
+          ctx.fillStyle = fd.color || '#c084fc';
+          ctx.strokeText(fd.text, fd.x, floatY);
+          ctx.fillText(fd.text, fd.x, floatY);
+        } else {
+          ctx.lineWidth = 2.5;
+          ctx.font = 'extrabold 14px Outfit, sans-serif';
+          const isHeal = fd.damage < 0;
+          ctx.fillStyle = isHeal ? '#22c55e' : '#facc15';
+          const text = isHeal ? `+${-fd.damage} HP` : `-${fd.damage}`;
+          ctx.strokeText(text, fd.x, floatY);
+          ctx.fillText(text, fd.x, floatY);
+        }
       }
 
       floatingDamages[writeIdx++] = fd;

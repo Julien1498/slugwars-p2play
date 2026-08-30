@@ -176,6 +176,8 @@ export function updateSupplyCrates(
             x: s.x,
             y: s.y - 22,
             damage: -gained,
+            text: `+${gained} HP ❤️`,
+            color: '#22c55e',
             createdAt: Date.now(),
           });
           sfx.play('airdrop');
@@ -197,10 +199,13 @@ export function updateSupplyCrates(
             x: s.x,
             y: s.y - 22,
             damage: -count,
+            text: `+${count} ${weaponDef.icon} ${weaponDef.name}`,
+            color: crate.crateType === 'utility' ? '#38bdf8' : '#e879f9',
             createdAt: Date.now(),
           });
           sfx.play('airdrop');
-          addLog?.(`📦 ${s.name} a trouvé une Caisse d'Armes (+${count} ${weaponDef.name}) !`, 'combat');
+          const crateKind = crate.crateType === 'utility' ? "d'Utilitaires" : "d'Armes";
+          addLog?.(`📦 ${s.name} a trouvé une Caisse ${crateKind} (+${count} ${weaponDef.name}) !`, 'combat');
         }
 
         collected = true;

@@ -19,6 +19,7 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
   const clientParticlesRef = useRef<ClientParticle[]>([]);
   const clientExplosionsRef = useRef<ClientExplosion[]>([]);
   const clientFloatingDamagesRef = useRef<ClientFloatingDamage[]>([]);
+  const knownFloatingDamageIdsRef = useRef<Set<string>>(new Set());
   const prevSlugHpsRef = useRef<Map<string, number>>(new Map());
   const prevSlugWaterStateRef = useRef<Map<string, { y: number; isAlive: boolean }>>(new Map());
   const splashCooldownsRef = useRef<Map<string, number>>(new Map());
@@ -133,7 +134,25 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       }
     }
 
-    // 3. Floating Damages
+    // 3. Floating Damages & Crate Pickup Text
+    if (curState.floatingDamages && curState.floatingDamages.length > 0) {
+      for (const fd of curState.floatingDamages) {
+        if (!knownFloatingDamageIdsRef.current.has(fd.id)) {
+          knownFloatingDamageIdsRef.current.add(fd.id);
+          clientFloatingDamagesRef.current.push({
+            id: fd.id,
+            x: fd.x,
+            y: fd.y,
+            damage: fd.damage,
+            text: fd.text,
+            color: fd.color,
+            startTime: performance.now(),
+            duration: fd.text ? 1600 : 900,
+          });
+        }
+      }
+    }
+
     if (curState.slugs) {
       for (const slug of curState.slugs) {
         const prevHp = prevSlugHpsRef.current.get(slug.id);
