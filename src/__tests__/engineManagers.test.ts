@@ -163,7 +163,7 @@ describe('engineManagers - PhaseManager, SupplyDropManager, VehicleManager & Wea
 
       updateMines(state, terrain, carveCrater, addLog);
       expect(mine.isTriggered).toBe(true);
-      expect(mine.fuseTimerMs).toBe(2000);
+      expect(mine.fuseTimerMs).toBe(3000);
       expect(addLog).toHaveBeenCalled();
     });
 
