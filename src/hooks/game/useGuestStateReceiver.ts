@@ -1,11 +1,32 @@
 import { useEffect, useRef, MutableRefObject } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
-import { GameState } from '../../core/types';
+import { GameState, PlacedGirder } from '../../core/types';
+import { DestructibleTerrain } from '../../core/terrain';
 import { applyStateDelta, CompactStateDelta } from '../../network/netSerializer';
 import { decodeBinaryDelta } from '../../network/netBinarySerializer';
 import { sfx } from '../../core/audio';
 import { netMetrics } from '../../core/networkMetrics';
 import { PeerManagerLike } from 'p2play-core';
+
+function stampGirderToTerrain(terrain: DestructibleTerrain, g: PlacedGirder): void {
+  const rad = (g.angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const halfL = g.length / 2;
+  const halfT = g.thickness / 2;
+  const w = terrain.data.width;
+  const h = terrain.data.height;
+
+  for (let dl = -halfL; dl <= halfL; dl++) {
+    for (let dt = -halfT; dt <= halfT; dt++) {
+      const px = Math.round(g.x + dl * cos - dt * sin);
+      const py = Math.round(g.y + dl * sin + dt * cos);
+      if (px >= 0 && px < w && py >= 0 && py < h) {
+        terrain.data.grid[py * w + px] = 1;
+      }
+    }
+  }
+}
 
 export function useGuestStateReceiver(
   engineRef: MutableRefObject<SlugWarsEngine>,
@@ -80,6 +101,15 @@ export function useGuestStateReceiver(
           for (const c of delta.supplyCrates) {
             if (c.id && !knownCrateIdsRef.current.has(c.id)) {
               knownCrateIdsRef.current.add(c.id);
+              sfx.play('airdrop');
+            }
+          }
+        }
+
+        // Sound effect for Guest on Crate Pickup VFX
+        if (delta.floatingDamages && Array.isArray(delta.floatingDamages)) {
+          for (const fd of delta.floatingDamages) {
+            if (fd.id && (fd.id.startsWith('weap_') || fd.id.startsWith('heal_'))) {
               sfx.play('airdrop');
             }
           }
@@ -162,23 +192,7 @@ export function useGuestStateReceiver(
           for (const g of engine.state.girders) {
             if (!knownGirderIdsRef.current.has(g.id)) {
               knownGirderIdsRef.current.add(g.id);
-              const rad = (g.angleDeg * Math.PI) / 180;
-              const cos = Math.cos(rad);
-              const sin = Math.sin(rad);
-              const halfL = g.length / 2;
-              const halfT = g.thickness / 2;
-              const w = engine.terrain.data.width;
-              const h = engine.terrain.data.height;
-
-              for (let dl = -halfL; dl <= halfL; dl++) {
-                for (let dt = -halfT; dt <= halfT; dt++) {
-                  const px = Math.round(g.x + dl * cos - dt * sin);
-                  const py = Math.round(g.y + dl * sin + dt * cos);
-                  if (px >= 0 && px < w && py >= 0 && py < h) {
-                    engine.terrain.data.grid[py * w + px] = 1;
-                  }
-                }
-              }
+              stampGirderToTerrain(engine.terrain, g);
               sfx.play('girder');
             }
           }
@@ -202,6 +216,7 @@ export function useGuestStateReceiver(
         const hasActiveDynamics =
           (engine.state.projectiles?.length ?? 0) > 0 ||
           (engine.state.explosions?.length ?? 0) > 0 ||
+          (engine.state.floatingDamages?.length ?? 0) > 0 ||
           (engine.state.supplyCrates?.some((c) => !c.isLanded) ?? false);
         setGameState(engine.state, hasActiveDynamics);
       } else if (payload.config) {
@@ -247,23 +262,7 @@ export function useGuestStateReceiver(
           for (const g of newState.girders) {
             if (!knownGirderIdsRef.current.has(g.id)) {
               knownGirderIdsRef.current.add(g.id);
-              const rad = (g.angleDeg * Math.PI) / 180;
-              const cos = Math.cos(rad);
-              const sin = Math.sin(rad);
-              const halfL = g.length / 2;
-              const halfT = g.thickness / 2;
-              const w = engine.terrain.data.width;
-              const h = engine.terrain.data.height;
-
-              for (let dl = -halfL; dl <= halfL; dl++) {
-                for (let dt = -halfT; dt <= halfT; dt++) {
-                  const px = Math.round(g.x + dl * cos - dt * sin);
-                  const py = Math.round(g.y + dl * sin + dt * cos);
-                  if (px >= 0 && px < w && py >= 0 && py < h) {
-                    engine.terrain.data.grid[py * w + px] = 1;
-                  }
-                }
-              }
+              stampGirderToTerrain(engine.terrain, g);
             }
           }
         }

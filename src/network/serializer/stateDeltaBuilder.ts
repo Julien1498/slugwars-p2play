@@ -53,31 +53,16 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   const teamDeltas: CompactTeamDelta[] = [];
   for (const team of currentState.teams) {
     const prevTeam = prevState?.teams.find((t) => t.id === team.id);
-    const hasStatsChanged = !prevTeam ||
+    const hasStatsChanged =
+      !prevTeam ||
       prevTeam.stats?.kills !== team.stats?.kills ||
       prevTeam.stats?.deaths !== team.stats?.deaths ||
       prevTeam.stats?.damageDealt !== team.stats?.damageDealt ||
       prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
 
-    let hasInventoryChanged = false;
-    if (!prevTeam || !prevTeam.inventory) {
-      hasInventoryChanged = true;
-    } else {
-      const curInv = team.inventory || {};
-      const prevInv = prevTeam.inventory || {};
-      const curKeys = Object.keys(curInv);
-      const prevKeys = Object.keys(prevInv);
-      if (curKeys.length !== prevKeys.length) {
-        hasInventoryChanged = true;
-      } else {
-        for (const k of curKeys) {
-          if (curInv[k] !== prevInv[k]) {
-            hasInventoryChanged = true;
-            break;
-          }
-        }
-      }
-    }
+    const curInv = team.inventory || {};
+    const prevInv = prevTeam?.inventory || {};
+    const hasInventoryChanged = !prevTeam || JSON.stringify(curInv) !== JSON.stringify(prevInv);
 
     if (hasStatsChanged || hasInventoryChanged) {
       const tDelta: CompactTeamDelta = { id: team.id };
@@ -290,6 +275,18 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   const prevJournal = prevState?.journal || [];
   if (curJournal.length > 0 && curJournal[0]?.id !== prevJournal[0]?.id) {
     delta.journal = curJournal.slice(0, 5);
+  }
+
+  // Floating Damages / Combat Text VFX Sync
+  const curFloating = currentState.floatingDamages || [];
+  const prevFloating = prevState?.floatingDamages || [];
+  if (
+    curFloating.length > 0 &&
+    (prevFloating.length === 0 ||
+      curFloating[curFloating.length - 1]?.id !== prevFloating[prevFloating.length - 1]?.id ||
+      curFloating.length !== prevFloating.length)
+  ) {
+    delta.floatingDamages = curFloating.slice(-5);
   }
 
   return delta;

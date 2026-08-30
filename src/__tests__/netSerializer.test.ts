@@ -466,5 +466,34 @@ describe('Network Serialization & Delta Engine (netSerializer)', () => {
       expect(guestState.slugs[0].fuseTimerSec).toBe(2);
       expect(guestState.slugs[0].selectedWeaponId).toBe('dynamite');
     });
+
+    it('synchronizes floatingDamages and journal messages to guest correctly', () => {
+      const prevState = createMockGameState();
+      const nextState = createMockGameState();
+
+      nextState.journal = [
+        { id: 'j_new', timestamp: 1000, message: '📦 Limace 1 a trouvé une Caisse (+1 Bazooka) !', type: 'combat' },
+        { id: 'j_old', timestamp: 500, message: 'Phase de Tir', type: 'info' },
+      ];
+      nextState.floatingDamages = [
+        { id: 'weap_1', x: 120, y: 180, text: '+1 💣 Bazooka', color: '#e879f9', damage: -1, createdAt: 1000 },
+      ];
+
+      const delta = buildStateDelta(prevState, nextState);
+      expect(delta.journal).toBeDefined();
+      expect(delta.floatingDamages).toBeDefined();
+      expect(delta.floatingDamages?.[0].text).toBe('+1 💣 Bazooka');
+
+      const binaryBuffer = encodeBinaryDelta(delta);
+      const decodedDelta = decodeBinaryDelta(binaryBuffer);
+
+      const guestState = createMockGameState();
+      applyStateDelta(guestState, decodedDelta);
+
+      expect(guestState.journal).toBeDefined();
+      expect(guestState.journal?.[0].message).toContain('Caisse (+1 Bazooka)');
+      expect(guestState.floatingDamages).toBeDefined();
+      expect(guestState.floatingDamages?.[0].text).toBe('+1 💣 Bazooka');
+    });
   });
 });

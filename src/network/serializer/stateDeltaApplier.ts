@@ -4,12 +4,22 @@ import { CompactStateDelta } from './netSerializerTypes';
 export function applyStateDelta(localState: GameState, delta: CompactStateDelta): void {
   if (delta.journal && delta.journal.length > 0) {
     if (!localState.journal) localState.journal = [];
-    for (const newEntry of delta.journal) {
+    for (let i = delta.journal.length - 1; i >= 0; i--) {
+      const newEntry = delta.journal[i];
       if (!localState.journal.some((j) => j.id === newEntry.id)) {
         localState.journal.unshift(newEntry);
       }
     }
     if (localState.journal.length > 50) localState.journal.splice(50);
+  }
+
+  if (delta.floatingDamages && delta.floatingDamages.length > 0) {
+    if (!localState.floatingDamages) localState.floatingDamages = [];
+    for (const newFd of delta.floatingDamages) {
+      if (!localState.floatingDamages.some((fd) => fd.id === newFd.id)) {
+        localState.floatingDamages.push(newFd);
+      }
+    }
   }
 
   if (delta.phase) {

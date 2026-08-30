@@ -19,6 +19,7 @@ export function shouldUpdateReactUi(
   if ((prev.explosions?.length ?? 0) > 0 || (next.explosions?.length ?? 0) > 0) return true;
   if ((prev.craters?.length ?? 0) !== (next.craters?.length ?? 0)) return true;
   if ((prev.girders?.length ?? 0) !== (next.girders?.length ?? 0)) return true;
+  if ((prev.journal?.length ?? 0) !== (next.journal?.length ?? 0) || prev.journal?.[0]?.id !== next.journal?.[0]?.id) return true;
 
   // 2. Critical gameplay UI state changes -> Instant React update
   if (prev.phase !== next.phase) return true;

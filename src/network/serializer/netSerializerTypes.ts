@@ -73,4 +73,5 @@ export interface CompactStateDelta {
   girders?: PlacedGirder[];
   craters?: CraterRecord[];
   journal?: GameState['journal'];
+  floatingDamages?: GameState['floatingDamages'];
 }
