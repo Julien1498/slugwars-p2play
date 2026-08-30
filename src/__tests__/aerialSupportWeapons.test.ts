@@ -216,5 +216,85 @@ describe('Aerial Support & Strikes (Standard Rules)', () => {
       expect(activeSlug.isAlive).toBe(false);
       expect(activeSlug.hp).toBe(0);
     });
+
+    it('detonates Kamikaze immediately when colliding with an enemy slug', () => {
+      engine.state.turnCount = 10;
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      const enemySlug: Slug = {
+        id: 'enemy_1',
+        teamId: 'team_blue',
+        name: 'Enemy',
+        x: 400,
+        y: 200,
+        vx: 0,
+        vy: 0,
+        hp: 100,
+        maxHp: 100,
+        isAlive: true,
+        isPlaced: true,
+        facing: 'left',
+        aimAngle: 0,
+        aimPower: 0,
+        selectedWeaponId: 'bazooka',
+      };
+
+      const kamikazeProj: ActiveProjectile = {
+        id: 'proj_k',
+        weaponId: 'kamikaze',
+        x: 395,
+        y: 195,
+        vx: 15,
+        vy: 0,
+        radius: 8,
+        bounces: false,
+        windAffected: false,
+        ownerSlugId: activeSlug.id,
+        behaviorData: { maxDistance: 450, traveled: 50 },
+      };
+
+      const terrain = createMockTerrain();
+      const res = updateProjectilePhysics(kamikazeProj, terrain, 0, [activeSlug, enemySlug]);
+      expect(res.exploded).toBe(true);
+      expect(activeSlug.isAlive).toBe(false);
+    });
+
+    it('detonates Bunker Buster immediately when hitting a slug during descent', () => {
+      const enemySlug: Slug = {
+        id: 'enemy_2',
+        teamId: 'team_blue',
+        name: 'Enemy 2',
+        x: 500,
+        y: 240,
+        vx: 0,
+        vy: 0,
+        hp: 100,
+        maxHp: 100,
+        isAlive: true,
+        isPlaced: true,
+        facing: 'left',
+        aimAngle: 0,
+        aimPower: 0,
+        selectedWeaponId: 'bazooka',
+      };
+
+      const busterProj: ActiveProjectile = {
+        id: 'proj_b',
+        weaponId: 'bunker_buster',
+        x: 500,
+        y: 235,
+        vx: 0,
+        vy: 14,
+        radius: 7,
+        bounces: false,
+        windAffected: false,
+        ownerSlugId: 'some_slug',
+        behaviorData: { burrowRemaining: 100 },
+      };
+
+      const terrain = createMockTerrain();
+      const res = updateProjectilePhysics(busterProj, terrain, 0, [enemySlug]);
+      expect(res.exploded).toBe(true);
+      expect(res.collisionPoint?.x).toBe(500);
+    });
   });
 });

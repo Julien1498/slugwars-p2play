@@ -26,6 +26,15 @@ export function updateProjectilePhysics(
 
   // Burrowing Penetrator (Bunker Buster)
   if (proj.behaviorData?.burrowRemaining !== undefined) {
+    // 1. Direct collision with slugs: detonates immediately on impact
+    for (const slug of slugs) {
+      if (slug.isAlive && slug.isPlaced !== false) {
+        if (Math.hypot(proj.x - slug.x, proj.y - (slug.y - 8)) < 16) {
+          return { exploded: true, collisionPoint: { x: slug.x, y: slug.y - 8 } };
+        }
+      }
+    }
+
     const isSolid = terrain.isSolid(Math.round(proj.x), Math.round(proj.y));
     if (isSolid) {
       proj.vy = Math.min(proj.vy, 4.5);
@@ -37,6 +46,11 @@ export function updateProjectilePhysics(
       }
       return { exploded: false, carveStep: { x: proj.x, y: proj.y, radius: 12 } };
     }
+
+    // Exited a ceiling/rock into an open cavern: accelerates in free-fall
+    if (proj.behaviorData.isBurrowing) {
+      proj.vy = Math.min(14, proj.vy + GRAVITY * 2);
+    }
     proj.y += proj.vy;
     if (proj.y >= terrain.data.waterLevel) {
       return { exploded: true, collisionPoint: { x: proj.x, y: terrain.data.waterLevel } };
@@ -46,13 +60,32 @@ export function updateProjectilePhysics(
 
   // Sacrificial Kinetic Rocket (Kamikaze)
   if (proj.behaviorData?.maxDistance !== undefined) {
-    proj.x += proj.vx;
-    proj.y += proj.vy;
     const owner = slugs.find((s) => s.id === proj.ownerSlugId);
     if (owner && owner.isAlive) {
       owner.x = proj.x;
       owner.y = proj.y;
     }
+
+    // Direct collision with other slugs along trajectory: explodes immediately
+    for (const slug of slugs) {
+      if (slug.isAlive && slug.isPlaced !== false && slug.id !== proj.ownerSlugId) {
+        if (Math.hypot(proj.x - slug.x, proj.y - (slug.y - 8)) < 18) {
+          if (owner) {
+            owner.hp = 0;
+            owner.isAlive = false;
+          }
+          return { exploded: true, collisionPoint: { x: slug.x, y: slug.y - 8 }, carveStep: { x: proj.x, y: proj.y, radius: 16 } };
+        }
+      }
+    }
+
+    proj.x += proj.vx;
+    proj.y += proj.vy;
+    if (owner && owner.isAlive) {
+      owner.x = proj.x;
+      owner.y = proj.y;
+    }
+
     proj.behaviorData.traveled = (proj.behaviorData.traveled || 0) + Math.hypot(proj.vx, proj.vy);
     if (proj.behaviorData.traveled >= proj.behaviorData.maxDistance || proj.y >= terrain.data.waterLevel) {
       if (owner) {
