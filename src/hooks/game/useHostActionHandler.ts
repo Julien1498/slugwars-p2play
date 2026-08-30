@@ -189,6 +189,18 @@ export function processHostAction(
             }
             break;
           }
+          case 'DEV_ACTION': {
+            if (playerId === hostId || engine.state.teams.length <= 1) {
+              const method = msg.payload?.devMethod;
+              const args = msg.payload?.devArgs || [];
+              if (method && typeof (engine as any)[method] === 'function') {
+                (engine as any)[method](...args);
+                syncState();
+                broadcastState(engine.state);
+              }
+            }
+            break;
+          }
         }
         syncState();
       }

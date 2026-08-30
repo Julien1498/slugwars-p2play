@@ -30,7 +30,9 @@ export function updatePhaseTick(
     }
 
     case 'AIMING': {
-      state.turnTimer -= dt;
+      if (!state.isTimerFrozen) {
+        state.turnTimer -= dt;
+      }
       if (state.turnTimer <= 0) {
         state.turnTimer = 0;
         const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);

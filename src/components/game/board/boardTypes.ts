@@ -29,4 +29,6 @@ export interface SlugWarsBoardProps {
   onSteerVehicle?: (dir: 'left' | 'right' | 'up' | 'down') => void;
   onRestartGame: () => void;
   onExit?: () => void;
+  engine?: any;
+  onDevAction?: (devMethod: string, devArgs?: any[]) => void;
 }

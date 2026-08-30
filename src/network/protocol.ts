@@ -24,7 +24,8 @@ export type SlugWarsActionType =
   | 'STEER_VEHICLE'
   | 'REQUEST_FULL_STATE'
   | 'SET_FUSE_TIMER'
-  | 'RESTART_GAME';
+  | 'RESTART_GAME'
+  | 'DEV_ACTION';
 
 export interface SlugWarsNetworkPayload {
   name?: string;
@@ -40,6 +41,8 @@ export interface SlugWarsNetworkPayload {
   seconds?: number;
   targetPoint?: Vector2D;
   point?: Vector2D;
+  devMethod?: string;
+  devArgs?: any[];
 }
 
 export interface SlugWarsNetworkMessage {

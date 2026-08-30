@@ -1,0 +1,68 @@
+import { describe, it, expect, vi } from 'vitest';
+import { executeDevCursorAction } from '../components/game/dev/devActionExecutor';
+import { GameState } from '../core/types';
+
+describe('Dev Mode UI Actions & Executors (devActionExecutor.ts)', () => {
+  const mockGameState = {
+    activeSlugId: 'slug_123',
+    slugs: [{ id: 'slug_123', name: 'Alpha Slug', x: 100, y: 200, hp: 100, isAlive: true }],
+  } as unknown as GameState;
+
+  it('dispatches devTeleportSlug when teleport tool is executed', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('teleport_slug', { x: 500, y: 300 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devTeleportSlug', ['slug_123', 500, 300]);
+  });
+
+  it('calls engine.devTeleportSlug directly if no onDevAction handler is passed', () => {
+    const mockEngine = {
+      devTeleportSlug: vi.fn(),
+    };
+    executeDevCursorAction('teleport_slug', { x: 500, y: 300 }, mockGameState, mockEngine, undefined);
+
+    expect(mockEngine.devTeleportSlug).toHaveBeenCalledWith('slug_123', 500, 300);
+  });
+
+  it('dispatches devSpawnCrate with weapon type', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_crate_weapon', { x: 400, y: 200 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnCrate', [400, 200, 'weapon']);
+  });
+
+  it('dispatches devSpawnCrate with health type', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_crate_health', { x: 420, y: 210 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnCrate', [420, 210, 'health']);
+  });
+
+  it('dispatches devSpawnCrate with utility type', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_crate_utility', { x: 440, y: 220 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnCrate', [440, 220, 'utility']);
+  });
+
+  it('dispatches devSpawnMine at cursor position', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_mine', { x: 350, y: 150 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnMine', [350, 150]);
+  });
+
+  it('dispatches devSpawnOilDrum at cursor position', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_drum', { x: 600, y: 220 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnOilDrum', [600, 220]);
+  });
+
+  it('dispatches devSpawnHelicopter at cursor position', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('spawn_heli', { x: 250, y: 100 }, mockGameState, null, mockOnDevAction);
+
+    expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnHelicopter', [250, 100]);
+  });
+});

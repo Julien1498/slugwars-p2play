@@ -136,6 +136,8 @@ export const App: React.FC<AppProps> = ({
         onSteerVehicle={handleSteerVehicle}
         onRestartGame={handleRestartGame}
         onExit={onExit}
+        engine={engine}
+        onDevAction={(devMethod, devArgs) => sendAction('DEV_ACTION', { devMethod, devArgs })}
       />
     </div>
   );

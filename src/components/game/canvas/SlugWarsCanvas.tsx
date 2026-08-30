@@ -8,6 +8,7 @@ import { useCanvasCamera } from './useCanvasCamera';
 import { useCanvasTouchGestures } from './useCanvasTouchGestures';
 import { useCanvasMouseControls } from './useCanvasMouseControls';
 import { useCanvasRenderLoop } from './useCanvasRenderLoop';
+import { screenToWorldCoords } from '../../../rendering/cameraUtils';
 
 export interface SlugWarsCanvasProps {
   gameState: GameState;
@@ -22,6 +23,8 @@ export interface SlugWarsCanvasProps {
   onReleaseCharge?: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
   onDetonate?: () => void;
+  onDevClick?: (pos: Vector2D) => void;
+  activeDevTool?: string | null;
 }
 
 const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
@@ -37,25 +40,20 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   onReleaseCharge,
   onUpdateAim,
   onDetonate,
+  onDevClick,
+  activeDevTool,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const actionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const gameStateRef = useRef(gameState);
-  gameStateRef.current = gameState;
-  const isMyTurnRef = useRef(isMyTurn);
-  isMyTurnRef.current = isMyTurn;
-  const showHitboxesRef = useRef(showHitboxes);
-  showHitboxesRef.current = showHitboxes;
-
-  const onPlaceSlugRef = useRef(onPlaceSlug);
-  onPlaceSlugRef.current = onPlaceSlug;
-  const onSelectPlacementPointRef = useRef(onSelectPlacementPoint);
-  onSelectPlacementPointRef.current = onSelectPlacementPoint;
-  const onUpdateAimRef = useRef(onUpdateAim);
-  onUpdateAimRef.current = onUpdateAim;
+  const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
+  const isMyTurnRef = useRef(isMyTurn); isMyTurnRef.current = isMyTurn;
+  const showHitboxesRef = useRef(showHitboxes); showHitboxesRef.current = showHitboxes;
+  const onPlaceSlugRef = useRef(onPlaceSlug); onPlaceSlugRef.current = onPlaceSlug;
+  const onSelectPlacementPointRef = useRef(onSelectPlacementPoint); onSelectPlacementPointRef.current = onSelectPlacementPoint;
+  const onUpdateAimRef = useRef(onUpdateAim); onUpdateAimRef.current = onUpdateAim;
 
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const lockedTargetRef = useRef<Vector2D | null>(null);
@@ -192,7 +190,26 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       ref={containerRef}
       style={{ touchAction: 'none', contain: 'layout paint size' }}
       className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair select-none"
-      onMouseDown={handleMouseDown}
+      onMouseDown={(e) => {
+        if (activeDevTool && onDevClick && e.button === 0) {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const worldPos = screenToWorldCoords(
+              e.clientX,
+              e.clientY,
+              rect,
+              terrain.data.width,
+              terrain.data.height,
+              zoomRef.current,
+              panRef.current
+            );
+            onDevClick(worldPos);
+            return;
+          }
+        }
+        handleMouseDown(e);
+      }}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
       onContextMenu={handleContextMenu}

@@ -8,18 +8,7 @@ export type SlugId = string;
 
 export interface SolidProp {
   id: string;
-  type:
-    | 'hedgehog'
-    | 'chick'
-    | 'mushroom'
-    | 'flower'
-    | 'tree'
-    | 'bunker'
-    | 'cactus'
-    | 'crystal'
-    | 'oil_drum'
-    | 'totem'
-    | 'lamppost';
+  type: 'hedgehog' | 'chick' | 'mushroom' | 'flower' | 'tree' | 'bunker' | 'cactus' | 'crystal' | 'oil_drum' | 'totem' | 'lamppost';
   x: number;
   y: number;
   width: number;
@@ -294,4 +283,7 @@ export interface GameState {
   winnerTeamId?: TeamId;
   journal: JournalEntry[];
   turnCount: number;
+  solidProps?: SolidProp[];
+  isTimerFrozen?: boolean;
+  godModeEnabled?: boolean;
 }

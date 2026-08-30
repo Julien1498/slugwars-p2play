@@ -45,6 +45,7 @@ import {
   handleCarveCrater,
 } from './engine/engineLifecycle';
 import { executeEngineTick } from './engine/engineTick';
+import * as devCtrl from './engine/devControls';
 
 export class SlugWarsEngine {
   public state: GameState;
@@ -240,4 +241,19 @@ export class SlugWarsEngine {
     });
     if (this.state.journal.length > 50) this.state.journal.pop();
   }
+
+  public devSetInfiniteAmmo(): void { devCtrl.devSetInfiniteAmmo(this.state); }
+  public devUnlockAllWeapons(): void { devCtrl.devUnlockAllWeapons(this.state); }
+  public devHealAll(hp?: number): void { devCtrl.devHealAll(this.state, hp); }
+  public devSetOneHp(): void { devCtrl.devSetOneHp(this.state); }
+  public devKillSlug(slugId: string): void { devCtrl.devKillSlug(this.state, slugId); }
+  public devTeleportSlug(slugId: string, x: number, y: number): void { devCtrl.devTeleportSlug(this.state, slugId, x, y); }
+  public devSpawnCrate(x: number, y: number, type?: 'health' | 'weapon' | 'utility') { return devCtrl.devSpawnCrate(this.state, x, y, type); }
+  public devSpawnMine(x: number, y: number) { return devCtrl.devSpawnMine(this.state, x, y); }
+  public devSpawnOilDrum(x: number, y: number) { return devCtrl.devSpawnOilDrum(this.state, x, y); }
+  public devSpawnHelicopter(x: number, y: number) { return devCtrl.devSpawnHelicopter(this.state, x, y); }
+  public devSetWind(wind: number): void { devCtrl.devSetWind(this.state, wind); }
+  public devRiseWater(amountPx?: number): void { devCtrl.devRiseWater(this.state, this.terrain, amountPx); }
+  public devToggleFreezeTimer(): boolean { return devCtrl.devToggleFreezeTimer(this.state); }
+  public devToggleGodMode(): boolean { return devCtrl.devToggleGodMode(this.state); }
 }

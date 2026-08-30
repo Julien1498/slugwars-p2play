@@ -15,59 +15,33 @@ import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
 import { useFullscreen } from '../../../hooks/useFullscreen';
 import { perfTracker } from '../../../core/perfTracker';
 import { SlugWarsBoardProps } from './boardTypes';
+import { useDevMode } from '../../../hooks/useDevMode';
+import { DevFloatingToggle } from '../dev/DevFloatingToggle';
+import { DevToolsDrawer } from '../dev/DevToolsDrawer';
+import { executeDevCursorAction } from '../dev/devActionExecutor';
 
 export type { SlugWarsBoardProps };
 
 export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
-  gameState,
-  terrain,
-  chatMessages,
-  sendChat,
-  myPeerId,
-  hostPeerId,
-  isHost,
-  onFire,
-  onPlaceSlug,
-  onUpdateAim,
-  onSelectWeapon,
-  onSetFuseTimer,
-  onStartMove,
-  onStopMove,
-  onJump,
-  onStartSteer,
-  onStopSteer,
-  onStartCharge,
-  onReleaseCharge,
-  onDetonate,
-  onEnterVehicle,
-  onExitVehicle,
-  onSteerVehicle,
-  onRestartGame,
-  onExit,
+  gameState, terrain, chatMessages, sendChat, myPeerId, hostPeerId, isHost,
+  onFire, onPlaceSlug, onUpdateAim, onSelectWeapon, onSetFuseTimer,
+  onStartMove, onStopMove, onJump, onStartSteer, onStopSteer,
+  onStartCharge, onReleaseCharge, onDetonate, onEnterVehicle, onExitVehicle,
+  onSteerVehicle, onRestartGame, onExit, engine, onDevAction,
 }) => {
+  const devMode = useDevMode();
+  const engineRef = React.useRef(engine);
+  engineRef.current = engine;
   const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
   const [pendingPlacement, setPendingPlacement] = useState<Vector2D | null>(null);
   const isTouch = useIsTouchDevice();
   const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
 
   const {
-    showHitboxes,
-    showDrawer,
-    showWeaponPicker,
-    showRules,
-    showMetrics,
-    showConfirmLobby,
-    setShowConfirmLobby,
-    setShowWeaponPicker,
-    handleOpenWeaponPicker,
-    handleCloseWeaponPicker,
-    handleOpenRules,
-    handleCloseRules,
-    handleOpenMetrics,
-    handleCloseMetrics,
-    handleToggleHitboxes,
-    handleToggleDrawer,
-    handleCloseDrawer,
+    showHitboxes, showDrawer, showWeaponPicker, showRules, showMetrics, showConfirmLobby,
+    setShowConfirmLobby, setShowWeaponPicker, handleOpenWeaponPicker, handleCloseWeaponPicker,
+    handleOpenRules, handleCloseRules, handleOpenMetrics, handleCloseMetrics,
+    handleToggleHitboxes, handleToggleDrawer, handleCloseDrawer,
   } = useBoardModals(gameState.phase);
 
   useEffect(() => {
@@ -168,6 +142,13 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             onReleaseCharge={onReleaseCharge}
             onUpdateAim={onUpdateAim}
             onDetonate={onDetonate}
+            activeDevTool={devMode.activeCursorTool}
+            onDevClick={(pos) => {
+              if (devMode.activeCursorTool) {
+                executeDevCursorAction(devMode.activeCursorTool, pos, gameState, engine, onDevAction);
+                devMode.clearCursorTool();
+              }
+            }}
           />
         </Profiler>
       </div>
@@ -266,6 +247,32 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             }
           }}
         />
+      )}
+
+      {devMode.isDevEnabled && (
+        <>
+          <DevFloatingToggle
+            isOpen={devMode.isDevOpen}
+            onToggle={() => devMode.setIsDevOpen((p) => !p)}
+            activeCursorTool={devMode.activeCursorTool}
+          />
+          <DevToolsDrawer
+            isOpen={devMode.isDevOpen}
+            onClose={() => devMode.setIsDevOpen(false)}
+            activeTab={devMode.activeTab}
+            onTabChange={devMode.setActiveTab}
+            engineRef={engineRef}
+            isHost={isHost}
+            gameState={gameState}
+            syncState={() => {}}
+            activeCursorTool={devMode.activeCursorTool}
+            onSelectCursorTool={devMode.selectCursorTool}
+            showHitboxes={showHitboxes}
+            onToggleHitboxes={handleToggleHitboxes}
+            showPerfMetrics={showMetrics}
+            onTogglePerfMetrics={handleOpenMetrics}
+          />
+        </>
       )}
     </div>
   );
