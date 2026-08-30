@@ -27,6 +27,21 @@ export function updateProjectilesInTick(
     }
 
     const res = updateProjectilePhysics(proj, terrain, state.wind, state.slugs);
+    if (res.carveStep) {
+      carveCrater(res.carveStep.x, res.carveStep.y, res.carveStep.radius);
+      if (state.particles.length < 50) {
+        state.particles.push({
+          x: res.carveStep.x,
+          y: res.carveStep.y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4 - 2,
+          color: Math.random() > 0.5 ? '#713f12' : '#ca8a04',
+          size: Math.random() * 4 + 3,
+          life: 0.8,
+        });
+      }
+    }
+
     if (res.exploded) {
       const pt = res.collisionPoint || { x: proj.x, y: proj.y };
       const weapon = getWeapon(proj.weaponId);

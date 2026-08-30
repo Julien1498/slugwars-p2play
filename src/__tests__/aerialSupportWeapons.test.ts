@@ -157,12 +157,15 @@ describe('Aerial Support & Strikes (Standard Rules)', () => {
       buster.y = 260;
       res = updateProjectilePhysics(buster, terrain);
       expect(res.exploded).toBe(false);
+      expect(res.carveStep).toBeDefined();
+      expect(res.carveStep?.radius).toBeGreaterThan(0);
       expect(buster.behaviorData?.burrowRemaining).toBeLessThan(100);
 
       // When burrowRemaining depleted -> explodes deep underground
       buster.behaviorData!.burrowRemaining = 0;
       res = updateProjectilePhysics(buster, terrain);
       expect(res.exploded).toBe(true);
+      expect(res.carveStep).toBeDefined();
     });
 
     it('spawns 5 parachute mines horizontally distributed when calling Mine Strike', () => {
@@ -182,7 +185,7 @@ describe('Aerial Support & Strikes (Standard Rules)', () => {
   });
 
   describe('5. Kamikaze Propulsion & Sacrificial Detonation', () => {
-    it('propels the active slug along aim trajectory and detonates sacrificially', () => {
+    it('propels the active slug along aim trajectory, carves a tunnel and detonates sacrificially', () => {
       engine.state.turnCount = 10;
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       activeSlug.aimAngle = 45;
@@ -202,6 +205,8 @@ describe('Aerial Support & Strikes (Standard Rules)', () => {
       // Advance trajectory
       let res = updateProjectilePhysics(kamikazeProj, terrain, 0, slugs);
       expect(res.exploded).toBe(false);
+      expect(res.carveStep).toBeDefined();
+      expect(res.carveStep?.radius).toBe(16);
       expect(activeSlug.x).toBe(kamikazeProj.x);
 
       // Traveled maxDistance -> explosion and sacrifice

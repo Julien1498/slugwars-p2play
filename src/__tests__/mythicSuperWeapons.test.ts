@@ -232,8 +232,9 @@ describe('Mythic & Devastating Super-Weapons (Standard Rules)', () => {
 
   describe('5. Armageddon Global Strike & Manual Sheep Detonation', () => {
     it('spawns 20 meteor projectiles across the map when firing Armageddon', () => {
-      const redTeam = engine.state.teams.find((t) => t.id === 'team_red')!;
-      redTeam.inventory.armageddon = 1;
+      for (const t of engine.state.teams) {
+        t.inventory.armageddon = 1;
+      }
       engine.state.turnCount = 20; // Unlocks all turn delays
       expect(engine.selectWeapon('armageddon')).toBe(true);
       expect(engine.fireWeapon()).toBe(true);

@@ -7,6 +7,7 @@ export const GRAVITY = 0.28;
 export interface ProjectilePhysicsResult {
   exploded: boolean;
   collisionPoint?: { x: number; y: number };
+  carveStep?: { x: number; y: number; radius: number };
 }
 
 export function updateProjectilePhysics(
@@ -25,14 +26,18 @@ export function updateProjectilePhysics(
 
   // Burrowing Penetrator (Bunker Buster)
   if (proj.behaviorData?.burrowRemaining !== undefined) {
-    proj.y += proj.vy;
-    if (terrain.isSolid(Math.round(proj.x), Math.round(proj.y))) {
-      terrain.carveExplosion(Math.round(proj.x), Math.round(proj.y), 10);
+    const isSolid = terrain.isSolid(Math.round(proj.x), Math.round(proj.y));
+    if (isSolid) {
+      proj.vy = Math.min(proj.vy, 4.5);
+      proj.behaviorData.isBurrowing = true;
       proj.behaviorData.burrowRemaining -= Math.abs(proj.vy);
+      proj.y += proj.vy;
       if (proj.behaviorData.burrowRemaining <= 0 || proj.y >= terrain.data.waterLevel) {
-        return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+        return { exploded: true, collisionPoint: { x: proj.x, y: proj.y }, carveStep: { x: proj.x, y: proj.y, radius: 14 } };
       }
+      return { exploded: false, carveStep: { x: proj.x, y: proj.y, radius: 12 } };
     }
+    proj.y += proj.vy;
     if (proj.y >= terrain.data.waterLevel) {
       return { exploded: true, collisionPoint: { x: proj.x, y: terrain.data.waterLevel } };
     }
@@ -43,7 +48,6 @@ export function updateProjectilePhysics(
   if (proj.behaviorData?.maxDistance !== undefined) {
     proj.x += proj.vx;
     proj.y += proj.vy;
-    terrain.carveExplosion(Math.round(proj.x), Math.round(proj.y), 14);
     const owner = slugs.find((s) => s.id === proj.ownerSlugId);
     if (owner && owner.isAlive) {
       owner.x = proj.x;
@@ -55,9 +59,9 @@ export function updateProjectilePhysics(
         owner.hp = 0;
         owner.isAlive = false;
       }
-      return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+      return { exploded: true, collisionPoint: { x: proj.x, y: proj.y }, carveStep: { x: proj.x, y: proj.y, radius: 16 } };
     }
-    return { exploded: false };
+    return { exploded: false, carveStep: { x: proj.x, y: proj.y, radius: 16 } };
   }
 
   // 1. Fuse Countdown
