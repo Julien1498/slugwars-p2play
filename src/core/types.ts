@@ -43,8 +43,10 @@ export interface SupplyCrate {
   y: number;
   vy: number;
   isLanded: boolean;
-  crateType: 'health' | 'ammo';
-  healAmount: number;
+  crateType: 'health' | 'weapon' | 'utility' | 'ammo';
+  healAmount?: number;
+  weaponId?: string;
+  weaponCount?: number;
 }
 
 export interface DecorItem {
@@ -180,6 +182,7 @@ export interface GameConfig {
   mapTheme: MapTheme;
   mapSize?: MapSize;
   mapSeed: number;
+  turnDelaysEnabled?: boolean;
 }
 
 export interface Particle {

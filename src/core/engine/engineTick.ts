@@ -108,7 +108,12 @@ export function executeEngineTick(
     (x, y, r) => callbacks.carveCrater(x, y, r),
     (msg, type) => callbacks.addLog(msg, type)
   );
-  updateSupplyCrates(state, terrain, (msg, type) => callbacks.addLog(msg, type));
+  updateSupplyCrates(
+    state,
+    terrain,
+    (x, y, r) => callbacks.carveCrater(x, y, r),
+    (msg, type) => callbacks.addLog(msg, type)
+  );
 
   // 10. Expired VFX cleanup
   cleanupExpiredVFX(state, Date.now());

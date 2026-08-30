@@ -9,6 +9,8 @@ import { WeaponGridCard } from './weaponPicker/WeaponGridCard';
 interface WeaponPickerProps {
   inventory: Record<string, number>;
   selectedWeaponId: string;
+  turnCount?: number;
+  teamsCount?: number;
   onSelectWeapon: (weaponId: string) => void;
   onClose: () => void;
 }
@@ -16,6 +18,8 @@ interface WeaponPickerProps {
 export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   inventory,
   selectedWeaponId,
+  turnCount = 1,
+  teamsCount = 2,
   onSelectWeapon,
   onClose,
 }) => {
@@ -23,6 +27,9 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   const [activeCategory, setActiveCategory] = useState<WeaponCategory>('EXPLOSIVE');
   const allWeapons = getAllWeapons();
   const filtered = allWeapons.filter((w) => w.category === activeCategory);
+
+  const totalTeams = Math.max(1, teamsCount);
+  const completedRounds = Math.floor(Math.max(0, turnCount - 1) / totalTeams);
 
   // Keyboard navigation for desktop: F1-F5 / 1-5 / &é"'( to switch categories, Esc/I/Tab to close
   React.useEffect(() => {
@@ -113,6 +120,10 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           {filtered.map((w) => {
             const count = inventory[w.id] ?? 0;
             const isSelected = selectedWeaponId === w.id;
+            const turnDelay = w.turnDelay ?? 0;
+            const hasCrateAmmo = count > 0 && turnDelay > 0;
+            const isLocked = turnDelay > 0 && completedRounds < turnDelay && !hasCrateAmmo;
+            const roundsRemaining = Math.max(0, turnDelay - completedRounds);
 
             return (
               <WeaponGridCard
@@ -121,8 +132,11 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
                 ammo={count}
                 isSelected={isSelected}
                 isTouch={isTouch}
+                isLocked={isLocked}
+                turnDelay={turnDelay}
+                roundsRemaining={roundsRemaining}
                 onSelect={() => {
-                  if (count !== 0) {
+                  if (!isLocked && count !== 0) {
                     onSelectWeapon(w.id);
                     onClose();
                   }

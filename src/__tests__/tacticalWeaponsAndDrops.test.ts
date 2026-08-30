@@ -11,6 +11,7 @@ describe('Tactical Weapons & Utility Items', () => {
       slugsPerTeam: 2,
       mapTheme: 'ISLAND',
       mapSeed: 42,
+      turnDelaysEnabled: false,
     });
     engine.addTeam('team_red', 'Red Team', '#ef4444', '🐌', true);
     engine.addTeam('team_blue', 'Blue Team', '#3b82f6', '🐌', false);

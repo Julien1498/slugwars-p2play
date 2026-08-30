@@ -1,8 +1,11 @@
-import { GameState, Landmine, JournalEntry } from '../types';
+import { GameState, Landmine, SupplyCrate, JournalEntry } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { applyExplosionToSlugs } from '../physics';
 import { PhaseManager } from './phaseManager';
 import { sfx } from '../audio';
+import { getWeapon } from '../weapons/registry';
+
+export { pickRandomCrateContent, spawnTurnSupplyCrate } from './supplyDropSpawner';
 
 export function updateMines(
   state: GameState,
@@ -19,7 +22,7 @@ export function updateMines(
     if (!mine.isTriggered) {
       for (const slug of state.slugs) {
         if (!slug.isAlive || slug.isPlaced === false) continue;
-        if (Math.hypot(slug.x - mine.x, (slug.y - 8) - mine.y) <= 25) {
+        if (Math.hypot(slug.x - mine.x, slug.y - 8 - mine.y) <= 25) {
           mine.isTriggered = true;
           mine.fuseTimerMs = 2000;
           sfx.play('tick');
@@ -88,12 +91,65 @@ export function updateMines(
 export function updateSupplyCrates(
   state: GameState,
   terrain: DestructibleTerrain,
-  addLog: (msg: string, type?: JournalEntry['type']) => void
+  carveCraterOrAddLog?: ((x: number, y: number, radius: number) => void) | ((msg: string, type?: JournalEntry['type']) => void),
+  optionalAddLog?: (msg: string, type?: JournalEntry['type']) => void
 ) {
   if (!state.supplyCrates || state.supplyCrates.length === 0) return;
 
-  const remainingCrates: typeof state.supplyCrates = [];
+  const carveCrater =
+    typeof carveCraterOrAddLog === 'function' && carveCraterOrAddLog.length === 3
+      ? (carveCraterOrAddLog as (x: number, y: number, radius: number) => void)
+      : undefined;
+
+  const addLog =
+    typeof optionalAddLog === 'function'
+      ? optionalAddLog
+      : typeof carveCraterOrAddLog === 'function' && carveCraterOrAddLog.length !== 3
+      ? (carveCraterOrAddLog as (msg: string, type?: JournalEntry['type']) => void)
+      : undefined;
+
+  const remainingCrates: SupplyCrate[] = [];
   for (const crate of state.supplyCrates) {
+    let exploded = false;
+
+    // Check if crate took damage from nearby explosions
+    if (state.explosions && state.explosions.length > 0) {
+      for (const ex of state.explosions) {
+        if (Math.hypot(crate.x - ex.x, crate.y - ex.y) <= ex.radius + 10) {
+          exploded = true;
+          break;
+        }
+      }
+    }
+
+    if (exploded) {
+      const now = Date.now();
+      const radius = 35;
+      const damage = 25;
+      if (carveCrater) carveCrater(crate.x, crate.y, radius);
+      state.explosions.push({
+        id: `ex_crate_${now}_${Math.random()}`,
+        x: crate.x,
+        y: crate.y,
+        radius,
+        damage,
+        createdAt: now,
+      });
+      sfx.play('explosion');
+      const crateExpRes = applyExplosionToSlugs(crate.x, crate.y, radius, damage, state.slugs, terrain, state.teams);
+      for (const dm of crateExpRes.damageEvents) {
+        state.floatingDamages.push({
+          id: `fd_${now}_${Math.random()}`,
+          x: dm.x,
+          y: dm.y,
+          damage: dm.damage,
+          createdAt: now,
+        });
+      }
+      addLog?.(`💥 Une caisse de ravitaillement a explosé !`, 'combat');
+      continue;
+    }
+
     if (!crate.isLanded) {
       crate.x += state.wind * 0.15;
       crate.y += crate.vy;
@@ -106,21 +162,47 @@ export function updateSupplyCrates(
 
     let collected = false;
     for (const s of state.slugs) {
-      if (s.isAlive && Math.hypot(s.x - crate.x, (s.y - 8) - crate.y) < 20) {
-        const oldHp = s.hp;
-        s.hp = Math.min(s.maxHp, s.hp + crate.healAmount);
-        const gained = s.hp - oldHp;
+      if (s.isAlive && Math.hypot(s.x - crate.x, s.y - 8 - crate.y) < 20) {
+        const team = state.teams.find((t) => t.id === s.teamId);
 
-        state.floatingDamages.push({
-          id: `heal_${Date.now()}_${Math.random()}`,
-          x: s.x,
-          y: s.y - 22,
-          damage: -gained,
-          createdAt: Date.now(),
-        });
+        if (crate.crateType === 'health') {
+          const oldHp = s.hp;
+          const heal = crate.healAmount || 50;
+          s.hp = Math.min(s.maxHp, s.hp + heal);
+          const gained = s.hp - oldHp;
 
-        sfx.play('airdrop');
-        addLog(`📦 ${s.name} a ramassé une Caisse de Ravitaillement (+${gained} HP) !`, 'combat');
+          state.floatingDamages.push({
+            id: `heal_${Date.now()}_${Math.random()}`,
+            x: s.x,
+            y: s.y - 22,
+            damage: -gained,
+            createdAt: Date.now(),
+          });
+          sfx.play('airdrop');
+          addLog?.(`📦 ${s.name} a ramassé une Caisse de Soin (+${gained} HP) !`, 'combat');
+        } else {
+          const weaponId = crate.weaponId || 'holy_grenade';
+          const weaponDef = getWeapon(weaponId);
+          const count = crate.weaponCount || 1;
+
+          if (team) {
+            if (!team.inventory) team.inventory = {};
+            if (team.inventory[weaponId] !== -1) {
+              team.inventory[weaponId] = (team.inventory[weaponId] ?? 0) + count;
+            }
+          }
+
+          state.floatingDamages.push({
+            id: `weap_${Date.now()}_${Math.random()}`,
+            x: s.x,
+            y: s.y - 22,
+            damage: -count,
+            createdAt: Date.now(),
+          });
+          sfx.play('airdrop');
+          addLog?.(`📦 ${s.name} a trouvé une Caisse d'Armes (+${count} ${weaponDef.name}) !`, 'combat');
+        }
+
         collected = true;
         break;
       }

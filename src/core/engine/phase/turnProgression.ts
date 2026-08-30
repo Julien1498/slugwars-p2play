@@ -1,6 +1,7 @@
 import { GameState, JournalEntry } from '../../types';
 import { DestructibleTerrain } from '../../terrain';
 import { startAiming } from './phaseTransitions';
+import { spawnTurnSupplyCrate } from '../supplyDropSpawner';
 
 export function advanceToNextTurn(
   state: GameState,
@@ -102,5 +103,11 @@ export function advanceToNextTurn(
   // 6. Increment turn count & Randomize wind & start aiming
   state.turnCount = (state.turnCount || 0) + 1;
   callbacks.randomizeWind(state);
+
+  // 7. Chance of procedural turn supply crate drop (25% chance, Worms standard)
+  if (Math.random() < 0.25) {
+    spawnTurnSupplyCrate(state, terrain.data.width, callbacks.addLog);
+  }
+
   startAiming(state);
 }

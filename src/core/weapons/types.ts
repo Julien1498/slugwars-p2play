@@ -75,5 +75,7 @@ export interface WeaponDefinition {
   maxPower?: number;
   requiresTarget?: boolean;
   chargeable?: boolean;
+  turnDelay?: number; // Minimum round delay before weapon is selectable in standard schemes
+  crateProbability?: number; // Crate drop probability weight (0.05 to 0.25)
   createProjectiles: (ctx: FireContext) => ActiveProjectile[];
 }

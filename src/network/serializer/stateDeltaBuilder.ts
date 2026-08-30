@@ -205,6 +205,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
         isLanded: c.isLanded,
         crateType: c.crateType,
         healAmount: c.healAmount,
+        weaponId: c.weaponId,
+        weaponCount: c.weaponCount,
       }));
     } else {
       delta.supplyCrates = [];

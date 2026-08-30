@@ -4,13 +4,8 @@ import { GameConfig, SolidProp } from '../core/types';
 
 function createTestEngine(customConfig?: Partial<GameConfig>): SlugWarsEngine {
   const config: Partial<GameConfig> = {
-    turnDuration: 45,
-    slugsPerTeam: 2,
-    slugHp: 100,
-    weaponSetId: 'CLASSIC',
-    vehiclesEnabled: true,
-    mapTheme: 'ISLAND',
-    ...customConfig,
+    turnDuration: 45, slugsPerTeam: 2, slugHp: 100, weaponSetId: 'CLASSIC',
+    vehiclesEnabled: true, mapTheme: 'ISLAND', turnDelaysEnabled: false, ...customConfig,
   };
   const engine = new SlugWarsEngine(config);
   engine.addTeam('team_red', 'Équipe Rouge', '#ef4444', '🐌', true);

@@ -22,7 +22,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('executes Air Strike correctly at targeted coordinates', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -46,7 +46,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('executes Teleport weapon moving slug to targeted destination', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -70,7 +70,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('places a Girder platform into the game world and alters terrain grid', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -95,7 +95,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('handles supply drop spawning and health/ammo replenishment', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -120,7 +120,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('handles Concrete Donkey multiple impacts and successive terrain pounding', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -166,7 +166,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('detonates Holy Grenade with massive radius, 110 damage, and holy sound', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -198,7 +198,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('explodes Banana Bomb and scatters 5 cluster bananettes', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -229,7 +229,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('allows steering Super Sheep in flight and detonates on command or impact', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -257,7 +257,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('triggers landmine on proximity (<25px) and counts down to blast', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -293,7 +293,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('operates blowtorch tunneling through terrain', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -332,7 +332,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('executes skip_turn weapon and passes turn cleanly', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -347,7 +347,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('resets selectedWeaponId to bazooka for all team slugs when ammo reaches 0', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 2 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 2 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -376,7 +376,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('bounces grenades predictably off flat floors and vertical walls using surface normals', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -452,7 +452,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('fires non-chargeable weapons like dynamite immediately on startCharge', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -474,7 +474,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('immediately liberates helicopter when the pilot slug dies', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 2 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 2 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
@@ -528,7 +528,7 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('charges homing missile and scales initial launch velocity and ballistic delay with power', () => {
-    const engine = new SlugWarsEngine({ turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();

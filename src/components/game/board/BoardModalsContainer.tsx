@@ -52,6 +52,8 @@ export const BoardModalsContainer: React.FC<BoardModalsContainerProps> = ({
           <WeaponPicker
             inventory={myTeam.inventory}
             selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
+            turnCount={gameState.turnCount}
+            teamsCount={gameState.teams.length}
             onSelectWeapon={(wId) => {
               sfx.play('tick');
               onSelectWeapon(wId);
