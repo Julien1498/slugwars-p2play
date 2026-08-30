@@ -147,6 +147,10 @@ export function detonateSheep(
   if (sheepIdx === -1) return false;
 
   const sheep = state.projectiles[sheepIdx];
+  if (sheep.behaviorData?.createdAt && Date.now() - sheep.behaviorData.createdAt < 200) {
+    return false;
+  }
+
   state.projectiles.splice(sheepIdx, 1);
 
   const weapon = getWeapon('super_sheep');

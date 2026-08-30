@@ -107,9 +107,6 @@ export function updateProjectilePhysics(
   // 3. Collision with Slugs
   for (const slug of slugs) {
     if (!slug.isAlive || slug.isPlaced === false) continue;
-    if (slug.id === proj.ownerSlugId && Math.hypot(proj.x - slug.x, proj.y - (slug.y - 8)) < 14) {
-      continue;
-    }
 
     const slugRadius = 10;
     const slugCenterY = slug.y - 8;
@@ -126,6 +123,11 @@ export function updateProjectilePhysics(
       const closestX = proj.x + t * segDx;
       const closestY = proj.y + t * segDy;
       distToSlug = Math.hypot(closestX - slug.x, closestY - slugCenterY);
+    }
+
+    // Clearance for owner slug during launch
+    if (slug.id === proj.ownerSlugId && distToSlug < Math.max(28, proj.radius + slugRadius + 8)) {
+      continue;
     }
 
     if (distToSlug <= proj.radius + slugRadius) {

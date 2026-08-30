@@ -90,6 +90,7 @@ export const superSheepWeapon: WeaponDefinition = {
         windAffected: false,
         gravityScale: 0,
         ownerSlugId: ctx.ownerSlugId,
+        behaviorData: { createdAt: Date.now() },
       },
     ];
   },

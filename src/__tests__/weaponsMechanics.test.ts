@@ -263,7 +263,8 @@ describe('Weapons Arsenal & Mechanics', () => {
     engine.steerSheep('left');
     expect(sheep.vx !== initialVx || sheep.vy !== initialVy).toBe(true);
 
-    // Detonate sheep manually
+    // Detonate sheep manually after arming window
+    sheep.behaviorData = { createdAt: Date.now() - 500 };
     engine.detonateSheep();
     expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
     expect(engine.state.projectiles.some((p) => p.weaponId === 'super_sheep')).toBe(false);
