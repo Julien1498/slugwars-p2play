@@ -90,3 +90,47 @@ export function drawHeldClusterBomb(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = '#ef4444';
   ctx.fillRect(4, -1, 8, 2);
 }
+
+export function drawHeldBunkerBuster(ctx: CanvasRenderingContext2D): void {
+  // Military Laser Designator Radio
+  ctx.fillStyle = '#1e293b';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 1.2;
+  ctx.fillRect(3, -4, 9, 8);
+  ctx.strokeRect(3, -4, 9, 8);
+  // Red targeting laser lens
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(11, -2, 2.5, 3);
+  // Antenna
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 1.0;
+  ctx.beginPath();
+  ctx.moveTo(5, -4);
+  ctx.lineTo(5, -9);
+  ctx.stroke();
+}
+
+export function drawHeldMineStrike(ctx: CanvasRenderingContext2D): void {
+  // Flare Gun with red smoke flare
+  ctx.fillStyle = '#dc2626';
+  ctx.strokeStyle = '#991b1b';
+  ctx.lineWidth = 1.2;
+  ctx.fillRect(3, -3, 10, 5);
+  ctx.strokeRect(3, -3, 10, 5);
+  ctx.fillStyle = '#450a0a';
+  ctx.fillRect(1, -1, 3.5, 5);
+}
+
+export function drawHeldKamikaze(ctx: CanvasRenderingContext2D): void {
+  // White Headband on slug with red circle
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.0;
+  ctx.fillRect(2, -7, 10, 3.5);
+  ctx.strokeRect(2, -7, 10, 3.5);
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(7, -5.2, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+}
+

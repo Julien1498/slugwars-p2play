@@ -28,6 +28,9 @@ export type WeaponId =
   | 'old_lady'
   | 'armageddon'
   | 'meteor'
+  | 'bunker_buster'
+  | 'mine_strike'
+  | 'kamikaze'
   | 'skip_turn';
 
 
@@ -53,6 +56,9 @@ export type WeaponBehavior =
   | 'AIRDROP'
   | 'WALKER'
   | 'GLOBAL_STRIKE'
+  | 'BUNKER_BUSTER'
+  | 'MINE_STRIKE'
+  | 'KAMIKAZE'
   | 'SKIP_TURN';
 
 

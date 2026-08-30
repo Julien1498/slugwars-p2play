@@ -16,6 +16,9 @@ import {
   drawHeldHandgun,
   drawHeldUzi,
   drawHeldClusterBomb,
+  drawHeldBunkerBuster,
+  drawHeldMineStrike,
+  drawHeldKamikaze,
 } from './slugMythicWeaponDrawers';
 
 export type HeldWeaponDrawer = (ctx: CanvasRenderingContext2D, animTime: number) => void;
@@ -265,6 +268,9 @@ export const HELD_WEAPON_DRAWERS: Record<string, HeldWeaponDrawer> = {
   sheep: (ctx) => drawHeldSheep(ctx),
   old_lady: (ctx) => drawHeldOldLady(ctx),
   armageddon: (ctx) => drawHeldArmageddon(ctx),
+  bunker_buster: (ctx) => drawHeldBunkerBuster(ctx),
+  mine_strike: (ctx) => drawHeldMineStrike(ctx),
+  kamikaze: (ctx) => drawHeldKamikaze(ctx),
 };
 
 export const drawDefaultGenericWeapon: HeldWeaponDrawer = (ctx) => {

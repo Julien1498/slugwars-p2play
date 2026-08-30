@@ -23,6 +23,43 @@ export function updateProjectilePhysics(
     return updateWalkingEntityPhysics(proj, terrain);
   }
 
+  // Burrowing Penetrator (Bunker Buster)
+  if (proj.behaviorData?.burrowRemaining !== undefined) {
+    proj.y += proj.vy;
+    if (terrain.isSolid(Math.round(proj.x), Math.round(proj.y))) {
+      terrain.carveExplosion(Math.round(proj.x), Math.round(proj.y), 10);
+      proj.behaviorData.burrowRemaining -= Math.abs(proj.vy);
+      if (proj.behaviorData.burrowRemaining <= 0 || proj.y >= terrain.data.waterLevel) {
+        return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+      }
+    }
+    if (proj.y >= terrain.data.waterLevel) {
+      return { exploded: true, collisionPoint: { x: proj.x, y: terrain.data.waterLevel } };
+    }
+    return { exploded: false };
+  }
+
+  // Sacrificial Kinetic Rocket (Kamikaze)
+  if (proj.behaviorData?.maxDistance !== undefined) {
+    proj.x += proj.vx;
+    proj.y += proj.vy;
+    terrain.carveExplosion(Math.round(proj.x), Math.round(proj.y), 14);
+    const owner = slugs.find((s) => s.id === proj.ownerSlugId);
+    if (owner && owner.isAlive) {
+      owner.x = proj.x;
+      owner.y = proj.y;
+    }
+    proj.behaviorData.traveled = (proj.behaviorData.traveled || 0) + Math.hypot(proj.vx, proj.vy);
+    if (proj.behaviorData.traveled >= proj.behaviorData.maxDistance || proj.y >= terrain.data.waterLevel) {
+      if (owner) {
+        owner.hp = 0;
+        owner.isAlive = false;
+      }
+      return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
+    }
+    return { exploded: false };
+  }
+
   // 1. Fuse Countdown
   if (proj.fuseTimerMs !== undefined) {
     proj.fuseTimerMs -= 50;

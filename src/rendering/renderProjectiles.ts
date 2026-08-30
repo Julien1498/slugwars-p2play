@@ -23,6 +23,11 @@ import {
   renderOldLady,
   renderMeteor,
 } from './projectiles/renderMythicProjectiles';
+import {
+  renderBunkerBuster,
+  renderParachuteMine,
+  renderKamikaze,
+} from './projectiles/renderAerialProjectiles';
 
 export interface ProjectilesRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -55,6 +60,9 @@ export const PROJECTILE_DRAWERS: Record<string, ProjectileDrawerFn> = {
   sheep: (ctx, proj, animTime) => renderWalkingSheep(ctx, proj, animTime),
   old_lady: (ctx, proj, animTime) => renderOldLady(ctx, proj, animTime),
   meteor: (ctx, proj, animTime) => renderMeteor(ctx, proj, animTime),
+  bunker_buster: (ctx, proj, animTime) => renderBunkerBuster(ctx, proj, animTime),
+  mine_strike: (ctx, proj, animTime) => renderParachuteMine(ctx, proj, animTime),
+  kamikaze: (ctx, proj, animTime) => renderKamikaze(ctx, proj, animTime),
   holy_grenade: (ctx) => renderHolyGrenade(ctx),
   banana_bomb: (ctx) => renderBananaBomb(ctx),
   dynamite: (ctx, _proj, animTime) => renderDynamite(ctx, animTime),

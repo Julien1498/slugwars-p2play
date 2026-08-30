@@ -3,7 +3,7 @@
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
 > **Catégorie** : Game Design, Arsenal & Balistique 2D  
-> **État des lieux** : 25 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
+> **État des lieux** : 28 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
 
 ---
 
@@ -11,14 +11,15 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       ARSENAL SLUGWARS P2PLAY : 25 ARMES                    │
+│                       ARSENAL SLUGWARS P2PLAY : 28 ARMES                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ✅ Balistique & Explosifs : Bazooka, Grenade, Cluster Bomb, Dynamite,      │
 │     Shotgun, Handgun, Uzi, Homing Missile, Homing Pigeon, Banana Bomb,      │
 │     Mines, Barils de Pétrole                                                │
 │  ✅ Super-Armes Mythiques  : Sainte Grenade, Âne en Béton, Super Mouton,    │
-│     Mouton au sol, Vieille Dame, Armageddon                                 │
-│  ✅ Support Céleste        : Frappe Aérienne (Air Strike), Caisses de Soin  │
+│     Mouton au sol, Vieille Dame, Armageddon, Kamikaze                       │
+│  ✅ Support Céleste        : Frappe Aérienne (Air Strike), Bunker Buster,   │
+│     Frappe de Mines (Mine Strike), Caisses de Soin                          │
 │  ✅ Corps-à-Corps & Outils : Batte de Baseball, Piquouze, Grappin Ninja,    │
 │     Poutre Métallique, Chalumeau, Téléporteur, Passe-Tour                   │
 │  ✅ Véhicules              : Hélicoptère (Rocket Copter) pilotable          │
@@ -66,9 +67,9 @@
 | Frappe Aérienne | Dans le Standard du Genre | Dans `slugwars-p2play` | Détails & Spécificités |
 | :--- | :---: | :---: | :--- |
 | **Frappe Aérienne (Air Strike)** | ✅ | ✅ | **Présent** (5 missiles tombant du ciel sur les coordonnées ciblées) |
-| **Bunker Buster** | ✅ | ❌ | *Non présent (Bombe perforante creusant le sol avant d'exploser)* |
-| **Frappe de Mines (Mine Strike)** | ✅ | ❌ | *Non présent (Parachutage de 5 mines actives sur une zone)* |
-| **Kamikaze** | ✅ | ❌ | *Non présent (Propulsion de l'opératif en ligne droite perforant le terrain)* |
+| **Bunker Buster** | ✅ | ✅ | **Présent** (Bombe perforante creusant 100px sous terre avant d'exploser, 60 dégâts) |
+| **Frappe de Mines (Mine Strike)** | ✅ | ✅ | **Présent** (Largage aérien de 5 mines actives en parachute sur une zone, 45 dégâts/mine) |
+| **Kamikaze** | ✅ | ✅ | **Présent** (Propulsion sacrificielle perforant le terrain sur 450px, 60 dégâts) |
 
 ---
 
