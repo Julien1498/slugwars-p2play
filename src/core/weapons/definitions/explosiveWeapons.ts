@@ -243,7 +243,7 @@ export const dynamiteWeapon: WeaponDefinition = {
 export const clusterBananaWeapon: WeaponDefinition = {
   id: 'cluster_banana',
   name: 'Mini-Banane',
-  category: 'EXPLOSIVE',
+  category: 'SPECIAL',
   behavior: 'BOUNCING_TIMER',
   icon: '🍌',
   description: 'Sous-munition de la bombe banane.',

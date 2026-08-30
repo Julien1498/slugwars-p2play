@@ -19,6 +19,8 @@ export type SoundEffectType =
   | 'rope_attach'
   | 'girder'
   | 'airdrop'
+  | 'gunshot'
+  | 'uzi_burst'
   | 'ouch';
 
 export interface PlaySoundOptions {

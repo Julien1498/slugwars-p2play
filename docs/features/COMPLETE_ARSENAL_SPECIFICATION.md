@@ -3,7 +3,7 @@
 > **Projet** : `slugwars-p2play`  
 > **Date** : Août 2026  
 > **Catégorie** : Game Design, Arsenal & Balistique 2D  
-> **État des lieux** : 19 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
+> **État des lieux** : 22 armes, gadgets et véhicules déjà implémentés dans `slugwars-p2play`
 
 ---
 
@@ -11,10 +11,11 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       ARSENAL SLUGWARS P2PLAY : 19 ARMES                    │
+│                       ARSENAL SLUGWARS P2PLAY : 22 ARMES                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  ✅ Balistique & Explosifs : Bazooka, Grenade, Dynamite, Shotgun, Homing   │
-│     Missile, Homing Pigeon, Banana Bomb, Mines, Barils de Pétrole           │
+│  ✅ Balistique & Explosifs : Bazooka, Grenade, Cluster Bomb, Dynamite,      │
+│     Shotgun, Handgun, Uzi, Homing Missile, Homing Pigeon, Banana Bomb,      │
+│     Mines, Barils de Pétrole                                                │
 │  ✅ Super-Armes Mythiques  : Sainte Grenade, Âne en Béton, Super Mouton     │
 │  ✅ Support Céleste        : Frappe Aérienne (Air Strike), Caisses de Soin  │
 │  ✅ Corps-à-Corps & Outils : Batte de Baseball, Piquouze, Grappin Ninja,    │
@@ -33,16 +34,16 @@
 | :--- | :---: | :---: | :--- |
 | **Bazooka** | ✅ | ✅ | **Présent** (Tir balistique soumis au vent, 45 dégâts, cratère moyen) |
 | **Grenade Classique** | ✅ | ✅ | **Présent** (Mèche 1-5s réglable, rebonds élastiques, 45 dégâts) |
+| **Grenade à Fragmentation (Cluster Bomb)** | ✅ | ✅ | **Présent** (Mèche 1-5s, explosion 35 dgt + 5 sous-fragments rebondissants de 25 dgt) |
 | **Banana Bomb** | ✅ | ✅ | **Présent** (Grenade géante qui explose en 5 sous-bananes véloces) |
 | **Dynamite** | ✅ | ✅ | **Présent** (Pose au sol sans cloche, décompte 4s de fuite, 75 dégâts) |
-| **Fusil à Pompe (Shotgun)** | ✅ | ✅ | **Présent** (Tir rectiligne direct à dégâts concentrés) |
+| **Fusil à Pompe (Shotgun)** | ✅ | ✅ | **Présent** (Tir rectiligne direct à 6 cartouches concentrées) |
+| **Pistolet (Handgun)** | ✅ | ✅ | **Présent** (Rafale rapide de 6 balles précises, 5 dgt/balle, micro-cratères) |
+| **Uzi / Pistolet-Mitrailleur** | ✅ | ✅ | **Présent** (Rafale automatique de 10 balles avec dispersion et fort recul) |
 | **Missile Téléguidé (Homing Missile)** | ✅ | ✅ | **Présent** (Verrouillage de cible au clic et guidage en vol) |
 | **Pigeon Voyageur (Homing Pigeon)** | ✅ | ✅ | **Présent** (Vol autonome en arc avant de piquer sur la cible) |
-| **Mine Terrestre** | ✅ | ✅ | **Présent** (Déclencheur de proximité, bip d'alerte, 50 dégâts) |
+| **Mine Terrestre** | ✅ | ✅ | **Présent** (Déclencheur de proximité, bip d'alerte, mèche 2.5s) |
 | **Baril de Pétrole (Oil Drum)** | ✅ | ✅ | **Présent** (Prop physique explosif, 50 dégâts, cratère 65px) |
-| **Grenade à Fragmentation (Cluster Bomb)** | ✅ | ❌ | *Non présent (À ajouter : division en 5 éclats à l'impact)* |
-| **Pistolet (Handgun)** | ✅ | ❌ | *Non présent (Rafale rapide de 6 balles légères)* |
-| **Uzi / Pistolet-Mitrailleur** | ✅ | ❌ | *Non présent (Tir automatique avec arrosage et recul)* |
 
 ---
 

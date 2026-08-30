@@ -55,7 +55,25 @@ export function updateProjectilesInTick(
         });
       }
 
-      if (proj.weaponId === 'banana_bomb') {
+      if (proj.weaponId === 'cluster_bomb') {
+        for (let i = 0; i < 5; i++) {
+          const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+          const speed = 3.5 + Math.random() * 3.5;
+          remaining.push({
+            id: `proj_cluster_frag_${now}_${i}_${Math.random()}`,
+            weaponId: 'cluster_fragment',
+            x: pt.x,
+            y: pt.y - 4,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 2.5,
+            radius: 3.5,
+            bounces: true,
+            windAffected: false,
+            fuseTimerMs: 1500 + Math.random() * 700,
+            ownerSlugId: proj.ownerSlugId,
+          });
+        }
+      } else if (proj.weaponId === 'banana_bomb') {
         for (let i = 0; i < 5; i++) {
           const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
           const speed = 4 + Math.random() * 4;

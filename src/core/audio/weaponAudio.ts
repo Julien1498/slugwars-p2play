@@ -221,3 +221,56 @@ export function playRopeAttachSound(ctx: AudioContext, dest: AudioNode, pitchRat
   osc.start(now);
   osc.stop(now + 0.06);
 }
+
+export function playGunshotSound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
+  // Snappy 9mm Pistol Gunshot Crack
+  const popOsc = ctx.createOscillator();
+  const popGain = ctx.createGain();
+  popOsc.type = 'triangle';
+  popOsc.frequency.setValueAtTime(480 * pitchRatio, now);
+  popOsc.frequency.exponentialRampToValueAtTime(80 * pitchRatio, now + 0.08);
+
+  popGain.gain.setValueAtTime(0.7, now);
+  popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+  popOsc.connect(popGain);
+  popGain.connect(dest);
+  popOsc.start(now);
+  popOsc.stop(now + 0.09);
+
+  const noise = createPinkNoiseBuffer(ctx, 0.08);
+  const nSource = ctx.createBufferSource();
+  nSource.buffer = noise;
+  const nFilter = ctx.createBiquadFilter();
+  nFilter.type = 'bandpass';
+  nFilter.frequency.setValueAtTime(1800 * pitchRatio, now);
+  nFilter.Q.setValueAtTime(2.0, now);
+  const nGain = ctx.createGain();
+  nGain.gain.setValueAtTime(0.5, now);
+  nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+  nSource.connect(nFilter);
+  nFilter.connect(nGain);
+  nGain.connect(dest);
+  nSource.start(now);
+}
+
+export function playUziBurstSound(ctx: AudioContext, dest: AudioNode, pitchRatio: number, now: number): void {
+  // Rapid 9mm SMG / Uzi Automatic Burst
+  for (let i = 0; i < 3; i++) {
+    const t = now + i * 0.045;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(620 * pitchRatio, t);
+    osc.frequency.exponentialRampToValueAtTime(110 * pitchRatio, t + 0.04);
+
+    gain.gain.setValueAtTime(0.45, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(t);
+    osc.stop(t + 0.045);
+  }
+}

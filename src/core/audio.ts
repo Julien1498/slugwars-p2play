@@ -7,6 +7,8 @@ import {
   playMeleeSound,
   playRopeShootSound,
   playRopeAttachSound,
+  playGunshotSound,
+  playUziBurstSound,
 } from './audio/weaponAudio';
 import {
   playSplashSound,
@@ -36,6 +38,8 @@ const SFX_DISPATCH: Record<string, SoundPlayerFn> = {
   bat_hit: playMeleeSound,
   rope_shoot: playRopeShootSound,
   rope_attach: playRopeAttachSound,
+  gunshot: playGunshotSound,
+  uzi_burst: playUziBurstSound,
   splash: playSplashSound,
   jump: playJumpSound,
   bounce: playBounceSound,

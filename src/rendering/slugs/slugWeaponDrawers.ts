@@ -250,6 +250,39 @@ export const HELD_WEAPON_DRAWERS: Record<string, HeldWeaponDrawer> = {
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(4, -10, 8, 5);
   },
+
+  cluster_bomb: (ctx) => {
+    ctx.fillStyle = '#ca8a04';
+    ctx.strokeStyle = '#713f12';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(8, 0, 5.5, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(4, -1, 8, 2);
+  },
+
+  handgun: (ctx) => {
+    ctx.fillStyle = '#334155';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.2;
+    ctx.fillRect(3, -2, 10, 3.5);
+    ctx.strokeRect(3, -2, 10, 3.5);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(1, 0, 4, 6);
+  },
+
+  uzi: (ctx) => {
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.2;
+    ctx.fillRect(2, -3, 14, 5);
+    ctx.strokeRect(2, -3, 14, 5);
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(14, -1.5, 3, 2);
+    ctx.fillRect(6, 2, 4, 7);
+  },
 };
 
 export const drawDefaultGenericWeapon: HeldWeaponDrawer = (ctx) => {

@@ -172,3 +172,67 @@ export function renderBuckshotPellet(ctx: CanvasRenderingContext2D) {
   ctx.arc(-2, 0, 1.6, 0, Math.PI * 2);
   ctx.fill();
 }
+
+export function renderClusterBomb(ctx: CanvasRenderingContext2D) {
+  // Pineapple style fragmentation grenade with amber/green body
+  const grad = ctx.createRadialGradient(-2, -2, 1, 0, 0, 7);
+  grad.addColorStop(0, '#facc15');
+  grad.addColorStop(0.6, '#ca8a04');
+  grad.addColorStop(1, '#713f12');
+  ctx.fillStyle = grad;
+  ctx.strokeStyle = '#451a03';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 6.5, 5.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Red/Orange Warning Band
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(-5, -1, 10, 2);
+
+  // Top Pin and Ring
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillRect(-2, -7, 4, 3);
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.arc(3.5, -6.5, 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+export function renderClusterFragment(ctx: CanvasRenderingContext2D) {
+  // Shrapnel fragment pellet with fiery core
+  ctx.fillStyle = '#f97316';
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+export function renderBullet(ctx: CanvasRenderingContext2D, color = '#facc15') {
+  // Aerodynamic glowing bullet tracer
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#ea580c';
+  ctx.lineWidth = 1.0;
+  ctx.beginPath();
+  ctx.moveTo(4, 0);
+  ctx.lineTo(-4, -1.8);
+  ctx.lineTo(-4, 1.8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Glowing tail tracer
+  ctx.fillStyle = '#ffedd5';
+  ctx.beginPath();
+  ctx.arc(2, 0, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+}

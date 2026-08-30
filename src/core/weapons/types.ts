@@ -4,11 +4,15 @@ export type WeaponId =
   | 'bazooka'
   | 'homing_missile'
   | 'grenade'
+  | 'cluster_bomb'
+  | 'cluster_fragment'
   | 'holy_grenade'
   | 'banana_bomb'
   | 'cluster_banana'
   | 'dynamite'
   | 'shotgun'
+  | 'handgun'
+  | 'uzi'
   | 'homing_pigeon'
   | 'prod'
   | 'baseball_bat'
@@ -25,6 +29,7 @@ export type WeaponId =
 
 export type WeaponCategory =
   | 'EXPLOSIVE'
+  | 'BALLISTIC'
   | 'MELEE'
   | 'AIR_SUPPORT'
   | 'SPECIAL'
