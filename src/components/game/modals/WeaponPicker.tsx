@@ -65,7 +65,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
       <div
         className={`bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-[0_0_50px_rgba(124,58,237,0.25)] pointer-events-auto ${
           isTouch
-            ? 'max-w-lg p-3 sm:p-4 space-y-2.5 h-[88vh] sm:h-[540px] max-h-[92vh]'
+            ? 'w-[95vw] max-w-4xl landscape:max-w-5xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 h-[92vh] sm:h-[540px] max-h-[96vh]'
             : 'max-w-5xl p-5 space-y-3.5 h-[540px] max-h-[90vh]'
         }`}
       >
@@ -102,11 +102,11 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           allWeapons={allWeapons}
         />
 
-        {/* Weapons Grid: 4 columns on desktop so 8 weapons fit in 2 rows without scrolling */}
+        {/* Weapons Grid: 2 cols on mobile portrait, 3-4 cols on mobile landscape, 4 cols on desktop */}
         <div
           className={`flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar content-start ${
             isTouch
-              ? 'grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-2'
+              ? 'grid grid-cols-2 landscape:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2'
               : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5'
           }`}
         >
