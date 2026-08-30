@@ -27,7 +27,7 @@ export const WeaponCategoryTabs: React.FC<WeaponCategoryTabsProps> = ({
     return (
       <div className="flex overflow-x-auto no-scrollbar gap-1.5 border-b border-zinc-800/80 pb-2 shrink-0">
         {WEAPON_CATEGORIES.map((cat) => {
-          const count = allWeapons.filter((w) => w.category === cat.id).length;
+          const count = allWeapons.filter((w) => w.category === cat.id && w.craftable !== false).length;
           const isActive = activeCategory === cat.id;
           return (
             <button
@@ -59,7 +59,7 @@ export const WeaponCategoryTabs: React.FC<WeaponCategoryTabsProps> = ({
   return (
     <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
       {WEAPON_CATEGORIES.map((cat, idx) => {
-        const count = allWeapons.filter((w) => w.category === cat.id).length;
+        const count = allWeapons.filter((w) => w.category === cat.id && w.craftable !== false).length;
         const isActive = activeCategory === cat.id;
         const shortcut = azertyShortcuts[idx] || `${idx + 1}`;
         return (
