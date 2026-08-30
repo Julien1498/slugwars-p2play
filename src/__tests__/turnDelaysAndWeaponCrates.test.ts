@@ -8,7 +8,7 @@ import {
 } from '../core/engine/supplyDropManager';
 import { GameState } from '../core/types';
 
-describe('Weapon Turn Delays & Supply Crates (Worms Standard)', () => {
+describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
   let engine: SlugWarsEngine;
 
   beforeEach(() => {

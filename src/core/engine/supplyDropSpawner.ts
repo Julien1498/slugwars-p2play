@@ -9,7 +9,7 @@ export function pickRandomCrateContent(): {
   weaponCount?: number;
 } {
   const roll = Math.random();
-  // 40% Health, 40% Weapons, 20% Utilities (Worms standard)
+  // 40% Health, 40% Weapons, 20% Utilities
   if (roll < 0.4) {
     return { crateType: 'health', healAmount: 50 };
   } else if (roll < 0.8) {

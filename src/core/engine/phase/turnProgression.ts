@@ -104,7 +104,7 @@ export function advanceToNextTurn(
   state.turnCount = (state.turnCount || 0) + 1;
   callbacks.randomizeWind(state);
 
-  // 7. Chance of procedural turn supply crate drop (25% chance, Worms standard)
+  // 7. Chance of procedural turn supply crate drop (25% chance)
   if (Math.random() < 0.25) {
     spawnTurnSupplyCrate(state, terrain.data.width, callbacks.addLog);
   }

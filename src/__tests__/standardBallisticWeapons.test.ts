@@ -6,7 +6,7 @@ import { updateProjectilesInTick } from '../core/engine/engineTickProjectiles';
 import { GameState, ActiveProjectile } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
 
-describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () => {
+describe('Standard Ballistic & Explosive Weapons (Standard Artillery)', () => {
   let engine: SlugWarsEngine;
 
   beforeEach(() => {
@@ -29,8 +29,8 @@ describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () =>
     }
   });
 
-  describe('1. Weapon Definitions & Worms W.M.D Parameters', () => {
-    it('defines Cluster Bomb (cluster_bomb) with exact WMD stats', () => {
+  describe('1. Weapon Definitions & Artillery Parameters', () => {
+    it('defines Cluster Bomb (cluster_bomb) with standard stats', () => {
       const weapon = getWeapon('cluster_bomb');
       expect(weapon).toBeDefined();
       expect(weapon.name).toBe('Grenade à Fragmentation');
@@ -53,7 +53,7 @@ describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () =>
       expect(fragment.bounces).toBe(true);
     });
 
-    it('defines Handgun (handgun) with exact WMD stats', () => {
+    it('defines Handgun (handgun) with standard stats', () => {
       const weapon = getWeapon('handgun');
       expect(weapon).toBeDefined();
       expect(weapon.name).toBe('Pistolet');
@@ -66,7 +66,7 @@ describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () =>
       expect(weapon.bounces).toBe(false);
     });
 
-    it('defines Uzi (uzi) with exact WMD stats', () => {
+    it('defines Uzi (uzi) with standard stats', () => {
       const weapon = getWeapon('uzi');
       expect(weapon).toBeDefined();
       expect(weapon.name).toBe('Pistolet-Mitrailleur');
@@ -358,10 +358,14 @@ describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () =>
       engine.state.phase = 'AIMING';
 
       // 3. Uzi
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      activeSlug.facing = 'right';
+      activeSlug.vx = 0;
       expect(engine.selectWeapon('uzi')).toBe(true);
       expect(engine.fireWeapon()).toBe(true);
       expect(engine.state.projectiles.length).toBe(10);
       expect(engine.state.projectiles[0].weaponId).toBe('uzi');
+      expect(activeSlug.vx).toBeLessThan(0); // Backward shooter recoil!
     });
   });
 });

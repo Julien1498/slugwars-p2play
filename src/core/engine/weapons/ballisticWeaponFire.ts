@@ -26,6 +26,17 @@ export function fireBallisticProjectiles(
 
   state.projectiles.push(...projs);
 
+  // Apply backward physical recoil kick to shooter on heavy rapid firearms
+  if (weapon.id === 'uzi') {
+    const dirX = activeSlug.facing === 'right' ? 1 : -1;
+    activeSlug.vx -= dirX * 3.6;
+    activeSlug.vy = Math.min(activeSlug.vy, -1.6);
+  } else if (weapon.id === 'shotgun') {
+    const dirX = activeSlug.facing === 'right' ? 1 : -1;
+    activeSlug.vx -= dirX * 2.2;
+    activeSlug.vy = Math.min(activeSlug.vy, -1.2);
+  }
+
   if (
     weapon.id === 'dynamite' ||
     weapon.id === 'holy_grenade' ||
