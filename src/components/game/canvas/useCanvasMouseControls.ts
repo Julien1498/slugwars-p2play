@@ -27,6 +27,7 @@ export interface UseCanvasMouseControlsProps {
   onStartCharge?: (target: Vector2D) => void;
   onReleaseCharge?: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
+  onDetonate?: () => void;
 }
 
 export function useCanvasMouseControls({
@@ -50,6 +51,7 @@ export function useCanvasMouseControls({
   onStartCharge,
   onReleaseCharge,
   onUpdateAim,
+  onDetonate,
 }: UseCanvasMouseControlsProps) {
   const lastPlacementTimeRef = useRef<number>(0);
   const girderDragOriginRef = useRef<Vector2D | null>(null);
@@ -181,6 +183,15 @@ export function useCanvasMouseControls({
           lastPlacementTimeRef.current = Date.now();
           onPlaceSlug?.({ x: mouseX, y: mouseY });
         }
+        return;
+      }
+
+      // If a controllable/detonatable sheep is active, click detonates it
+      const hasActiveSheep = curGameState.projectiles?.some(
+        (p) => (p.weaponId === 'super_sheep' || p.weaponId === 'sheep') && p.ownerSlugId === curGameState.activeSlugId
+      );
+      if (hasActiveSheep) {
+        onDetonate?.();
         return;
       }
 

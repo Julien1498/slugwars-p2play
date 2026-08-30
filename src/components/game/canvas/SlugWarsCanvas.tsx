@@ -21,6 +21,7 @@ export interface SlugWarsCanvasProps {
   onStartCharge?: (target: Vector2D) => void;
   onReleaseCharge?: (params: { x: number; y: number; aimAngle: number; aimPower: number; facing: 'left' | 'right' }) => void;
   onUpdateAim?: (angle: number, power: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
+  onDetonate?: () => void;
 }
 
 const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
@@ -35,6 +36,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   onStartCharge,
   onReleaseCharge,
   onUpdateAim,
+  onDetonate,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
@@ -161,6 +163,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
     onStartCharge,
     onReleaseCharge,
     onUpdateAim,
+    onDetonate,
   });
 
   // 5. Canvas Render Loop Hook

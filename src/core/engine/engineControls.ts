@@ -143,7 +143,7 @@ export function detonateSheep(
   terrain: DestructibleTerrain,
   carveCrater: (x: number, y: number, r: number) => void
 ): boolean {
-  const sheepIdx = state.projectiles.findIndex((p) => p.weaponId === 'super_sheep');
+  const sheepIdx = state.projectiles.findIndex((p) => p.weaponId === 'super_sheep' || p.weaponId === 'sheep');
   if (sheepIdx === -1) return false;
 
   const sheep = state.projectiles[sheepIdx];
@@ -153,7 +153,7 @@ export function detonateSheep(
 
   state.projectiles.splice(sheepIdx, 1);
 
-  const weapon = getWeapon('super_sheep');
+  const weapon = getWeapon(sheep.weaponId);
   carveCrater(sheep.x, sheep.y, weapon.radius);
   state.explosions.push({
     id: `ex_${Date.now()}_${Math.random()}`,

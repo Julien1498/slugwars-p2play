@@ -123,6 +123,12 @@ describe('Data-Driven Input Engine', () => {
       expect(resolveKeyToAction('r', 'SLUG_GROUND')).toBe('ROTATE_GIRDER');
     });
 
+    it('maps detonation to Space and Enter in STEERABLE_PROJECTILE context', () => {
+      expect(resolveKeyToAction(' ', 'STEERABLE_PROJECTILE')).toBe('DETONATE');
+      expect(resolveKeyToAction('Spacebar', 'STEERABLE_PROJECTILE')).toBe('DETONATE');
+      expect(resolveKeyToAction('enter', 'STEERABLE_PROJECTILE')).toBe('DETONATE');
+    });
+
     it('maps fuse timer settings from 1 to 5 across numerical and French AZERTY keys', () => {
       expect(resolveKeyToAction('1', 'SLUG_GROUND')).toBe('SET_FUSE_1');
       expect(resolveKeyToAction('&', 'SLUG_GROUND')).toBe('SET_FUSE_1');

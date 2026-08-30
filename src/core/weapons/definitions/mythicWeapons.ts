@@ -39,6 +39,7 @@ export const sheepWeapon: WeaponDefinition = {
           facing: isLeft ? 'left' : 'right',
           walkerType: 'sheep',
           jumpCooldown: 0,
+          createdAt: Date.now(),
         },
       },
     ];

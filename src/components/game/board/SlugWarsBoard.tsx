@@ -86,7 +86,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const isMyTurn = gameState.teams.length <= 1
     ? true
     : !!(activeTeam && (activeTeam.isHost ? isHost : myPeerId === activeTeam.id));
-  const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep');
+  const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep' || p.weaponId === 'sheep');
 
   const mobileTeamStats = useMemo(() => {
     return computeTeamStats(gameState);
@@ -167,6 +167,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             onStartCharge={onStartCharge}
             onReleaseCharge={onReleaseCharge}
             onUpdateAim={onUpdateAim}
+            onDetonate={onDetonate}
           />
         </Profiler>
       </div>

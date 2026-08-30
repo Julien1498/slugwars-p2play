@@ -270,6 +270,28 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(engine.state.projectiles.some((p) => p.weaponId === 'super_sheep')).toBe(false);
   });
 
+  it('allows detonating walking sheep on command at any time', () => {
+    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
+    engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
+    engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
+    engine.startGame();
+    engine.state.phase = 'AIMING';
+
+    const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId)!;
+    activeTeam.inventory['sheep'] = 1;
+    engine.selectWeapon('sheep');
+
+    engine.fireWeapon();
+    const sheep = engine.state.projectiles.find((p) => p.weaponId === 'sheep')!;
+    expect(sheep).toBeTruthy();
+
+    // Detonate sheep manually after arming window
+    sheep.behaviorData = { createdAt: Date.now() - 500 };
+    expect(engine.detonateSheep()).toBe(true);
+    expect(engine.state.explosions.length).toBeGreaterThanOrEqual(1);
+    expect(engine.state.projectiles.some((p) => p.weaponId === 'sheep')).toBe(false);
+  });
+
   it('triggers landmine on proximity (<25px) and counts down to blast', () => {
     const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);

@@ -26,7 +26,7 @@ export const DEFAULT_KEYMAP: KeyBindingMap = {
 
   // Combat & Detonation
   FIRE_OR_CHARGE: ['enter'],
-  DETONATE: [' ', 'spacebar'],
+  DETONATE: [' ', 'spacebar', 'enter'],
 
   // Utilities & Settings
   TOGGLE_WEAPON_PICKER: ['tab', 'i'],
