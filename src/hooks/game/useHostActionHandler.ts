@@ -1,11 +1,10 @@
 import { useCallback, MutableRefObject } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
-import { SlugWarsNetworkMessage, sanitizeGameState } from '../../network/protocol';
+import { SlugWarsNetworkMessage, sanitizeGameState, TEAM_COLORS } from '../../network/protocol';
 import { netMetrics } from '../../core/networkMetrics';
 import { GameState } from '../../core/types';
 import { PeerManagerLike } from 'p2play-core';
-
-const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+import { resolveLobbyPlayerName } from './useHostLobbySync';
 
 export function processHostAction(
   engine: SlugWarsEngine,
@@ -27,22 +26,21 @@ export function processHostAction(
     switch (msg.actionName) {
       case 'JOIN_GAME': {
         const requestedName = msg.payload?.name?.trim();
-            const isGeneric = (n?: string) => !n || n.startsWith('Joueur-') || n.startsWith('Joueur ') || n.startsWith('Player-');
-            const trusted = (!isGeneric(requestedName) ? requestedName : null) || peerManager.getTrustedUsername?.(playerId) || requestedName || `Limace ${playerId.slice(0, 4)}`;
-            const existing = engine.state.teams.find((t) => t.id === playerId);
-            if (existing) {
-              if (requestedName && !isGeneric(requestedName)) existing.name = requestedName;
-              if (msg.payload?.avatar) existing.avatar = msg.payload.avatar;
-            } else {
-              const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
-              engine.addTeam(
-                playerId,
-                trusted,
-                msg.payload?.color || TEAM_COLORS[colorIdx],
-                msg.payload?.avatar || '🐌',
-                playerId === hostId
-              );
-            }
+        const trusted = resolveLobbyPlayerName(requestedName, peerManager.getTrustedUsername?.(playerId), playerId);
+        const existing = engine.state.teams.find((t) => t.id === playerId);
+        if (existing) {
+          if (requestedName && !requestedName.startsWith('Joueur-')) existing.name = requestedName;
+          if (msg.payload?.avatar) existing.avatar = msg.payload.avatar;
+        } else {
+          const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
+          engine.addTeam(
+            playerId,
+            trusted,
+            msg.payload?.color || TEAM_COLORS[colorIdx],
+            msg.payload?.avatar || '🐌',
+            playerId === hostId
+          );
+        }
             broadcastState(engine.state);
             break;
           }
@@ -174,7 +172,7 @@ export function processHostAction(
             break;
           case 'REQUEST_FULL_STATE': {
             if (engine.state.phase === 'LOBBY' && !engine.state.teams.some((t) => t.id === playerId)) {
-              const trusted = peerManager.getTrustedUsername?.(playerId) || `Limace ${playerId.slice(0, 4)}`;
+              const trusted = resolveLobbyPlayerName(undefined, peerManager.getTrustedUsername?.(playerId), playerId);
               const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
               engine.addTeam(playerId, trusted, TEAM_COLORS[colorIdx], '🐌', playerId === hostId);
               broadcastState(engine.state);

@@ -1,11 +1,79 @@
 import { useRef, useCallback } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
 import { GameState } from '../../core/types';
-import { SlugWarsNetworkMessage } from '../../network/protocol';
+import { SlugWarsNetworkMessage, SlugWarsActionType, SlugWarsNetworkPayload } from '../../network/protocol';
 import { netMetrics } from '../../core/networkMetrics';
 import { sfx } from '../../core/audio';
 import { type PeerManagerLike } from 'p2play-core';
-import { applyOptimisticAction } from './gameActionUtils';
+
+export function applyOptimisticAction(
+  state: GameState,
+  actionName: SlugWarsActionType | string,
+  payload: SlugWarsNetworkPayload | any,
+  myPeerId: string
+): boolean {
+  const isMyTurn =
+    myPeerId &&
+    state.activeTeamId === myPeerId &&
+    (state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT');
+
+  const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
+  if (!activeSlug) return false;
+
+  if (actionName === 'AIM') {
+    if (payload?.aimAngle !== undefined) activeSlug.aimAngle = payload.aimAngle;
+    if (payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
+      activeSlug.aimPower = payload.aimPower;
+    }
+    if (payload?.facing !== undefined) activeSlug.facing = payload.facing;
+    if (payload?.targetPoint !== undefined) activeSlug.currentTargetPoint = payload.targetPoint;
+    return true;
+  }
+  if (actionName === 'SELECT_WEAPON') {
+    if (payload?.weaponId) {
+      activeSlug.selectedWeaponId = payload.weaponId;
+      return true;
+    }
+  }
+  if (actionName === 'SET_FUSE_TIMER') {
+    if (payload?.seconds !== undefined) {
+      activeSlug.fuseTimerSec = payload.seconds;
+      return true;
+    }
+  }
+  if (actionName === 'START_CHARGE') {
+    activeSlug.isChargingPower = true;
+    activeSlug.aimPower = 5;
+    if (payload?.targetPoint) activeSlug.currentTargetPoint = payload.targetPoint;
+    return true;
+  }
+  if (actionName === 'FIRE') {
+    activeSlug.isChargingPower = false;
+    if (activeSlug.selectedWeaponId === 'blowtorch') {
+      activeSlug.isBlowtorching = true;
+    }
+    return true;
+  }
+  if (actionName === 'RELEASE_CHARGE') {
+    activeSlug.isChargingPower = false;
+    if (activeSlug.isBlowtorching) {
+      activeSlug.isBlowtorching = false;
+    }
+    return true;
+  }
+  if (actionName === 'START_MOVE') {
+    if (payload?.dir) {
+      activeSlug.movingDir = payload.dir;
+      activeSlug.facing = payload.dir;
+      return true;
+    }
+  }
+  if (actionName === 'STOP_MOVE') {
+    activeSlug.movingDir = null;
+    return true;
+  }
+  return false;
+}
 
 interface UseActionDispatcherOptions {
   engineRef: React.MutableRefObject<SlugWarsEngine>;

@@ -1,5 +1,7 @@
 import { GameState, Vector2D } from '../core/types';
 
+export const TEAM_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
 export type SlugWarsActionType =
   | 'JOIN_GAME'
   | 'CHANGE_CONFIG'

@@ -13,7 +13,7 @@ import { useHostPhysicsLoop } from './game/useHostPhysicsLoop';
 import { useHostLobbySync } from './game/useHostLobbySync';
 import { useVisibilityRecovery } from './game/useVisibilityRecovery';
 import { useActionDispatcher } from './game/useActionDispatcher';
-import { TEAM_COLORS } from './game/gameActionUtils';
+import { TEAM_COLORS } from '../network/protocol';
 import { shouldUpdateReactUi } from '../core/uiSyncUtils';
 
 export function useGame(options?: {

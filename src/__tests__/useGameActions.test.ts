@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { GameState } from '../core/types';
-import {
-  applyOptimisticAction,
-  interpolateGuestLocalState,
-  resolveLobbyPlayerName,
-  TEAM_COLORS,
-} from '../hooks/game/gameActionUtils';
+import { applyOptimisticAction } from '../hooks/game/useActionDispatcher';
+import { interpolateGuestLocalState } from '../hooks/game/useGuestLocalTimer';
+import { resolveLobbyPlayerName } from '../hooks/game/useHostLobbySync';
+import { TEAM_COLORS } from '../network/protocol';
+import { stepSupplyCrateDescent } from '../core/engine/supplyDropManager';
 
 function createMockGameState(): GameState {
   return {
@@ -138,7 +137,7 @@ describe('useGame: Optimistic Client Prediction & Local Guest Interpolation', ()
     });
   });
 
-  describe('interpolateGuestLocalState()', () => {
+  describe('interpolateGuestLocalState() & stepSupplyCrateDescent()', () => {
     it('decrements turnTimer smoothly during AIMING phase and clamps at 0', () => {
       const state = createMockGameState();
       state.turnTimer = 0.02;
@@ -201,6 +200,15 @@ describe('useGame: Optimistic Client Prediction & Local Guest Interpolation', ()
       expect(waterState.supplyCrates[0].isLanded).toBe(true);
       expect(waterState.supplyCrates[0].vy).toBe(0);
     });
+
+    it('executes core stepSupplyCrateDescent cleanly', () => {
+      const crate = { id: 'c_test', x: 100, y: 50, vy: 1.8, isLanded: false, crateType: 'health' as const };
+      const moved = stepSupplyCrateDescent(crate, 4.0, () => false, 500);
+      expect(moved).toBe(true);
+      expect(crate.x).toBeCloseTo(100.6, 1);
+      expect(crate.y).toBeCloseTo(51.8, 1);
+      expect(crate.isLanded).toBe(false);
+    });
   });
 
   describe('resolveLobbyPlayerName() & TEAM_COLORS', () => {
@@ -218,7 +226,7 @@ describe('useGame: Optimistic Client Prediction & Local Guest Interpolation', ()
       expect(resolveLobbyPlayerName('Joueur 1', 'Joueur-8821', 'f8b2c4e1')).toBe('Limace f8b2');
     });
 
-    it('provides 6 distinct valid hex colors for teams', () => {
+    it('provides 6 distinct valid hex colors for teams in protocol', () => {
       expect(TEAM_COLORS).toHaveLength(6);
       expect(new Set(TEAM_COLORS).size).toBe(6);
       TEAM_COLORS.forEach((color) => expect(color).toMatch(/^#[0-9a-f]{6}$/i));

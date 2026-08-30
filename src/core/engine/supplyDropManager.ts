@@ -88,6 +88,27 @@ export function updateMines(
   state.mines = remainingMines;
 }
 
+export const SUPPLY_CRATE_WIND_FACTOR = 0.15;
+export const SUPPLY_CRATE_DEFAULT_FALL_SPEED = 1.8;
+
+export function stepSupplyCrateDescent(
+  crate: SupplyCrate,
+  wind: number,
+  isSolid: (x: number, y: number) => boolean,
+  waterLevel: number
+): boolean {
+  if (crate.isLanded) return false;
+
+  crate.x += wind * SUPPLY_CRATE_WIND_FACTOR;
+  crate.y += crate.vy || SUPPLY_CRATE_DEFAULT_FALL_SPEED;
+
+  if (isSolid(crate.x, crate.y + 10) || crate.y >= waterLevel - 15) {
+    crate.isLanded = true;
+    crate.vy = 0;
+  }
+  return true;
+}
+
 export function updateSupplyCrates(
   state: GameState,
   terrain: DestructibleTerrain,
@@ -151,13 +172,12 @@ export function updateSupplyCrates(
     }
 
     if (!crate.isLanded) {
-      crate.x += state.wind * 0.15;
-      crate.y += crate.vy;
-
-      if (terrain.isSolid(crate.x, crate.y + 10) || crate.y >= terrain.data.waterLevel - 15) {
-        crate.isLanded = true;
-        crate.vy = 0;
-      }
+      stepSupplyCrateDescent(
+        crate,
+        state.wind,
+        (x, y) => terrain.isSolid(x, y),
+        terrain.data.waterLevel
+      );
     }
 
     let collected = false;
