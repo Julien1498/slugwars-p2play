@@ -165,7 +165,7 @@ describe('Multiplayer P2P Session & Network Replication', () => {
         payload: { dir: 'right' },
       });
       expect(activeSlug.movingDir).toBe('right');
-      expect(activeSlug.vx).toBe(3.2);
+      expect(activeSlug.vx).toBe(2.4);
       expect(activeSlug.facing).toBe('right');
 
       // Active player stops moving

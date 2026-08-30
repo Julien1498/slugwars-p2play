@@ -159,9 +159,9 @@ export type MapTheme =
 export type MapSize = 'SMALL' | 'NORMAL' | 'LARGE';
 
 export const MAP_SIZE_CONFIGS: Record<MapSize, { width: number; height: number; label: string; desc: string; icon: string }> = {
-  SMALL: { width: 1000, height: 600, label: 'Petite', desc: '1000×600 px - Combats rapides & intenses', icon: '⚡' },
-  NORMAL: { width: 1400, height: 800, label: 'Normale', desc: '1400×800 px - Équilibrée et tactique', icon: '⚖️' },
-  LARGE: { width: 2000, height: 1000, label: 'Grande', desc: '2000×1000 px - Épique avec vastes reliefs', icon: '🗺️' },
+  SMALL: { width: 1400, height: 800, label: 'Petite', desc: '1400×800 px - Combats rapides & intenses', icon: '⚡' },
+  NORMAL: { width: 2000, height: 1000, label: 'Normale', desc: '2000×1000 px - Équilibrée et tactique', icon: '⚖️' },
+  LARGE: { width: 2600, height: 1200, label: 'Grande', desc: '2600×1200 px - Épique avec vastes reliefs', icon: '🗺️' },
 };
 
 export type DayNightCycle = 'DAY' | 'NIGHT';
