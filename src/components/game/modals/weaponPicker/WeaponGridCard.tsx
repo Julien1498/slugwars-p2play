@@ -35,7 +35,7 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
           isSelected
             ? 'bg-gradient-to-br from-violet-950 to-purple-950/90 border-violet-400 ring-2 ring-violet-500/70 shadow-[0_0_20px_rgba(139,92,246,0.4)]'
             : isLocked
-            ? 'bg-zinc-950/60 border-zinc-800/40 text-zinc-500 opacity-50 cursor-not-allowed'
+            ? 'bg-zinc-950/80 border-dashed border-zinc-700/60 text-zinc-500 opacity-60 cursor-not-allowed'
             : isOutOfAmmo
             ? 'bg-zinc-950/40 border-zinc-800/60 text-zinc-600 opacity-40 cursor-not-allowed'
             : 'bg-zinc-900/80 border-zinc-800/80 hover:border-violet-500/50 hover:bg-zinc-800/90 text-zinc-200'
@@ -47,13 +47,19 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
           </div>
         )}
 
-        <div className="w-10 h-10 rounded-lg bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+        <div
+          className={`w-10 h-10 rounded-lg bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shrink-0 shadow-inner ${
+            isLocked ? 'grayscale opacity-50' : ''
+          }`}
+        >
           {weapon.icon}
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-xs text-zinc-100 truncate">{weapon.name}</span>
+            <span className={`font-bold text-xs truncate ${isLocked ? 'text-zinc-400' : 'text-zinc-100'}`}>
+              {weapon.name}
+            </span>
             {weapon.craftable && (
               <span className="text-[8px] font-black uppercase bg-amber-950/90 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded shrink-0">
                 WMD
@@ -82,7 +88,7 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
 
         <div className="text-right shrink-0">
           {isLocked ? (
-            <div className="text-[10px] font-black px-1.5 py-0.5 rounded-lg border bg-amber-950/60 border-amber-500/40 text-amber-300 flex items-center gap-0.5">
+            <div className="text-[10px] font-black px-1.5 py-0.5 rounded-lg border bg-amber-950/70 border-amber-500/50 text-amber-300 flex items-center gap-0.5 shadow-sm">
               <Lock className="w-2.5 h-2.5" /> T{turnDelay}
             </div>
           ) : (
@@ -107,14 +113,14 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
     <button
       disabled={isDisabled}
       onClick={onSelect}
-      className={`p-3 rounded-2xl border text-left flex flex-col justify-between min-h-[148px] h-full transition-all relative overflow-hidden group cursor-pointer ${
+      className={`p-3 rounded-2xl border text-left flex flex-col justify-between min-h-[148px] h-full transition-all relative overflow-hidden group ${
         isSelected
           ? 'bg-gradient-to-b from-violet-900/60 to-purple-950/80 border-violet-400 ring-2 ring-violet-500/80 shadow-[0_0_25px_rgba(139,92,246,0.4)]'
           : isLocked
-          ? 'bg-zinc-950/60 border-zinc-800/40 text-zinc-500 opacity-55 cursor-not-allowed'
+          ? 'bg-zinc-950/70 border-dashed border-zinc-700/60 text-zinc-500 opacity-60 cursor-not-allowed'
           : isOutOfAmmo
           ? 'bg-zinc-950/50 border-zinc-800/40 text-zinc-600 opacity-40 cursor-not-allowed'
-          : 'bg-zinc-900/80 border-zinc-800/90 hover:border-violet-500/60 hover:bg-zinc-850 hover:shadow-lg text-zinc-200'
+          : 'bg-zinc-900/80 border-zinc-800/90 hover:border-violet-500/60 hover:bg-zinc-850 hover:shadow-lg text-zinc-200 cursor-pointer'
       }`}
     >
       {isSelected && (
@@ -125,11 +131,15 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <div className="w-10 h-10 rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner group-hover:scale-105 transition-transform shrink-0">
+          <div
+            className={`w-10 h-10 rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner shrink-0 ${
+              isLocked ? 'grayscale opacity-50' : 'group-hover:scale-105 transition-transform'
+            }`}
+          >
             {weapon.icon}
           </div>
           {isLocked ? (
-            <div className="text-[10px] font-black px-2 py-0.5 rounded-lg border bg-amber-950/70 border-amber-500/50 text-amber-300 flex items-center gap-1">
+            <div className="text-[10px] font-black px-2 py-0.5 rounded-lg border bg-amber-950/80 border-amber-500/60 text-amber-300 flex items-center gap-1 shadow-sm">
               <Lock className="w-3 h-3 text-amber-400" /> Tour {turnDelay}
             </div>
           ) : (
@@ -148,7 +158,11 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 mb-0.5">
-          <h4 className="font-extrabold text-xs text-zinc-100 group-hover:text-white transition-colors truncate">
+          <h4
+            className={`font-extrabold text-xs truncate ${
+              isLocked ? 'text-zinc-400' : 'text-zinc-100 group-hover:text-white transition-colors'
+            }`}
+          >
             {weapon.name}
           </h4>
           {weapon.craftable && (
@@ -165,9 +179,9 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
 
       <div className="pt-1.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] font-medium text-zinc-400 shrink-0">
         {isLocked ? (
-          <div className="text-amber-400/90 font-bold flex items-center gap-1">
+          <div className="text-amber-400 font-bold flex items-center gap-1">
             <Lock className="w-3 h-3 text-amber-400" />
-            <span>Déblocage dans {roundsRemaining} tour{roundsRemaining > 1 ? 's' : ''}</span>
+            <span>Disponible au Tour {turnDelay} ({roundsRemaining} rest.)</span>
           </div>
         ) : (
           <>

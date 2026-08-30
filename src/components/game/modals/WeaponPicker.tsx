@@ -11,6 +11,7 @@ interface WeaponPickerProps {
   selectedWeaponId: string;
   turnCount?: number;
   teamsCount?: number;
+  turnDelaysEnabled?: boolean;
   onSelectWeapon: (weaponId: string) => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
   selectedWeaponId,
   turnCount = 1,
   teamsCount = 2,
+  turnDelaysEnabled = true,
   onSelectWeapon,
   onClose,
 }) => {
@@ -121,8 +123,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
             const count = inventory[w.id] ?? 0;
             const isSelected = selectedWeaponId === w.id;
             const turnDelay = w.turnDelay ?? 0;
-            const hasCrateAmmo = count > 0 && turnDelay > 0;
-            const isLocked = turnDelay > 0 && completedRounds < turnDelay && !hasCrateAmmo;
+            const isLocked = turnDelaysEnabled && turnDelay > 0 && completedRounds < turnDelay;
             const roundsRemaining = Math.max(0, turnDelay - completedRounds);
 
             return (

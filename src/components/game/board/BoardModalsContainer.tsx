@@ -54,6 +54,7 @@ export const BoardModalsContainer: React.FC<BoardModalsContainerProps> = ({
             selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
             turnCount={gameState.turnCount}
             teamsCount={gameState.teams.length}
+            turnDelaysEnabled={gameState.config?.turnDelaysEnabled !== false}
             onSelectWeapon={(wId) => {
               sfx.play('tick');
               onSelectWeapon(wId);
