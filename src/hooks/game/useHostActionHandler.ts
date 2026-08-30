@@ -114,6 +114,11 @@ export function processHostAction(
               engine.releaseCharge(msg.payload?.targetPoint);
             }
             break;
+          case 'DETONATE':
+            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
+              engine.detonateSheep();
+            }
+            break;
           case 'AIM': {
             if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
               const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
