@@ -255,13 +255,83 @@ describe('Standard Ballistic & Explosive Weapons (Worms W.M.D Standards)', () =>
       expect(craters.length).toBe(1);
       expect(craters[0].r).toBe(35);
 
-      // 5 cluster fragments spawned into state.projectiles
+      // 5 cluster fragments spawned into state.projectiles with regular upward fan
       expect(state.projectiles.length).toBe(5);
       for (const frag of state.projectiles) {
         expect(frag.weaponId).toBe('cluster_fragment');
         expect(frag.bounces).toBe(true);
-        expect(frag.fuseTimerMs).toBeGreaterThan(0);
+        expect(frag.fuseTimerMs).toBe(1600);
+        expect(frag.vy).toBeLessThan(0); // Upward fountain arc
       }
+    });
+
+    it('imparts directional kinetic knockback to slugs hit by handgun and uzi bullets', () => {
+      const terrain = createFlatTerrain();
+      const state: GameState = {
+        phase: 'PROJECTILE_ACTIVE',
+        activeTeamId: 'team_1',
+        activeSlugId: 'slug_1',
+        turnTimer: 45,
+        turnCount: 1,
+        wind: 0,
+        config: {
+          turnDuration: 45,
+          slugsPerTeam: 1,
+          slugHp: 100,
+          mapTheme: 'ISLAND',
+          mapSeed: 42,
+          windEnabled: true,
+          vehiclesEnabled: true,
+          weaponSetId: 'CLASSIC',
+        },
+        teams: [{ id: 'team_1', name: 'Red', color: '#ef4444', avatar: '🐌', isHost: true, inventory: {} }],
+        slugs: [
+          {
+            id: 'victim_slug',
+            teamId: 'team_2',
+            name: 'Enemy Slug',
+            x: 200,
+            y: 248,
+            vx: 0,
+            vy: 0,
+            hp: 100,
+            maxHp: 100,
+            facing: 'left',
+            aimAngle: 0,
+            aimPower: 50,
+            selectedWeaponId: 'bazooka',
+            isAlive: true,
+            isPlaced: true,
+          },
+        ],
+        projectiles: [
+          {
+            id: 'bullet_1',
+            weaponId: 'handgun',
+            x: 200,
+            y: 240,
+            vx: 26, // Flying rightwards
+            vy: 0,
+            radius: 2,
+            bounces: false,
+            windAffected: false,
+            ownerSlugId: 'slug_1',
+          },
+        ],
+        explosions: [],
+        floatingDamages: [],
+        particles: [],
+        supplyCrates: [],
+        mines: [],
+        helicopters: [],
+        journal: [],
+      };
+
+      updateProjectilesInTick(state, terrain, () => {}, () => {});
+
+      const victim = state.slugs.find((s) => s.id === 'victim_slug')!;
+      expect(victim.vx).toBeGreaterThan(0); // Pushed rightwards!
+      expect(victim.vy).toBeLessThan(0); // Popped up slightly to prevent floor-clamping
     });
   });
 

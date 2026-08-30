@@ -85,7 +85,20 @@ export function updateProjectilePhysics(
 
     const slugRadius = 10;
     const slugCenterY = slug.y - 8;
-    const distToSlug = Math.hypot(nextX - slug.x, nextY - slugCenterY);
+
+    // Continuous segment-to-point collision to prevent tunneling on fast bullets
+    const segDx = nextX - proj.x;
+    const segDy = nextY - proj.y;
+    const segLenSq = segDx * segDx + segDy * segDy;
+    let distToSlug: number;
+    if (segLenSq === 0) {
+      distToSlug = Math.hypot(nextX - slug.x, nextY - slugCenterY);
+    } else {
+      const t = Math.max(0, Math.min(1, ((slug.x - proj.x) * segDx + (slugCenterY - proj.y) * segDy) / segLenSq));
+      const closestX = proj.x + t * segDx;
+      const closestY = proj.y + t * segDy;
+      distToSlug = Math.hypot(closestX - slug.x, closestY - slugCenterY);
+    }
 
     if (distToSlug <= proj.radius + slugRadius) {
       if (impact === 'REST') {

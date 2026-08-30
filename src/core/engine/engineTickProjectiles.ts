@@ -55,21 +55,37 @@ export function updateProjectilesInTick(
         });
       }
 
+      if (proj.weaponId === 'handgun' || proj.weaponId === 'uzi' || proj.weaponId === 'shotgun') {
+        const dirX = Math.sign(proj.vx) || 1;
+        const pushForce = proj.weaponId === 'handgun' ? 3.8 : proj.weaponId === 'uzi' ? 3.2 : 4.5;
+        const popUp = proj.weaponId === 'handgun' ? -2.2 : proj.weaponId === 'uzi' ? -1.8 : -2.5;
+
+        for (const dm of expRes.damageEvents) {
+          const hitSlug = state.slugs.find((s) => s.id === dm.slugId);
+          if (hitSlug && hitSlug.isAlive) {
+            hitSlug.vx += dirX * pushForce;
+            hitSlug.vy = Math.min(hitSlug.vy, popUp);
+          }
+        }
+      }
+
       if (proj.weaponId === 'cluster_bomb') {
+        // Regular upward fountain arc in 5 symmetric angles (-126° to -54°)
+        const fanAngles = [-2.2, -1.88, -1.57, -1.26, -0.94];
         for (let i = 0; i < 5; i++) {
-          const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-          const speed = 3.5 + Math.random() * 3.5;
+          const angle = fanAngles[i];
+          const speed = 5.2 + (Math.random() - 0.5) * 0.4;
           remaining.push({
             id: `proj_cluster_frag_${now}_${i}_${Math.random()}`,
             weaponId: 'cluster_fragment',
             x: pt.x,
-            y: pt.y - 4,
+            y: pt.y - 6,
             vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 2.5,
+            vy: Math.sin(angle) * speed,
             radius: 3.5,
             bounces: true,
             windAffected: false,
-            fuseTimerMs: 1500 + Math.random() * 700,
+            fuseTimerMs: 1600, // Synchronized fuse for predictable carpet bombing
             ownerSlugId: proj.ownerSlugId,
           });
         }
