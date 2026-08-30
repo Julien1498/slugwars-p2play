@@ -128,7 +128,7 @@ export function steerSheep(state: GameState, dir: 'left' | 'right'): boolean {
   const sheep = state.projectiles.find((p) => p.weaponId === 'super_sheep');
   if (!sheep) return false;
 
-  const angleDelta = (dir === 'left' ? -14 : 14) * (Math.PI / 180);
+  const angleDelta = (dir === 'left' ? -7.5 : 7.5) * (Math.PI / 180);
   const currentAngle = Math.atan2(sheep.vy, sheep.vx);
   const newAngle = currentAngle + angleDelta;
   const speed = Math.hypot(sheep.vx, sheep.vy) || 7.5;

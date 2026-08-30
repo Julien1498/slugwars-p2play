@@ -180,9 +180,11 @@ export function useBoardKeyboardControls({
       const action = resolveKeyToAction(e.key, context);
       if (!action) return;
 
-      if (action === 'MOVE_LEFT' || action === 'MOVE_RIGHT') {
-        if (activeSheep) onStopSteer?.();
-        else onStopMove();
+      if (action === 'STEER_LEFT' || action === 'STEER_RIGHT') {
+        onStopSteer?.();
+        activeMovingKeyRef.current = null;
+      } else if (action === 'MOVE_LEFT' || action === 'MOVE_RIGHT') {
+        onStopMove();
         activeMovingKeyRef.current = null;
       } else if (action === 'WINCH_UP' || action === 'WINCH_DOWN') {
         if (activeSlug?.ropeState) onStopSteer?.();
