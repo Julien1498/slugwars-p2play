@@ -156,7 +156,7 @@ describe('Tactical Weapons & Utility Items', () => {
       updateMines(engine.state, engine.terrain, engine.carveCrater.bind(engine), addLog);
 
       expect(engine.state.mines[0].isTriggered).toBe(true);
-      expect(engine.state.mines[0].fuseTimerMs).toBe(3000);
+      expect(engine.state.mines[0].fuseTimerMs).toBe(2500);
     });
 
     it('detonates triggered mine when fuse expires and damages nearby slugs', () => {

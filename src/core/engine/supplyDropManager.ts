@@ -24,7 +24,7 @@ export function updateMines(
         if (!slug.isAlive || slug.isPlaced === false) continue;
         if (Math.hypot(slug.x - mine.x, slug.y - 8 - mine.y) <= 25) {
           mine.isTriggered = true;
-          mine.fuseTimerMs = 3000;
+          mine.fuseTimerMs = 2500;
           sfx.play('tick');
           addLog('🚨 UNE MINE A ÉTÉ DÉCLENCHÉE !', 'combat');
           break;
