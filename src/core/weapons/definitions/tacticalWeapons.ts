@@ -97,8 +97,8 @@ export const shotgunWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
-  shooterRecoil: { pushForce: 2.2, popUp: -1.2 },
-  kineticImpulse: { pushForce: 4.5, popUp: -2.5 },
+  shooterRecoil: { pushForce: 4.8, popUp: -2.4 },
+  kineticImpulse: { pushForce: 7.5, popUp: -3.8 },
   customSoundKey: 'melee',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;

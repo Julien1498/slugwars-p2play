@@ -17,7 +17,7 @@ export const handgunWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
-  kineticImpulse: { pushForce: 3.8, popUp: -2.2 },
+  kineticImpulse: { pushForce: 5.5, popUp: -3.0 },
   customSoundKey: 'gunshot',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
@@ -58,8 +58,8 @@ export const uziWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
-  shooterRecoil: { pushForce: 3.6, popUp: -1.6 },
-  kineticImpulse: { pushForce: 3.2, popUp: -1.8 },
+  shooterRecoil: { pushForce: 6.8, popUp: -3.2 },
+  kineticImpulse: { pushForce: 5.5, popUp: -2.8 },
   customSoundKey: 'uzi_burst',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
