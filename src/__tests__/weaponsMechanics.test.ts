@@ -19,6 +19,13 @@ describe('Weapons Arsenal & Mechanics', () => {
     expect(bazooka.id).toBe('bazooka');
     expect(bazooka.damage).toBeGreaterThan(0);
     expect(bazooka.radius).toBeGreaterThan(0);
+
+    // Verify all primary tools and utilities are craftable (visible in UI weapon picker)
+    const essentialTools = ['teleport', 'ninja_rope', 'blowtorch', 'baseball_bat', 'prod', 'skip_turn', 'girder', 'airdrop'];
+    for (const toolId of essentialTools) {
+      const tool = getWeapon(toolId);
+      expect(tool.craftable).not.toBe(false);
+    }
   });
 
   it('executes Air Strike correctly at targeted coordinates', () => {
@@ -120,7 +127,13 @@ describe('Weapons Arsenal & Mechanics', () => {
   });
 
   it('handles Concrete Donkey multiple impacts and successive terrain pounding', () => {
-    const engine = new SlugWarsEngine({ turnDelaysEnabled: false, turnDuration: 45, slugsPerTeam: 1 });
+    const engine = new SlugWarsEngine({
+      mapTheme: 'ISLAND',
+      mapSeed: 12345,
+      turnDelaysEnabled: false,
+      turnDuration: 45,
+      slugsPerTeam: 1,
+    });
     engine.addTeam('t1', 'Red', '#ef4444', '🐌', true);
     engine.addTeam('t2', 'Blue', '#3b82f6', '🐌', false);
     engine.startGame();
