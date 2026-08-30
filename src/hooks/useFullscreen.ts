@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { isActionKey } from '../core/input';
 
 export function toggleFullscreen(): Promise<void> {
   if (typeof document === 'undefined') return Promise.resolve();
@@ -94,7 +95,7 @@ export function useFullscreen() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable) return;
-      if (e.key === 'f' || e.key === 'F') {
+      if (isActionKey(e.key, 'TOGGLE_FULLSCREEN')) {
         e.preventDefault();
         toggleFullscreen().catch(() => {});
       }

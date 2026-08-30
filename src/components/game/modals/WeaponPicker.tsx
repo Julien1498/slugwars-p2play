@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WeaponCategory } from '../../../core/weapons/types';
 import { getAllWeapons } from '../../../core/weapons/registry';
+import { resolveKeyToAction, getCategoryIndexFromAction } from '../../../core/input';
 import { useIsTouchDevice } from '../../../hooks/useIsTouchDevice';
 import { X, Sparkles } from 'lucide-react';
 import { WeaponCategoryTabs } from './weaponPicker/WeaponCategoryTabs';
@@ -40,29 +41,19 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea') return;
 
-      const key = e.key.toLowerCase();
+      const action = resolveKeyToAction(e.key, 'WEAPON_PICKER');
+      if (!action) return;
 
-      if (e.key === 'Escape' || e.key === 'Tab' || key === 'i') {
-        e.preventDefault();
+      e.preventDefault();
+      if (action === 'CLOSE_MODAL') {
         onClose();
         return;
       }
 
-      if (e.key === 'F1' || key === '1' || key === '&') {
-        e.preventDefault();
-        setActiveCategory('EXPLOSIVE');
-      } else if (e.key === 'F2' || key === '2' || key === 'é') {
-        e.preventDefault();
-        setActiveCategory('MELEE');
-      } else if (e.key === 'F3' || key === '3' || key === '"') {
-        e.preventDefault();
-        setActiveCategory('AIR_SUPPORT');
-      } else if (e.key === 'F4' || key === '4' || key === "'") {
-        e.preventDefault();
-        setActiveCategory('SPECIAL');
-      } else if (e.key === 'F5' || key === '5' || key === '(') {
-        e.preventDefault();
-        setActiveCategory('UTILITY');
+      const catIdx = getCategoryIndexFromAction(action);
+      const categories: WeaponCategory[] = ['EXPLOSIVE', 'MELEE', 'AIR_SUPPORT', 'SPECIAL', 'UTILITY'];
+      if (catIdx !== null && categories[catIdx]) {
+        setActiveCategory(categories[catIdx]);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

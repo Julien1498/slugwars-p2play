@@ -1,5 +1,6 @@
 import React from 'react';
 import { WeaponCategory, WeaponDefinition } from '../../../../core/weapons/types';
+import { getCategoryShortcutBadge } from '../../../../core/input';
 import { Bomb, Swords, Plane, Flame, Wrench } from 'lucide-react';
 
 export const WEAPON_CATEGORIES: { id: WeaponCategory; label: string; icon: React.ReactNode }[] = [
@@ -55,13 +56,12 @@ export const WeaponCategoryTabs: React.FC<WeaponCategoryTabsProps> = ({
     );
   }
 
-  const azertyShortcuts = ['&', 'é', '"', "'", '('];
   return (
     <div className="grid grid-cols-5 gap-2 border-b border-zinc-800/80 pb-3 shrink-0">
       {WEAPON_CATEGORIES.map((cat, idx) => {
         const count = allWeapons.filter((w) => w.category === cat.id && w.craftable !== false).length;
         const isActive = activeCategory === cat.id;
-        const shortcut = azertyShortcuts[idx] || `${idx + 1}`;
+        const shortcut = getCategoryShortcutBadge(idx);
         return (
           <button
             key={cat.id}

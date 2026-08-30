@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageSquare, X, ScrollText } from 'lucide-react';
+import { isActionKey } from '../../../core/input';
 import {
   DesktopCombatLogProps,
   extractRecentChatEvents,
@@ -28,7 +29,7 @@ export const DesktopCombatLog: React.FC<DesktopCombatLogProps> = React.memo(({
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea') return;
 
-      if (e.key === 't' || e.key === 'T') {
+      if (isActionKey(e.key, 'TOGGLE_CHAT')) {
         e.preventDefault();
         setActiveTab('chat');
         if (!showDrawer) {
