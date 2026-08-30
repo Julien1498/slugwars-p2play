@@ -219,5 +219,37 @@ describe('144 FPS Visual Interpolation & Angle Lerp', () => {
 
       expect(cameraModeRef.current).toBe('FOLLOW_PROJECTILE');
     });
+
+    it('does not cancel FREE_LOOK when opponent moves or drives a slug', async () => {
+      const { updateCameraFollow } = await import('../components/game/canvas/useCanvasCameraFollow');
+      const cameraModeRef = { current: 'FREE_LOOK' as const };
+      const panRef = { current: { x: 300, y: -200 } };
+      const targetCameraPanRef = { current: null };
+      const zoomRef = { current: 1.0 };
+
+      const mockState: any = {
+        phase: 'AIMING',
+        activeSlugId: 'slug_opponent',
+        slugs: [{ id: 'slug_opponent', isAlive: true, isPlaced: true, x: 900, y: 400, vx: 2.5, vy: -1.0, movingDir: 'right', isChargingPower: false }],
+        projectiles: [],
+      };
+
+      updateCameraFollow({
+        curState: mockState,
+        cameraModeRef,
+        panRef,
+        targetCameraPanRef,
+        zoomRef,
+        isUserDraggingNow: false,
+        clientExplosions: [],
+        cRect: { width: 1200, height: 600 },
+        terrainWidth: 1400,
+        terrainHeight: 700,
+      });
+
+      expect(cameraModeRef.current).toBe('FREE_LOOK');
+      expect(panRef.current.x).toBe(300);
+      expect(panRef.current.y).toBe(-200);
+    });
   });
 });

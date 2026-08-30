@@ -49,32 +49,21 @@ export function updateCameraFollow({
     return;
   }
 
-  const currentActiveSlug = curState?.slugs?.find((s) => s.id === curState.activeSlugId);
-
-  // 3. Projectile Launch Event: Track in-flight action unless manually overridden
+  // 3. Projectile Launch Event: Track in-flight action
   if (curState?.projectiles && curState.projectiles.length > 0) {
     cameraModeRef.current = 'FOLLOW_PROJECTILE';
   }
 
-  // 4. Active Player Movement / Driving Input: Switch back to follow when actively controlling slug
-  if (
-    cameraModeRef.current === 'FREE_LOOK' &&
-    currentActiveSlug &&
-    currentActiveSlug.isAlive &&
-    (currentActiveSlug.movingDir !== null || currentActiveSlug.isChargingPower)
-  ) {
-    cameraModeRef.current = 'FOLLOW_SLUG';
-  }
-
-  // 5. If still in FREE_LOOK, do not move camera at all!
+  // 4. If in FREE_LOOK, respect the user's view and do not snap back on slug movement!
   if (cameraModeRef.current === 'FREE_LOOK') {
     return;
   }
 
+  const currentActiveSlug = curState?.slugs?.find((s) => s.id === curState.activeSlugId);
   let actionTarget: { x: number; y: number } | null = null;
   let followSpeed = 0.08;
 
-  // 6. FOLLOW_PROJECTILE Mode
+  // 5. FOLLOW_PROJECTILE Mode
   if (cameraModeRef.current === 'FOLLOW_PROJECTILE') {
     if (curState?.projectiles && curState.projectiles.length > 0) {
       const proj = curState.projectiles[0];
@@ -94,7 +83,7 @@ export function updateCameraFollow({
     }
   }
 
-  // 7. FOLLOW_SLUG Mode
+  // 6. FOLLOW_SLUG Mode
   if (cameraModeRef.current === 'FOLLOW_SLUG') {
     if (currentActiveSlug && currentActiveSlug.isAlive && currentActiveSlug.isPlaced) {
       actionTarget = { x: currentActiveSlug.x, y: currentActiveSlug.y };
@@ -102,7 +91,7 @@ export function updateCameraFollow({
     }
   }
 
-  // 8. Smoothly interpolate camera to target position
+  // 7. Smoothly interpolate camera to target position
   if (actionTarget && cRect.width > 0 && cRect.height > 0) {
     const fitScale = Math.min(cRect.width / terrainWidth, cRect.height / terrainHeight);
     const totalScale = fitScale * zoomRef.current;
