@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-30T14:29:48.905Z",
+  "timestamp": "2026-08-30T14:39:18.061Z",
   "environment": {
     "nodeVersion": "v24.19.0",
     "platform": "win32",
@@ -18,15 +18,15 @@
       "jsonByteSize": 1146,
       "binaryByteSize": 646,
       "compressionRatio": "43.6",
-      "avgEncodeMicros": "70.05",
-      "avgDecodeMicros": "26.85",
+      "avgEncodeMicros": "59.67",
+      "avgDecodeMicros": "24.83",
       "reentrantSafe": true
     },
     "physics": {
       "themesCount": 8,
       "totalRaycasts": 4000,
       "totalNormals": 3906,
-      "durationMs": "455.9",
+      "durationMs": "477.5",
       "determinismPassed": true
     },
     "dependencyGraph": {

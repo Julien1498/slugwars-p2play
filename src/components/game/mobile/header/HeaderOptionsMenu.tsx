@@ -73,19 +73,19 @@ export const HeaderOptionsMenu: React.FC<HeaderOptionsMenuProps> = ({
       <button
         type="button"
         onClick={() => setShowMenuPopover(!showMenuPopover)}
-        className={`p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-lg backdrop-blur-md cursor-pointer ${
+        className={`p-1.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center shadow-md backdrop-blur-md cursor-pointer ${
           showMenuPopover
-            ? 'bg-violet-950/80 border-violet-500 text-white'
-            : 'bg-zinc-950/60 border-zinc-750/80 text-zinc-300 active:scale-95 hover:border-zinc-600'
+            ? 'bg-zinc-800 border-zinc-600 text-white shadow-lg'
+            : 'bg-zinc-950/80 border-zinc-800 text-zinc-300 active:scale-95 hover:border-zinc-700 hover:text-white'
         }`}
         title="Menu & Options"
       >
-        <Settings className="w-4 h-4 text-violet-400" />
+        <Settings className="w-4 h-4 text-zinc-300" />
       </button>
 
       {showMenuPopover && (
-        <div className="fixed sm:absolute top-12 right-2 sm:right-0 w-64 bg-zinc-950/95 backdrop-blur-xl border border-violet-500/30 rounded-2xl p-2 shadow-2xl shadow-violet-950/40 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1 select-none">
-          <div className="px-2.5 py-1 text-[10px] uppercase font-black tracking-widest text-violet-400/90 border-b border-zinc-800/80 mb-1 flex items-center justify-between">
+        <div className="fixed sm:absolute top-12 right-2 sm:right-0 w-64 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800/90 rounded-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1 select-none">
+          <div className="px-2.5 py-1 text-[10px] uppercase font-black tracking-widest text-zinc-400 border-b border-zinc-800/80 mb-1 flex items-center justify-between">
             <span>⚙️ Configuration</span>
             {isHost && (
               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 rounded font-mono">
@@ -105,9 +105,9 @@ export const HeaderOptionsMenu: React.FC<HeaderOptionsMenuProps> = ({
             >
               <div className="flex items-center gap-2">
                 {isFullscreen ? (
-                  <Minimize2 className="w-3.5 h-3.5 text-violet-400" />
+                  <Minimize2 className="w-3.5 h-3.5 text-zinc-400" />
                 ) : (
-                  <Maximize2 className="w-3.5 h-3.5 text-violet-400" />
+                  <Maximize2 className="w-3.5 h-3.5 text-zinc-400" />
                 )}
                 <span>{isFullscreen ? 'Quitter Plein Écran' : 'Plein Écran'}</span>
               </div>
