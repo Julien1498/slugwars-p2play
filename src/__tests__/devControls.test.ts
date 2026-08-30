@@ -123,11 +123,12 @@ describe('Engine Dev & Debug Controls (devControls.ts)', () => {
 
     it('spawns an explosive oil drum at specified coordinates', () => {
       const initialPropsCount = engine.state.solidProps?.length ?? 0;
-      devSpawnOilDrum(engine.state, 500, 250);
+      devSpawnOilDrum(engine.state, engine.terrain, 500, 250);
       expect(engine.state.solidProps).toHaveLength(initialPropsCount + 1);
       const drum = engine.state.solidProps!.find((p) => p.x === 500 && p.y === 250);
       expect(drum).toBeDefined();
       expect(drum?.type).toBe('oil_drum');
+      expect(engine.terrain.data.solidProps?.some((p) => p.x === 500 && p.y === 250)).toBe(true);
     });
 
     it('spawns a helicopter at specified coordinates', () => {
@@ -174,9 +175,31 @@ describe('Engine Dev & Debug Controls (devControls.ts)', () => {
       expect(engine.state.godModeEnabled).toBeFalsy();
       devToggleGodMode(engine.state);
       expect(engine.state.godModeEnabled).toBe(true);
+      expect(engine.state.slugs[0].isGodMode).toBe(true);
 
       devToggleGodMode(engine.state);
       expect(engine.state.godModeEnabled).toBe(false);
+      expect(engine.state.slugs[0].isGodMode).toBe(false);
+    });
+
+    it('forces victory for active team or specified team', () => {
+      engine.devForceWin('team_a');
+      expect(engine.state.phase).toBe('GAME_OVER');
+      expect(engine.state.winnerTeamId).toBe('team_a');
+    });
+
+    it('lowers water level on terrain and in state', () => {
+      const initialWater = engine.terrain.data.waterLevel;
+      engine.devLowerWater(40);
+      expect(engine.terrain.data.waterLevel).toBe(initialWater + 40);
+      expect(engine.state.waterLevel).toBe(initialWater + 40);
+    });
+
+    it('triggers armageddon spawning 20 meteors', () => {
+      expect(engine.state.projectiles.filter((p) => p.weaponId === 'meteor')).toHaveLength(0);
+      engine.devTriggerArmageddon();
+      const meteors = engine.state.projectiles.filter((p) => p.weaponId === 'meteor');
+      expect(meteors.length).toBeGreaterThanOrEqual(15);
     });
   });
 });

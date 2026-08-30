@@ -210,7 +210,10 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         }
         handleMouseDown(e);
       }}
-      onMouseUp={handleMouseUp}
+      onMouseUp={(e) => {
+        if (activeDevTool && e.button === 0) return;
+        handleMouseUp(e);
+      }}
       onMouseMove={handleMouseMove}
       onContextMenu={handleContextMenu}
     >

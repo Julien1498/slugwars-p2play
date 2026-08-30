@@ -49,17 +49,17 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.waterLevel = quantizeFloat(currentState.waterLevel, 1);
   }
 
+  if (currentState.isTimerFrozen !== prevState?.isTimerFrozen) delta.isTimerFrozen = currentState.isTimerFrozen;
+  if (currentState.godModeEnabled !== prevState?.godModeEnabled) delta.godModeEnabled = currentState.godModeEnabled;
+  if (currentState.solidProps && currentState.solidProps.length !== (prevState?.solidProps?.length ?? 0)) {
+    delta.solidProps = currentState.solidProps;
+  }
+
   // Team stats & inventory delta
   const teamDeltas: CompactTeamDelta[] = [];
   for (const team of currentState.teams) {
     const prevTeam = prevState?.teams.find((t) => t.id === team.id);
-    const hasStatsChanged =
-      !prevTeam ||
-      prevTeam.stats?.kills !== team.stats?.kills ||
-      prevTeam.stats?.deaths !== team.stats?.deaths ||
-      prevTeam.stats?.damageDealt !== team.stats?.damageDealt ||
-      prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
-
+    const hasStatsChanged = !prevTeam || prevTeam.stats?.kills !== team.stats?.kills || prevTeam.stats?.deaths !== team.stats?.deaths || prevTeam.stats?.damageDealt !== team.stats?.damageDealt || prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
     const curInv = team.inventory || {};
     const prevInv = prevTeam?.inventory || {};
     const hasInventoryChanged = !prevTeam || JSON.stringify(curInv) !== JSON.stringify(prevInv);

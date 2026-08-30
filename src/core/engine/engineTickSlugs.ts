@@ -10,7 +10,7 @@ export function updateSlugsPhysicsAndDrowning(
   effectiveWaterY: number
 ) {
   for (const slug of state.slugs) {
-    if (slug.y >= effectiveWaterY) {
+    if (slug.y >= effectiveWaterY && !slug.isGodMode) {
       if (slug.isAlive) {
         const victimTeam = state.teams.find((t) => t.id === slug.teamId);
         if (victimTeam) {
@@ -23,7 +23,7 @@ export function updateSlugsPhysicsAndDrowning(
     }
 
     const phys = updateSlugPhysics(slug, terrain, state.slugs);
-    if (phys.fallDamage) {
+    if (phys.fallDamage && !slug.isGodMode) {
       addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');
       sfx.play('ouch');
       state.floatingDamages.push({

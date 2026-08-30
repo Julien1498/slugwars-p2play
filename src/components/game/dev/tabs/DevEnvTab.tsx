@@ -6,6 +6,7 @@ interface DevEnvTabProps {
   gameState: GameState;
   onSetWind: (wind: number) => void;
   onRiseWater: (amountPx: number) => void;
+  onLowerWater: (amountPx: number) => void;
   onTriggerArmageddon: () => void;
 }
 
@@ -13,6 +14,7 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
   gameState,
   onSetWind,
   onRiseWater,
+  onLowerWater,
   onTriggerArmageddon,
 }) => {
   const curWind = gameState.wind ?? 0;
@@ -46,7 +48,7 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
         </div>
       </div>
 
-      {/* Water Level Rise */}
+      {/* Water Level Rise & Lower */}
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => onRiseWater(30)}
@@ -56,10 +58,10 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
         </button>
 
         <button
-          onClick={() => onRiseWater(60)}
-          className="px-3 py-2 rounded-lg bg-blue-800/30 hover:bg-blue-800/40 text-blue-200 font-bold border border-blue-500/50 flex items-center justify-center gap-1.5 transition-colors"
+          onClick={() => onLowerWater(30)}
+          className="px-3 py-2 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 font-bold border border-sky-500/40 flex items-center justify-center gap-1.5 transition-colors"
         >
-          <Waves className="w-3.5 h-3.5" /> Inondation (+60px)
+          <Waves className="w-3.5 h-3.5 rotate-180" /> Baisser Eau (-30px)
         </button>
       </div>
 

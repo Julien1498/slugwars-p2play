@@ -113,10 +113,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
             gameState={gameState}
             onFreezeTimer={() => triggerMutation(() => engineRef.current.devToggleFreezeTimer())}
             onSkipTurn={() => triggerMutation(() => engineRef.current.endTurn())}
-            onForceWin={() => triggerMutation(() => {
-              const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
-              if (activeTeam) engineRef.current.state.winnerTeamId = activeTeam.id;
-            })}
+            onForceWin={() => triggerMutation(() => engineRef.current.devForceWin())}
             onResetTimer={() => triggerMutation(() => { engineRef.current.state.turnTimer = 45; })}
           />
         )}
@@ -161,9 +158,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
             gameState={gameState}
             onSetWind={(w) => triggerMutation(() => engineRef.current.devSetWind(w))}
             onRiseWater={(amount) => triggerMutation(() => engineRef.current.devRiseWater(amount))}
-            onTriggerArmageddon={() => triggerMutation(() => {
-              engineRef.current.fireWeapon();
-            })}
+            onLowerWater={(amount) => triggerMutation(() => engineRef.current.devLowerWater(amount))}
+            onTriggerArmageddon={() => triggerMutation(() => engineRef.current.devTriggerArmageddon())}
           />
         )}
 

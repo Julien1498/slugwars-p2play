@@ -30,7 +30,7 @@ export function applyExplosionToSlugs(
       const falloff = 1 - Math.min(1, dist / (radius + 15));
       const damage = Math.round(maxDamage * falloff);
 
-      if (damage > 0) {
+      if (damage > 0 && !slug.isGodMode) {
         const victimHpBefore = slug.hp;
         const actualDamage = Math.min(victimHpBefore, damage);
         slug.hp = Math.max(0, slug.hp - damage);

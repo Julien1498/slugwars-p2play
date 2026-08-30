@@ -30,6 +30,7 @@ const KNOWN_KEYS = [
   'isLanded', 'crateType', 'healAmount', 'isTriggered', 'text', 'color',
   'journal', 'message', 'timestamp', 'type',
   'floatingDamages', 'damage', 'createdAt',
+  'isTimerFrozen', 'godModeEnabled', 'solidProps',
 ];
 
 const KEY_TO_INDEX: Record<string, number> = {};

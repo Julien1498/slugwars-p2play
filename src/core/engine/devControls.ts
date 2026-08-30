@@ -1,6 +1,18 @@
-import { GameState, SupplyCrate, Landmine, HelicopterVehicle, SolidProp } from '../types';
+import { GameState, SupplyCrate, Landmine, HelicopterVehicle, SolidProp, JournalEntry } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { WEAPON_REGISTRY } from '../weapons/registry';
+import { PhaseManager } from './phaseManager';
+import { executeArmageddon } from './weapons/specialWeaponExecutors';
+
+const DEV_WEAPON_CRATE_POOL = [
+  'holy_grenade', 'banana_bomb', 'super_sheep', 'armageddon',
+  'air_strike', 'bunker_buster', 'mine_strike', 'concrete_donkey',
+  'shotgun', 'uzi', 'homing_missile', 'dynamite', 'kamikaze',
+];
+
+const DEV_UTILITY_CRATE_POOL = [
+  'teleport', 'ninja_rope', 'girder', 'airdrop', 'blowtorch', 'prod',
+];
 
 export function devSetInfiniteAmmo(state: GameState): void {
   const activeTeam = state.teams.find((t) => t.id === state.activeTeamId) || state.teams[0];
@@ -13,13 +25,15 @@ export function devSetInfiniteAmmo(state: GameState): void {
 }
 
 export function devUnlockAllWeapons(state: GameState): void {
-  const activeTeam = state.teams.find((t) => t.id === state.activeTeamId) || state.teams[0];
-  if (!activeTeam) return;
-  if (!activeTeam.inventory) activeTeam.inventory = {};
-
-  for (const weapon of Object.values(WEAPON_REGISTRY)) {
-    if (activeTeam.inventory[weapon.id] === undefined || activeTeam.inventory[weapon.id] === 0) {
-      activeTeam.inventory[weapon.id] = 5;
+  if (state.config) {
+    state.config.turnDelaysEnabled = false;
+  }
+  for (const team of state.teams) {
+    if (!team.inventory) team.inventory = {};
+    for (const weapon of Object.values(WEAPON_REGISTRY)) {
+      if (team.inventory[weapon.id] === undefined || team.inventory[weapon.id] === 0) {
+        team.inventory[weapon.id] = 5;
+      }
     }
   }
 }
@@ -52,6 +66,15 @@ export function devKillSlug(state: GameState, slugId: string): void {
   }
 }
 
+export function devForceWin(
+  state: GameState,
+  teamId?: string,
+  addLog?: (msg: string, type?: JournalEntry['type']) => void
+): void {
+  const targetId = teamId || state.activeTeamId || state.teams[0]?.id;
+  PhaseManager.startGameOver(state, targetId, addLog);
+}
+
 export function devTeleportSlug(
   state: GameState,
   slugId: string,
@@ -76,6 +99,16 @@ export function devSpawnCrate(
   crateType: 'health' | 'weapon' | 'utility' = 'weapon'
 ): SupplyCrate {
   if (!state.supplyCrates) state.supplyCrates = [];
+
+  let weaponId: string | undefined;
+  if (crateType === 'weapon') {
+    const rIdx = Math.floor(Math.random() * DEV_WEAPON_CRATE_POOL.length);
+    weaponId = DEV_WEAPON_CRATE_POOL[rIdx];
+  } else if (crateType === 'utility') {
+    const rIdx = Math.floor(Math.random() * DEV_UTILITY_CRATE_POOL.length);
+    weaponId = DEV_UTILITY_CRATE_POOL[rIdx];
+  }
+
   const crate: SupplyCrate = {
     id: `crate_dev_${Date.now()}_${Math.random()}`,
     x,
@@ -84,7 +117,7 @@ export function devSpawnCrate(
     isLanded: true,
     crateType,
     healAmount: crateType === 'health' ? 50 : undefined,
-    weaponId: crateType === 'weapon' ? 'holy_grenade' : crateType === 'utility' ? 'teleport' : undefined,
+    weaponId,
     weaponCount: crateType !== 'health' ? 1 : undefined,
   };
   state.supplyCrates.push(crate);
@@ -103,8 +136,14 @@ export function devSpawnMine(state: GameState, x: number, y: number): Landmine {
   return mine;
 }
 
-export function devSpawnOilDrum(state: GameState, x: number, y: number): SolidProp {
+export function devSpawnOilDrum(
+  state: GameState,
+  terrain: DestructibleTerrain | undefined,
+  x: number,
+  y: number
+): SolidProp {
   if (!state.solidProps) state.solidProps = [];
+  if (terrain && !terrain.data.solidProps) terrain.data.solidProps = [];
   const drum: SolidProp = {
     id: `prop_drum_dev_${Date.now()}_${Math.random()}`,
     type: 'oil_drum',
@@ -112,8 +151,10 @@ export function devSpawnOilDrum(state: GameState, x: number, y: number): SolidPr
     y,
     width: 24,
     height: 30,
+    variant: 0,
   };
   state.solidProps.push(drum);
+  if (terrain) terrain.data.solidProps.push(drum);
   return drum;
 }
 
@@ -147,6 +188,25 @@ export function devRiseWater(
   state.waterLevel = terrain.data.waterLevel;
 }
 
+export function devLowerWater(
+  state: GameState,
+  terrain: DestructibleTerrain,
+  amountPx: number = 30
+): void {
+  terrain.data.waterLevel = Math.min(terrain.data.height, terrain.data.waterLevel + amountPx);
+  state.waterLevel = terrain.data.waterLevel;
+}
+
+export function devTriggerArmageddon(
+  state: GameState,
+  terrain: DestructibleTerrain,
+  addLog: (msg: string, type?: JournalEntry['type']) => void = () => {}
+): void {
+  const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId) || state.slugs[0];
+  if (!activeSlug) return;
+  executeArmageddon(state, terrain, activeSlug, addLog);
+}
+
 export function devToggleFreezeTimer(state: GameState): boolean {
   state.isTimerFrozen = !state.isTimerFrozen;
   return state.isTimerFrozen;
@@ -154,5 +214,8 @@ export function devToggleFreezeTimer(state: GameState): boolean {
 
 export function devToggleGodMode(state: GameState): boolean {
   state.godModeEnabled = !state.godModeEnabled;
+  for (const slug of state.slugs) {
+    slug.isGodMode = state.godModeEnabled;
+  }
   return state.godModeEnabled;
 }

@@ -250,10 +250,13 @@ export class SlugWarsEngine {
   public devTeleportSlug(slugId: string, x: number, y: number): void { devCtrl.devTeleportSlug(this.state, slugId, x, y); }
   public devSpawnCrate(x: number, y: number, type?: 'health' | 'weapon' | 'utility') { return devCtrl.devSpawnCrate(this.state, x, y, type); }
   public devSpawnMine(x: number, y: number) { return devCtrl.devSpawnMine(this.state, x, y); }
-  public devSpawnOilDrum(x: number, y: number) { return devCtrl.devSpawnOilDrum(this.state, x, y); }
+  public devSpawnOilDrum(x: number, y: number) { return devCtrl.devSpawnOilDrum(this.state, this.terrain, x, y); }
   public devSpawnHelicopter(x: number, y: number) { return devCtrl.devSpawnHelicopter(this.state, x, y); }
   public devSetWind(wind: number): void { devCtrl.devSetWind(this.state, wind); }
   public devRiseWater(amountPx?: number): void { devCtrl.devRiseWater(this.state, this.terrain, amountPx); }
+  public devLowerWater(amountPx?: number): void { devCtrl.devLowerWater(this.state, this.terrain, amountPx); }
+  public devTriggerArmageddon(): void { devCtrl.devTriggerArmageddon(this.state, this.terrain, (m, t) => this.addLog(m, t)); }
+  public devForceWin(teamId?: string): void { devCtrl.devForceWin(this.state, teamId, (m, t) => this.addLog(m, t)); }
   public devToggleFreezeTimer(): boolean { return devCtrl.devToggleFreezeTimer(this.state); }
   public devToggleGodMode(): boolean { return devCtrl.devToggleGodMode(this.state); }
 }

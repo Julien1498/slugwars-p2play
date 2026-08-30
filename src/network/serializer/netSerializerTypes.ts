@@ -7,6 +7,7 @@ import {
   SupplyCrate,
   PlacedGirder,
   CraterRecord,
+  SolidProp,
 } from '../../core/types';
 
 export function quantizeFloat(val: number | undefined | null, decimals: number = 2): number {
@@ -74,4 +75,7 @@ export interface CompactStateDelta {
   craters?: CraterRecord[];
   journal?: GameState['journal'];
   floatingDamages?: GameState['floatingDamages'];
+  solidProps?: SolidProp[];
+  isTimerFrozen?: boolean;
+  godModeEnabled?: boolean;
 }

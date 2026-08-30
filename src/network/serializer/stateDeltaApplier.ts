@@ -39,6 +39,14 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
   }
   if (delta.wind !== undefined) localState.wind = delta.wind;
   if (delta.waterLevel !== undefined) localState.waterLevel = delta.waterLevel;
+  if (delta.isTimerFrozen !== undefined) localState.isTimerFrozen = delta.isTimerFrozen;
+  if (delta.godModeEnabled !== undefined) {
+    localState.godModeEnabled = delta.godModeEnabled;
+    for (const slug of localState.slugs) {
+      slug.isGodMode = delta.godModeEnabled;
+    }
+  }
+  if (delta.solidProps !== undefined) localState.solidProps = delta.solidProps;
 
   if (delta.teams) {
     for (const dTeam of delta.teams) {

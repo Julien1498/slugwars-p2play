@@ -13,7 +13,7 @@ export function interpolateGuestLocalState(
   let changed = false;
 
   if (state.phase === 'AIMING' || state.phase === 'PLACEMENT' || state.phase === 'TURN_START') {
-    if (state.turnTimer > 0) {
+    if (!state.isTimerFrozen && state.turnTimer > 0) {
       state.turnTimer = Math.max(0, state.turnTimer - 0.05);
       changed = true;
     }
