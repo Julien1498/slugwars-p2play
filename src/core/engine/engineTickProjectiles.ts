@@ -42,6 +42,18 @@ export function updateProjectilesInTick(
       }
     }
 
+    if (res.landAsMine) {
+      if (!state.mines) state.mines = [];
+      state.mines.push({
+        id: `mine_${Date.now()}_${Math.random()}`,
+        x: res.landAsMine.x,
+        y: res.landAsMine.y,
+        isTriggered: false,
+      });
+      sfx.play('bounce');
+      continue;
+    }
+
     if (res.exploded) {
       const pt = res.collisionPoint || { x: proj.x, y: proj.y };
       const weapon = getWeapon(proj.weaponId);

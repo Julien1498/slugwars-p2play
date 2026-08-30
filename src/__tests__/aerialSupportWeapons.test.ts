@@ -168,19 +168,30 @@ describe('Aerial Support & Strikes (Standard Rules)', () => {
       expect(res.carveStep).toBeDefined();
     });
 
-    it('spawns 5 parachute mines horizontally distributed when calling Mine Strike', () => {
+    it('spawns 5 parachute mines that float down without fuse timer and convert to Landmines upon landing', () => {
       engine.state.turnCount = 10;
       expect(engine.selectWeapon('mine_strike')).toBe(true);
       expect(engine.fireWeapon({ x: 500, y: 300 })).toBe(true);
 
       expect(engine.state.projectiles.length).toBe(5);
       const xPositions = engine.state.projectiles.map((p) => p.x);
-      // Verify spread
+      // Verify horizontal dispersion
       expect(xPositions[0]).toBeLessThan(xPositions[4]);
       for (const p of engine.state.projectiles) {
         expect(p.weaponId).toBe('mine_strike');
-        expect(p.behaviorData?.isMine).toBe(true);
+        expect(p.behaviorData?.isParachuteMine).toBe(true);
+        expect(p.fuseTimerMs).toBeUndefined(); // No timer ticking in air!
       }
+
+      // Physics landing test: touches ground at y=250
+      const terrain = createMockTerrain();
+      const fallingMine = engine.state.projectiles[0];
+      fallingMine.y = 248;
+      fallingMine.vy = 4;
+      const res = updateProjectilePhysics(fallingMine, terrain);
+      expect(res.exploded).toBe(false);
+      expect(res.landAsMine).toBeDefined();
+      expect(res.landAsMine?.x).toBeCloseTo(fallingMine.x + fallingMine.vx, 1);
     });
   });
 

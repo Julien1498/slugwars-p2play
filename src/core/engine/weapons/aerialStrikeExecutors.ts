@@ -52,14 +52,13 @@ export function executeMineStrike(
       x: targetPoint.x + offset,
       y: -50 - Math.abs(i - 2) * 20,
       vx: (i - 2) * 0.8,
-      vy: 6.5,
-      radius: 5,
-      bounces: true,
+      vy: 4.0,
+      radius: 6,
+      bounces: false,
       windAffected: true,
-      fuseTimerMs: 4000,
       ownerSlugId: activeSlug.id,
       behaviorData: {
-        isMine: true,
+        isParachuteMine: true,
       },
     });
   }

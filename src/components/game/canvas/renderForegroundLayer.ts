@@ -14,6 +14,7 @@ import {
   renderFloatingDamages,
   renderNinjaRopes,
   renderSupplyCrates,
+  renderMines,
   ClientParticle,
   ClientExplosion,
   ClientFloatingDamage,
@@ -112,10 +113,13 @@ export function renderForegroundLayer({
   });
   perfTracker.recordRenderPass('slugs_rendering', performance.now() - pSlugsStart);
 
-  // 2. Supply Crates, Projectiles & Particle FX
+  // 2. Supply Crates, Mines, Projectiles & Particle FX
   const pCratesStart = performance.now();
   if (visualState.supplyCrates) {
     renderSupplyCrates(actionCtx, visualState.supplyCrates, animTime, viewLeft, viewRight);
+  }
+  if (visualState.mines) {
+    renderMines(actionCtx, visualState.mines, viewLeft, viewRight);
   }
   perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
 
