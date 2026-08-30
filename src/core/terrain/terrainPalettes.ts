@@ -99,15 +99,15 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     seam: 0xff070605,         // #050607 Mortar seam
   },
   FLOATING_CHAOS: {
-    highlight: 0xfff472b6,    // #b672f4 Cosmic stardust magenta
-    surfaceBody: 0xff8b5cf6,  // #f65c8b Astral nebula purple
-    surfaceShadow: 0xff6d28d9,// #d9286d Deep void shadow
-    surfaceDeep: 0xff4c1d95,  // #951d4c Abyssal cosmos edge
-    soilLight: 0xff281c3e,    // #3e1c28 Floating core loam
-    strataA: 0xff1c1228,      // #28121c Astral sandstone band
-    strataB: 0xff160c20,      // #200c16 Gravity distortion stratum
-    denseRock: 0xff100818,    // #180810 Deep obsidian root
-    bedrock: 0xff0a0410,      // #10040a Singularity bedrock
-    seam: 0xff06020c,         // #0c0206 Cosmic rift seam
+    highlight: 0xffb7e76e,    // #6ee7b7 Mint celestial moss rim
+    surfaceBody: 0xff81b910,  // #10b981 Vibrant sky emerald grass
+    surfaceShadow: 0xff577804,// #047857 Deep forest moss shadow
+    surfaceDeep: 0xff3b4e06,  // #064e3b Deep vegetation undercoat
+    soilLight: 0xffb8a394,    // #94a3b8 Celestial limestone slate
+    strataA: 0xff695547,      // #475569 Floating slate band
+    strataB: 0xff554133,      // #334155 Dense aerial stratum
+    denseRock: 0xff3b291e,    // #1e293b Deep floating island basalt
+    bedrock: 0xff2a170f,      // #0f172a Abyssal core stone
+    seam: 0xff1a0d07,         // #070d1a Sky fissure seam
   },
 };
