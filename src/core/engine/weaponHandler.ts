@@ -20,6 +20,26 @@ import { fireBallisticProjectiles } from './weapons/ballisticWeaponFire';
 
 export { selectWeapon, setFuseTimer, detonateOilDrum };
 
+type BehaviorExecutor = (
+  state: GameState,
+  terrain: DestructibleTerrain,
+  activeSlug: any,
+  activeTeam: any,
+  weapon: any,
+  effectiveTargetPoint: Vector2D,
+  addLog: (msg: string, type?: JournalEntry['type']) => void
+) => boolean;
+
+const SPECIAL_BEHAVIOR_EXECUTORS: Partial<Record<string, BehaviorExecutor>> = {
+  SKIP_TURN: (state, _terrain, activeSlug, _team, _w, _tp, addLog) => executeSkipTurn(state, activeSlug, addLog),
+  TELEPORT: (state, terrain, activeSlug, _team, _w, tp, addLog) => executeTeleport(state, terrain, activeSlug, tp, addLog),
+  BLOWTORCH: (_s, _t, activeSlug, _team, _w, _tp, addLog) => executeBlowtorch(activeSlug, addLog),
+  NINJA_ROPE: (state, terrain, activeSlug, _team, _w, _tp, addLog) => executeNinjaRope(state, terrain, activeSlug, addLog),
+  GIRDER: (state, terrain, activeSlug, _team, _w, tp, addLog) => executeGirder(state, terrain, activeSlug, tp, addLog),
+  AIRDROP: (state, _t, _slug, _team, _w, tp, addLog) => executeAirdrop(state, tp, addLog),
+  MELEE_PUSH: (state, _t, activeSlug, activeTeam, weapon, _tp, addLog) => executeMeleePush(state, activeSlug, activeTeam, weapon, addLog),
+};
+
 export function fireWeapon(
   state: GameState,
   terrain: DestructibleTerrain,
@@ -46,32 +66,9 @@ export function fireWeapon(
     activeSlug.currentTargetPoint = targetPoint;
   }
 
-  if (weapon.id === 'skip_turn') {
-    return executeSkipTurn(state, activeSlug, addLog);
-  }
-
-  if (weapon.behavior === 'TELEPORT') {
-    return executeTeleport(state, terrain, activeSlug, effectiveTargetPoint, addLog);
-  }
-
-  if (weapon.id === 'blowtorch') {
-    return executeBlowtorch(activeSlug, addLog);
-  }
-
-  if (weapon.id === 'ninja_rope') {
-    return executeNinjaRope(state, terrain, activeSlug, addLog);
-  }
-
-  if (weapon.id === 'girder') {
-    return executeGirder(state, terrain, activeSlug, effectiveTargetPoint, addLog);
-  }
-
-  if (weapon.behavior === 'AIRDROP') {
-    return executeAirdrop(state, effectiveTargetPoint, addLog);
-  }
-
-  if (weapon.behavior === 'MELEE_PUSH') {
-    return executeMeleePush(state, activeSlug, activeTeam, weapon, addLog);
+  const specialExecutor = SPECIAL_BEHAVIOR_EXECUTORS[weapon.behavior];
+  if (specialExecutor) {
+    return specialExecutor(state, terrain, activeSlug, activeTeam, weapon, effectiveTargetPoint, addLog);
   }
 
   return fireBallisticProjectiles(state, activeSlug, weapon, effectiveTargetPoint, addLog);

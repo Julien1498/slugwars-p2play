@@ -16,6 +16,7 @@ export const ninjaRopeWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: false,
   craftable: false,
+  chargeable: false,
   customSoundKey: 'rope_shoot',
   createProjectiles: () => [],
 };
@@ -35,6 +36,7 @@ export const girderWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: false,
   craftable: true,
+  chargeable: false,
   requiresTarget: true,
   customSoundKey: 'girder',
   createProjectiles: () => [],
@@ -55,6 +57,7 @@ export const airdropWeapon: WeaponDefinition = {
   windAffected: true,
   bounces: false,
   craftable: true,
+  chargeable: false,
   requiresTarget: true,
   customSoundKey: 'airdrop',
   createProjectiles: () => [],
@@ -75,6 +78,7 @@ export const skipTurnWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: false,
   craftable: false,
+  chargeable: false,
   customSoundKey: 'tick',
   createProjectiles: () => [],
 };

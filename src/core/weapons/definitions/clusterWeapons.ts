@@ -17,7 +17,32 @@ export const clusterBombWeapon: WeaponDefinition = {
   fuseTimeMs: 3000,
   allowCustomFuse: true,
   craftable: true,
+  chargeable: true,
+  triggersRetreat: true,
   customSoundKey: 'grenade_throw',
+  onExplode: (proj, pt) => {
+    const now = Date.now();
+    const fanAngles = [-2.2, -1.88, -1.57, -1.26, -0.94];
+    const frags = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = fanAngles[i];
+      const speed = 5.2 + (Math.random() - 0.5) * 0.4;
+      frags.push({
+        id: `proj_cluster_frag_${now}_${i}_${Math.random()}`,
+        weaponId: 'cluster_fragment' as const,
+        x: pt.x,
+        y: pt.y - 6,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 3.5,
+        bounces: true,
+        windAffected: false,
+        fuseTimerMs: 1600,
+        ownerSlugId: proj.ownerSlugId,
+      });
+    }
+    return frags;
+  },
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
     const speed = (ctx.power / 100) * 14 + 3;

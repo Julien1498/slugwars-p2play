@@ -55,74 +55,23 @@ export function updateProjectilesInTick(
         });
       }
 
-      if (proj.weaponId === 'handgun' || proj.weaponId === 'uzi' || proj.weaponId === 'shotgun') {
+      if (weapon.kineticImpulse) {
         const dirX = Math.sign(proj.vx) || 1;
-        const pushForce = proj.weaponId === 'handgun' ? 3.8 : proj.weaponId === 'uzi' ? 3.2 : 4.5;
-        const popUp = proj.weaponId === 'handgun' ? -2.2 : proj.weaponId === 'uzi' ? -1.8 : -2.5;
-
         for (const dm of expRes.damageEvents) {
           const hitSlug = state.slugs.find((s) => s.id === dm.slugId);
           if (hitSlug && hitSlug.isAlive) {
-            hitSlug.vx += dirX * pushForce;
-            hitSlug.vy = Math.min(hitSlug.vy, popUp);
+            hitSlug.vx += dirX * weapon.kineticImpulse.pushForce;
+            if (weapon.kineticImpulse.popUp !== undefined) {
+              hitSlug.vy = Math.min(hitSlug.vy, weapon.kineticImpulse.popUp);
+            }
           }
         }
       }
 
-      if (proj.weaponId === 'cluster_bomb') {
-        // Regular upward fountain arc in 5 symmetric angles (-126° to -54°)
-        const fanAngles = [-2.2, -1.88, -1.57, -1.26, -0.94];
-        for (let i = 0; i < 5; i++) {
-          const angle = fanAngles[i];
-          const speed = 5.2 + (Math.random() - 0.5) * 0.4;
-          remaining.push({
-            id: `proj_cluster_frag_${now}_${i}_${Math.random()}`,
-            weaponId: 'cluster_fragment',
-            x: pt.x,
-            y: pt.y - 6,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            radius: 3.5,
-            bounces: true,
-            windAffected: false,
-            fuseTimerMs: 1600, // Synchronized fuse for predictable carpet bombing
-            ownerSlugId: proj.ownerSlugId,
-          });
-        }
-      } else if (proj.weaponId === 'banana_bomb') {
-        for (let i = 0; i < 5; i++) {
-          const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-          const speed = 4 + Math.random() * 4;
-          remaining.push({
-            id: `proj_bananette_${now}_${i}_${Math.random()}`,
-            weaponId: 'cluster_banana',
-            x: pt.x,
-            y: pt.y - 6,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 3,
-            radius: 4,
-            bounces: true,
-            windAffected: false,
-            fuseTimerMs: 2000 + Math.random() * 800,
-            ownerSlugId: proj.ownerSlugId,
-          });
-        }
-      } else if (proj.weaponId === 'concrete_donkey') {
-        const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
-        const curWaterY = state.waterLevel ?? terrain.data.waterLevel;
-        // The Concrete Donkey pulverizes landmasses but sinks straight into the ocean without bouncing on water!
-        if (bouncesLeft > 0 && pt.y < curWaterY - 15) {
-          proj.x = pt.x + (Math.random() - 0.5) * 4;
-          proj.y = pt.y - 14;
-          proj.vx = (Math.random() - 0.5) * 2;
-          proj.vy = -7.5;
-          proj.behaviorData = { ...proj.behaviorData, bouncesLeft };
-          sfx.play('donkey');
-          addLog(`🫏 L'Âne de Béton pilonne et rebondit à travers le terrain ! (${bouncesLeft} impacts restants)`, 'combat');
-          remaining.push(proj);
-        } else if (pt.y >= curWaterY - 15) {
-          sfx.play('splash');
-          addLog(`🌊 L'Âne de Béton a coulé dans l'océan !`, 'combat');
+      if (weapon.onExplode) {
+        const spawned = weapon.onExplode(proj, pt, state, terrain);
+        if (spawned && spawned.length > 0) {
+          remaining.push(...spawned);
         }
       }
     } else {

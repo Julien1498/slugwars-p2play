@@ -15,6 +15,7 @@ export const bazookaWeapon: WeaponDefinition = {
   windAffected: true,
   bounces: false,
   craftable: true,
+  chargeable: true,
   customSoundKey: 'bazooka_fire',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
@@ -101,6 +102,8 @@ export const grenadeWeapon: WeaponDefinition = {
   fuseTimeMs: 3000,
   allowCustomFuse: true,
   craftable: true,
+  chargeable: true,
+  triggersRetreat: true,
   customSoundKey: 'grenade_throw',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
@@ -140,6 +143,8 @@ export const holyGrenadeWeapon: WeaponDefinition = {
   fuseTimeMs: 4000,
   allowCustomFuse: true,
   craftable: true,
+  chargeable: true,
+  triggersRetreat: true,
   customSoundKey: 'holy_choir',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
@@ -179,7 +184,31 @@ export const bananaBombWeapon: WeaponDefinition = {
   fuseTimeMs: 3000,
   allowCustomFuse: true,
   craftable: true,
+  chargeable: true,
+  triggersRetreat: true,
   customSoundKey: 'grenade_throw',
+  onExplode: (proj, pt) => {
+    const now = Date.now();
+    const frags = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const speed = 4 + Math.random() * 4;
+      frags.push({
+        id: `proj_bananette_${now}_${i}_${Math.random()}`,
+        weaponId: 'cluster_banana' as const,
+        x: pt.x,
+        y: pt.y - 6,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        radius: 4,
+        bounces: true,
+        windAffected: false,
+        fuseTimerMs: 2000 + Math.random() * 800,
+        ownerSlugId: proj.ownerSlugId,
+      });
+    }
+    return frags;
+  },
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;
     const speed = (ctx.power / 100) * 14 + 3;
@@ -218,6 +247,7 @@ export const dynamiteWeapon: WeaponDefinition = {
   fuseTimeMs: 3000,
   allowCustomFuse: true,
   chargeable: false,
+  triggersRetreat: true,
   craftable: true,
   customSoundKey: 'grenade_throw',
   createProjectiles: (ctx) => {

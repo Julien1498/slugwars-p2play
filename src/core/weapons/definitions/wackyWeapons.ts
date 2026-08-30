@@ -15,8 +15,22 @@ export const concreteDonkeyWeapon: WeaponDefinition = {
   windAffected: false,
   bounces: true,
   craftable: true,
+  chargeable: false,
   requiresTarget: true,
   customSoundKey: 'donkey',
+  onExplode: (proj, pt, state, terrain) => {
+    const bouncesLeft = (proj.behaviorData?.bouncesLeft ?? 8) - 1;
+    const curWaterY = state.waterLevel ?? terrain.data.waterLevel;
+    if (bouncesLeft > 0 && pt.y < curWaterY - 15) {
+      proj.x = pt.x + (Math.random() - 0.5) * 4;
+      proj.y = pt.y - 14;
+      proj.vx = (Math.random() - 0.5) * 2;
+      proj.vy = -7.5;
+      proj.behaviorData = { ...proj.behaviorData, bouncesLeft };
+      return [proj];
+    }
+    return [];
+  },
   createProjectiles: (ctx) => {
     const targetX = ctx.targetPoint ? ctx.targetPoint.x : ctx.originX;
     return [
@@ -57,6 +71,7 @@ export const superSheepWeapon: WeaponDefinition = {
   bounces: false,
   fuseTimeMs: 8000,
   craftable: true,
+  chargeable: false,
   customSoundKey: 'baah',
   createProjectiles: (ctx) => {
     const rad = (ctx.angleDeg * Math.PI) / 180;

@@ -26,23 +26,16 @@ export function fireBallisticProjectiles(
 
   state.projectiles.push(...projs);
 
-  // Apply backward physical recoil kick to shooter on heavy rapid firearms
-  if (weapon.id === 'uzi') {
+  // Apply backward physical recoil kick to shooter if defined on weapon
+  if (weapon.shooterRecoil) {
     const dirX = activeSlug.facing === 'right' ? 1 : -1;
-    activeSlug.vx -= dirX * 3.6;
-    activeSlug.vy = Math.min(activeSlug.vy, -1.6);
-  } else if (weapon.id === 'shotgun') {
-    const dirX = activeSlug.facing === 'right' ? 1 : -1;
-    activeSlug.vx -= dirX * 2.2;
-    activeSlug.vy = Math.min(activeSlug.vy, -1.2);
+    activeSlug.vx -= dirX * weapon.shooterRecoil.pushForce;
+    if (weapon.shooterRecoil.popUp !== undefined) {
+      activeSlug.vy = Math.min(activeSlug.vy, weapon.shooterRecoil.popUp);
+    }
   }
 
-  if (
-    weapon.id === 'dynamite' ||
-    weapon.id === 'holy_grenade' ||
-    weapon.id === 'banana_bomb' ||
-    weapon.behavior === 'BOUNCING_TIMER'
-  ) {
+  if (weapon.triggersRetreat || weapon.behavior === 'BOUNCING_TIMER') {
     PhaseManager.startRetreat(state, 4.0, addLog);
   } else {
     PhaseManager.startProjectileActive(state);

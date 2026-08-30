@@ -82,5 +82,9 @@ export interface WeaponDefinition {
   chargeable?: boolean;
   turnDelay?: number; // Minimum round delay before weapon is selectable in standard schemes
   crateProbability?: number; // Crate drop probability weight (0.05 to 0.25)
+  shooterRecoil?: { pushForce: number; popUp?: number };
+  triggersRetreat?: boolean;
+  kineticImpulse?: { pushForce: number; popUp?: number };
+  onExplode?: (proj: ActiveProjectile, pt: { x: number; y: number }, state: any, terrain: any) => ActiveProjectile[] | void;
   createProjectiles: (ctx: FireContext) => ActiveProjectile[];
 }
