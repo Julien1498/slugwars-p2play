@@ -115,6 +115,30 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       expect(activeTeam.inventory.cluster_banana).toBe(2);
       expect(activeTeam.inventory['super_sheep'] ?? 0).toBe(0);
     });
+
+    it('ensures all weapons fit within maximum 2 desktop rows (4 columns) to prevent vertical overflow', () => {
+      const DESKTOP_COLS = 4;
+      const MAX_ALLOWED_ROWS_WITHOUT_SCROLL = 2;
+
+      for (const cat of categories) {
+        const list = getWeaponsByCategory(cat);
+        const rowsNeeded = Math.ceil(list.length / DESKTOP_COLS);
+        expect(rowsNeeded).toBeLessThanOrEqual(MAX_ALLOWED_ROWS_WITHOUT_SCROLL);
+      }
+    });
+
+    it('validates weapon definition descriptions and telemetry for unclipped card rendering', () => {
+      for (const cat of categories) {
+        const list = getWeaponsByCategory(cat);
+        for (const w of list) {
+          expect(w.name.length).toBeGreaterThan(0);
+          expect(w.description.length).toBeGreaterThan(0);
+          expect(w.description.length).toBeLessThan(300);
+          expect(w.damage).toBeGreaterThanOrEqual(0);
+          expect(w.radius).toBeGreaterThanOrEqual(0);
+        }
+      }
+    });
   });
 
   describe('GameOver Stats & Leaderboard Telemetry', () => {

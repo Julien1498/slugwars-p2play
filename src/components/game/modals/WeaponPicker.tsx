@@ -66,7 +66,7 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
         className={`bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-[0_0_50px_rgba(124,58,237,0.25)] pointer-events-auto ${
           isTouch
             ? 'max-w-lg p-3 sm:p-4 space-y-2.5 h-[88vh] sm:h-[540px] max-h-[92vh]'
-            : 'max-w-4xl p-5 space-y-3.5 h-[560px] max-h-[90vh]'
+            : 'max-w-5xl p-5 space-y-3.5 h-[540px] max-h-[90vh]'
         }`}
       >
         {/* Header Title Bar */}
@@ -102,12 +102,12 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
           allWeapons={allWeapons}
         />
 
-        {/* Weapons Grid: Fixed content-start with min-h-0 so the frame never shrinks or jumps */}
+        {/* Weapons Grid: 4 columns on desktop so 8 weapons fit in 2 rows without scrolling */}
         <div
           className={`flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar content-start ${
             isTouch
               ? 'grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-2'
-              : 'grid grid-cols-2 md:grid-cols-3 gap-2.5'
+              : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5'
           }`}
         >
           {filtered.map((w) => {

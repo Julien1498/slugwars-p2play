@@ -84,7 +84,7 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
     <button
       disabled={isDisabled}
       onClick={onSelect}
-      className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all relative overflow-hidden group cursor-pointer h-[154px] ${
+      className={`p-3 rounded-2xl border text-left flex flex-col justify-between min-h-[148px] h-full transition-all relative overflow-hidden group cursor-pointer ${
         isSelected
           ? 'bg-gradient-to-b from-violet-900/60 to-purple-950/80 border-violet-400 ring-2 ring-violet-500/80 shadow-[0_0_25px_rgba(139,92,246,0.4)]'
           : isDisabled
@@ -99,12 +99,12 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
       )}
 
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="w-12 h-12 rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-3xl shadow-inner group-hover:scale-105 transition-transform">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="w-10 h-10 rounded-xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner group-hover:scale-105 transition-transform shrink-0">
             {weapon.icon}
           </div>
           <div
-            className={`text-xs font-black px-2 py-1 rounded-lg border ${
+            className={`text-[11px] font-black px-2 py-0.5 rounded-lg border ${
               ammo === -1
                 ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
                 : ammo > 0
@@ -116,23 +116,23 @@ export const WeaponGridCard: React.FC<WeaponGridCardProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 mb-1">
-          <h4 className="font-extrabold text-sm text-zinc-100 group-hover:text-white transition-colors truncate">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <h4 className="font-extrabold text-xs text-zinc-100 group-hover:text-white transition-colors truncate">
             {weapon.name}
           </h4>
           {weapon.craftable && (
-            <span className="text-[9px] font-black uppercase bg-amber-950 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded-full shrink-0">
+            <span className="text-[8px] font-black uppercase bg-amber-950 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded-full shrink-0">
               Rare
             </span>
           )}
         </div>
 
-        <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed mb-3">
+        <p className="text-[10.5px] text-zinc-400 line-clamp-2 leading-snug mb-2">
           {weapon.description}
         </p>
       </div>
 
-      <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-medium text-zinc-400">
+      <div className="pt-1.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] font-medium text-zinc-400 shrink-0">
         <div className="flex items-center gap-1 text-red-400 font-bold">
           <Zap className="w-3 h-3 text-red-400" />
           <span>{weapon.damage} Dégâts</span>
