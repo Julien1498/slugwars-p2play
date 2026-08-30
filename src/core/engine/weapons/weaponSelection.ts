@@ -1,8 +1,12 @@
 import { GameState, Team, Slug } from '../../types';
 import { getWeapon } from '../../weapons/registry';
+import { getWeaponSet } from '../../weapons/weaponSets';
 
 export function isWeaponLocked(state: GameState, weaponId: string, _team?: Team): boolean {
   if (state.config && state.config.turnDelaysEnabled === false) return false;
+
+  const wSet = state.config?.weaponSetId ? getWeaponSet(state.config.weaponSetId) : undefined;
+  if (wSet && wSet.turnDelaysEnabled === false) return false;
 
   const weapon = getWeapon(weaponId);
   const turnDelay = weapon.turnDelay ?? 0;
@@ -23,6 +27,11 @@ export function getWeaponLockDetails(
   roundsRemaining: number;
 } {
   if (state.config && state.config.turnDelaysEnabled === false) {
+    return { isLocked: false, turnDelay: 0, roundsRemaining: 0 };
+  }
+
+  const wSet = state.config?.weaponSetId ? getWeaponSet(state.config.weaponSetId) : undefined;
+  if (wSet && wSet.turnDelaysEnabled === false) {
     return { isLocked: false, turnDelay: 0, roundsRemaining: 0 };
   }
 

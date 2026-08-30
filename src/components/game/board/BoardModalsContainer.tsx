@@ -3,6 +3,7 @@ import { GameState, Team, Slug } from '../../../core/types';
 import { GameOverStatsModal, WeaponPicker, RulesModal, MetricsModal } from '../modals';
 import { perfTracker } from '../../../core/perfTracker';
 import { sfx } from '../../../core/audio';
+import { getWeaponSet } from '../../../core/weapons/weaponSets';
 
 interface BoardModalsContainerProps {
   gameState: GameState;
@@ -35,6 +36,10 @@ export const BoardModalsContainer: React.FC<BoardModalsContainerProps> = ({
   onCloseRules,
   onCloseMetrics,
 }) => {
+  const currentWeaponSet = getWeaponSet(gameState.config?.weaponSetId || 'CLASSIC');
+  const isTurnDelaysActive =
+    gameState.config?.turnDelaysEnabled !== false && currentWeaponSet.turnDelaysEnabled !== false;
+
   return (
     <>
       {gameState.phase === 'GAME_OVER' && (
@@ -54,7 +59,7 @@ export const BoardModalsContainer: React.FC<BoardModalsContainerProps> = ({
             selectedWeaponId={activeSlug?.selectedWeaponId || 'bazooka'}
             turnCount={gameState.turnCount}
             teamsCount={gameState.teams.length}
-            turnDelaysEnabled={gameState.config?.turnDelaysEnabled !== false}
+            turnDelaysEnabled={isTurnDelaysActive}
             onSelectWeapon={(wId) => {
               sfx.play('tick');
               onSelectWeapon(wId);

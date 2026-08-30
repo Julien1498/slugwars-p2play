@@ -4,6 +4,7 @@ export interface WeaponSetDefinition {
   id: string;
   name: string;
   description: string;
+  turnDelaysEnabled?: boolean; // false = all weapons unlocked on turn 1
   inventory: Record<string, number>; // weaponId -> ammo count (-1 = infinite)
 }
 
@@ -12,6 +13,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
     id: 'CLASSIC',
     name: 'Arsenal Classique',
     description: 'Armes équilibrées et tactiques avec munitions limitées.',
+    turnDelaysEnabled: true,
     inventory: {
       bazooka: -1,
       homing_missile: 3,
@@ -38,6 +40,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
     id: 'WMD_CRAZY',
     name: 'Arsenal W.M.D Farfelu',
     description: 'Plein d\'armes loufoques, Sainte Grenade et Âne en Béton débloqués !',
+    turnDelaysEnabled: true,
     inventory: {
       bazooka: -1,
       grenade: 10,
@@ -62,7 +65,8 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
   UNLIMITED_CHAOS: {
     id: 'UNLIMITED_CHAOS',
     name: 'Chaos Illimité',
-    description: 'Toutes les armes ont des munitions illimitées. Destruction maximale !',
+    description: 'Toutes les armes ont des munitions illimitées. Déblocage immédiat & Destruction maximale !',
+    turnDelaysEnabled: false,
     inventory: Object.fromEntries(getAllWeapons().map((w) => [w.id, -1])),
   },
 };
