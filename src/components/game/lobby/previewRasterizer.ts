@@ -166,4 +166,22 @@ export function rasterizePreviewToCanvas(
   ctx.moveTo(0, waterLevelY);
   ctx.lineTo(previewW, waterLevelY);
   ctx.stroke();
+
+  // 5. Tactical Radar Grid Overlay for Grand Radar
+  if (previewW >= 300) {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    for (let gx = 35; gx < previewW; gx += 35) {
+      ctx.beginPath();
+      ctx.moveTo(gx, 0);
+      ctx.lineTo(gx, previewH);
+      ctx.stroke();
+    }
+    for (let gy = 25; gy < previewH; gy += 25) {
+      ctx.beginPath();
+      ctx.moveTo(0, gy);
+      ctx.lineTo(previewW, gy);
+      ctx.stroke();
+    }
+  }
 }

@@ -40,17 +40,22 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
   }, [theme, sizeCfg.width, sizeCfg.height, seed]);
 
   return (
-    <div className="relative w-full h-[180px] md:h-[220px] rounded-xl overflow-hidden bg-zinc-950 border border-zinc-700/60 shadow-inner flex items-center justify-center group">
+    <div className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group w-full aspect-[2/1]">
       <canvas
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
-        className="w-full h-full object-contain filter contrast-[1.05]"
+        className="w-full h-full block bg-zinc-950"
       />
 
-      <div className="absolute top-2 left-2 pointer-events-none bg-black/65 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] text-zinc-300 font-mono flex items-center gap-1.5 shadow">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>RADAR HD • {sizeCfg.width}x{sizeCfg.height}</span>
+      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-white/15 text-[9px] font-mono text-zinc-200 shadow flex items-center gap-1.5 z-10">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span>SEED #{seed}</span>
+      </div>
+
+      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-violet-500/40 text-[9px] font-bold text-violet-300 shadow flex items-center gap-1.5 z-10">
+        <span>{sizeCfg.icon}</span>
+        <span>{sizeCfg.label} ({sizeCfg.width}×{sizeCfg.height})</span>
       </div>
     </div>
   );
