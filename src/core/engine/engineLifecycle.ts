@@ -134,6 +134,9 @@ export function handlePlaceSlug(
   const safePt = findSafePlacementPoint(terrain, point.x, point.y, state.slugs);
   activeSlug.x = safePt.x;
   activeSlug.y = safePt.y;
+  activeSlug.vx = 0;
+  activeSlug.vy = 0;
+  activeSlug.fallStartY = undefined;
   activeSlug.isPlaced = true;
   sfx.play('jump');
   addLog(`${activeSlug.name} positionné sur le terrain !`, 'info');

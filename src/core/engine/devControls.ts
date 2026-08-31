@@ -116,6 +116,9 @@ export function devAutoPlaceAllSlugs(
     const safePt = findSafePlacementPoint(terrain, targetX, targetY, state.slugs);
     slug.x = safePt.x;
     slug.y = safePt.y;
+    slug.vx = 0;
+    slug.vy = 0;
+    slug.fallStartY = undefined;
     slug.isPlaced = true;
   });
 

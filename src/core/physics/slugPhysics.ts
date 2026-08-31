@@ -44,6 +44,7 @@ export function updateSlugPhysics(
     slug.hp = 0;
     slug.isAlive = false;
   }
+  if (!slug.isAlive || slug.isPlaced === false) return {};
   if (slug.ropeState || slug.inVehicleId || slug.isDrilling) {
     slug.fallStartY = undefined;
     return {};

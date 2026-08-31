@@ -73,7 +73,10 @@ describe('Slug Placement: Safety & Boundary Clamping', () => {
     expect(engine.state.phase).not.toBe('PLACEMENT');
     expect(['TURN_START', 'AIMING']).toContain(engine.state.phase);
 
-    // Verify all slugs are marked placed and alive
+    // Verify all slugs are marked placed, alive, and retain 100 HP across physics ticks
+    for (let t = 0; t < 5; t++) {
+      engine.tick();
+    }
     for (const slug of engine.state.slugs) {
       expect(slug.isPlaced).toBe(true);
       expect(slug.isAlive).toBe(true);
