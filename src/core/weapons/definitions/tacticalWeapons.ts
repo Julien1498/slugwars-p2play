@@ -63,7 +63,7 @@ export const airStrikeWeapon: WeaponDefinition = {
 export const teleportWeapon: WeaponDefinition = {
   id: 'teleport',
   name: 'Téléporteur',
-  category: 'UTILITY',
+  category: 'SPECIAL',
   behavior: 'TELEPORT',
   icon: '🌀',
   description: 'Se téléporte instantanément sur la position cible.',
@@ -191,7 +191,7 @@ export const prodWeapon: WeaponDefinition = {
 export const blowtorchWeapon: WeaponDefinition = {
   id: 'blowtorch',
   name: 'Chalumeau',
-  category: 'UTILITY',
+  category: 'MELEE',
   behavior: 'BLOWTORCH',
   icon: '🔥',
   description: 'Creuse des galeries et détruit le sol devant vous avec un jet de flammes haute température.',

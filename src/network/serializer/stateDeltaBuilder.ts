@@ -124,13 +124,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
     // Ninja Rope State Sync
     if (slug.ropeState) {
-      sDelta.rs = {
-        hx: quantizeFloat(slug.ropeState.hookX, 1),
-        hy: quantizeFloat(slug.ropeState.hookY, 1),
-        l: quantizeFloat(slug.ropeState.length, 1),
-        a: quantizeFloat(slug.ropeState.angleRad, 3),
-        w: quantizeFloat(slug.ropeState.angularVelocity, 3),
-      };
+      sDelta.rs = { hx: quantizeFloat(slug.ropeState.hookX, 1), hy: quantizeFloat(slug.ropeState.hookY, 1), l: quantizeFloat(slug.ropeState.length, 1), a: quantizeFloat(slug.ropeState.angleRad, 3), w: quantizeFloat(slug.ropeState.angularVelocity, 3) };
       hasChange = true;
     } else if (prevSlug?.ropeState) {
       sDelta.rs = null;
@@ -144,6 +138,26 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
     if (!prevSlug || prevSlug.isBlowtorching !== slug.isBlowtorching) {
       sDelta.bt = slug.isBlowtorching;
+      hasChange = true;
+    }
+
+    if (!prevSlug || prevSlug.isDrilling !== slug.isDrilling) {
+      sDelta.dr = slug.isDrilling;
+      hasChange = true;
+    }
+
+    if (!prevSlug || prevSlug.isParachuting !== slug.isParachuting) {
+      sDelta.pa = slug.isParachuting;
+      hasChange = true;
+    }
+
+    if (slug.jetpackState) {
+      sDelta.jpF = quantizeFloat(slug.jetpackState.fuelMs, 0);
+      sDelta.jpT = slug.jetpackState.isThrusting;
+      hasChange = true;
+    } else if (prevSlug?.jetpackState) {
+      sDelta.jpF = 0;
+      sDelta.jpT = false;
       hasChange = true;
     }
 
@@ -172,11 +186,15 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.projectiles = [];
   }
 
-  // Girders Sync
+  // Girders & Magnets Sync
   const curGirders = currentState.girders || [];
   const prevGirders = prevState?.girders || [];
-  if (curGirders.length !== prevGirders.length) {
-    delta.girders = curGirders;
+  if (curGirders.length !== prevGirders.length) delta.girders = curGirders;
+
+  const curMagnets = currentState.magnets || [];
+  const prevMagnets = prevState?.magnets || [];
+  if (curMagnets.length !== prevMagnets.length || curMagnets.some((m, idx) => m.turnsRemaining !== prevMagnets[idx]?.turnsRemaining)) {
+    delta.magnets = curMagnets;
   }
 
   // Supply Crates Sync
@@ -190,15 +208,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   if (curCrates.length !== prevCrates.length || hasFallingCrate || anyLandingStateChanged) {
     if (curCrates.length > 0) {
       delta.supplyCrates = curCrates.map((c) => ({
-        id: c.id,
-        x: quantizeFloat(c.x, 2),
-        y: quantizeFloat(c.y, 2),
-        vy: quantizeFloat(c.vy, 2),
-        isLanded: c.isLanded,
-        crateType: c.crateType,
-        healAmount: c.healAmount,
-        weaponId: c.weaponId,
-        weaponCount: c.weaponCount,
+        id: c.id, x: quantizeFloat(c.x, 2), y: quantizeFloat(c.y, 2), vy: quantizeFloat(c.vy, 2),
+        isLanded: c.isLanded, crateType: c.crateType, healAmount: c.healAmount, weaponId: c.weaponId, weaponCount: c.weaponCount,
       }));
     } else {
       delta.supplyCrates = [];
@@ -216,21 +227,15 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
   if (minesCountChanged || anyMineChanged) {
     delta.mines = curMines.map((m) => ({
-      id: m.id,
-      x: quantizeFloat(m.x, 2),
-      y: quantizeFloat(m.y, 2),
-      isTriggered: m.isTriggered,
-      fuseTimerMs: m.fuseTimerMs !== undefined ? Math.round(m.fuseTimerMs) : undefined,
+      id: m.id, x: quantizeFloat(m.x, 2), y: quantizeFloat(m.y, 2),
+      isTriggered: m.isTriggered, fuseTimerMs: m.fuseTimerMs !== undefined ? Math.round(m.fuseTimerMs) : undefined,
     }));
   }
 
   // Explosions Sync
   if (currentState.explosions.length > 0) {
     delta.explosions = currentState.explosions.map((ex) => ({
-      id: ex.id,
-      x: quantizeFloat(ex.x, 2),
-      y: quantizeFloat(ex.y, 2),
-      radius: ex.radius,
+      id: ex.id, x: quantizeFloat(ex.x, 2), y: quantizeFloat(ex.y, 2), radius: ex.radius,
     }));
   } else if (prevState && prevState.explosions.length > 0) {
     delta.explosions = [];
@@ -262,22 +267,21 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
   if (heliCountChanged || changedHelis.length > 0) {
     delta.helicopters = changedHelis.map((h) => {
-      const prevH = prevHelis.find((p) => p.id === h.id);
-      const hDelta: Partial<HelicopterVehicle> = { id: h.id };
-      if (!prevH || Math.abs(prevH.x - h.x) > 0.1) hDelta.x = quantizeFloat(h.x, 2);
-      if (!prevH || Math.abs(prevH.y - h.y) > 0.1) hDelta.y = quantizeFloat(h.y, 2);
-      if (!prevH || Math.abs((prevH.vx || 0) - (h.vx || 0)) > 0.05) hDelta.vx = quantizeFloat(h.vx || 0, 2);
-      if (!prevH || Math.abs((prevH.vy || 0) - (h.vy || 0)) > 0.05) hDelta.vy = quantizeFloat(h.vy || 0, 2);
-      if (!prevH || prevH.hp !== h.hp) hDelta.hp = h.hp;
-      if (!prevH || prevH.facing !== h.facing) hDelta.facing = h.facing;
-      if (!prevH || prevH.pilotSlugId !== h.pilotSlugId) hDelta.pilotSlugId = h.pilotSlugId;
-      return hDelta;
+      const p = prevHelis.find((x) => x.id === h.id);
+      const d: Partial<HelicopterVehicle> = { id: h.id };
+      if (!p || Math.abs(p.x - h.x) > 0.1) d.x = quantizeFloat(h.x, 2);
+      if (!p || Math.abs(p.y - h.y) > 0.1) d.y = quantizeFloat(h.y, 2);
+      if (!p || Math.abs((p.vx || 0) - (h.vx || 0)) > 0.05) d.vx = quantizeFloat(h.vx || 0, 2);
+      if (!p || Math.abs((p.vy || 0) - (h.vy || 0)) > 0.05) d.vy = quantizeFloat(h.vy || 0, 2);
+      if (!p || p.hp !== h.hp) d.hp = h.hp;
+      if (!p || p.facing !== h.facing) d.facing = h.facing;
+      if (!p || p.pilotSlugId !== h.pilotSlugId) d.pilotSlugId = h.pilotSlugId;
+      return d;
     });
-  } else if (prevState && prevState.helicopters && prevState.helicopters.length > 0 && curHelis.length === 0) {
+  } else if (prevState?.helicopters && prevState.helicopters.length > 0 && curHelis.length === 0) {
     delta.helicopters = [];
   }
 
-  // Journal & Floating Damages VFX Sync
   const curJournal = currentState.journal || [];
   const prevJournal = prevState?.journal || [];
   if (curJournal.length > 0 && curJournal[0]?.id !== prevJournal[0]?.id) delta.journal = curJournal.slice(0, 5);

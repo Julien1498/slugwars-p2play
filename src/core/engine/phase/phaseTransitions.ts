@@ -8,6 +8,9 @@ export function onExitPhase(state: GameState, oldPhase: GamePhase): void {
       activeSlug.steeringDir = null;
       activeSlug.isChargingPower = false;
       activeSlug.isBlowtorching = false;
+      activeSlug.isDrilling = false;
+      activeSlug.isParachuting = false;
+      if (activeSlug.jetpackState) activeSlug.jetpackState.isThrusting = false;
       activeSlug.currentTargetPoint = undefined;
     }
   }

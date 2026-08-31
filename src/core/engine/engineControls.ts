@@ -51,10 +51,23 @@ export function jumpSlug(state: GameState, terrain: DestructibleTerrain): boolea
     return true;
   }
 
-  if (isSlugGrounded(activeSlug, terrain, state.slugs)) {
+  if (activeSlug.jetpackState) {
+    activeSlug.jetpackState.isThrusting = true;
+    activeSlug.vy = Math.max(-5.5, activeSlug.vy - 0.8);
+    sfx.play('jetpack');
+    return true;
+  }
+
+  const grounded = isSlugGrounded(activeSlug, terrain, state.slugs);
+  if (grounded) {
     activeSlug.vy = -7.5;
     activeSlug.vx += activeSlug.facing === 'right' ? 2 : -2;
     sfx.play('jump');
+    return true;
+  } else if (activeSlug.vy > 0.5 && !activeSlug.isParachuting) {
+    activeSlug.isParachuting = true;
+    activeSlug.fallStartY = undefined;
+    sfx.play('parachute');
     return true;
   }
   return false;
@@ -103,8 +116,9 @@ export function releaseCharge(
   if (state.phase !== 'AIMING') return;
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (activeSlug && activeSlug.isAlive) {
-    if (activeSlug.isBlowtorching) {
+    if (activeSlug.isBlowtorching || activeSlug.isDrilling) {
       activeSlug.isBlowtorching = false;
+      activeSlug.isDrilling = false;
       return;
     }
     if (activeSlug.isChargingPower) {

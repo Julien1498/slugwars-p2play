@@ -26,7 +26,7 @@ export function updateProjectilesInTick(
       });
     }
 
-    const res = updateProjectilePhysics(proj, terrain, state.wind, state.slugs);
+    const res = updateProjectilePhysics(proj, terrain, state.wind, state.slugs, state.magnets);
     if (res.carveStep) {
       carveCrater(res.carveStep.x, res.carveStep.y, res.carveStep.radius);
       if (state.particles.length < 50) {

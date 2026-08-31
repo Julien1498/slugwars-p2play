@@ -104,6 +104,16 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.tp !== undefined) slug.currentTargetPoint = dSlug.tp;
         if (dSlug.ft !== undefined) slug.fuseTimerSec = dSlug.ft;
         if (dSlug.bt !== undefined) slug.isBlowtorching = dSlug.bt;
+        if (dSlug.dr !== undefined) slug.isDrilling = dSlug.dr;
+        if (dSlug.pa !== undefined) slug.isParachuting = dSlug.pa;
+
+        if (dSlug.jpF !== undefined) {
+          if (dSlug.jpF > 0) {
+            slug.jetpackState = { fuelMs: dSlug.jpF, isThrusting: dSlug.jpT ?? false };
+          } else {
+            slug.jetpackState = null;
+          }
+        }
 
         // Apply Ninja Rope State
         if (dSlug.rs === null || ('rs' in dSlug && !dSlug.rs)) {
@@ -127,6 +137,10 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
 
   if (delta.girders !== undefined) {
     localState.girders = delta.girders;
+  }
+
+  if (delta.magnets !== undefined) {
+    localState.magnets = delta.magnets;
   }
 
   if (delta.craters !== undefined) {

@@ -16,6 +16,7 @@ import {
 import { renderGhostSpirits } from './slugs/renderGhostSpirits';
 import { renderSlugHat } from './slugs/renderSlugHats';
 import { renderHeldWeapon } from './slugs/renderSlugWeapons';
+import { renderSlugJetpack, renderSlugParachute, renderSlugDrill } from './slugs/renderSlugUtilityProps';
 
 export interface SlugsRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -143,6 +144,10 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.fill(SLUG_BODY_PATH);
     ctx.stroke(SLUG_BODY_PATH);
 
+    // Jetpack & Drill attachments
+    renderSlugJetpack(ctx, slug, animTime);
+    renderSlugDrill(ctx, slug, animTime);
+
     // Belly
     ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
     ctx.fill(SLUG_BELLY_PATH);
@@ -228,6 +233,9 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     ctx.restore();
 
+    // Parachute Overlay
+    renderSlugParachute(ctx, slug, animTime);
+
     // HP Badge
     const badgeW = 38;
     const badgeH = 14;
@@ -248,6 +256,15 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     ctx.fillStyle = '#f8fafc';
     ctx.fillText(`${slug.hp}`, slug.x, badgeY + badgeH / 2);
+
+    // Jetpack Fuel Gauge Bar
+    if (slug.jetpackState) {
+      const fuelRatio = Math.max(0, Math.min(1, (slug.jetpackState.fuelMs || 0) / 4000));
+      ctx.fillStyle = 'rgba(9, 9, 11, 0.8)';
+      ctx.fillRect(slug.x - 14, badgeY - 5, 28, 3);
+      ctx.fillStyle = fuelRatio > 0.35 ? '#22c55e' : '#ef4444';
+      ctx.fillRect(slug.x - 14, badgeY - 5, 28 * fuelRatio, 3);
+    }
   }
 }
 

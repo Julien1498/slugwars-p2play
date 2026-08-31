@@ -104,7 +104,15 @@ export function advanceToNextTurn(
   state.turnCount = (state.turnCount || 0) + 1;
   callbacks.randomizeWind(state);
 
-  // 7. Chance of procedural turn supply crate drop (25% chance)
+  // 7. Decrement electromagnetic magnets remaining turns
+  if (state.magnets && state.magnets.length > 0) {
+    state.magnets.forEach((m) => {
+      m.turnsRemaining--;
+    });
+    state.magnets = state.magnets.filter((m) => m.turnsRemaining > 0);
+  }
+
+  // 8. Chance of procedural turn supply crate drop (25% chance)
   if (Math.random() < 0.25) {
     spawnTurnSupplyCrate(state, terrain.data.width, callbacks.addLog);
   }

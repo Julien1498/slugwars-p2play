@@ -4,7 +4,7 @@ import {
   renderParticles,
   renderClientExplosions,
 } from './effects/renderExplosionEffects';
-import { renderSupplyCrates, renderMines } from './effects/renderDeployables';
+import { renderSupplyCrates, renderMines, renderMagnets } from './effects/renderDeployables';
 import { renderHelicopters } from './effects/renderHelicopters';
 import {
   ClientFloatingDamage,
@@ -20,6 +20,7 @@ export {
   renderClientExplosions,
   renderSupplyCrates,
   renderMines,
+  renderMagnets,
   renderHelicopters,
   renderFloatingDamages,
   renderTombstones,

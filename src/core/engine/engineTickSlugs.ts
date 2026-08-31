@@ -22,6 +22,10 @@ export function updateSlugsPhysicsAndDrowning(
       slug.isAlive = false;
     }
 
+    if (slug.isParachuting && state.wind) {
+      slug.vx += state.wind * 0.02;
+    }
+
     const phys = updateSlugPhysics(slug, terrain, state.slugs);
     if (phys.fallDamage && !slug.isGodMode) {
       addLog(`💥 ${slug.name} a subi ${phys.fallDamage} dégâts de chute !`, 'combat');

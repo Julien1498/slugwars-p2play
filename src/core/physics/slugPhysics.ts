@@ -45,15 +45,24 @@ export function updateSlugPhysics(
     slug.isAlive = false;
   }
   if (!slug.isAlive || slug.isPlaced === false) return {};
-  if (slug.ropeState || slug.inVehicleId) {
+  if (slug.ropeState || slug.inVehicleId || slug.jetpackState || slug.isDrilling) {
     slug.fallStartY = undefined;
-    return {};
+    if (slug.isDrilling) return {};
+    if (slug.ropeState || slug.inVehicleId) return {};
   }
 
   const result: { fallDamage?: number } = {};
 
   const grounded = isSlugGrounded(slug, terrain, slugs);
-  if (!grounded) {
+  if (grounded) {
+    if (slug.isParachuting) slug.isParachuting = false;
+    if (slug.jetpackState) slug.jetpackState.isThrusting = false;
+  }
+
+  if (slug.isParachuting) {
+    slug.fallStartY = undefined;
+    slug.vy = Math.min(slug.vy, 1.6);
+  } else if (!grounded) {
     if (slug.fallStartY === undefined) {
       slug.fallStartY = slug.y;
     }
@@ -72,7 +81,7 @@ export function updateSlugPhysics(
     slug.fallStartY = undefined;
   }
 
-  slug.vy += GRAVITY;
+  slug.vy += slug.isParachuting ? GRAVITY * 0.25 : GRAVITY;
   slug.vx *= FRICTION;
 
   const totalSpeed = Math.hypot(slug.vx, slug.vy);

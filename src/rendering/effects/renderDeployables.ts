@@ -186,3 +186,49 @@ export function renderMines(
     }
   }
 }
+
+export function renderMagnets(
+  ctx: CanvasRenderingContext2D,
+  magnets: import('../../core/types').PlacedMagnet[] | undefined,
+  animTime: number = 0,
+  viewLeft?: number,
+  viewRight?: number
+) {
+  if (!magnets || magnets.length === 0) return;
+  for (const mag of magnets) {
+    if (viewLeft !== undefined && viewRight !== undefined && (mag.x < viewLeft - 50 || mag.x > viewRight + 50)) continue;
+    ctx.save();
+    ctx.translate(mag.x, mag.y);
+
+    // Pulsing magnetic force waves
+    const isAttract = mag.polarity === 'ATTRACT';
+    const waveRadius = (animTime * 60) % 90;
+    const waveAlpha = Math.max(0, 1 - waveRadius / 90) * 0.4;
+    ctx.strokeStyle = isAttract ? `rgba(59, 130, 246, ${waveAlpha})` : `rgba(239, 68, 68, ${waveAlpha})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, waveRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Horseshoe Magnet Body
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = isAttract ? '#3b82f6' : '#dc2626';
+    ctx.beginPath();
+    ctx.arc(0, 0, 8, Math.PI, 0, false);
+    ctx.stroke();
+
+    // Magnet tips (North/South poles)
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(5, -2, 4, 6);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-9, -2, 4, 6);
+
+    // Turns badge
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${mag.turnsRemaining}t`, 0, -12);
+
+    ctx.restore();
+  }
+}

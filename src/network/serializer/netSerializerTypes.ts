@@ -44,6 +44,10 @@ export interface CompactSlugDelta {
   rs?: CompactRopeDelta | null; // ropeState
   ft?: number; // fuseTimerSec (1 to 5)
   bt?: boolean; // isBlowtorching
+  jpF?: number; // jetpack fuelMs
+  jpT?: boolean; // jetpack isThrusting
+  dr?: boolean; // isDrilling
+  pa?: boolean; // isParachuting
 }
 
 export interface CompactTeamDelta {
@@ -74,6 +78,7 @@ export interface CompactStateDelta {
   explosions?: Partial<ExplosionEvent>[];
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
+  magnets?: import('../../core/types').PlacedMagnet[];
   craters?: CraterRecord[];
   terrainBuilds?: CraterRecord[];
   journal?: GameState['journal'];

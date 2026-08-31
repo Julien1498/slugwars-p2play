@@ -1,4 +1,4 @@
-import { ActiveProjectile, Slug, ProjectileImpactBehavior } from '../types';
+import { ActiveProjectile, Slug, ProjectileImpactBehavior, PlacedMagnet } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { updateWalkingEntityPhysics } from './walkingEntityPhysics';
 import {
@@ -20,7 +20,8 @@ export function updateProjectilePhysics(
   proj: ActiveProjectile,
   terrain: DestructibleTerrain,
   arg3?: number | Slug[],
-  arg4?: number | Slug[]
+  arg4?: number | Slug[],
+  magnets?: PlacedMagnet[]
 ): ProjectilePhysicsResult {
   const wind: number = typeof arg3 === 'number' ? arg3 : typeof arg4 === 'number' ? arg4 : 0;
   const slugs: Slug[] = Array.isArray(arg3) ? arg3 : Array.isArray(arg4) ? arg4 : [];
@@ -88,6 +89,22 @@ export function updateProjectilePhysics(
   } else {
     if (proj.windAffected) {
       proj.vx += wind * 0.02;
+    }
+
+    // Apply active electromagnetic field from PlacedMagnet props
+    if (magnets && magnets.length > 0) {
+      for (const mag of magnets) {
+        if (mag.turnsRemaining <= 0) continue;
+        const mdx = mag.x - proj.x;
+        const mdy = mag.y - proj.y;
+        const mdist = Math.hypot(mdx, mdy);
+        if (mdist < 240 && mdist > 1) {
+          const force = 1600 / Math.pow(mdist + 20, 2);
+          const sign = mag.polarity === 'ATTRACT' ? 1 : -1;
+          proj.vx += (mdx / mdist) * force * sign;
+          proj.vy += (mdy / mdist) * force * sign;
+        }
+      }
     }
 
     const gScale = proj.gravityScale ?? 1;

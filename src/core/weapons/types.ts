@@ -31,6 +31,10 @@ export type WeaponId =
   | 'bunker_buster'
   | 'mine_strike'
   | 'kamikaze'
+  | 'jetpack'
+  | 'pneumatic_drill'
+  | 'parachute'
+  | 'magnet'
   | 'skip_turn';
 
 
@@ -59,6 +63,10 @@ export type WeaponBehavior =
   | 'BUNKER_BUSTER'
   | 'MINE_STRIKE'
   | 'KAMIKAZE'
+  | 'JETPACK'
+  | 'DRILL'
+  | 'PARACHUTE'
+  | 'MAGNET'
   | 'SKIP_TURN';
 
 
@@ -87,6 +95,7 @@ export interface WeaponDefinition {
   fuseTimeMs?: number;
   allowCustomFuse?: boolean; // When true, allows choosing 1s, 2s, 3s, 4s, 5s fuse
   craftable: boolean;
+  isMetallic?: boolean; // When true, deflected by active electromagnetic magnets
   customSoundKey?: string;
   minPower?: number;
   maxPower?: number;

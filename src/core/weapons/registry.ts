@@ -4,7 +4,7 @@ import { clusterBombWeapon, clusterFragmentWeapon } from './definitions/clusterW
 import { concreteDonkeyWeapon, superSheepWeapon } from './definitions/wackyWeapons';
 import { baseballBatWeapon, airStrikeWeapon, teleportWeapon, shotgunWeapon, homingPigeonWeapon, prodWeapon, blowtorchWeapon } from './definitions/tacticalWeapons';
 import { handgunWeapon, uziWeapon } from './definitions/bulletWeapons';
-import { ninjaRopeWeapon, girderWeapon, airdropWeapon, skipTurnWeapon } from './definitions/utilityWeapons';
+import { ninjaRopeWeapon, girderWeapon, airdropWeapon, skipTurnWeapon, jetpackWeapon, pneumaticDrillWeapon, parachuteWeapon, magnetWeapon } from './definitions/utilityWeapons';
 import { sheepWeapon, oldLadyWeapon, armageddonWeapon, meteorWeapon } from './definitions/mythicWeapons';
 import { bunkerBusterWeapon, mineStrikeWeapon, kamikazeWeapon } from './definitions/aerialWeapons';
 
@@ -39,6 +39,10 @@ export const WEAPON_REGISTRY: Record<WeaponId, WeaponDefinition> = {
   ninja_rope: ninjaRopeWeapon,
   girder: girderWeapon,
   airdrop: airdropWeapon,
+  jetpack: jetpackWeapon,
+  pneumatic_drill: pneumaticDrillWeapon,
+  parachute: parachuteWeapon,
+  magnet: magnetWeapon,
   skip_turn: skipTurnWeapon,
 };
 

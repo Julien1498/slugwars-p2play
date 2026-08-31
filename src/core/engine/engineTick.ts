@@ -2,6 +2,7 @@ import { GameState, JournalEntry, Vector2D } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { PhaseManager } from './phaseManager';
 import { updateSlugsPhysicsAndDrowning, updateSlugRopeAndCharge, updateBlowtorchTick } from './engineTickSlugs';
+import { updateJetpackTick, updateDrillTick } from './engineTickUtility';
 import { updateProjectilesInTick, cleanupExpiredVFX } from './engineTickProjectiles';
 import { updateHelicopters } from './vehicleManager';
 import { updateMines, updateSupplyCrates } from './supplyDropManager';
@@ -68,13 +69,23 @@ export function executeEngineTick(
     );
   }
 
-  // 5. Super sheep steer
+  // 5. Jetpack vol & pneumatic drill
+  if (activeSlug && activeSlug.isAlive) {
+    if (activeSlug.jetpackState) {
+      updateJetpackTick(state, terrain, activeSlug, (msg, type) => callbacks.addLog(msg, type));
+    }
+    if (activeSlug.isDrilling) {
+      updateDrillTick(state, terrain, activeSlug, (x, y, r) => callbacks.carveCrater(x, y, r), (msg, type) => callbacks.addLog(msg, type));
+    }
+  }
+
+  // 6. Super sheep steer
   const activeSheep = state.projectiles.find((p) => p.weaponId === 'super_sheep');
   if (activeSheep && activeSlug && activeSlug.steeringDir) {
     callbacks.steerSheep(activeSlug.steeringDir);
   }
 
-  // 6. Helicopter physics
+  // 7. Helicopter physics
   updateHelicopters(state, terrain, (msg, type) => callbacks.addLog(msg, type));
 
   // 7. Active slug took damage during aiming -> interrupt turn immediately

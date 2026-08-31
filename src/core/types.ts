@@ -1,8 +1,4 @@
-export interface Vector2D {
-  x: number;
-  y: number;
-}
-
+export interface Vector2D { x: number; y: number; }
 export type TeamId = string;
 export type SlugId = string;
 
@@ -48,6 +44,19 @@ export interface DecorItem {
   destroyed?: boolean;
 }
 
+export interface JetpackState {
+  fuelMs: number;
+  isThrusting?: boolean;
+}
+
+export interface PlacedMagnet {
+  id: string;
+  x: number;
+  y: number;
+  polarity: 'ATTRACT' | 'REPEL';
+  turnsRemaining: number;
+}
+
 export interface PlacedGirder {
   id: string;
   x: number;
@@ -85,7 +94,11 @@ export interface Slug {
   isBlowtorching?: boolean;
   blowtorchTimerMs?: number;
   ropeState?: RopeState | null;
-  fuseTimerSec?: number; // Configurable fuse timer in seconds (1 to 5, default 3)
+  jetpackState?: JetpackState | null;
+  isDrilling?: boolean;
+  drillDepth?: number;
+  isParachuting?: boolean;
+  fuseTimerSec?: number;
   isGodMode?: boolean;
 }
 
@@ -216,48 +229,11 @@ export interface ActiveProjectile {
   behaviorData?: Record<string, any>;
 }
 
-export interface ExplosionEvent {
-  x: number;
-  y: number;
-  radius: number;
-  damage: number;
-  customSound?: string;
-  id: string;
-  createdAt: number;
-}
-
-export interface JournalEntry {
-  id: string;
-  timestamp: number;
-  message: string;
-  type?: 'info' | 'combat' | 'death' | 'weapon';
-}
-
-export interface Landmine {
-  id: string;
-  x: number;
-  y: number;
-  isTriggered: boolean;
-  fuseTimerMs?: number;
-}
-
-export interface FloatingDamage {
-  id: string;
-  x: number;
-  y: number;
-  damage: number;
-  text?: string;
-  color?: string;
-  createdAt: number;
-}
-
-export interface CraterRecord {
-  id: string;
-  x: number;
-  y: number;
-  radius: number;
-  createdAt?: number;
-}
+export interface ExplosionEvent { id: string; x: number; y: number; radius: number; damage: number; customSound?: string; createdAt: number; }
+export interface JournalEntry { id: string; timestamp: number; message: string; type?: 'info' | 'combat' | 'death' | 'weapon'; }
+export interface Landmine { id: string; x: number; y: number; isTriggered: boolean; fuseTimerMs?: number; }
+export interface FloatingDamage { id: string; x: number; y: number; damage: number; text?: string; color?: string; createdAt: number; }
+export interface CraterRecord { id: string; x: number; y: number; radius: number; createdAt?: number; }
 
 export interface GameState {
   phase: GamePhase;
@@ -280,6 +256,7 @@ export interface GameState {
   floatingDamages: FloatingDamage[];
   supplyCrates?: SupplyCrate[];
   girders?: PlacedGirder[];
+  magnets?: PlacedMagnet[];
   craters?: CraterRecord[];
   terrainBuilds?: CraterRecord[];
   winnerTeamId?: TeamId;

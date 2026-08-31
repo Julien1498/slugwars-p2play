@@ -22,6 +22,10 @@ export type SoundEffectType =
   | 'gunshot'
   | 'uzi_burst'
   | 'granny_hum'
+  | 'jetpack'
+  | 'drill'
+  | 'parachute'
+  | 'magnet'
   | 'ouch';
 
 export interface PlaySoundOptions {

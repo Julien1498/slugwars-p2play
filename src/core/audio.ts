@@ -54,6 +54,10 @@ const SFX_DISPATCH: Record<string, SoundPlayerFn> = {
   ouch: playOuchSound,
   tick: playTickSound,
   victory: playVictorySound,
+  jetpack: playFireSound,
+  drill: playMeleeSound,
+  parachute: playAirdropSound,
+  magnet: playSirenSound,
 };
 
 class SoundEffects {
