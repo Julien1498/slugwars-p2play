@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, memo } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateTerrainGridOnly } from '../../../core/terrainGenerator';
+import { generateScaledTerrainGrid } from '../../../core/terrainGenerator';
 import { rasterizePreviewToCanvas } from './previewRasterizer';
 
 interface BiomeMiniPreviewProps {
@@ -24,8 +24,7 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
-      const waterLevelY = Math.round((terrainData.waterLevel / terrainData.height) * height);
+      const terrainData = generateScaledTerrainGrid(seed, theme, width, height, sizeCfg.width, sizeCfg.height);
 
       rasterizePreviewToCanvas(
         ctx,
@@ -35,7 +34,7 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
         theme,
         width,
         height,
-        waterLevelY
+        terrainData.waterLevel
       );
     });
 

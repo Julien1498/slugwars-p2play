@@ -45,14 +45,18 @@ export function rasterizePreviewToCanvas(
   const palette = PREVIEW_RGB_PALETTES[theme] || PREVIEW_RGB_PALETTES.ISLAND;
   const { skyTop, skyBottom, surface, shadow, topsoil, strataA, strataB, denseRock, bedrock, packedSurface, packedTopsoil, packedDenseRock, packedBedrock } = palette;
 
-  // 1. Zero-Alloc Downsampling of the real physical simulation grid
-  for (let py = 0; py < previewH; py++) {
-    const gy = ((py / previewH) * realH) | 0;
-    const gRowOffset = gy * realW;
-    const pRowOffset = py * previewW;
-    for (let px = 0; px < previewW; px++) {
-      const gx = ((px / previewW) * realW) | 0;
-      _SHARED_GRID[pRowOffset + px] = realGrid[gRowOffset + gx] > 0 ? 1 : 0;
+  // 1. Zero-Alloc Downsampling or Instant Direct Memcpy
+  if (realGrid.length === totalPixels) {
+    _SHARED_GRID.set(realGrid);
+  } else {
+    for (let py = 0; py < previewH; py++) {
+      const gy = ((py / previewH) * realH) | 0;
+      const gRowOffset = gy * realW;
+      const pRowOffset = py * previewW;
+      for (let px = 0; px < previewW; px++) {
+        const gx = ((px / previewW) * realW) | 0;
+        _SHARED_GRID[pRowOffset + px] = realGrid[gRowOffset + gx] > 0 ? 1 : 0;
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateTerrainGridOnly } from '../../../core/terrainGenerator';
+import { generateScaledTerrainGrid } from '../../../core/terrainGenerator';
 import { rasterizePreviewToCanvas } from './previewRasterizer';
 
 interface MapThumbnailPreviewProps {
@@ -25,8 +25,7 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const previewW = canvas.width;
     const previewH = canvas.height;
 
-    const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
-    const waterLevelY = Math.round((terrainData.waterLevel / terrainData.height) * previewH);
+    const terrainData = generateScaledTerrainGrid(seed, theme, previewW, previewH, sizeCfg.width, sizeCfg.height);
 
     rasterizePreviewToCanvas(
       ctx,
@@ -36,7 +35,7 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
       theme,
       previewW,
       previewH,
-      waterLevelY
+      terrainData.waterLevel
     );
   }, [theme, sizeCfg.width, sizeCfg.height, seed]);
 

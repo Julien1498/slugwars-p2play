@@ -14,6 +14,7 @@ import { generateSolidProps } from './terrain/terrainPropsPlacer';
 
 export { SeededRandom };
 export type { DecorItem, SolidProp };
+export { generateScaledTerrainGrid } from './terrain/scaledTerrainGenerator';
 
 export interface TerrainData {
   width: number;
