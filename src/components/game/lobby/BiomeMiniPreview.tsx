@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, memo } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateTerrainPreviewGrid } from '../../../core/terrain/terrainPreviewGenerator';
+import { generateProceduralTerrain } from '../../../core/terrainGenerator';
 import { getThemeConfig } from '../../../core/terrain/themeRegistry';
 
 interface BiomeMiniPreviewProps {
@@ -22,8 +22,24 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const preview = generateTerrainPreviewGrid(seed, theme, width, height, sizeCfg.width, sizeCfg.height);
-    const { grid, waterLevel } = preview;
+    const terrainData = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
+    const realGrid = terrainData.grid;
+    const realW = terrainData.width;
+    const realH = terrainData.height;
+    const waterLevel = Math.round((terrainData.waterLevel / realH) * height);
+
+    const grid = new Uint8Array(width * height);
+    for (let py = 0; py < height; py++) {
+      const gy = Math.min(realH - 1, Math.floor((py / height) * realH));
+      const gRowOffset = gy * realW;
+      const pRowOffset = py * width;
+      for (let px = 0; px < width; px++) {
+        const gx = Math.min(realW - 1, Math.floor((px / width) * realW));
+        if (realGrid[gRowOffset + gx] > 0) {
+          grid[pRowOffset + px] = 1;
+        }
+      }
+    }
     const themeConfig = getThemeConfig(theme);
 
     const hexStringToRgb = (hex: string): [number, number, number] => {

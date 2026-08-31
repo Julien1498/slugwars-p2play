@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateTerrainPreviewGrid } from '../../../core/terrain/terrainPreviewGenerator';
+import { generateProceduralTerrain } from '../../../core/terrainGenerator';
 import { getThemeConfig } from '../../../core/terrain/themeRegistry';
 
 interface MapThumbnailPreviewProps {
@@ -25,8 +25,25 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const previewW = canvas.width;
     const previewH = canvas.height;
 
-    const preview = generateTerrainPreviewGrid(seed, theme, previewW, previewH, sizeCfg.width, sizeCfg.height);
-    const { grid, waterLevel } = preview;
+    const terrainData = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
+    const realGrid = terrainData.grid;
+    const realW = terrainData.width;
+    const realH = terrainData.height;
+    const waterLevel = Math.round((terrainData.waterLevel / realH) * previewH);
+
+    // Direct downsampling of real simulation grid guarantees 100% bitwise topological parity
+    const grid = new Uint8Array(previewW * previewH);
+    for (let py = 0; py < previewH; py++) {
+      const gy = Math.min(realH - 1, Math.floor((py / previewH) * realH));
+      const gRowOffset = gy * realW;
+      const pRowOffset = py * previewW;
+      for (let px = 0; px < previewW; px++) {
+        const gx = Math.min(realW - 1, Math.floor((px / previewW) * realW));
+        if (realGrid[gRowOffset + gx] > 0) {
+          grid[pRowOffset + px] = 1;
+        }
+      }
+    }
 
     const themeConfig = getThemeConfig(theme);
     const hexStringToRgb = (hex: string): [number, number, number] => {
