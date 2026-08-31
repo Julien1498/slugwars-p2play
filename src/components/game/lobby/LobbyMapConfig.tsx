@@ -39,7 +39,13 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
           size={config.mapSize || 'NORMAL'}
           seed={config.mapSeed}
           isHost={isHost}
-          onSelectTheme={(mapTheme) => onChangeConfig({ mapTheme })}
+          onSelectTheme={(mapTheme) => {
+            if (mapTheme === config.mapTheme) {
+              onChangeConfig({ mapTheme, mapSeed: Math.floor(Math.random() * 1000000) });
+            } else {
+              onChangeConfig({ mapTheme });
+            }
+          }}
         />
 
         <div className="flex items-center gap-2">
