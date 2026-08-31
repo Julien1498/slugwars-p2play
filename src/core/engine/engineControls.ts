@@ -73,6 +73,13 @@ export function jumpSlug(state: GameState, terrain: DestructibleTerrain): boolea
   return false;
 }
 
+export function stopJump(state: GameState): void {
+  const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+  if (activeSlug?.jetpackState) {
+    activeSlug.jetpackState.isThrusting = false;
+  }
+}
+
 export function startCharge(
   state: GameState,
   targetPoint?: Vector2D,

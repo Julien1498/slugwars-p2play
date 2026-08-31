@@ -63,6 +63,7 @@ export const App: React.FC<AppProps> = ({
   const handleStartMove = React.useCallback((dir: 'left' | 'right') => sendAction('START_MOVE', { dir }), [sendAction]);
   const handleStopMove = React.useCallback(() => sendAction('STOP_MOVE'), [sendAction]);
   const handleJump = React.useCallback(() => sendAction('JUMP'), [sendAction]);
+  const handleStopJump = React.useCallback(() => sendAction('STOP_JUMP'), [sendAction]);
   const handleStartSteer = React.useCallback((dir: 'left' | 'right') => sendAction('START_STEER', { dir }), [sendAction]);
   const handleStopSteer = React.useCallback(() => sendAction('STOP_STEER'), [sendAction]);
   const handleStartCharge = React.useCallback((targetPoint?: any) => sendAction('START_CHARGE', { targetPoint }), [sendAction]);
@@ -126,6 +127,7 @@ export const App: React.FC<AppProps> = ({
         onStartMove={handleStartMove}
         onStopMove={handleStopMove}
         onJump={handleJump}
+        onStopJump={handleStopJump}
         onStartSteer={handleStartSteer}
         onStopSteer={handleStopSteer}
         onStartCharge={handleStartCharge}

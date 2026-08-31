@@ -19,6 +19,7 @@ export interface SlugWarsBoardProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
+  onStopJump?: () => void;
   onStartSteer?: (dir: 'left' | 'right') => void;
   onStopSteer?: () => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;

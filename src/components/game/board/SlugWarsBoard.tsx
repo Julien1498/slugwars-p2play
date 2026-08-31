@@ -25,7 +25,7 @@ export type { SlugWarsBoardProps };
 export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   gameState, terrain, chatMessages, sendChat, myPeerId, hostPeerId, isHost,
   onFire, onPlaceSlug, onUpdateAim, onSelectWeapon, onSetFuseTimer,
-  onStartMove, onStopMove, onJump, onStartSteer, onStopSteer,
+  onStartMove, onStopMove, onJump, onStopJump, onStartSteer, onStopSteer,
   onStartCharge, onReleaseCharge, onDetonate, onEnterVehicle, onExitVehicle,
   onSteerVehicle, onRestartGame, onExit, engine, onDevAction,
 }) => {
@@ -88,6 +88,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
     onStartMove,
     onStopMove,
     onJump,
+    onStopJump,
     onFire,
     onStartCharge,
     onReleaseCharge,
@@ -208,6 +209,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
         onStartMove={onStartMove}
         onStopMove={onStopMove}
         onJump={onJump}
+        onStopJump={onStopJump}
         onUpdateAim={onUpdateAim}
         onFire={onFire}
         onStartCharge={onStartCharge}
@@ -286,8 +288,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             showPerfMetrics={showMetrics}
             onTogglePerfMetrics={handleOpenMetrics}
             roomCode={isHost ? myPeerId : hostPeerId}
-            brushRadius={devMode.brushRadius}
-            onSetBrushRadius={devMode.setBrushRadius}
+            brushRadius={devMode.brushRadius} onSetBrushRadius={devMode.setBrushRadius}
           />
         </>
       )}

@@ -43,6 +43,15 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
         engine.tick();
       }
       expect(activeSlug.jetpackState!.fuelMs).toBeLessThan(initialFuel);
+
+      // Releasing jump key stops thrust and freezes fuel consumption
+      engine.stopJump();
+      expect(activeSlug.jetpackState!.isThrusting).toBe(false);
+      const fuelAfterStop = activeSlug.jetpackState!.fuelMs;
+      for (let i = 0; i < 10; i++) {
+        engine.tick();
+      }
+      expect(activeSlug.jetpackState!.fuelMs).toBe(fuelAfterStop);
     });
 
     it('inflicts fall damage if falling without thrust cushioning from height', () => {

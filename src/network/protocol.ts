@@ -9,6 +9,7 @@ export type SlugWarsActionType =
   | 'START_MOVE'
   | 'STOP_MOVE'
   | 'JUMP'
+  | 'STOP_JUMP'
   | 'AIM'
   | 'START_STEER'
   | 'STOP_STEER'

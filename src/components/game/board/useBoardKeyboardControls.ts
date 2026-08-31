@@ -25,6 +25,7 @@ interface KeyboardControlsProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
+  onStopJump?: () => void;
   onFire?: (targetPoint?: Vector2D) => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;
   onReleaseCharge?: (targetPoint?: Vector2D) => void;
@@ -47,6 +48,7 @@ export function useBoardKeyboardControls({
   onStartMove,
   onStopMove,
   onJump,
+  onStopJump,
   onFire,
   onStartCharge,
   onReleaseCharge,
@@ -142,7 +144,9 @@ export function useBoardKeyboardControls({
       } else if (action === 'JUMP') {
         onJump();
       } else if (action === 'AIM_UP' && activeSlug && gameState.phase !== 'RETREAT') {
-        if (activeSlug.selectedWeaponId === 'girder') {
+        if (activeSlug.jetpackState) {
+          onJump();
+        } else if (activeSlug.selectedWeaponId === 'girder') {
           const nextAngle = (activeSlug.aimAngle + 5) % 360;
           onUpdateAim(nextAngle, activeSlug.aimPower, activeSlug.facing, activeSlug.currentTargetPoint);
           sfx.play('tick');
@@ -188,6 +192,10 @@ export function useBoardKeyboardControls({
         activeMovingKeyRef.current = null;
       } else if (action === 'WINCH_UP' || action === 'WINCH_DOWN') {
         if (activeSlug?.ropeState) onStopSteer?.();
+      } else if (action === 'JUMP') {
+        onStopJump?.();
+      } else if (action === 'AIM_UP') {
+        if (activeSlug?.jetpackState) onStopJump?.();
       } else if (action === 'FIRE_OR_CHARGE' && !activeSheep && gameState.phase === 'AIMING') {
         onReleaseCharge?.();
       }
@@ -207,6 +215,7 @@ export function useBoardKeyboardControls({
     onStartMove,
     onStopMove,
     onJump,
+    onStopJump,
     onFire,
     onStartSteer,
     onStopSteer,

@@ -19,6 +19,7 @@ interface MobileTouchOverlayProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
+  onStopJump?: () => void;
   onUpdateAim: (aimAngle: number, aimPower: number, facing: 'left' | 'right', targetPoint?: Vector2D) => void;
   onFire?: (targetPoint?: Vector2D) => void;
   onStartCharge?: (targetPoint?: Vector2D) => void;
@@ -46,6 +47,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
   onStartMove,
   onStopMove,
   onJump,
+  onStopJump,
   onUpdateAim,
   onFire,
   onStartCharge,
@@ -114,6 +116,7 @@ export const MobileTouchOverlay: React.FC<MobileTouchOverlayProps> = ({
             onStartMove={onStartMove}
             onStopMove={onStopMove}
             onJump={onJump}
+            onStopJump={onStopJump}
             onSteerVehicle={onSteerVehicle}
             onExitVehicle={onExitVehicle}
             onEnterVehicle={onEnterVehicle}

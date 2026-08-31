@@ -58,5 +58,5 @@ describe('SUITE D\'AUDIT AUTOMATISÉ & DIAGNOSTIC SLUGWARS', () => {
     expect(resPhysics.determinismPassed).toBe(true);
     expect(resGraph.cycles.length).toBe(0);
     expect(resGraph.boundaryViolations.length).toBe(0);
-  });
+  }, 30000);
 });

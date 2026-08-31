@@ -10,6 +10,7 @@ interface LeftThumbClusterProps {
   onStartMove: (dir: 'left' | 'right') => void;
   onStopMove: () => void;
   onJump: () => void;
+  onStopJump?: () => void;
   onSteerVehicle?: (dir: 'left' | 'right' | 'up' | 'down') => void;
   onExitVehicle?: () => void;
   onEnterVehicle?: () => void;
@@ -26,6 +27,7 @@ export const LeftThumbCluster: React.FC<LeftThumbClusterProps> = ({
   onStartMove,
   onStopMove,
   onJump,
+  onStopJump,
   onSteerVehicle,
   onExitVehicle,
   onEnterVehicle,
@@ -168,13 +170,19 @@ export const LeftThumbCluster: React.FC<LeftThumbClusterProps> = ({
             type="button"
             disabled={!isMyTurn}
             className="w-[74px] h-[74px] rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 active:from-emerald-700 active:to-teal-600 border-2 border-emerald-400 text-white font-black text-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-40"
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
               if (!isMyTurn) return;
               triggerHaptic(20);
               try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
               onJump();
             }}
-            title="Sauter"
+            onPointerUp={(e) => {
+              e.preventDefault();
+              onStopJump?.();
+            }}
+            onPointerCancel={() => onStopJump?.()}
+            title="Sauter / Propulsion Jetpack"
           >
             🦘
           </button>

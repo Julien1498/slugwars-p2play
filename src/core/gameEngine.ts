@@ -32,6 +32,7 @@ import {
   stopMove,
   moveSlug,
   jumpSlug,
+  stopJump,
   startCharge,
   releaseCharge,
   startSteer,
@@ -190,6 +191,10 @@ export class SlugWarsEngine {
 
   public jumpSlug(): boolean {
     return jumpSlug(this.state, this.terrain);
+  }
+
+  public stopJump(): void {
+    stopJump(this.state);
   }
 
   public selectWeapon(weaponId: string): boolean {

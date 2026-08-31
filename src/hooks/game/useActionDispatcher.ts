@@ -69,6 +69,18 @@ export function applyOptimisticAction(
     activeSlug.movingDir = null;
     return true;
   }
+  if (actionName === 'JUMP') {
+    if (activeSlug.jetpackState) {
+      activeSlug.jetpackState.isThrusting = true;
+      return true;
+    }
+  }
+  if (actionName === 'STOP_JUMP') {
+    if (activeSlug.jetpackState) {
+      activeSlug.jetpackState.isThrusting = false;
+      return true;
+    }
+  }
   return false;
 }
 

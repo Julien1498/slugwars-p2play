@@ -106,6 +106,11 @@ export function processHostAction(
           engine.jumpSlug();
         }
         break;
+      case 'STOP_JUMP':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.stopJump();
+        }
+        break;
       case 'START_STEER':
         if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.dir) {
           engine.startSteer(msg.payload.dir);
