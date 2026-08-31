@@ -69,7 +69,7 @@ export const jetpackWeapon: WeaponDefinition = {
   category: 'UTILITY',
   behavior: 'JETPACK',
   icon: '🎒',
-  description: 'Vol dorsal propulsé avec 4 secondes de carburant dynamique. Contrôles aux touches de saut et direction.',
+  description: 'Vol dorsal propulsé avec 30 secondes de carburant actif. Contrôles aux touches de saut et direction.',
   damage: 0,
   radius: 0,
   defaultAmmo: 2,

@@ -23,13 +23,13 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
   });
 
   describe('Jetpack (Vol dorsal & Propulsion)', () => {
-    it('activates jetpack with 4000ms fuel and cancels fall damage', () => {
+    it('activates jetpack with 30000ms fuel and applies thrust', () => {
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       engine.selectWeapon('jetpack');
       engine.fireWeapon();
 
       expect(activeSlug.jetpackState).toBeDefined();
-      expect(activeSlug.jetpackState?.fuelMs).toBe(4000);
+      expect(activeSlug.jetpackState?.fuelMs).toBe(30000);
       expect(activeSlug.jetpackState?.isThrusting).toBe(true);
 
       // Jump applies upward thrust when jetpack is active
@@ -37,12 +37,33 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       engine.jumpSlug();
       expect(activeSlug.vy).toBeLessThan(2.0);
 
-      // Simulates engine tick consuming fuel
+      // Simulates engine tick consuming fuel only when thrusting
       const initialFuel = activeSlug.jetpackState!.fuelMs;
       for (let i = 0; i < 10; i++) {
         engine.tick();
       }
       expect(activeSlug.jetpackState!.fuelMs).toBeLessThan(initialFuel);
+    });
+
+    it('inflicts fall damage if falling without thrust cushioning from height', () => {
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      engine.selectWeapon('jetpack');
+      engine.fireWeapon();
+
+      // Deactivate thrust (freefall)
+      activeSlug.jetpackState!.isThrusting = false;
+      activeSlug.x = 300;
+      activeSlug.y = 50;
+      activeSlug.fallStartY = 50;
+      activeSlug.vy = 8.0;
+
+      const hpBefore = activeSlug.hp;
+      // Drop to ground level (solid ground at ~370, fall distance 320 > 90)
+      activeSlug.y = 370;
+      engine.tick();
+
+      expect(activeSlug.hp).toBeLessThan(hpBefore);
+      expect(activeSlug.jetpackState).toBeNull(); // Crash destroyed jetpack
     });
 
     it('exhausts jetpack fuel when depleted to 0', () => {

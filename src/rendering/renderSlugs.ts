@@ -259,7 +259,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     // Jetpack Fuel Gauge Bar
     if (slug.jetpackState) {
-      const fuelRatio = Math.max(0, Math.min(1, (slug.jetpackState.fuelMs || 0) / 4000));
+      const fuelRatio = Math.max(0, Math.min(1, (slug.jetpackState.fuelMs || 0) / 30000));
       ctx.fillStyle = 'rgba(9, 9, 11, 0.8)';
       ctx.fillRect(slug.x - 14, badgeY - 5, 28, 3);
       ctx.fillStyle = fuelRatio > 0.35 ? '#22c55e' : '#ef4444';

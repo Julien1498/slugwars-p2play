@@ -44,11 +44,13 @@ export function updateSlugPhysics(
     slug.hp = 0;
     slug.isAlive = false;
   }
-  if (!slug.isAlive || slug.isPlaced === false) return {};
-  if (slug.ropeState || slug.inVehicleId || slug.jetpackState || slug.isDrilling) {
+  if (slug.ropeState || slug.inVehicleId || slug.isDrilling) {
     slug.fallStartY = undefined;
-    if (slug.isDrilling) return {};
-    if (slug.ropeState || slug.inVehicleId) return {};
+    return {};
+  }
+
+  if (slug.jetpackState?.isThrusting) {
+    slug.fallStartY = undefined;
   }
 
   const result: { fallDamage?: number } = {};
@@ -63,7 +65,7 @@ export function updateSlugPhysics(
     slug.fallStartY = undefined;
     slug.vy = Math.min(slug.vy, 1.6);
   } else if (!grounded) {
-    if (slug.fallStartY === undefined) {
+    if (slug.fallStartY === undefined && (!slug.jetpackState || !slug.jetpackState.isThrusting)) {
       slug.fallStartY = slug.y;
     }
   } else if (slug.fallStartY !== undefined) {
@@ -74,6 +76,9 @@ export function updateSlugPhysics(
         slug.hp = Math.max(0, slug.hp - fallDamage);
         if (slug.hp === 0) {
           slug.isAlive = false;
+        }
+        if (slug.jetpackState) {
+          slug.jetpackState = null; // High-velocity crash destroys the jetpack
         }
         result.fallDamage = fallDamage;
       }
