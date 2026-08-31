@@ -48,15 +48,15 @@ export function carveTerrainFeatures(
         const minY = Math.max(hasSolidCeiling ? 17 : 0, Math.floor(ty - tunnelRadius));
         const maxY = Math.min(height - 1, Math.ceil(ty + tunnelRadius));
         const rSq = tunnelRadius * tunnelRadius;
-
         for (let y = minY; y <= maxY; y++) {
           const dy = y - ty;
-          const rowOffset = y * width;
-          for (let x = minX; x <= maxX; x++) {
-            const dx = x - tx;
-            if (dx * dx + dy * dy <= rSq) {
-              grid[rowOffset + x] = 0;
-            }
+          const dySq = dy * dy;
+          if (dySq > rSq) continue;
+          const dxMax = Math.sqrt(rSq - dySq);
+          const startX = Math.max(0, Math.ceil(tx - dxMax));
+          const endX = Math.min(width - 1, Math.floor(tx + dxMax));
+          if (startX <= endX) {
+            grid.fill(0, y * width + startX, y * width + endX + 1);
           }
         }
       }
@@ -70,13 +70,20 @@ export function carveTerrainFeatures(
       const rx = Math.floor(prng.range(32, 60));
       const ry = Math.floor(prng.range(24, 45));
 
-      for (let y = Math.max(hasSolidCeiling ? 17 : 0, cy - ry); y <= Math.min(height - 1, cy + ry); y++) {
-        for (let x = Math.max(0, cx - rx); x <= Math.min(width - 1, cx + rx); x++) {
-          const dx = (x - cx) / rx;
-          const dy = (y - cy) / ry;
-          if (dx * dx + dy * dy <= 1.0) {
-            grid[y * width + x] = 0;
-          }
+      const rySq = ry * ry;
+      const rxOverRy = rx / ry;
+      const minY = Math.max(hasSolidCeiling ? 17 : 0, cy - ry);
+      const maxY = Math.min(height - 1, cy + ry);
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - cy;
+        const dySq = dy * dy;
+        if (dySq > rySq) continue;
+        const dxMax = Math.sqrt(rySq - dySq) * rxOverRy;
+        const startX = Math.max(0, Math.ceil(cx - dxMax));
+        const endX = Math.min(width - 1, Math.floor(cx + dxMax));
+        if (startX <= endX) {
+          grid.fill(0, y * width + startX, y * width + endX + 1);
         }
       }
     }
@@ -89,13 +96,20 @@ export function carveTerrainFeatures(
       const archY = height * 0.54;
       const rx = 120;
       const ry = 90;
-      for (let y = Math.max(0, Math.floor(archY - ry)); y <= Math.min(height - 1, Math.ceil(archY + ry + 30)); y++) {
-        for (let x = Math.max(0, Math.floor(archX - rx)); x <= Math.min(width - 1, Math.ceil(archX + rx)); x++) {
-          const dx = (x - archX) / rx;
-          const dy = (y - archY) / ry;
-          if (dx * dx + dy * dy <= 1.0) {
-            grid[y * width + x] = 0;
-          }
+      const rySq = ry * ry;
+      const rxOverRy = rx / ry;
+      const minY = Math.max(0, Math.floor(archY - ry));
+      const maxY = Math.min(height - 1, Math.ceil(archY + ry + 30));
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - archY;
+        const dySq = dy * dy;
+        if (dySq > rySq) continue;
+        const dxMax = Math.sqrt(rySq - dySq) * rxOverRy;
+        const startX = Math.max(0, Math.ceil(archX - dxMax));
+        const endX = Math.min(width - 1, Math.floor(archX + dxMax));
+        if (startX <= endX) {
+          grid.fill(0, y * width + startX, y * width + endX + 1);
         }
       }
     }
@@ -124,19 +138,19 @@ export function carveTerrainFeatures(
 
         // Tight tunnel radius (radius 13 to 20px -> diameter 26 to 40px)
         const diggerRadius = Math.floor(prng.range(13, 20));
-        const minX = Math.max(0, Math.floor(wx - diggerRadius));
-        const maxX = Math.min(width - 1, Math.ceil(wx + diggerRadius));
         const minY = Math.max(17, Math.floor(wy - diggerRadius)); // Preserve bedrock ceiling
         const maxY = Math.min(height - 1, Math.ceil(wy + diggerRadius));
+        const rSq = diggerRadius * diggerRadius;
 
         for (let y = minY; y <= maxY; y++) {
           const dy = y - wy;
-          const rowOffset = y * width;
-          for (let x = minX; x <= maxX; x++) {
-            const dx = x - wx;
-            if (dx * dx + dy * dy <= diggerRadius * diggerRadius) {
-              grid[rowOffset + x] = 0;
-            }
+          const dySq = dy * dy;
+          if (dySq > rSq) continue;
+          const dxMax = Math.sqrt(rSq - dySq);
+          const startX = Math.max(0, Math.ceil(wx - dxMax));
+          const endX = Math.min(width - 1, Math.floor(wx + dxMax));
+          if (startX <= endX) {
+            grid.fill(0, y * width + startX, y * width + endX + 1);
           }
         }
       }
@@ -148,14 +162,19 @@ export function carveTerrainFeatures(
       const hx = prng.range(width * 0.2, width * 0.8);
       const hy = prng.range(80, waterLevel - 80);
       const hr = prng.range(22, 28);
-      for (let y = Math.max(17, Math.floor(hy - hr)); y <= Math.min(height - 1, Math.ceil(hy + hr)); y++) {
+      const hrSq = hr * hr;
+      const minY = Math.max(17, Math.floor(hy - hr));
+      const maxY = Math.min(height - 1, Math.ceil(hy + hr));
+
+      for (let y = minY; y <= maxY; y++) {
         const dy = y - hy;
-        const rowOffset = y * width;
-        for (let x = Math.max(0, Math.floor(hx - hr)); x <= Math.min(width - 1, Math.ceil(hx + hr)); x++) {
-          const dx = x - hx;
-          if (dx * dx + dy * dy <= hr * hr) {
-            grid[rowOffset + x] = 0;
-          }
+        const dySq = dy * dy;
+        if (dySq > hrSq) continue;
+        const dxMax = Math.sqrt(hrSq - dySq);
+        const startX = Math.max(0, Math.ceil(hx - dxMax));
+        const endX = Math.min(width - 1, Math.floor(hx + dxMax));
+        if (startX <= endX) {
+          grid.fill(0, y * width + startX, y * width + endX + 1);
         }
       }
     }

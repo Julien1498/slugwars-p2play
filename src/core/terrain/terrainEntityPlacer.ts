@@ -18,13 +18,23 @@ export function createFloorFinder(
   searchStartY: number,
   waterLevel: number
 ): (x: number, minY?: number, maxY?: number) => number[] {
-  return (x: number, minY: number = searchStartY, maxY: number = waterLevel - 25): number[] => {
+  const cache = new Map<number, number[]>();
+  const defaultMaxY = waterLevel - 25;
+
+  return (x: number, minY: number = searchStartY, maxY: number = defaultMaxY): number[] => {
+    const isDefaultRange = minY === searchStartY && maxY === defaultMaxY;
+    if (isDefaultRange) {
+      const cached = cache.get(x);
+      if (cached) return cached;
+    }
+
     const floors: number[] = [];
     for (let y = minY; y <= maxY; y++) {
-      if (grid[y * width + x] === 1 && grid[(y - 1) * width + x] === 0) {
+      const idx = y * width + x;
+      if (grid[idx] === 1 && grid[idx - width] === 0) {
         let clear = true;
         for (let h = 1; h <= 16; h++) {
-          if (y - h < 0 || grid[(y - h) * width + x] !== 0) {
+          if (y - h < 0 || grid[idx - h * width] !== 0) {
             clear = false;
             break;
           }
@@ -33,6 +43,10 @@ export function createFloorFinder(
           floors.push(y);
         }
       }
+    }
+
+    if (isDefaultRange) {
+      cache.set(x, floors);
     }
     return floors;
   };
