@@ -1,10 +1,23 @@
-import { useCallback, MutableRefObject } from 'react';
+import { useCallback, useEffect, MutableRefObject } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
 import { SlugWarsNetworkMessage, sanitizeGameState, TEAM_COLORS } from '../../network/protocol';
 import { netMetrics } from '../../core/networkMetrics';
 import { GameState } from '../../core/types';
 import { PeerManagerLike } from 'p2play-core';
 import { resolveLobbyPlayerName } from './useHostLobbySync';
+
+export function isSenderAuthorizedForTurn(engine: SlugWarsEngine, playerId: string, hostId: string): boolean {
+  if (engine.state.teams.length <= 1) return true;
+  if (playerId === hostId && playerId === engine.state.activeTeamId) return true;
+  if (playerId === engine.state.activeTeamId) return true;
+  const activeTeam = engine.state.teams.find((t) => t.id === engine.state.activeTeamId);
+  if (!activeTeam) return false;
+  if (activeTeam.id === playerId) return true;
+  if (!activeTeam.isHost && engine.state.teams.some((t) => t.id === playerId && !t.isHost)) {
+    return true;
+  }
+  return false;
+}
 
 export function processHostAction(
   engine: SlugWarsEngine,
@@ -66,167 +79,168 @@ export function processHostAction(
         }
         break;
       }
-          case 'CHANGE_CONFIG':
-            if (msg.payload?.config && playerId === hostId) {
-              engine.setConfig(msg.payload.config);
-              broadcastState(engine.state);
-            }
-            break;
-          case 'START_GAME':
-            if (playerId === hostId) {
-              engine.startGame();
-              broadcastState(engine.state);
-            }
-            break;
-          case 'START_MOVE':
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
-              engine.startMove(msg.payload.dir);
-            }
-            break;
-          case 'STOP_MOVE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.stopMove();
-            }
-            break;
-          case 'JUMP':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.jumpSlug();
-            }
-            break;
-          case 'START_STEER':
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
-              engine.startSteer(msg.payload.dir);
-            }
-            break;
-          case 'STOP_STEER':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.stopSteer();
-            }
-            break;
-          case 'ENTER_VEHICLE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.enterVehicle();
-            }
-            break;
-          case 'EXIT_VEHICLE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.exitVehicle();
-            }
-            break;
-          case 'STEER_VEHICLE':
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.dir) {
-              engine.steerVehicle(msg.payload.dir);
-            }
-            break;
-          case 'START_CHARGE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.startCharge(msg.payload?.targetPoint);
-            }
-            break;
-          case 'RELEASE_CHARGE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug) {
-                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
-                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
-                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
-              }
-              engine.releaseCharge(msg.payload?.targetPoint);
-            }
-            break;
-          case 'DETONATE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              engine.detonateSheep();
-            }
-            break;
-          case 'AIM': {
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug) {
-                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
-                if (msg.payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
-                  activeSlug.aimPower = msg.payload.aimPower;
-                }
-                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
-                if (msg.payload?.targetPoint) activeSlug.currentTargetPoint = msg.payload.targetPoint;
-              }
-            }
-            break;
+      case 'CHANGE_CONFIG':
+        if (msg.payload?.config && playerId === hostId) {
+          engine.setConfig(msg.payload.config);
+          broadcastState(engine.state);
+        }
+        break;
+      case 'START_GAME':
+        if (playerId === hostId) {
+          engine.startGame();
+          broadcastState(engine.state);
+        }
+        break;
+      case 'START_MOVE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.dir) {
+          engine.startMove(msg.payload.dir);
+        }
+        break;
+      case 'STOP_MOVE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.stopMove();
+        }
+        break;
+      case 'JUMP':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.jumpSlug();
+        }
+        break;
+      case 'START_STEER':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.dir) {
+          engine.startSteer(msg.payload.dir);
+        }
+        break;
+      case 'STOP_STEER':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.stopSteer();
+        }
+        break;
+      case 'ENTER_VEHICLE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.enterVehicle();
+        }
+        break;
+      case 'EXIT_VEHICLE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.exitVehicle();
+        }
+        break;
+      case 'STEER_VEHICLE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.dir) {
+          engine.steerVehicle(msg.payload.dir);
+        }
+        break;
+      case 'START_CHARGE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.startCharge(msg.payload?.targetPoint);
+        }
+        break;
+      case 'RELEASE_CHARGE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+          if (activeSlug) {
+            if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+            if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+            if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
           }
-          case 'SELECT_WEAPON': {
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.weaponId) {
-              engine.selectWeapon(msg.payload.weaponId);
+          engine.releaseCharge(msg.payload?.targetPoint);
+        }
+        break;
+      case 'DETONATE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          engine.detonateSheep();
+        }
+        break;
+      case 'AIM': {
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+          if (activeSlug) {
+            if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+            if (msg.payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
+              activeSlug.aimPower = msg.payload.aimPower;
             }
-            break;
-          }
-          case 'SET_FUSE_TIMER': {
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.seconds !== undefined) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug) {
-                engine.setFuseTimer(activeSlug.id, msg.payload.seconds);
-              }
-            }
-            break;
-          }
-          case 'FIRE':
-            if (playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) {
-              const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-              if (activeSlug) {
-                if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
-                if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
-                if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
-              }
-              engine.fireWeapon(msg.payload?.targetPoint);
-            }
-            break;
-          case 'PLACE_SLUG':
-            if ((playerId === engine.state.activeTeamId || playerId === hostId || engine.state.teams.length <= 1) && msg.payload?.point) {
-              engine.placeSlug(msg.payload.point);
-              syncState();
-              broadcastState(engine.state);
-            }
-            break;
-          case 'RESTART_GAME':
-            if (playerId === hostId) {
-              engine.restartGame();
-              broadcastState(engine.state);
-            }
-            break;
-          case 'REQUEST_FULL_STATE': {
-            if (engine.state.phase === 'LOBBY' && !engine.state.teams.some((t) => t.id === playerId)) {
-              const trusted = resolveLobbyPlayerName(undefined, peerManager.getTrustedUsername?.(playerId), playerId);
-              const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
-              engine.addTeam(playerId, trusted, TEAM_COLORS[colorIdx], '🐌', playerId === hostId);
-              broadcastState(engine.state);
-            } else {
-              const conn = peerManager.connections?.get(playerId);
-              const sanitized = sanitizeGameState(engine.state);
-              if (conn && conn.open) {
-                const resMsg = { type: 'STATE_UPDATE', state: sanitized };
-                conn.send(resMsg);
-                netMetrics.recordUpload(resMsg);
-              } else {
-                broadcastState(engine.state);
-              }
-            }
-            break;
-          }
-          case 'DEV_ACTION': {
-            if (playerId === hostId || engine.state.teams.length <= 1) {
-              const method = msg.payload?.devMethod;
-              const args = msg.payload?.devArgs || [];
-              if (method && typeof (engine as any)[method] === 'function') {
-                (engine as any)[method](...args);
-                syncState();
-                broadcastState(engine.state);
-              }
-            }
-            break;
+            if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
+            if (msg.payload?.targetPoint) activeSlug.currentTargetPoint = msg.payload.targetPoint;
           }
         }
-        syncState();
+        break;
+      }
+      case 'SELECT_WEAPON': {
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.weaponId) {
+          engine.selectWeapon(msg.payload.weaponId);
+        }
+        break;
+      }
+      case 'SET_FUSE_TIMER': {
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.seconds !== undefined) {
+          const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+          if (activeSlug) {
+            engine.setFuseTimer(activeSlug.id, msg.payload.seconds);
+          }
+        }
+        break;
+      }
+      case 'FIRE':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '')) {
+          const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+          if (activeSlug) {
+            if (msg.payload?.aimAngle !== undefined) activeSlug.aimAngle = msg.payload.aimAngle;
+            if (msg.payload?.aimPower !== undefined) activeSlug.aimPower = msg.payload.aimPower;
+            if (msg.payload?.facing) activeSlug.facing = msg.payload.facing;
+          }
+          engine.fireWeapon(msg.payload?.targetPoint);
+        }
+        break;
+      case 'PLACE_SLUG':
+        if (isSenderAuthorizedForTurn(engine, playerId, hostId || '') && msg.payload?.point) {
+          engine.placeSlug(msg.payload.point);
+          syncState();
+          broadcastState(engine.state);
+        }
+        break;
+      case 'RESTART_GAME':
+        if (playerId === hostId) {
+          engine.restartGame();
+          broadcastState(engine.state);
+        }
+        break;
+      case 'REQUEST_FULL_STATE': {
+        if (engine.state.phase === 'LOBBY' && !engine.state.teams.some((t) => t.id === playerId)) {
+          const trusted = resolveLobbyPlayerName(undefined, peerManager.getTrustedUsername?.(playerId), playerId);
+          const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
+          engine.addTeam(playerId, trusted, TEAM_COLORS[colorIdx], '🐌', playerId === hostId);
+          broadcastState(engine.state);
+        } else {
+          const conn = peerManager.connections?.get(playerId);
+          const sanitized = sanitizeGameState(engine.state);
+          if (conn && conn.open) {
+            const resMsg = { type: 'STATE_UPDATE', state: sanitized };
+            conn.send(resMsg);
+            netMetrics.recordUpload(resMsg);
+          } else {
+            broadcastState(engine.state);
+          }
+        }
+        break;
+      }
+      case 'DEV_ACTION': {
+        if (playerId === hostId || engine.state.teams.length <= 1) {
+          const method = msg.payload?.devMethod;
+          const args = msg.payload?.devArgs || [];
+          if (method && typeof (engine as any)[method] === 'function') {
+            (engine as any)[method](...args);
+            syncState();
+            broadcastState(engine.state);
+          }
+        }
+        break;
       }
     }
+    syncState();
+  }
+}
+
 export function useHostActionHandler(
   engineRef: MutableRefObject<SlugWarsEngine>,
   isHost: boolean,
@@ -250,6 +264,12 @@ export function useHostActionHandler(
     },
     [isHost, myPeerId, peerManager, syncState, broadcastState, engineRef]
   );
+
+  useEffect(() => {
+    if (isHost && peerManager) {
+      peerManager.hostActionHandler = handleHostAction;
+    }
+  }, [isHost, peerManager, handleHostAction]);
 
   return { handleHostAction };
 }

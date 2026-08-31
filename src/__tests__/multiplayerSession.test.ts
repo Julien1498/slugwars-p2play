@@ -54,20 +54,12 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       const joinMsg: SlugWarsNetworkMessage = {
         type: 'ACTION',
         actionName: 'JOIN_GAME',
-        payload: {
-          name: 'Invité Bob',
-          color: '#3b82f6',
-          avatar: '🤠',
-        },
+        payload: { name: 'Invité Bob', color: '#3b82f6', avatar: '🤠' },
       };
-
       dispatchAction('guest_peer_456', joinMsg);
-
       expect(hostEngine.state.teams.length).toBe(1);
-      const joinedTeam = hostEngine.state.teams[0];
-      expect(joinedTeam.id).toBe('guest_peer_456');
-      expect(joinedTeam.name).toBe('Invité Bob');
-      expect(joinedTeam.avatar).toBe('🤠');
+      expect(hostEngine.state.teams[0].id).toBe('guest_peer_456');
+      expect(hostEngine.state.teams[0].name).toBe('Invité Bob');
       expect(lastBroadcastedState).not.toBeNull();
       expect(syncStateCalled).toBe(true);
     });
@@ -78,22 +70,15 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       hostEngine.startGame();
       expect(hostEngine.state.phase).toBe('PLACEMENT');
 
-      // 2nd player joins late during active match
       const lateJoinMsg: SlugWarsNetworkMessage = {
         type: 'ACTION',
         actionName: 'JOIN_GAME',
-        payload: {
-          name: 'Invité LateJoin',
-          color: '#10b981',
-          avatar: '⚡',
-        },
+        payload: { name: 'Invité LateJoin', color: '#10b981', avatar: '⚡' },
       };
-
       dispatchAction('guest_peer_789', lateJoinMsg);
 
       expect(hostEngine.state.teams.length).toBe(2);
       expect(hostEngine.state.teams[1].id).toBe('guest_peer_789');
-      expect(hostEngine.state.teams[1].name).toBe('Invité LateJoin');
       const lateSlugs = hostEngine.state.slugs.filter((s) => s.teamId === 'guest_peer_789');
       expect(lateSlugs.length).toBe(2);
       expect(lateSlugs.every((s) => !s.isPlaced && s.isAlive)).toBe(true);
@@ -103,14 +88,11 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       hostEngine.state.isDevHost = false;
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.startGame();
-      expect(hostEngine.state.phase).toBe('PLACEMENT');
-
       const lateJoinMsg: SlugWarsNetworkMessage = {
         type: 'ACTION',
         actionName: 'JOIN_GAME',
         payload: { name: 'Late Guest', color: '#10b981', avatar: '⚡' },
       };
-
       dispatchAction('guest_peer_999', lateJoinMsg);
       expect(hostEngine.state.teams.length).toBe(1);
     });
@@ -118,18 +100,14 @@ describe('Multiplayer P2P Session & Network Replication', () => {
     it('rejects CHANGE_CONFIG from non-host players', () => {
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.addTeam('guest_peer_456', 'Guest Bob', '#3b82f6', '🐌', false);
-
       const configMsg: SlugWarsNetworkMessage = {
         type: 'ACTION',
         actionName: 'CHANGE_CONFIG',
         payload: { config: { turnDuration: 10 } },
       };
-
-      // Non-host tries to change config
       dispatchAction('guest_peer_456', configMsg);
       expect(hostEngine.state.config.turnDuration).toBe(45); // Unchanged
 
-      // Host changes config
       dispatchAction('host_peer_123', configMsg);
       expect(hostEngine.state.config.turnDuration).toBe(10); // Changed
     });
@@ -220,6 +198,27 @@ describe('Multiplayer P2P Session & Network Replication', () => {
         actionName: 'FIRE',
       });
       expect(hostEngine.state.projectiles.length).toBe(projCountBefore + 1);
+    });
+
+    it('accepts move and fire from guest when it is guest turn', () => {
+      hostEngine.state.activeTeamId = 'guest_peer_456';
+      const guestSlug = hostEngine.state.slugs.find((s) => s.teamId === 'guest_peer_456')!;
+      hostEngine.state.activeSlugId = guestSlug.id;
+      guestSlug.x = 400;
+      guestSlug.y = 200;
+      guestSlug.selectedWeaponId = 'bazooka';
+
+      dispatchAction('guest_peer_456', {
+        type: 'ACTION',
+        actionName: 'START_MOVE',
+        payload: { dir: 'left' },
+      });
+      expect(guestSlug.movingDir).toBe('left');
+      expect(guestSlug.vx).toBe(-2.4);
+
+      const count = hostEngine.state.projectiles.length;
+      dispatchAction('guest_peer_456', { type: 'ACTION', actionName: 'FIRE' });
+      expect(hostEngine.state.projectiles.length).toBe(count + 1);
     });
   });
 

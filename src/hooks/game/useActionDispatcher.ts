@@ -12,12 +12,9 @@ export function applyOptimisticAction(
   payload: SlugWarsNetworkPayload | any,
   myPeerId: string
 ): boolean {
-  const isMyTurn =
-    myPeerId &&
-    state.activeTeamId === myPeerId &&
-    (state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT');
-
-  const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
+  const isMyTurn = myPeerId ? state.activeTeamId === myPeerId : true;
+  const isPlayablePhase = state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT' || state.phase === 'PLACEMENT';
+  const activeSlug = (isMyTurn && isPlayablePhase) ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
   if (!activeSlug) return false;
 
   if (actionName === 'AIM') {

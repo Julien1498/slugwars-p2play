@@ -56,10 +56,10 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
 
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
-  const myTeam = gameState.teams.find((t) => (t.isHost ? isHost : myPeerId === t.id)) || activeTeam;
+  const myTeam = gameState.teams.find((t) => (t.isHost ? isHost : (myPeerId ? myPeerId === t.id : !t.isHost))) || activeTeam;
   const isMyTurn = gameState.teams.length <= 1
     ? true
-    : !!(activeTeam && (activeTeam.isHost ? isHost : myPeerId === activeTeam.id));
+    : !!(activeTeam && (activeTeam.isHost ? isHost : (myPeerId ? myPeerId === activeTeam.id : !activeTeam.isHost)));
   const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep' || p.weaponId === 'sheep');
 
   const mobileTeamStats = useMemo(() => {
