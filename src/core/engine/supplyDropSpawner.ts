@@ -31,9 +31,22 @@ export function pickRandomCrateContent(): {
     }
     return { crateType: 'weapon', weaponId: chosen.id, weaponCount: 1 };
   } else {
-    const utilityIds = ['girder', 'teleport', 'blowtorch', 'ninja_rope'];
-    const chosenId = utilityIds[Math.floor(Math.random() * utilityIds.length)];
-    return { crateType: 'utility', weaponId: chosenId, weaponCount: 1 };
+    const candidates = getAllWeapons().filter(
+      (w) => (w.crateProbability ?? 0) > 0 && w.category === 'UTILITY'
+    );
+    if (candidates.length === 0) return { crateType: 'health', healAmount: 50 };
+
+    const totalWeight = candidates.reduce((sum, w) => sum + (w.crateProbability ?? 0.1), 0);
+    let r = Math.random() * totalWeight;
+    let chosen = candidates[0];
+    for (const w of candidates) {
+      r -= w.crateProbability ?? 0.1;
+      if (r <= 0) {
+        chosen = w;
+        break;
+      }
+    }
+    return { crateType: 'utility', weaponId: chosen.id, weaponCount: 1 };
   }
 }
 
