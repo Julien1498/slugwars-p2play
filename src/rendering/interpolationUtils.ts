@@ -80,7 +80,7 @@ export function interpolateVisualState(
     };
   }
 
-  // 2. Interpolate Supply Crates
+  // 2. Interpolate Supply Crates (Zero-Alloc In-Place Mutation)
   const renderedCrates = cache.renderedCratesCache;
   const rawCrates = curState.supplyCrates || [];
   renderedCrates.length = rawCrates.length;
@@ -95,11 +95,23 @@ export function interpolateVisualState(
       visualPos.x = next.x;
       visualPos.y = next.y;
     }
-    renderedCrates[i] = {
-      ...crate,
-      x: visualPos.x,
-      y: visualPos.y,
-    };
+    const target = renderedCrates[i];
+    if (!target || target.id !== crate.id) {
+      renderedCrates[i] = {
+        ...crate,
+        x: visualPos.x,
+        y: visualPos.y,
+      };
+    } else {
+      target.x = visualPos.x;
+      target.y = visualPos.y;
+      target.vy = crate.vy;
+      target.isLanded = crate.isLanded;
+      target.crateType = crate.crateType;
+      target.healAmount = crate.healAmount;
+      target.weaponId = crate.weaponId;
+      target.weaponCount = crate.weaponCount;
+    }
   }
 
   // 3. Interpolate Projectiles (Position + Shortest Arc Angle)

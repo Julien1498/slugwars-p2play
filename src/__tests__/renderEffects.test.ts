@@ -186,7 +186,7 @@ describe('renderEffects - Complete Canvas VFX & Entities Pipeline', () => {
   });
 
   describe('renderSupplyCrates', () => {
-    it('renders falling crates with animated parachute sway in the wind', () => {
+    it('renders falling crates with animated parachute sway in the wind and zero gradient allocations', () => {
       const ctx = createMockContext();
       const crates: SupplyCrate[] = [
         { id: 'c_air', x: 200, y: 100, vy: 1.5, isLanded: false, crateType: 'health', healAmount: 50 },
@@ -196,20 +196,26 @@ describe('renderEffects - Complete Canvas VFX & Entities Pipeline', () => {
 
       expect(ctx.save).toHaveBeenCalled();
       expect(ctx.rotate).toHaveBeenCalled();
-      expect(ctx.createLinearGradient).toHaveBeenCalled();
+      expect(ctx.createLinearGradient).not.toHaveBeenCalled();
+      expect(ctx.fill).toHaveBeenCalled();
+      expect(ctx.stroke).toHaveBeenCalled();
       expect(ctx.restore).toHaveBeenCalled();
     });
 
-    it('renders landed crates with ground drop shadow and health badge', () => {
+    it('renders landed crates with ground drop shadow, health badge, and pure vector emblems', () => {
       const ctx = createMockContext();
       const crates: SupplyCrate[] = [
         { id: 'c_ground', x: 350, y: 280, vy: 0, isLanded: true, crateType: 'health', healAmount: 50 },
+        { id: 'c_weapon', x: 450, y: 280, vy: 0, isLanded: true, crateType: 'weapon' },
+        { id: 'c_util', x: 550, y: 280, vy: 0, isLanded: true, crateType: 'utility' },
       ];
 
       renderSupplyCrates(ctx, crates, 0);
 
       expect(ctx.fillText).toHaveBeenCalledWith('+50 HP', 0, 16);
-      expect(ctx.strokeRect).toHaveBeenCalled();
+      expect(ctx.fillText).toHaveBeenCalledWith('ARMES', 0, 16);
+      expect(ctx.fillText).toHaveBeenCalledWith('OUTILS', 0, 16);
+      expect(ctx.createLinearGradient).not.toHaveBeenCalled();
     });
   });
 
