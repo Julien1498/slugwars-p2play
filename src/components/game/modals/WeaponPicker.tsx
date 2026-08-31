@@ -65,8 +65,8 @@ export const WeaponPicker: React.FC<WeaponPickerProps> = ({
       <div
         className={`bg-zinc-950/95 border border-violet-500/40 rounded-2xl sm:rounded-3xl w-full flex flex-col shadow-[0_0_50px_rgba(124,58,237,0.25)] pointer-events-auto ${
           isTouch
-            ? 'w-[95vw] max-w-4xl landscape:max-w-5xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 h-[92vh] sm:h-[540px] max-h-[96vh]'
-            : 'max-w-5xl p-5 space-y-3.5 h-[540px] max-h-[90vh]'
+            ? 'w-[95vw] max-w-4xl landscape:max-w-5xl p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 h-[94vh] sm:h-[620px] max-h-[96vh]'
+            : 'max-w-5xl p-4 sm:p-5 space-y-3 h-[88vh] max-h-[660px]'
         }`}
       >
         {/* Header Title Bar */}
