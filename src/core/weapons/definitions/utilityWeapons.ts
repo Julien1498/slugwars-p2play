@@ -132,7 +132,7 @@ export const magnetWeapon: WeaponDefinition = {
   description: 'Électroaimant à lancer comme une grenade. Règle la polarité (1 = Attirer 🔵, 2 = Repousser 🔴) avant de lancer. Actif 3 tours sur le terrain.',
   damage: 0,
   radius: 250,
-  defaultAmmo: 2,
+  defaultAmmo: 1,
   turnDelay: 1,
   crateProbability: 0.12,
   windAffected: false,

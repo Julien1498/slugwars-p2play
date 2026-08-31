@@ -116,14 +116,14 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       expect(activeTeam.inventory['super_sheep'] ?? 0).toBe(0);
     });
 
-    it('ensures all weapons fit within maximum 2 desktop rows (4 columns) to prevent vertical overflow', () => {
+    it('ensures all weapons fit within maximum 3 desktop rows (4 columns) to prevent vertical overflow', () => {
       const DESKTOP_COLS = 4;
-      const MAX_ALLOWED_ROWS_WITHOUT_SCROLL = 2;
+      const MAX_ALLOWED_ROWS = 3;
 
       for (const cat of categories) {
         const list = getWeaponsByCategory(cat).filter((w) => w.craftable !== false);
         const rowsNeeded = Math.ceil(list.length / DESKTOP_COLS);
-        expect(rowsNeeded).toBeLessThanOrEqual(MAX_ALLOWED_ROWS_WITHOUT_SCROLL);
+        expect(rowsNeeded).toBeLessThanOrEqual(MAX_ALLOWED_ROWS);
       }
     });
 

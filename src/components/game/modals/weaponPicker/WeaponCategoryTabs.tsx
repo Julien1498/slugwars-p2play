@@ -5,9 +5,9 @@ import { Bomb, Swords, Plane, Flame, Wrench } from 'lucide-react';
 
 export const WEAPON_CATEGORIES: { id: WeaponCategory; label: string; icon: React.ReactNode }[] = [
   { id: 'EXPLOSIVE', label: 'Explosifs', icon: <Bomb className="w-3.5 h-3.5" /> },
-  { id: 'MELEE', label: 'Mêlée', icon: <Swords className="w-3.5 h-3.5" /> },
+  { id: 'MELEE', label: 'Armes & Mêlée', icon: <Swords className="w-3.5 h-3.5" /> },
   { id: 'AIR_SUPPORT', label: 'Aérien', icon: <Plane className="w-3.5 h-3.5" /> },
-  { id: 'SPECIAL', label: 'W.M.D', icon: <Flame className="w-3.5 h-3.5" /> },
+  { id: 'SPECIAL', label: 'Spécial & W.M.D', icon: <Flame className="w-3.5 h-3.5" /> },
   { id: 'UTILITY', label: 'Utilitaires', icon: <Wrench className="w-3.5 h-3.5" /> },
 ];
 
