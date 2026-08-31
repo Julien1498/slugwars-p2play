@@ -143,31 +143,72 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
                   </div>
                 </div>
 
-                {/* Integrated Fuse Timer Selector (if weapon supports it) */}
+                {/* Integrated Fuse Timer / Magnet Polarity Selector */}
                 {currentWeapon.allowCustomFuse && isMyTurn && !isRetreat && (
                   <div className="flex items-center gap-1 pl-2 border-l border-zinc-800">
-                    <span className="text-xs font-bold text-amber-400">⏱️</span>
-                    {[1, 2, 3, 4, 5].map((sec) => {
-                      const currentFuse =
-                        activeSlug?.fuseTimerSec ??
-                        (currentWeapon.fuseTimeMs ? Math.round(currentWeapon.fuseTimeMs / 1000) : 3);
-                      const isSelected = currentFuse === sec;
-                      return (
-                        <button
-                          key={sec}
-                          type="button"
-                          onClick={() => onSetFuseTimer?.(sec)}
-                          className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center border transition-all ${
-                            isSelected
-                              ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-[0_0_12px_#f59e0b] scale-105'
-                              : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-zinc-800 active:scale-95'
-                          }`}
-                          title={`Régler la mèche sur ${sec}s (Touche ${sec})`}
-                        >
-                          {sec}s
-                        </button>
-                      );
-                    })}
+                    {currentWeapon.id === 'magnet' ? (
+                      <>
+                        <span className="text-xs font-bold text-sky-400">🧲</span>
+                        {(() => {
+                          const currentFuse = activeSlug?.fuseTimerSec ?? 1;
+                          return (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => onSetFuseTimer?.(1)}
+                                className={`px-2 h-7 rounded-lg font-black text-xs flex items-center gap-1 border transition-all ${
+                                  currentFuse !== 2
+                                    ? 'bg-blue-600 text-white border-blue-300 shadow-[0_0_12px_#3b82f6] scale-105'
+                                    : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-zinc-800 active:scale-95'
+                                }`}
+                                title="Attirer les projectiles métalliques (Touche 1)"
+                              >
+                                <span>Attirer</span>
+                                <span className="text-[9px] opacity-70">[1]</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onSetFuseTimer?.(2)}
+                                className={`px-2 h-7 rounded-lg font-black text-xs flex items-center gap-1 border transition-all ${
+                                  currentFuse === 2
+                                    ? 'bg-red-600 text-white border-red-300 shadow-[0_0_12px_#ef4444] scale-105'
+                                    : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-zinc-800 active:scale-95'
+                                }`}
+                                title="Repousser les projectiles métalliques (Touche 2)"
+                              >
+                                <span>Repousser</span>
+                                <span className="text-[9px] opacity-70">[2]</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-amber-400">⏱️</span>
+                        {[1, 2, 3, 4, 5].map((sec) => {
+                          const currentFuse =
+                            activeSlug?.fuseTimerSec ??
+                            (currentWeapon.fuseTimeMs ? Math.round(currentWeapon.fuseTimeMs / 1000) : 3);
+                          const isSelected = currentFuse === sec;
+                          return (
+                            <button
+                              key={sec}
+                              type="button"
+                              onClick={() => onSetFuseTimer?.(sec)}
+                              className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center border transition-all ${
+                                isSelected
+                                  ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-[0_0_12px_#f59e0b] scale-105'
+                                  : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 border-zinc-800 active:scale-95'
+                              }`}
+                              title={`Régler la mèche sur ${sec}s (Touche ${sec})`}
+                            >
+                              {sec}s
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
                   </div>
                 )}
 

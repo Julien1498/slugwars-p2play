@@ -8,6 +8,7 @@ export interface SpecialKinematicResult {
   collisionPoint?: { x: number; y: number };
   carveStep?: { x: number; y: number; radius: number };
   landAsMine?: { x: number; y: number };
+  landAsMagnet?: { x: number; y: number; polarity: 'ATTRACT' | 'REPEL' };
 }
 
 export function updateParachuteMinePhysics(

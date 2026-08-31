@@ -202,18 +202,35 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
   });
 
   describe('Electromagnetic Magnet (Aimant Répulseur / Attracteur)', () => {
-    it('places magnet on the terrain with 3 turns lifespan', () => {
+    it('throws magnet as a chargeable bouncing projectile and deploys on settle with chosen polarity', () => {
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       activeSlug.x = 700;
       activeSlug.y = 200;
+      activeSlug.aimPower = 50;
 
+      // Select magnet and set Repel mode (fuseTimerSec = 2)
       engine.selectWeapon('magnet');
-      engine.fireWeapon({ x: 750, y: 220 });
+      engine.setFuseTimer(activeSlug.id, 2);
+      expect(activeSlug.fuseTimerSec).toBe(2);
 
+      engine.fireWeapon();
+
+      // Projectile should be in flight
+      expect(engine.state.projectiles.length).toBe(1);
+      const proj = engine.state.projectiles[0];
+      expect(proj.weaponId).toBe('magnet');
+      expect(proj.behaviorData?.polarity).toBe('REPEL');
+
+      // Simulate until projectile settles / fuse ends
+      for (let i = 0; i < 60 && engine.state.projectiles.length > 0; i++) {
+        engine.tick();
+      }
+
+      // Should have deployed as a placed magnet with REPEL polarity and 3 turns
       expect(engine.state.magnets).toBeDefined();
       expect(engine.state.magnets!.length).toBe(1);
+      expect(engine.state.magnets![0].polarity).toBe('REPEL');
       expect(engine.state.magnets![0].turnsRemaining).toBe(3);
-      expect(engine.state.magnets![0].x).toBe(750);
     });
 
     it('deflects ballistic projectiles passing near the magnet', () => {
@@ -240,8 +257,8 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
 
       // Step with magnet
       updateProjectilePhysics(proj, engine.terrain, 0, [], [magnet]);
-      // Should be pulled towards magnet (x: 500) so vx increases
-      expect(proj.vx).toBeGreaterThan(4.0);
+      // Should be pulled towards magnet (x: 500) so vx increases noticeably
+      expect(proj.vx).toBeGreaterThan(4.5);
     });
   });
 });

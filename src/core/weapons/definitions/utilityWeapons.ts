@@ -72,7 +72,7 @@ export const jetpackWeapon: WeaponDefinition = {
   description: 'Vol dorsal propulsé avec 5 secondes de carburant actif. Contrôles aux touches de saut et direction.',
   damage: 0,
   radius: 0,
-  defaultAmmo: 0,
+  defaultAmmo: 1,
   turnDelay: 0,
   crateProbability: 0.15,
   windAffected: false,
@@ -127,20 +127,44 @@ export const magnetWeapon: WeaponDefinition = {
   id: 'magnet',
   name: 'Aimant',
   category: 'UTILITY',
-  behavior: 'MAGNET',
+  behavior: 'BOUNCING_TIMER',
   icon: '🧲',
-  description: 'Dépose un électroaimant actif 3 tours qui attire ou repousse les projectiles métalliques dans un rayon de 240px.',
+  description: 'Électroaimant à lancer comme une grenade. Règle la polarité (1 = Attirer 🔵, 2 = Repousser 🔴) avant de lancer. Actif 3 tours sur le terrain.',
   damage: 0,
-  radius: 240,
+  radius: 250,
   defaultAmmo: 2,
   turnDelay: 1,
   crateProbability: 0.12,
   windAffected: false,
-  bounces: false,
+  bounces: true,
+  fuseTimeMs: 2500,
+  allowCustomFuse: true,
   craftable: true,
-  chargeable: false,
-  customSoundKey: 'magnet',
-  createProjectiles: () => [],
+  chargeable: true,
+  triggersRetreat: true,
+  customSoundKey: 'grenade_throw',
+  createProjectiles: (ctx) => {
+    const rad = (ctx.angleDeg * Math.PI) / 180;
+    const speed = (ctx.power / 100) * 14 + 3;
+    const isRepel = ctx.fuseTimerMs !== undefined && ctx.fuseTimerMs === 2000;
+    const polarity: 'ATTRACT' | 'REPEL' = isRepel ? 'REPEL' : 'ATTRACT';
+    return [
+      {
+        id: `proj_${Date.now()}_${Math.random()}`,
+        weaponId: 'magnet',
+        x: ctx.originX,
+        y: ctx.originY,
+        vx: Math.cos(rad) * speed,
+        vy: Math.sin(rad) * speed,
+        radius: 6,
+        fuseTimerMs: 2500,
+        bounces: true,
+        windAffected: false,
+        ownerSlugId: ctx.ownerSlugId,
+        behaviorData: { isMagnetDeployable: true, polarity },
+      },
+    ];
+  },
 };
 
 export const skipTurnWeapon: WeaponDefinition = {

@@ -61,25 +61,3 @@ export function executeParachute(
   return true;
 }
 
-export function executeMagnet(
-  state: GameState,
-  activeSlug: Slug,
-  targetPoint: Vector2D | undefined,
-  addLog: (msg: string, type?: JournalEntry['type']) => void
-): boolean {
-  if (!state.magnets) state.magnets = [];
-  const pt = targetPoint || { x: activeSlug.x + (activeSlug.facing === 'right' ? 24 : -24), y: activeSlug.y - 8 };
-  
-  state.magnets.push({
-    id: `magnet_${Date.now()}_${Math.random()}`,
-    x: pt.x,
-    y: pt.y,
-    polarity: 'ATTRACT',
-    turnsRemaining: 3,
-  });
-
-  sfx.play('magnet');
-  addLog(`${activeSlug.name} a posé un Aimant Électromagnétique (3 tours) ! 🧲`, 'weapon');
-  PhaseManager.startResolving(state, { settleTimer: 0.5, phaseTimeout: 5.0 });
-  return true;
-}

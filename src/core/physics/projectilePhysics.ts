@@ -14,6 +14,7 @@ export interface ProjectilePhysicsResult {
   collisionPoint?: { x: number; y: number };
   carveStep?: { x: number; y: number; radius: number };
   landAsMine?: { x: number; y: number };
+  landAsMagnet?: { x: number; y: number; polarity: 'ATTRACT' | 'REPEL' };
 }
 
 export function updateProjectilePhysics(
@@ -50,6 +51,16 @@ export function updateProjectilePhysics(
   if (proj.fuseTimerMs !== undefined) {
     proj.fuseTimerMs -= 50;
     if (proj.fuseTimerMs <= 0) {
+      if (proj.behaviorData?.isMagnetDeployable) {
+        return {
+          exploded: false,
+          landAsMagnet: {
+            x: proj.x,
+            y: proj.y,
+            polarity: proj.behaviorData?.polarity || 'ATTRACT',
+          },
+        };
+      }
       return { exploded: true, collisionPoint: { x: proj.x, y: proj.y } };
     }
   }
@@ -98,8 +109,9 @@ export function updateProjectilePhysics(
         const mdx = mag.x - proj.x;
         const mdy = mag.y - proj.y;
         const mdist = Math.hypot(mdx, mdy);
-        if (mdist < 240 && mdist > 1) {
-          const force = 1600 / Math.pow(mdist + 20, 2);
+        if (mdist < 250 && mdist > 2) {
+          const normDist = mdist / 250;
+          const force = (1 - normDist) * 1.8 + (40 / (mdist + 15));
           const sign = mag.polarity === 'ATTRACT' ? 1 : -1;
           proj.vx += (mdx / mdist) * force * sign;
           proj.vy += (mdy / mdist) * force * sign;
@@ -214,6 +226,16 @@ export function updateProjectilePhysics(
       if (Math.hypot(proj.vx, proj.vy) < 0.25) {
         proj.vx = 0;
         proj.vy = 0;
+        if (proj.behaviorData?.isMagnetDeployable) {
+          return {
+            exploded: false,
+            landAsMagnet: {
+              x: ray.x,
+              y: ray.y - 2,
+              polarity: proj.behaviorData?.polarity || 'ATTRACT',
+            },
+          };
+        }
       }
 
       proj.x = ray.x + nx * (proj.radius + 1.2);

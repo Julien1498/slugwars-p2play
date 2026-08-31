@@ -10,6 +10,7 @@ import {
   getWeaponAmmoLabel,
   triggerHaptic,
 } from './touchControlsUtils';
+import { MobileFuseSelector } from './MobileFuseSelector';
 
 interface RightThumbClusterProps {
   isMyTurn: boolean;
@@ -116,33 +117,12 @@ export const RightThumbCluster: React.FC<RightThumbClusterProps> = ({
       {/* Fuse Selector / Girder Rotate Widget */}
       {isMyTurn && !isRetreat && (
         <div className="flex items-center gap-1">
-          {currentWeapon?.allowCustomFuse && (
-            <div className="flex items-center gap-1 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-xl">
-              <span className="text-xs font-bold text-amber-400 px-1">⏱️</span>
-              {[1, 2, 3, 4, 5].map((sec) => {
-                const currentFuse =
-                  activeSlug?.fuseTimerSec ?? (currentWeapon.fuseTimeMs ? Math.round(currentWeapon.fuseTimeMs / 1000) : 3);
-                const isSelected = currentFuse === sec;
-                return (
-                  <button
-                    key={sec}
-                    type="button"
-                    className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center border transition-all ${
-                      isSelected
-                        ? 'bg-amber-500 text-slate-950 border-amber-300 font-black shadow-[0_0_10px_#f59e0b] scale-105'
-                        : 'bg-slate-950/80 text-slate-300 border-slate-800 active:bg-amber-500 active:text-slate-950'
-                    }`}
-                    onClick={() => {
-                      triggerHaptic(15);
-                      onSetFuseTimer?.(sec);
-                    }}
-                  >
-                    {sec}s
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <MobileFuseSelector
+            currentWeapon={currentWeapon}
+            activeSlug={activeSlug}
+            onSetFuseTimer={onSetFuseTimer}
+            triggerHaptic={triggerHaptic}
+          />
 
           {isGirder && (
             <button

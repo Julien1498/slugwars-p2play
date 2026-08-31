@@ -10,6 +10,7 @@ import {
   renderClusterBomb,
   renderClusterFragment,
   renderBullet,
+  renderMagnetProjectile,
 } from './projectiles/renderBallisticProjectiles';
 import {
   renderAirStrikeBomb,
@@ -67,6 +68,7 @@ export const PROJECTILE_DRAWERS: Record<string, ProjectileDrawerFn> = {
   banana_bomb: (ctx) => renderBananaBomb(ctx),
   dynamite: (ctx, _proj, animTime) => renderDynamite(ctx, animTime),
   concrete_donkey: (ctx, _proj, _animTime, angle) => renderConcreteDonkey(ctx, angle),
+  magnet: (ctx, proj, animTime) => renderMagnetProjectile(ctx, proj, animTime),
 };
 
 export function renderProjectiles(rc: ProjectilesRenderContext) {

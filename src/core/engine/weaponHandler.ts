@@ -26,7 +26,6 @@ import {
   executeJetpack,
   executePneumaticDrill,
   executeParachute,
-  executeMagnet,
 } from './weapons/utilityWeaponExecutors';
 import { fireBallisticProjectiles } from './weapons/ballisticWeaponFire';
 
@@ -57,7 +56,6 @@ const SPECIAL_BEHAVIOR_EXECUTORS: Partial<Record<string, BehaviorExecutor>> = {
   JETPACK: (state, _t, activeSlug, _team, _w, _tp, addLog) => executeJetpack(state, activeSlug, addLog),
   DRILL: (state, _t, activeSlug, _team, _w, _tp, addLog) => executePneumaticDrill(state, activeSlug, addLog),
   PARACHUTE: (state, _t, activeSlug, _team, _w, _tp, addLog) => executeParachute(state, activeSlug, addLog),
-  MAGNET: (state, _t, activeSlug, _team, _w, tp, addLog) => executeMagnet(state, activeSlug, tp, addLog),
 };
 
 export function fireWeapon(

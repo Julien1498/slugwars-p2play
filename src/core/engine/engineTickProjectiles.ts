@@ -54,6 +54,20 @@ export function updateProjectilesInTick(
       continue;
     }
 
+    if (res.landAsMagnet) {
+      if (!state.magnets) state.magnets = [];
+      state.magnets.push({
+        id: `magnet_${Date.now()}_${Math.random()}`,
+        x: res.landAsMagnet.x,
+        y: res.landAsMagnet.y,
+        polarity: res.landAsMagnet.polarity,
+        turnsRemaining: 3,
+      });
+      sfx.play('magnet');
+      addLog(`🧲 Électroaimant (${res.landAsMagnet.polarity === 'ATTRACT' ? 'Attraction' : 'Répulsion'}) déployé pour 3 tours !`, 'weapon');
+      continue;
+    }
+
     if (res.exploded) {
       const pt = res.collisionPoint || { x: proj.x, y: proj.y };
       const weapon = getWeapon(proj.weaponId);

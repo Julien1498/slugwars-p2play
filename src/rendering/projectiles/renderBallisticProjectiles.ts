@@ -236,3 +236,33 @@ export function renderBullet(ctx: CanvasRenderingContext2D, color = '#facc15') {
   ctx.arc(2, 0, 1.2, 0, Math.PI * 2);
   ctx.fill();
 }
+
+export function renderMagnetProjectile(ctx: CanvasRenderingContext2D, proj: ActiveProjectile, animTime: number) {
+  const isAttract = proj.behaviorData?.polarity !== 'REPEL';
+  const spinAngle = animTime * 10;
+  ctx.save();
+  ctx.rotate(spinAngle);
+
+  // Horseshoe U-shape
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = isAttract ? '#3b82f6' : '#ef4444';
+  ctx.beginPath();
+  ctx.arc(0, 0, 7, Math.PI, 0, false);
+  ctx.stroke();
+
+  // Red & Blue tips
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(4, -2, 3.5, 5);
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(-7.5, -2, 3.5, 5);
+
+  // Sparkle / field glow
+  ctx.strokeStyle = isAttract ? 'rgba(59, 130, 246, 0.6)' : 'rgba(239, 68, 68, 0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, 10 + Math.sin(animTime * 18) * 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
