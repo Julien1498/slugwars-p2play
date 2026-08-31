@@ -18,7 +18,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
   },
   WMD_CRAZY: {
     id: 'WMD_CRAZY',
-    name: 'Armement Lourd',
+    name: 'Arsenal Lourd',
     description: 'Super-armes fournies & gros dégâts',
     turnDelaysEnabled: true,
     inventory: {
