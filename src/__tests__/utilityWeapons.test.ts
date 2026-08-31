@@ -185,6 +185,20 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       expect(activeSlug.isParachuting).toBe(false);
     });
 
+    it('does not deploy parachute when another weapon is selected while airborne', () => {
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      activeSlug.x = 600;
+      activeSlug.y = 100;
+      activeSlug.vy = 2.0;
+      activeSlug.isParachuting = false;
+      activeSlug.hasUsedParachute = false;
+
+      engine.selectWeapon('bazooka');
+      const jumped = engine.jumpSlug();
+      expect(jumped).toBe(false);
+      expect(activeSlug.isParachuting).toBe(false);
+    });
+
     it('drifts with ambient wind while parachuting', () => {
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       activeSlug.x = 600;

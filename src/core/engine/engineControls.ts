@@ -70,7 +70,7 @@ export function jumpSlug(state: GameState, terrain: DestructibleTerrain): boolea
     activeSlug.isParachuting = false;
     activeSlug.hasUsedParachute = true;
     return true;
-  } else if (activeSlug.vy > 0.5 && !activeSlug.hasUsedParachute && !activeSlug.isParachuting) {
+  } else if (activeSlug.selectedWeaponId === 'parachute' && activeSlug.vy > 0.5 && !activeSlug.hasUsedParachute && !activeSlug.isParachuting) {
     activeSlug.isParachuting = true;
     activeSlug.hasUsedParachute = true;
     activeSlug.fallStartY = undefined;

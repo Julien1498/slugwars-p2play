@@ -94,7 +94,7 @@ export const pneumaticDrillWeapon: WeaponDefinition = {
   description: 'Creuse verticalement un puits tubulaire sous vos pieds dans la roche (20 dégâts aux ennemis traversés).',
   damage: 20,
   radius: 14,
-  defaultAmmo: 3,
+  defaultAmmo: 1,
   turnDelay: 0,
   crateProbability: 0.15,
   windAffected: false,
