@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-31T23:14:43.280Z",
+  "timestamp": "2026-08-31T23:20:11.801Z",
   "environment": {
     "nodeVersion": "v24.19.0",
     "platform": "win32",
@@ -7,9 +7,9 @@
   },
   "metrics": {
     "codeQuality": {
-      "prodFilesCount": 269,
+      "prodFilesCount": 271,
       "testFilesCount": 62,
-      "totalProdLines": 33709,
+      "totalProdLines": 33603,
       "filesOver300Count": 0,
       "hardcodedWeaponsChecksCount": 0,
       "filesWithAnyInProdCount": 86
@@ -18,20 +18,20 @@
       "jsonByteSize": 1146,
       "binaryByteSize": 629,
       "compressionRatio": "45.1",
-      "avgEncodeMicros": "40.36",
-      "avgDecodeMicros": "17.61",
+      "avgEncodeMicros": "47.17",
+      "avgDecodeMicros": "18.69",
       "reentrantSafe": true
     },
     "physics": {
       "themesCount": 8,
       "totalRaycasts": 4000,
       "totalNormals": 3906,
-      "durationMs": "334.9",
+      "durationMs": "391.9",
       "determinismPassed": true
     },
     "dependencyGraph": {
-      "totalNodes": 331,
-      "totalEdges": 943,
+      "totalNodes": 333,
+      "totalEdges": 947,
       "cyclesCount": 0,
       "boundaryViolationsCount": 0,
       "orphanFilesCount": 0
