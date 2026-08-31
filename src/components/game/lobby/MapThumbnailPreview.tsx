@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateProceduralTerrain } from '../../../core/terrainGenerator';
+import { generateTerrainGridOnly } from '../../../core/terrainGenerator';
 import { getThemeConfig } from '../../../core/terrain/themeRegistry';
 
 interface MapThumbnailPreviewProps {
@@ -25,7 +25,7 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
     const previewW = canvas.width;
     const previewH = canvas.height;
 
-    const terrainData = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
+    const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
     const realGrid = terrainData.grid;
     const realW = terrainData.width;
     const realH = terrainData.height;

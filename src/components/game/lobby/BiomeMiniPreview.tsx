@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, memo } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
-import { generateProceduralTerrain } from '../../../core/terrainGenerator';
+import { generateTerrainGridOnly } from '../../../core/terrainGenerator';
 import { getThemeConfig } from '../../../core/terrain/themeRegistry';
 
 interface BiomeMiniPreviewProps {
@@ -22,7 +22,7 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const terrainData = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
+    const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
     const realGrid = terrainData.grid;
     const realW = terrainData.width;
     const realH = terrainData.height;
