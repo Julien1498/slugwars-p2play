@@ -219,8 +219,8 @@ export function useGuestStateReceiver(
           (engine.state.floatingDamages?.length ?? 0) > 0 ||
           (engine.state.supplyCrates?.some((c) => !c.isLanded) ?? false);
         setGameState(engine.state, hasActiveDynamics);
-      } else if (payload.config) {
-        const newState = payload as GameState;
+      } else if (payload.config || (payload.state && payload.state.config)) {
+        const newState = (payload.state?.config ? payload.state : payload) as GameState;
 
         const isMyActiveTurn = myPeerId && newState.activeTeamId === myPeerId && (newState.phase === 'AIMING' || newState.phase === 'TURN_TIME' || newState.phase === 'RETREAT');
         const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;

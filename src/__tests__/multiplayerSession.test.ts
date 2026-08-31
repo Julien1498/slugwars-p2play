@@ -220,6 +220,34 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       dispatchAction('guest_peer_456', { type: 'ACTION', actionName: 'FIRE' });
       expect(hostEngine.state.projectiles.length).toBe(count + 1);
     });
+
+    it('allows autojoin late-joining player in dev mode to place unplaced slugs and take turns', () => {
+      hostEngine.state.isDevHost = true;
+      const joinMsg: SlugWarsNetworkMessage = {
+        type: 'ACTION',
+        actionName: 'JOIN_GAME',
+        payload: { name: 'Late Joiner', color: '#10b981', avatar: '⚡' },
+      };
+      dispatchAction('guest_peer_999', joinMsg);
+
+      expect(hostEngine.state.teams.some((t) => t.id === 'guest_peer_999')).toBe(true);
+      const guestSlugs = hostEngine.state.slugs.filter((s) => s.teamId === 'guest_peer_999');
+      expect(guestSlugs.length).toBe(2);
+
+      // It becomes guest_peer_999's turn
+      hostEngine.state.activeTeamId = 'guest_peer_999';
+      hostEngine.state.activeSlugId = guestSlugs[0].id;
+      guestSlugs[0].x = 450;
+      guestSlugs[0].y = 200;
+
+      dispatchAction('guest_peer_999', {
+        type: 'ACTION',
+        actionName: 'START_MOVE',
+        payload: { dir: 'right' },
+      });
+      expect(guestSlugs[0].movingDir).toBe('right');
+      expect(guestSlugs[0].vx).toBe(2.4);
+    });
   });
 
   describe('State Delta & Binary Compression Synchronization', () => {

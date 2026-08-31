@@ -33,9 +33,12 @@ export function useDevMode(isHost: boolean = false) {
       params.get('debug') === 'true' ||
       params.get('debug') === '1';
 
-    setIsDevEnabled(hasParam);
-    if (!hasParam) {
-      sessionStorage.removeItem('slugwars_dev_enabled');
+    const hasSession = sessionStorage.getItem('slugwars_dev_enabled') === 'true';
+    if (hasParam) {
+      sessionStorage.setItem('slugwars_dev_enabled', 'true');
+      setIsDevEnabled(true);
+    } else {
+      setIsDevEnabled(hasSession);
     }
   }, [isHost]);
 

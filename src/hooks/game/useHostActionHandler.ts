@@ -70,7 +70,7 @@ export function processHostAction(
         syncState();
         broadcastState(engine.state);
 
-        const conn = peerManager.connections?.get(playerId);
+        const conn = peerManager.connections?.get(playerId) || Array.from(peerManager.connections?.values() || []).find((c: any) => c.peer === playerId);
         if (conn && conn.open) {
           const sanitized = sanitizeGameState(engine.state);
           const resMsg = { type: 'STATE_UPDATE', state: sanitized };
@@ -217,7 +217,7 @@ export function processHostAction(
           engine.addTeam(playerId, trusted, TEAM_COLORS[colorIdx], '🐌', playerId === hostId);
           broadcastState(engine.state);
         } else {
-          const conn = peerManager.connections?.get(playerId);
+          const conn = peerManager.connections?.get(playerId) || Array.from(peerManager.connections?.values() || []).find((c: any) => c.peer === playerId);
           const sanitized = sanitizeGameState(engine.state);
           if (conn && conn.open) {
             const resMsg = { type: 'STATE_UPDATE', state: sanitized };

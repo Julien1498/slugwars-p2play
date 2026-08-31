@@ -131,6 +131,15 @@ describe('useGame: Optimistic Client Prediction & Local Guest Interpolation', ()
 
     it('ignores optimistic actions when it is not the local player turn', () => {
       const state = createMockGameState();
+      state.teams.push({
+        id: 'peer_other',
+        name: 'Équipe Beta',
+        color: '#3b82f6',
+        avatar: '🤠',
+        isHost: true,
+        inventory: {},
+        stats: { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 },
+      });
       const updated = applyOptimisticAction(state, 'AIM', { aimAngle: 80 }, 'peer_other');
       expect(updated).toBe(false);
       expect(state.slugs[0].aimAngle).toBe(25);

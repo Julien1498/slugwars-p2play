@@ -33,7 +33,8 @@ export function interpolateGuestLocalState(
     }
   }
 
-  const isMyTurn = myPeerId && state.activeTeamId === myPeerId && state.phase === 'AIMING';
+  const activeTeam = state.teams.find((t) => t.id === state.activeTeamId);
+  const isMyTurn = (state.teams.length <= 1 || !!(activeTeam && (myPeerId ? myPeerId === activeTeam.id : !activeTeam.isHost))) && state.phase === 'AIMING';
   const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
   if (activeSlug && activeSlug.isChargingPower) {
     activeSlug.aimPower = Math.min(100, (activeSlug.aimPower || 0) + 2.5);

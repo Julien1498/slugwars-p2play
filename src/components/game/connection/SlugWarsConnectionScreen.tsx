@@ -64,16 +64,18 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     });
   }, []);
 
+  const autojoinAttemptedRef = React.useRef(false);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || autojoinAttemptedRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const isAutoJoin = params.get('autojoin') === '1' || params.get('autojoin') === 'true' || params.get('auto') === '1';
     const targetRoom = getRoomCodeFromLocation();
     if (isAutoJoin && targetRoom && !isConnecting) {
-      const guestName = `Invité_${Math.floor(100 + Math.random() * 900)}`;
+      autojoinAttemptedRef.current = true;
+      const guestName = username.trim() || `Invité_${Math.floor(100 + Math.random() * 900)}`;
       onJoin(guestName, selectedAvatar || '🐌', targetRoom);
     }
-  }, []);
+  }, [isConnecting, onJoin, selectedAvatar, username]);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 16);
