@@ -281,6 +281,7 @@ export interface GameState {
   supplyCrates?: SupplyCrate[];
   girders?: PlacedGirder[];
   craters?: CraterRecord[];
+  terrainBuilds?: CraterRecord[];
   winnerTeamId?: TeamId;
   journal: JournalEntry[];
   turnCount: number;

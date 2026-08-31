@@ -274,11 +274,19 @@ export function devDigTerrain(
 }
 
 export function devBuildTerrain(
-  _state: GameState,
+  state: GameState,
   terrain: DestructibleTerrain,
   x: number,
   y: number,
   radius: number = 30
 ): void {
   terrain.buildTerrain(x, y, radius, 1);
+  if (!state.terrainBuilds) state.terrainBuilds = [];
+  state.terrainBuilds.push({
+    id: `dev_build_${Date.now()}_${Math.random()}`,
+    x: Math.round(x),
+    y: Math.round(y),
+    radius: Math.round(radius),
+    createdAt: Date.now(),
+  });
 }

@@ -229,12 +229,12 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.explosions = [];
   }
 
-  // Persistent Craters Sync
+  // Persistent Craters & Terrain Builds Sync
   const curCraters = currentState.craters || [];
-  const prevCraters = prevState?.craters || [];
-  if (curCraters.length !== prevCraters.length) {
-    delta.craters = curCraters;
-  }
+  if (curCraters.length !== (prevState?.craters || []).length) delta.craters = curCraters;
+
+  const curBuilds = currentState.terrainBuilds || [];
+  if (curBuilds.length !== (prevState?.terrainBuilds || []).length) delta.terrainBuilds = curBuilds;
 
   // Helicopters
   const curHelis = currentState.helicopters || [];

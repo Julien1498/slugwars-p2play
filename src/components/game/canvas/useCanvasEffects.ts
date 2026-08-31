@@ -14,6 +14,7 @@ export interface UseCanvasEffectsProps {
 export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps) {
   const carvedExplosionsRef = useRef<Set<string>>(new Set());
   const knownCraterIdsCanvasRef = useRef<Set<string>>(new Set());
+  const knownBuildIdsCanvasRef = useRef<Set<string>>(new Set());
   const slugDeathTimestampsRef = useRef<Map<string, number>>(new Map());
 
   const clientParticlesRef = useRef<ClientParticle[]>([]);
@@ -32,23 +33,18 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
     (x: number, y: number, radius: number) => {
       const safeRadius = Math.max(0, radius || 0);
       if (safeRadius <= 0) return;
-
       terrain.carveExplosion(x, y, safeRadius);
-
-      const buffers = getBuffers();
-      if (buffers.offscreenCanvas) {
-        const offCtx = buffers.offscreenCanvas.getContext('2d');
-        if (offCtx) {
-          offCtx.save();
-          offCtx.globalCompositeOperation = 'destination-out';
-          offCtx.beginPath();
-          offCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
-          offCtx.fill();
-          offCtx.restore();
-        }
-      }
     },
-    [terrain, getBuffers]
+    [terrain]
+  );
+
+  const buildOffscreenTerrain = useCallback(
+    (x: number, y: number, radius: number) => {
+      const safeRadius = Math.max(0, radius || 0);
+      if (safeRadius <= 0) return;
+      terrain.buildTerrain(x, y, safeRadius, 1);
+    },
+    [terrain]
   );
 
   const triggerWaterSplash = useCallback((x: number, y: number, scale = 1.0) => {
@@ -119,6 +115,16 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
         if (!knownCraterIdsCanvasRef.current.has(c.id)) {
           knownCraterIdsCanvasRef.current.add(c.id);
           carveOffscreenCrater(c.x, c.y, c.radius);
+        }
+      }
+    }
+
+    // 1b. Terrain Builds (Dev Mode ground placement)
+    if (curState.terrainBuilds && curState.terrainBuilds.length > 0) {
+      for (const b of curState.terrainBuilds) {
+        if (!knownBuildIdsCanvasRef.current.has(b.id)) {
+          knownBuildIdsCanvasRef.current.add(b.id);
+          buildOffscreenTerrain(b.x, b.y, b.radius);
         }
       }
     }
@@ -227,6 +233,7 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
   const resetEffectsCache = useCallback(() => {
     carvedExplosionsRef.current.clear();
     knownCraterIdsCanvasRef.current.clear();
+    knownBuildIdsCanvasRef.current.clear();
     slugDeathTimestampsRef.current.clear();
   }, []);
 

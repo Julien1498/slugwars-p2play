@@ -108,7 +108,9 @@ export function useCanvasRenderLoop({
 
       if (lastTerrainRevisionRef.current !== terrain.revision) {
         lastTerrainRevisionRef.current = terrain.revision;
-        redrawTerrain();
+        const dirtyBox = terrain.lastDirtyBox;
+        terrain.lastDirtyBox = undefined;
+        redrawTerrain(dirtyBox);
       }
 
       const curState = gameStateRef.current;

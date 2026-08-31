@@ -72,11 +72,10 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(syncStateCalled).toBe(true);
     });
 
-    it('spawns active placed slugs for late-joining players after match has already started', () => {
+    it('registers late-joining players into teams without automatically placing slugs', () => {
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.startGame();
       expect(hostEngine.state.phase).toBe('PLACEMENT');
-      expect(hostEngine.state.slugs.length).toBe(2);
 
       // 2nd player joins late during active match
       const lateJoinMsg: SlugWarsNetworkMessage = {
@@ -92,9 +91,8 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       dispatchAction('guest_peer_789', lateJoinMsg);
 
       expect(hostEngine.state.teams.length).toBe(2);
-      const lateTeamSlugs = hostEngine.state.slugs.filter((s) => s.teamId === 'guest_peer_789');
-      expect(lateTeamSlugs.length).toBe(2);
-      expect(lateTeamSlugs.every((s) => s.isAlive && s.isPlaced)).toBe(true);
+      expect(hostEngine.state.teams[1].id).toBe('guest_peer_789');
+      expect(hostEngine.state.teams[1].name).toBe('Invité LateJoin');
     });
 
     it('rejects CHANGE_CONFIG from non-host players', () => {
@@ -229,11 +227,14 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       const hostSlug = hostEngine.state.slugs[0];
       hostSlug.hp = 65;
       hostSlug.x += 15;
-      hostEngine.carveCrater(300, 250, 45);
+      hostEngine.devDigTerrain(300, 250, 45);
+      hostEngine.devBuildTerrain(400, 260, 35);
 
       // Host generates delta
       const delta = buildStateDelta(prevState, hostEngine.state);
       expect(delta).not.toBeNull();
+      expect(delta!.terrainBuilds).toBeDefined();
+      expect(delta!.craters).toBeDefined();
 
       // Guest applies delta
       applyStateDelta(guestState, delta!);
@@ -243,6 +244,7 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(guestSlug.hp).toBe(65);
       expect(guestSlug.x).toBe(hostSlug.x);
       expect(guestState.craters?.length).toBe(hostEngine.state.craters?.length);
+      expect(guestState.terrainBuilds?.length).toBe(hostEngine.state.terrainBuilds?.length);
     });
 
     it('encodes and decodes binary deltas without data loss', () => {

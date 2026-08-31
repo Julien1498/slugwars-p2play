@@ -19,6 +19,7 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     (!delta.explosions || delta.explosions.length === 0) &&
     (!delta.girders || delta.girders.length === 0) &&
     (!delta.craters || delta.craters.length === 0) &&
+    (!delta.terrainBuilds || delta.terrainBuilds.length === 0) &&
     (!delta.supplyCrates || delta.supplyCrates.length === 0) &&
     (!delta.mines || delta.mines.length === 0) &&
     (!delta.helicopters || delta.helicopters.length === 0) &&

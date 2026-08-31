@@ -47,6 +47,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const lockedTargetRef = useRef<Vector2D | null>(null);
   const isDevPaintingRef = useRef<boolean>(false);
+  const lastDevPaintPosRef = useRef<Vector2D | null>(null);
   const isTouch = useIsTouchDevice();
 
   // Zero-Reflow Container Resize Observer
@@ -186,6 +187,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
           if (container) {
             const rect = container.getBoundingClientRect();
             const worldPos = screenToWorldCoords(e.clientX, e.clientY, rect, terrain.data.width, terrain.data.height, zoomRef.current, panRef.current);
+            lastDevPaintPosRef.current = worldPos;
             onDevClick(worldPos);
             return;
           }
@@ -194,17 +196,25 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       }}
       onMouseUp={(e) => {
         isDevPaintingRef.current = false;
+        lastDevPaintPosRef.current = null;
         if (activeDevTool && e.button === 0) return;
         handleMouseUp(e);
       }}
-      onMouseLeave={() => { isDevPaintingRef.current = false; }}
+      onMouseLeave={() => {
+        isDevPaintingRef.current = false;
+        lastDevPaintPosRef.current = null;
+      }}
       onMouseMove={(e) => {
         if (isDevPaintingRef.current && (activeDevTool === 'dig_terrain' || activeDevTool === 'build_terrain') && onDevClick) {
           const container = containerRef.current;
           if (container) {
             const rect = container.getBoundingClientRect();
             const worldPos = screenToWorldCoords(e.clientX, e.clientY, rect, terrain.data.width, terrain.data.height, zoomRef.current, panRef.current);
-            onDevClick(worldPos);
+            const lastPos = lastDevPaintPosRef.current;
+            if (!lastPos || Math.hypot(worldPos.x - lastPos.x, worldPos.y - lastPos.y) >= 6) {
+              lastDevPaintPosRef.current = worldPos;
+              onDevClick(worldPos);
+            }
           }
         }
         handleMouseMove(e);
@@ -215,28 +225,16 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       <div
         ref={fpsBadgeRef}
         style={{ display: perfTracker.getFpsHudEnabled() ? 'flex' : 'none' }}
-        className={`absolute top-16 right-4 pointer-events-none ${
-          perfTracker.getFpsHudAdvancedEnabled()
-            ? 'px-3 py-1.5 rounded-2xl flex-col gap-0.5'
-            : 'px-2.5 py-1 rounded-xl flex-row items-center gap-1.5'
-        } bg-zinc-950/90 backdrop-blur-md border border-emerald-500/30 text-xs font-mono text-emerald-400 shadow-2xl flex select-none z-20`}
+        className={`absolute top-16 right-4 pointer-events-none ${perfTracker.getFpsHudAdvancedEnabled() ? 'px-3 py-1.5 rounded-2xl flex-col gap-0.5' : 'px-2.5 py-1 rounded-xl flex-row items-center gap-1.5'} bg-zinc-950/90 backdrop-blur-md border border-emerald-500/30 text-xs font-mono text-emerald-400 shadow-2xl flex select-none z-20`}
       >
         <div className="flex items-center gap-1.5">
           <span ref={fpsDotRef} className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0" />
           <span ref={fpsTextRef} className="font-bold text-white">60 FPS</span>
-          <span
-            ref={fpsDetailsRef}
-            style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'inline' : 'none' }}
-            className="text-[10px] text-zinc-400 font-normal"
-          >
+          <span ref={fpsDetailsRef} style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'inline' : 'none' }} className="text-[10px] text-zinc-400 font-normal">
             (16.6ms) · Dessin: 1.0ms
           </span>
         </div>
-        <div
-          ref={fpsPassesRef}
-          style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'block' : 'none' }}
-          className="text-[10px] text-cyan-300/90 font-mono tracking-tight"
-        >
+        <div ref={fpsPassesRef} style={{ display: perfTracker.getFpsHudAdvancedEnabled() ? 'block' : 'none' }} className="text-[10px] text-cyan-300/90 font-mono tracking-tight">
           Chargement des passes...
         </div>
       </div>

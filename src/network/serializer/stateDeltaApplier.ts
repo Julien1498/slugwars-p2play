@@ -115,6 +115,10 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     localState.craters = delta.craters;
   }
 
+  if (delta.terrainBuilds !== undefined) {
+    localState.terrainBuilds = delta.terrainBuilds;
+  }
+
   if (delta.supplyCrates !== undefined) {
     localState.supplyCrates = delta.supplyCrates as any;
   }

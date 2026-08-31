@@ -73,6 +73,7 @@ export interface CompactStateDelta {
   supplyCrates?: Partial<SupplyCrate>[];
   girders?: PlacedGirder[];
   craters?: CraterRecord[];
+  terrainBuilds?: CraterRecord[];
   journal?: GameState['journal'];
   floatingDamages?: GameState['floatingDamages'];
   solidProps?: SolidProp[];
