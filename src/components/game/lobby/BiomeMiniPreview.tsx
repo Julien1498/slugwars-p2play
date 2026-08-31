@@ -1,4 +1,4 @@
-﻿import React, { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import { MapTheme, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
 import { generateProceduralTerrain } from '../../../core/terrainGenerator';
 import { getThemeConfig } from '../../../core/terrain/themeRegistry';
@@ -22,9 +22,9 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Fast generation at reduced resolution for instant preview (<1ms)
-    const terrain = generateProceduralTerrain(seed, theme, sizeCfg.width, sizeCfg.height);
-    const { grid, width: srcW, height: srcH, waterLevel } = terrain;
+    // Fast generation at reduced resolution for instant preview (<0.1ms)
+    const terrain = generateProceduralTerrain(seed, theme, width, height);
+    const { grid, waterLevel } = terrain;
     const themeConfig = getThemeConfig(theme);
 
     const hexStringToRgb = (hex: string): [number, number, number] => {
@@ -53,20 +53,19 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
     const data = imgData.data;
 
     for (let py = 0; py < height; py++) {
-      const srcY = Math.floor((py / height) * srcH);
       const skyT = py / height;
       const skyR = Math.round(skyTopRGB[0] + (skyBottomRGB[0] - skyTopRGB[0]) * skyT);
       const skyG = Math.round(skyTopRGB[1] + (skyBottomRGB[1] - skyTopRGB[1]) * skyT);
       const skyB = Math.round(skyTopRGB[2] + (skyBottomRGB[2] - skyTopRGB[2]) * skyT);
+      const rowOffset = py * width;
 
       for (let px = 0; px < width; px++) {
-        const srcX = Math.floor((px / width) * srcW);
-        const pIdx = py * width + px;
+        const pIdx = rowOffset + px;
         const idx = pIdx * 4;
 
-        if (grid[srcY * srcW + srcX] === 1) {
+        if (grid[pIdx] === 1) {
           // Subtle top surface highlight
-          const isSurface = py > 0 && grid[Math.floor(((py - 1) / height) * srcH) * srcW + srcX] === 0;
+          const isSurface = py > 0 && grid[pIdx - width] === 0;
           const color = isSurface ? surfaceRGB : deepRGB;
           data[idx] = color[0];
           data[idx + 1] = color[1];
@@ -84,10 +83,10 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
     ctx.putImageData(imgData, 0, 0);
 
     // Water level
-    const waterCanvasY = (waterLevel / srcH) * height;
+    const waterCanvasY = (waterLevel / height) * height;
     ctx.fillStyle = 'rgba(14, 165, 233, 0.75)';
     ctx.fillRect(0, waterCanvasY, width, height - waterCanvasY);
-  }, [theme, sizeCfg.width, sizeCfg.height, seed]);
+  }, [theme, seed]);
 
   return (
     <canvas
