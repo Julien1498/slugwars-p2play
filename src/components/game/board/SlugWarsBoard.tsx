@@ -20,6 +20,8 @@ import { DevFloatingToggle } from '../dev/DevFloatingToggle';
 import { DevToolsDrawer } from '../dev/DevToolsDrawer';
 import { executeDevCursorAction } from '../dev/devActionExecutor';
 
+import { getIsLocalPlayerTurn } from '../../../core/turnAuthority';
+
 export type { SlugWarsBoardProps };
 
 export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
@@ -29,13 +31,13 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   onStartCharge, onReleaseCharge, onDetonate, onEnterVehicle, onExitVehicle,
   onSteerVehicle, onRestartGame, onExit, engine, onDevAction,
 }) => {
+  const [pendingPlacement, setPendingPlacement] = useState<Vector2D | null>(null);
+  const isTouch = useIsTouchDevice();
+  const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
   const devMode = useDevMode(isHost);
   const engineRef = React.useRef(engine);
   engineRef.current = engine;
   const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
-  const [pendingPlacement, setPendingPlacement] = useState<Vector2D | null>(null);
-  const isTouch = useIsTouchDevice();
-  const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
 
   const {
     showHitboxes, showDrawer, showWeaponPicker, showRules, showMetrics, showConfirmLobby,
@@ -57,9 +59,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   const activeSlug = gameState.slugs.find((s) => s.id === gameState.activeSlugId);
   const activeTeam = gameState.teams.find((t) => t.id === gameState.activeTeamId);
   const myTeam = gameState.teams.find((t) => (t.isHost ? isHost : (myPeerId ? myPeerId === t.id : !t.isHost))) || activeTeam;
-  const isMyTurn = gameState.teams.length <= 1
-    ? true
-    : !!(activeTeam && (activeTeam.isHost ? isHost : (myPeerId ? myPeerId === activeTeam.id : !activeTeam.isHost)));
+  const isMyTurn = getIsLocalPlayerTurn(gameState, myPeerId, isHost);
   const activeSheep = gameState.projectiles.find((p) => p.weaponId === 'super_sheep' || p.weaponId === 'sheep');
 
   const mobileTeamStats = useMemo(() => {

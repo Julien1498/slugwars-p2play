@@ -4,6 +4,8 @@ import { GameState } from '../../core/types';
 import { createWorkerInterval } from '../../core/workerTimer';
 import { stepSupplyCrateDescent } from '../../core/engine/supplyDropManager';
 
+import { getIsLocalPlayerTurn } from '../../core/turnAuthority';
+
 export function interpolateGuestLocalState(
   state: GameState,
   isSolid: (x: number, y: number) => boolean,
@@ -33,8 +35,7 @@ export function interpolateGuestLocalState(
     }
   }
 
-  const activeTeam = state.teams.find((t) => t.id === state.activeTeamId);
-  const isMyTurn = (state.teams.length <= 1 || !!(activeTeam && (myPeerId ? myPeerId === activeTeam.id : !activeTeam.isHost))) && state.phase === 'AIMING';
+  const isMyTurn = getIsLocalPlayerTurn(state, myPeerId, false) && state.phase === 'AIMING';
   const activeSlug = isMyTurn ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
   if (activeSlug && activeSlug.isChargingPower) {
     activeSlug.aimPower = Math.min(100, (activeSlug.aimPower || 0) + 2.5);

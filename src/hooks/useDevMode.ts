@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { detectDevModeFromEnvironment, persistDevModeSession } from '../network/devSession';
 
 export type DevCursorTool =
   | 'teleport_slug'
@@ -21,24 +22,15 @@ export function useDevMode(isHost: boolean = false) {
   const [brushRadius, setBrushRadius] = useState<number>(30);
 
   useEffect(() => {
-    if (!isHost || typeof window === 'undefined') {
+    if (!isHost) {
       setIsDevEnabled(false);
       setIsDevOpen(false);
       return;
     }
-    const params = new URLSearchParams(window.location.search);
-    const hasParam =
-      params.get('dev') === 'true' ||
-      params.get('dev') === '1' ||
-      params.get('debug') === 'true' ||
-      params.get('debug') === '1';
-
-    const hasSession = sessionStorage.getItem('slugwars_dev_enabled') === 'true';
-    if (hasParam) {
-      sessionStorage.setItem('slugwars_dev_enabled', 'true');
-      setIsDevEnabled(true);
-    } else {
-      setIsDevEnabled(hasSession);
+    const isDev = detectDevModeFromEnvironment();
+    setIsDevEnabled(isDev);
+    if (isDev) {
+      persistDevModeSession(true);
     }
   }, [isHost]);
 

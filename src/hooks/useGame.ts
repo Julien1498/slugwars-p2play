@@ -15,6 +15,7 @@ import { useVisibilityRecovery } from './game/useVisibilityRecovery';
 import { useActionDispatcher } from './game/useActionDispatcher';
 import { TEAM_COLORS } from '../network/protocol';
 import { shouldUpdateReactUi } from '../core/uiSyncUtils';
+import { detectDevModeFromEnvironment } from '../network/devSession';
 
 export function useGame(options?: {
   isEmbedded?: boolean;
@@ -41,30 +42,14 @@ export function useGame(options?: {
   const engineRef = useRef<SlugWarsEngine>(null!);
   if (!engineRef.current) {
     engineRef.current = new SlugWarsEngine();
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const isDevParam =
-        params.get('dev') === 'true' ||
-        params.get('dev') === '1' ||
-        params.get('debug') === 'true' ||
-        params.get('debug') === '1';
-      if (isDevParam) {
-        engineRef.current.state.isDevHost = true;
-      }
-    }
+    engineRef.current.state.isDevHost = detectDevModeFromEnvironment();
   }
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const lastSentStateRef = useRef<GameState | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && isHost && engineRef.current) {
-      const params = new URLSearchParams(window.location.search);
-      const isDevParam =
-        params.get('dev') === 'true' ||
-        params.get('dev') === '1' ||
-        params.get('debug') === 'true' ||
-        params.get('debug') === '1';
-      engineRef.current.state.isDevHost = isDevParam;
+    if (isHost && engineRef.current) {
+      engineRef.current.state.isDevHost = detectDevModeFromEnvironment();
     }
   }, [isHost]);
 
@@ -189,14 +174,7 @@ export function useGame(options?: {
       const roomId = await hostGame(undefined, { username: name, avatar });
       syncRoomUrlToAddressBar(roomId);
       const engine = new SlugWarsEngine();
-      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const isDevParam =
-        params?.get('dev') === 'true' ||
-        params?.get('dev') === '1' ||
-        params?.get('debug') === 'true' ||
-        params?.get('debug') === '1' ||
-        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('slugwars_dev_enabled') === 'true');
-      engine.state.isDevHost = !!isDevParam;
+      engine.state.isDevHost = detectDevModeFromEnvironment();
       engineRef.current = engine;
       engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true);
       syncState();

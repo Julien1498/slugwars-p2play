@@ -2,11 +2,12 @@ import { useEffect, useRef, MutableRefObject } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
 import { GameState, PlacedGirder } from '../../core/types';
 import { DestructibleTerrain } from '../../core/terrain';
-import { applyStateDelta, CompactStateDelta } from '../../network/netSerializer';
-import { decodeBinaryDelta } from '../../network/netBinarySerializer';
+import { applyStateDelta } from '../../network/netSerializer';
 import { sfx } from '../../core/audio';
 import { netMetrics } from '../../core/networkMetrics';
 import { PeerManagerLike } from 'p2play-core';
+import { unwrapGameState, unwrapDeltaState } from '../../network/payloadNormalizer';
+import { getIsLocalPlayerTurn, isPlayablePhase } from '../../core/turnAuthority';
 
 function stampGirderToTerrain(terrain: DestructibleTerrain, g: PlacedGirder): void {
   const rad = (g.angleDeg * Math.PI) / 180;
@@ -51,16 +52,7 @@ export function useGuestStateReceiver(
       const engine = engineRef.current;
       if (!engine) return;
 
-      let delta: CompactStateDelta | null = null;
-      if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {
-        try {
-          delta = decodeBinaryDelta(payload);
-        } catch (err: unknown) {
-          console.warn('Binary decode error:', err instanceof Error ? err.message : String(err));
-        }
-      } else if (payload.isDelta && payload.delta) {
-        delta = payload.delta;
-      }
+      const delta = unwrapDeltaState(payload);
 
       netMetrics.recordDownload(payload, delta || payload);
 
@@ -219,70 +211,71 @@ export function useGuestStateReceiver(
           (engine.state.floatingDamages?.length ?? 0) > 0 ||
           (engine.state.supplyCrates?.some((c) => !c.isLanded) ?? false);
         setGameState(engine.state, hasActiveDynamics);
-      } else if (payload.config || (payload.state && payload.state.config)) {
-        const newState = (payload.state?.config ? payload.state : payload) as GameState;
+      } else {
+        const newState = unwrapGameState(payload);
+        if (newState) {
+          const isMyActiveTurn = getIsLocalPlayerTurn(newState, myPeerId, false) && isPlayablePhase(newState.phase);
+          const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
+          const preservedAim = prevActiveSlug
+            ? {
+                aimAngle: prevActiveSlug.aimAngle,
+                facing: prevActiveSlug.facing,
+                selectedWeaponId: prevActiveSlug.selectedWeaponId,
+                currentTargetPoint: prevActiveSlug.currentTargetPoint,
+                fuseTimerSec: prevActiveSlug.fuseTimerSec,
+              }
+            : null;
 
-        const isMyActiveTurn = myPeerId && newState.activeTeamId === myPeerId && (newState.phase === 'AIMING' || newState.phase === 'TURN_TIME' || newState.phase === 'RETREAT');
-        const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
-        const preservedAim = prevActiveSlug
-          ? {
-              aimAngle: prevActiveSlug.aimAngle,
-              facing: prevActiveSlug.facing,
-              selectedWeaponId: prevActiveSlug.selectedWeaponId,
-              currentTargetPoint: prevActiveSlug.currentTargetPoint,
-              fuseTimerSec: prevActiveSlug.fuseTimerSec,
-            }
-          : null;
-
-        engine.state = newState;
-        if (preservedAim) {
-          const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
-          if (newActiveSlug) {
-            newActiveSlug.aimAngle = preservedAim.aimAngle;
-            newActiveSlug.facing = preservedAim.facing;
-            newActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
-            newActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
-            newActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
-          }
-        }
-
-        const isNewMatch = (newState.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') ||
-          prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-        if (isNewMatch) {
-          prevMapKeyRef.current = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-          engine.initTerrain();
-          knownGirderIdsRef.current.clear();
-          knownCraterIdsRef.current.clear();
-          knownProjIdsRef.current.clear();
-          knownExplosionIdsRef.current.clear();
-        }
-        prevPhaseRef.current = newState.phase;
-
-        if (newState.girders && newState.girders.length > 0) {
-          for (const g of newState.girders) {
-            if (!knownGirderIdsRef.current.has(g.id)) {
-              knownGirderIdsRef.current.add(g.id);
-              stampGirderToTerrain(engine.terrain, g);
+          engine.state = newState;
+          if (preservedAim) {
+            const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
+            if (newActiveSlug) {
+              newActiveSlug.aimAngle = preservedAim.aimAngle;
+              newActiveSlug.facing = preservedAim.facing;
+              newActiveSlug.selectedWeaponId = preservedAim.selectedWeaponId;
+              newActiveSlug.currentTargetPoint = preservedAim.currentTargetPoint;
+              newActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
             }
           }
-        }
 
-        if (newState.craters && newState.craters.length > 0) {
-          for (const c of newState.craters) {
-            if (!knownCraterIdsRef.current.has(c.id)) {
-              knownCraterIdsRef.current.add(c.id);
-              engine.terrain.carveExplosion(c.x, c.y, c.radius);
+          const isNewMatch = (newState.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') ||
+            prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+          if (isNewMatch) {
+            prevMapKeyRef.current = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+            engine.initTerrain();
+            knownGirderIdsRef.current.clear();
+            knownCraterIdsRef.current.clear();
+            knownProjIdsRef.current.clear();
+            knownExplosionIdsRef.current.clear();
+          }
+          prevPhaseRef.current = newState.phase;
+
+          if (newState.girders && newState.girders.length > 0) {
+            for (const g of newState.girders) {
+              if (!knownGirderIdsRef.current.has(g.id)) {
+                knownGirderIdsRef.current.add(g.id);
+                stampGirderToTerrain(engine.terrain, g);
+              }
             }
           }
-        }
 
-        if (newState.explosions && newState.explosions.length > 0) {
-          for (const ex of newState.explosions) {
-            engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
+          if (newState.craters && newState.craters.length > 0) {
+            for (const c of newState.craters) {
+              if (!knownCraterIdsRef.current.has(c.id)) {
+                knownCraterIdsRef.current.add(c.id);
+                engine.terrain.carveExplosion(c.x, c.y, c.radius);
+              }
+            }
           }
-        }
 
-        setGameState(engine.state, true);
+          if (newState.explosions && newState.explosions.length > 0) {
+            for (const ex of newState.explosions) {
+              engine.terrain.carveExplosion(ex.x, ex.y, ex.radius);
+            }
+          }
+
+          setGameState(engine.state, true);
+        }
       }
     };
   }, [isHost, peerManager, engineRef, setGameState, myPeerId]);

@@ -40,3 +40,14 @@ export function saveProfile(data: { username: string; avatar?: string }): void {
     // Quota exceeded or private browsing
   }
 }
+
+export function resolveLobbyPlayerName(
+  username: string | undefined,
+  trusted: string | undefined,
+  peerId?: string
+): string {
+  const isGeneric = !username || username.startsWith('Joueur-') || username.startsWith('Joueur ') || username.startsWith('Player-');
+  if (!isGeneric && username) return username;
+  if (trusted && !trusted.startsWith('Joueur-') && !trusted.startsWith('Joueur ')) return trusted;
+  return peerId ? `Limace ${peerId.slice(0, 4)}` : 'Limace';
+}

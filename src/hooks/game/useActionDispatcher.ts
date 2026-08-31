@@ -1,100 +1,43 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, MutableRefObject, Dispatch, SetStateAction } from 'react';
 import { SlugWarsEngine } from '../../core/gameEngine';
 import { GameState } from '../../core/types';
-import { SlugWarsNetworkMessage, SlugWarsActionType, SlugWarsNetworkPayload } from '../../network/protocol';
+import { SlugWarsNetworkMessage, SlugWarsActionType } from '../../network/protocol';
 import { netMetrics } from '../../core/networkMetrics';
 import { sfx } from '../../core/audio';
 import { type PeerManagerLike } from 'p2play-core';
+import { getIsLocalPlayerTurn, isPlayablePhase } from '../../core/turnAuthority';
+import { NETWORK_ACTION_REGISTRY, canExecuteInPhase } from '../../network/actions';
 
 export function applyOptimisticAction(
   state: GameState,
   actionName: SlugWarsActionType | string,
-  payload: SlugWarsNetworkPayload | any,
+  payload: any,
   myPeerId: string
 ): boolean {
-  const activeTeam = state.teams.find((t) => t.id === state.activeTeamId);
-  const isMyTurn = state.teams.length <= 1
-    ? true
-    : !!(activeTeam && (myPeerId ? myPeerId === activeTeam.id : !activeTeam.isHost));
-  const isPlayablePhase = state.phase === 'AIMING' || state.phase === 'TURN_TIME' || state.phase === 'RETREAT' || state.phase === 'PLACEMENT';
-  const activeSlug = (isMyTurn && isPlayablePhase) ? state.slugs.find((s) => s.id === state.activeSlugId) : null;
+  const isMyTurn = getIsLocalPlayerTurn(state, myPeerId, false);
+  const actionDef = NETWORK_ACTION_REGISTRY[actionName as SlugWarsActionType];
+  if (!isMyTurn || !actionDef || !isPlayablePhase(state.phase)) return false;
+  if (!canExecuteInPhase(actionDef.allowedPhases, state.phase)) return false;
+
+  const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (!activeSlug) return false;
 
-  if (actionName === 'AIM') {
-    if (payload?.aimAngle !== undefined) activeSlug.aimAngle = payload.aimAngle;
-    if (payload?.aimPower !== undefined && !activeSlug.isChargingPower) {
-      activeSlug.aimPower = payload.aimPower;
-    }
-    if (payload?.facing !== undefined) activeSlug.facing = payload.facing;
-    if (payload?.targetPoint !== undefined) activeSlug.currentTargetPoint = payload.targetPoint;
+  if (actionDef.applyOptimistic) {
+    actionDef.applyOptimistic(state, activeSlug, payload);
     return true;
   }
-  if (actionName === 'SELECT_WEAPON') {
-    if (payload?.weaponId) {
-      activeSlug.selectedWeaponId = payload.weaponId;
-      return true;
-    }
-  }
-  if (actionName === 'SET_FUSE_TIMER') {
-    if (payload?.seconds !== undefined) {
-      activeSlug.fuseTimerSec = payload.seconds;
-      return true;
-    }
-  }
-  if (actionName === 'START_CHARGE') {
-    activeSlug.isChargingPower = true;
-    activeSlug.aimPower = 5;
-    if (payload?.targetPoint) activeSlug.currentTargetPoint = payload.targetPoint;
-    return true;
-  }
-  if (actionName === 'FIRE') {
-    activeSlug.isChargingPower = false;
-    if (activeSlug.selectedWeaponId === 'blowtorch') {
-      activeSlug.isBlowtorching = true;
-    }
-    return true;
-  }
-  if (actionName === 'RELEASE_CHARGE') {
-    activeSlug.isChargingPower = false;
-    if (activeSlug.isBlowtorching) {
-      activeSlug.isBlowtorching = false;
-    }
-    return true;
-  }
-  if (actionName === 'START_MOVE') {
-    if (payload?.dir) {
-      activeSlug.movingDir = payload.dir;
-      activeSlug.facing = payload.dir;
-      return true;
-    }
-  }
-  if (actionName === 'STOP_MOVE') {
-    activeSlug.movingDir = null;
-    return true;
-  }
-  if (actionName === 'JUMP') {
-    if (activeSlug.jetpackState) {
-      activeSlug.jetpackState.isThrusting = true;
-      return true;
-    }
-  }
-  if (actionName === 'STOP_JUMP') {
-    if (activeSlug.jetpackState) {
-      activeSlug.jetpackState.isThrusting = false;
-      return true;
-    }
-  }
+
   return false;
 }
 
 interface UseActionDispatcherOptions {
-  engineRef: React.MutableRefObject<SlugWarsEngine>;
+  engineRef: MutableRefObject<SlugWarsEngine>;
   isHost: boolean;
   myPeerId?: string | null;
   peerManager: PeerManagerLike;
   handleHostAction: (senderId: string, msg: SlugWarsNetworkMessage) => void;
   syncState: () => void;
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+  setGameState: Dispatch<SetStateAction<GameState>>;
 }
 
 export function useActionDispatcher({
@@ -118,7 +61,6 @@ export function useActionDispatcher({
         handleHostAction(senderId, msg);
         syncState();
       } else {
-        // Optimistic local state update for instantaneous 0ms client responsiveness
         const state = engineRef.current.state;
         const updated = applyOptimisticAction(state, actionName, payload, myPeerId || '');
         if (updated) {
@@ -128,7 +70,7 @@ export function useActionDispatcher({
           sfx.play('jump');
         }
 
-        // Throttle high-frequency AIM network packets over WebRTC (approx 30Hz / 33ms) to prevent network congestion
+        // Throttle high-frequency AIM network packets over WebRTC (approx 30Hz / 33ms)
         if (actionName === 'AIM') {
           pendingAimPayloadRef.current = payload;
           const now = performance.now();
