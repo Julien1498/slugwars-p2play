@@ -74,4 +74,26 @@ describe('Dev Mode UI Actions & Executors (devActionExecutor.ts)', () => {
     executeDevCursorAction('build_terrain', { x: 320, y: 160 }, mockGameState, null, mockOnDevAction, 60);
     expect(mockOnDevAction).toHaveBeenCalledWith('devBuildTerrain', [320, 160, 60]);
   });
+
+  it('evaluates dev mode state strictly from URL search params', () => {
+    const checkDevMode = (search: string) => {
+      const params = new URLSearchParams(search);
+      return (
+        params.get('dev') === 'true' ||
+        params.get('dev') === '1' ||
+        params.get('debug') === 'true' ||
+        params.get('debug') === '1'
+      );
+    };
+
+    expect(checkDevMode('')).toBe(false);
+    expect(checkDevMode('?room=123')).toBe(false);
+    expect(checkDevMode('?dev=false')).toBe(false);
+    expect(checkDevMode('?dev=0')).toBe(false);
+    expect(checkDevMode('?dev=true')).toBe(true);
+    expect(checkDevMode('?dev=1')).toBe(true);
+    expect(checkDevMode('?debug=true')).toBe(true);
+    expect(checkDevMode('?debug=1')).toBe(true);
+    expect(checkDevMode('?room=xyz&dev=true&autojoin=1')).toBe(true);
+  });
 });

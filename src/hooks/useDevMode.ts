@@ -27,12 +27,11 @@ export function useDevMode() {
       params.get('dev') === 'true' ||
       params.get('dev') === '1' ||
       params.get('debug') === 'true' ||
-      params.get('debug') === '1' ||
-      sessionStorage.getItem('slugwars_dev_enabled') === 'true';
+      params.get('debug') === '1';
 
-    if (hasParam) {
-      setIsDevEnabled(true);
-      sessionStorage.setItem('slugwars_dev_enabled', 'true');
+    setIsDevEnabled(hasParam);
+    if (!hasParam) {
+      sessionStorage.removeItem('slugwars_dev_enabled');
     }
   }, []);
 
