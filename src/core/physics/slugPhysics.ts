@@ -64,7 +64,7 @@ export function updateSlugPhysics(
 
   if (slug.isParachuting) {
     slug.fallStartY = undefined;
-    slug.vy = Math.min(slug.vy, 1.6);
+    slug.vy = Math.min(slug.vy, 3.2);
   } else if (!grounded) {
     if (slug.fallStartY === undefined && (!slug.jetpackState || !slug.jetpackState.isThrusting)) {
       slug.fallStartY = slug.y;
@@ -87,7 +87,7 @@ export function updateSlugPhysics(
     slug.fallStartY = undefined;
   }
 
-  slug.vy += slug.isParachuting ? GRAVITY * 0.25 : GRAVITY;
+  slug.vy += slug.isParachuting ? GRAVITY * 0.6 : GRAVITY;
   slug.vx *= FRICTION;
 
   const totalSpeed = Math.hypot(slug.vx, slug.vy);

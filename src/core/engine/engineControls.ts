@@ -8,7 +8,8 @@ export function startMove(state: GameState, dir: 'left' | 'right'): void {
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (activeSlug) {
     activeSlug.movingDir = dir;
-    activeSlug.vx = dir === 'left' ? -2.4 : 2.4;
+    const speed = activeSlug.isParachuting ? 1.4 : 2.4;
+    activeSlug.vx = dir === 'left' ? -speed : speed;
     activeSlug.facing = dir;
   }
 }
@@ -26,7 +27,7 @@ export function moveSlug(state: GameState, dir: 'left' | 'right'): boolean {
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (!activeSlug || !activeSlug.isAlive) return false;
 
-  const speed = 2.4;
+  const speed = activeSlug.isParachuting ? 1.4 : 2.4;
   if (dir === 'left') {
     activeSlug.vx = -speed;
     activeSlug.facing = 'left';

@@ -141,7 +141,18 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       expect(activeSlug.isParachuting).toBe(true);
 
       engine.tick();
-      expect(activeSlug.vy).toBeLessThanOrEqual(2.0);
+      expect(activeSlug.vy).toBeLessThanOrEqual(3.5);
+    });
+
+    it('limits horizontal glide speed while parachuting to ensure continuous downward descent', () => {
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      activeSlug.x = 600;
+      activeSlug.y = 100;
+      activeSlug.isParachuting = true;
+
+      engine.startMove('right');
+      expect(activeSlug.vx).toBe(1.4);
+      expect(activeSlug.vx).toBeLessThan(2.4);
     });
 
     it('drifts with ambient wind while parachuting', () => {

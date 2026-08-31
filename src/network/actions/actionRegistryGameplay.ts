@@ -9,6 +9,8 @@ export const GAMEPLAY_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Networ
       if (payload?.dir) {
         activeSlug.movingDir = payload.dir;
         activeSlug.facing = payload.dir;
+        const speed = activeSlug.isParachuting ? 1.4 : 2.4;
+        activeSlug.vx = payload.dir === 'left' ? -speed : speed;
       }
     },
     executeHost: ({ engine }, payload) => {
