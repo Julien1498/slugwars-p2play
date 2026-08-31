@@ -5,7 +5,14 @@ import { PhaseManager } from './phaseManager';
 import { sfx } from '../audio';
 import { getWeapon } from '../weapons/registry';
 
-export { pickRandomCrateContent, spawnTurnSupplyCrate } from './supplyDropSpawner';
+export {
+  pickRandomCrateContent,
+  spawnTurnSupplyCrate,
+  spawnSupplyCrateOfType,
+  processTurnSupplyDrops,
+  CRATE_DROP_RATES,
+  MAX_SUPPLY_CRATES_ON_MAP,
+} from './supplyDropSpawner';
 
 export function updateMines(
   state: GameState,

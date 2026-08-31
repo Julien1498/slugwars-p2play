@@ -4,6 +4,10 @@ import { isWeaponLocked, getWeaponLockDetails, selectWeapon } from '../core/engi
 import {
   pickRandomCrateContent,
   spawnTurnSupplyCrate,
+  spawnSupplyCrateOfType,
+  processTurnSupplyDrops,
+  CRATE_DROP_RATES,
+  MAX_SUPPLY_CRATES_ON_MAP,
   updateSupplyCrates,
 } from '../core/engine/supplyDropManager';
 import { GameState } from '../core/types';
@@ -147,18 +151,49 @@ describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
       }
     });
 
-    it('spawns a new procedural supply crate on the map up to max cap of 4', () => {
+    it('spawns a new procedural supply crate on the map up to max cap of 5', () => {
       expect(spawnTurnSupplyCrate(engine.state, engine.terrain.data.width)).toBe(true);
       expect(engine.state.supplyCrates?.length).toBe(1);
 
-      // Fill up to 4 crates
-      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
-      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
-      spawnTurnSupplyCrate(engine.state, engine.terrain.data.width);
-      expect(engine.state.supplyCrates?.length).toBe(4);
+      // Fill up to 5 crates
+      spawnSupplyCrateOfType(engine.state, 'utility', engine.terrain.data.width);
+      spawnSupplyCrateOfType(engine.state, 'health', engine.terrain.data.width);
+      spawnSupplyCrateOfType(engine.state, 'weapon', engine.terrain.data.width);
+      spawnSupplyCrateOfType(engine.state, 'utility', engine.terrain.data.width);
+      expect(engine.state.supplyCrates?.length).toBe(5);
 
-      // 5th spawn is rejected
+      // 6th spawn is rejected due to max cap of 5
       expect(spawnTurnSupplyCrate(engine.state, engine.terrain.data.width)).toBe(false);
+      expect(spawnSupplyCrateOfType(engine.state, 'health', engine.terrain.data.width)).toBe(false);
+    });
+
+    it('processes independent category drop rates and supports multi-crate drops in the same turn', () => {
+      expect(CRATE_DROP_RATES.WEAPON).toBe(0.55);
+      expect(CRATE_DROP_RATES.UTILITY).toBe(0.25);
+      expect(CRATE_DROP_RATES.HEALTH).toBe(0.15);
+      expect(MAX_SUPPLY_CRATES_ON_MAP).toBe(5);
+
+      engine.state.supplyCrates = [];
+      const logs: string[] = [];
+      const addLog = (msg: string) => logs.push(msg);
+
+      // Force Math.random to always succeed (< 0.15 triggers all 3 categories)
+      const originalRandom = Math.random;
+      Math.random = () => 0.05;
+
+      try {
+        const spawned = processTurnSupplyDrops(engine.state, engine.terrain.data.width, addLog);
+        expect(spawned).toBe(3);
+        expect(engine.state.supplyCrates.length).toBe(3);
+
+        const types = engine.state.supplyCrates.map((c) => c.crateType);
+        expect(types).toContain('weapon');
+        expect(types).toContain('utility');
+        expect(types).toContain('health');
+        expect(logs.length).toBe(3);
+      } finally {
+        Math.random = originalRandom;
+      }
     });
 
     it('creates in-world floating banner with weapon icon and name upon crate collection', () => {

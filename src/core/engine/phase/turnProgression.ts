@@ -1,7 +1,7 @@
 import { GameState, JournalEntry } from '../../types';
 import { DestructibleTerrain } from '../../terrain';
 import { startAiming } from './phaseTransitions';
-import { spawnTurnSupplyCrate } from '../supplyDropSpawner';
+import { processTurnSupplyDrops } from '../supplyDropSpawner';
 
 export function advanceToNextTurn(
   state: GameState,
@@ -112,10 +112,8 @@ export function advanceToNextTurn(
     state.magnets = state.magnets.filter((m) => m.turnsRemaining > 0);
   }
 
-  // 8. Chance of procedural turn supply crate drop (25% chance)
-  if (Math.random() < 0.25) {
-    spawnTurnSupplyCrate(state, terrain.data.width, callbacks.addLog);
-  }
+  // 8. Independent category rolls for turn supply crate drops
+  processTurnSupplyDrops(state, terrain.data.width, callbacks.addLog);
 
   startAiming(state);
 }
