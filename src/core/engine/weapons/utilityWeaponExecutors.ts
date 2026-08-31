@@ -11,10 +11,10 @@ export function executeJetpack(
     // Toggle thrusting / vol
     activeSlug.jetpackState.isThrusting = !activeSlug.jetpackState.isThrusting;
   } else {
-    activeSlug.jetpackState = { fuelMs: 30000, isThrusting: true };
+    activeSlug.jetpackState = { fuelMs: 5000, isThrusting: true };
     activeSlug.fallStartY = undefined;
     sfx.play('jetpack');
-    addLog(`${activeSlug.name} active son Jetpack ! 🎒 (30s de carburant - touches Saut et Déplacement)`, 'weapon');
+    addLog(`${activeSlug.name} active son Jetpack ! 🎒 (5s de carburant - touches Saut et Déplacement)`, 'weapon');
   }
   return true;
 }

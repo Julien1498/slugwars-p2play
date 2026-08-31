@@ -23,13 +23,13 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
   });
 
   describe('Jetpack (Vol dorsal & Propulsion)', () => {
-    it('activates jetpack with 30000ms fuel and applies thrust', () => {
+    it('activates jetpack with 5000ms fuel and applies thrust', () => {
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       engine.selectWeapon('jetpack');
       engine.fireWeapon();
 
       expect(activeSlug.jetpackState).toBeDefined();
-      expect(activeSlug.jetpackState?.fuelMs).toBe(30000);
+      expect(activeSlug.jetpackState?.fuelMs).toBe(5000);
       expect(activeSlug.jetpackState?.isThrusting).toBe(true);
 
       // Jump applies upward thrust when jetpack is active
