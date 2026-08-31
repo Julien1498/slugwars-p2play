@@ -10,6 +10,7 @@ export {
   spawnTurnSupplyCrate,
   spawnSupplyCrateOfType,
   processTurnSupplyDrops,
+  GLOBAL_CRATE_DROP_CHANCE,
   CRATE_DROP_RATES,
   MAX_SUPPLY_CRATES_ON_MAP,
 } from './supplyDropSpawner';

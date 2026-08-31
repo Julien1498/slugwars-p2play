@@ -6,6 +6,7 @@ import {
   spawnTurnSupplyCrate,
   spawnSupplyCrateOfType,
   processTurnSupplyDrops,
+  GLOBAL_CRATE_DROP_CHANCE,
   CRATE_DROP_RATES,
   MAX_SUPPLY_CRATES_ON_MAP,
   updateSupplyCrates,
@@ -168,6 +169,7 @@ describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
     });
 
     it('processes independent category drop rates and supports multi-crate drops in the same turn', () => {
+      expect(GLOBAL_CRATE_DROP_CHANCE).toBe(0.50);
       expect(CRATE_DROP_RATES.WEAPON).toBe(0.55);
       expect(CRATE_DROP_RATES.UTILITY).toBe(0.25);
       expect(CRATE_DROP_RATES.HEALTH).toBe(0.15);
@@ -177,10 +179,16 @@ describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
       const logs: string[] = [];
       const addLog = (msg: string) => logs.push(msg);
 
-      // Force Math.random to always succeed (< 0.15 triggers all 3 categories)
       const originalRandom = Math.random;
-      Math.random = () => 0.05;
 
+      // 1. When master die fails (>= 0.50), 0 crates spawn
+      Math.random = () => 0.75;
+      const failedSpawn = processTurnSupplyDrops(engine.state, engine.terrain.data.width, addLog);
+      expect(failedSpawn).toBe(0);
+      expect(engine.state.supplyCrates.length).toBe(0);
+
+      // 2. When master die succeeds (< 0.50) and category rolls succeed (< 0.15 triggers all 3 categories)
+      Math.random = () => 0.05;
       try {
         const spawned = processTurnSupplyDrops(engine.state, engine.terrain.data.width, addLog);
         expect(spawned).toBe(3);

@@ -2,6 +2,8 @@ import { GameState, SupplyCrate, JournalEntry } from '../types';
 import { getAllWeapons } from '../weapons/registry';
 import { sfx } from '../audio';
 
+export const GLOBAL_CRATE_DROP_CHANCE = 0.50; // 4ème dé maître : 50% de chance d'activer les tirages de caisses
+
 export const CRATE_DROP_RATES = {
   WEAPON: 0.55,   // 55% (~50 à 60 %)
   UTILITY: 0.25,  // 25% (~25 à 30 %)
@@ -132,6 +134,13 @@ export function processTurnSupplyDrops(
   addLog?: (msg: string, type?: JournalEntry['type']) => void
 ): number {
   if (!state.supplyCrates) state.supplyCrates = [];
+  if (state.supplyCrates.length >= MAX_SUPPLY_CRATES_ON_MAP) return 0;
+
+  // 4ème dé maître : 50% de chance de déclencher la session de tirage de caisses ce tour-ci
+  if (Math.random() >= GLOBAL_CRATE_DROP_CHANCE) {
+    return 0;
+  }
+
   let spawnedCount = 0;
 
   // 1. Independent roll for Weapon crate (~55%)
