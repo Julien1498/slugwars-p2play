@@ -25,6 +25,15 @@ export function processHostAction(
   if (msg.type === 'ACTION') {
     switch (msg.actionName) {
       case 'JOIN_GAME': {
+        const isDev = engine.state.isDevHost || (typeof window !== 'undefined' && (
+          new URLSearchParams(window.location.search).get('dev') === 'true' ||
+          new URLSearchParams(window.location.search).get('dev') === '1' ||
+          new URLSearchParams(window.location.search).get('debug') === 'true' ||
+          new URLSearchParams(window.location.search).get('debug') === '1' ||
+          sessionStorage.getItem('slugwars_dev_enabled') === 'true'
+        ));
+        if (isDev) engine.state.isDevHost = true;
+
         if (engine.state.phase !== 'LOBBY' && !engine.state.isDevHost) {
           console.warn(`[P2P] Late join/autojoin rejected from player ${playerId}: Host is not in dev mode.`);
           break;
@@ -45,9 +54,18 @@ export function processHostAction(
             playerId === hostId
           );
         }
-            broadcastState(engine.state);
-            break;
-          }
+        syncState();
+        broadcastState(engine.state);
+
+        const conn = peerManager.connections?.get(playerId);
+        if (conn && conn.open) {
+          const sanitized = sanitizeGameState(engine.state);
+          const resMsg = { type: 'STATE_UPDATE', state: sanitized };
+          conn.send(resMsg);
+          netMetrics.recordUpload(resMsg);
+        }
+        break;
+      }
           case 'CHANGE_CONFIG':
             if (msg.payload?.config && playerId === hostId) {
               engine.setConfig(msg.payload.config);

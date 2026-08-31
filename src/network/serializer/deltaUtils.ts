@@ -14,7 +14,9 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     delta.retreatTimer === undefined &&
     delta.wind === undefined &&
     (!delta.teams || delta.teams.length === 0) &&
+    (!delta.fullTeams || delta.fullTeams.length === 0) &&
     (!delta.slugs || delta.slugs.length === 0) &&
+    (!delta.fullSlugs || delta.fullSlugs.length === 0) &&
     (!delta.projectiles || delta.projectiles.length === 0) &&
     (!delta.explosions || delta.explosions.length === 0) &&
     (!delta.girders || delta.girders.length === 0) &&

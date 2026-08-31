@@ -57,6 +57,9 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
 
   // Team stats & inventory delta
+  if (currentState.teams.length !== (prevState?.teams.length ?? 0)) {
+    delta.fullTeams = currentState.teams;
+  }
   const teamDeltas: CompactTeamDelta[] = [];
   for (const team of currentState.teams) {
     const prevTeam = prevState?.teams.find((t) => t.id === team.id);
@@ -86,6 +89,9 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
   }
 
   // Slug Deltas (only changed fields + ultra-compact 1-byte integer index)
+  if (currentState.slugs.length !== (prevState?.slugs.length ?? 0)) {
+    delta.fullSlugs = currentState.slugs;
+  }
   const slugDeltas: CompactSlugDelta[] = [];
   for (let sIdx = 0; sIdx < currentState.slugs.length; sIdx++) {
     const slug = currentState.slugs[sIdx];
@@ -271,22 +277,14 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.helicopters = [];
   }
 
-  // Journal Combat Log Sync
+  // Journal & Floating Damages VFX Sync
   const curJournal = currentState.journal || [];
   const prevJournal = prevState?.journal || [];
-  if (curJournal.length > 0 && curJournal[0]?.id !== prevJournal[0]?.id) {
-    delta.journal = curJournal.slice(0, 5);
-  }
+  if (curJournal.length > 0 && curJournal[0]?.id !== prevJournal[0]?.id) delta.journal = curJournal.slice(0, 5);
 
-  // Floating Damages / Combat Text VFX Sync
   const curFloating = currentState.floatingDamages || [];
   const prevFloating = prevState?.floatingDamages || [];
-  if (
-    curFloating.length > 0 &&
-    (prevFloating.length === 0 ||
-      curFloating[curFloating.length - 1]?.id !== prevFloating[prevFloating.length - 1]?.id ||
-      curFloating.length !== prevFloating.length)
-  ) {
+  if (curFloating.length > 0 && (prevFloating.length === 0 || curFloating[curFloating.length - 1]?.id !== prevFloating[prevFloating.length - 1]?.id || curFloating.length !== prevFloating.length)) {
     delta.floatingDamages = curFloating.slice(-5);
   }
 

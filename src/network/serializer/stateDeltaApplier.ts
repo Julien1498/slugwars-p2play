@@ -49,6 +49,19 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
   if (delta.solidProps !== undefined) localState.solidProps = delta.solidProps;
   if (delta.isDevHost !== undefined) localState.isDevHost = delta.isDevHost;
 
+  if (delta.fullTeams) {
+    localState.teams = delta.fullTeams.map((t) => ({
+      ...t,
+      inventory: { ...t.inventory },
+      stats: {
+        kills: t.stats?.kills ?? 0,
+        deaths: t.stats?.deaths ?? 0,
+        damageDealt: t.stats?.damageDealt ?? 0,
+        damageTaken: t.stats?.damageTaken ?? 0,
+      },
+    }));
+  }
+
   if (delta.teams) {
     for (const dTeam of delta.teams) {
       const team = localState.teams.find((t) => t.id === dTeam.id);
@@ -63,6 +76,10 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         }
       }
     }
+  }
+
+  if (delta.fullSlugs) {
+    localState.slugs = delta.fullSlugs.map((s) => ({ ...s }));
   }
 
   if (delta.slugs) {

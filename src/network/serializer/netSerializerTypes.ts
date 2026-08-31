@@ -66,6 +66,8 @@ export interface CompactStateDelta {
   waterLevel?: number;
   teams?: CompactTeamDelta[];
   slugs?: CompactSlugDelta[];
+  fullTeams?: import('../../core/types').Team[];
+  fullSlugs?: import('../../core/types').Slug[];
   helicopters?: Partial<HelicopterVehicle>[];
   mines?: Partial<Landmine>[];
   projectiles?: Partial<ActiveProjectile>[];

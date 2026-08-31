@@ -189,6 +189,14 @@ export function useGame(options?: {
       const roomId = await hostGame(undefined, { username: name, avatar });
       syncRoomUrlToAddressBar(roomId);
       const engine = new SlugWarsEngine();
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const isDevParam =
+        params?.get('dev') === 'true' ||
+        params?.get('dev') === '1' ||
+        params?.get('debug') === 'true' ||
+        params?.get('debug') === '1' ||
+        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('slugwars_dev_enabled') === 'true');
+      engine.state.isDevHost = !!isDevParam;
       engineRef.current = engine;
       engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true);
       syncState();
@@ -209,7 +217,16 @@ export function useGame(options?: {
           payload: { name, avatar },
         });
       };
-      [200, 800, 2000].forEach((ms) => setTimeout(sendJoin, ms));
+      const reqState = () => {
+        peerManager.sendToHost('ACTION', {
+          actionName: 'REQUEST_FULL_STATE',
+          playerId: peerId,
+        });
+      };
+      [100, 400, 1000, 2500].forEach((ms) => {
+        setTimeout(sendJoin, ms);
+        setTimeout(reqState, ms + 50);
+      });
     },
     [joinGame, peerManager]
   );

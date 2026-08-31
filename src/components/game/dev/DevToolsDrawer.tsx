@@ -81,6 +81,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
+              try { sessionStorage.setItem('slugwars_dev_enabled', 'true'); } catch {}
               const currentParams = new URLSearchParams(window.location.search);
               const room = (roomCode || currentParams.get('room') || (window as any).__p2playRoomId || '').trim();
               const url = room ? `${window.location.origin}/${encodeURIComponent(room)}?autojoin=1` : `${window.location.origin}/?autojoin=1`;
