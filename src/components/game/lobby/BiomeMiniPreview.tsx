@@ -17,24 +17,31 @@ export const BiomeMiniPreview: React.FC<BiomeMiniPreviewProps> = memo(({ theme, 
   const height = 88;
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let animId: number;
+    animId = requestAnimationFrame(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
-    const waterLevelY = Math.round((terrainData.waterLevel / terrainData.height) * height);
+      const terrainData = generateTerrainGridOnly(seed, theme, sizeCfg.width, sizeCfg.height);
+      const waterLevelY = Math.round((terrainData.waterLevel / terrainData.height) * height);
 
-    rasterizePreviewToCanvas(
-      ctx,
-      terrainData.grid,
-      terrainData.width,
-      terrainData.height,
-      theme,
-      width,
-      height,
-      waterLevelY
-    );
+      rasterizePreviewToCanvas(
+        ctx,
+        terrainData.grid,
+        terrainData.width,
+        terrainData.height,
+        theme,
+        width,
+        height,
+        waterLevelY
+      );
+    });
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
   }, [theme, sizeCfg.width, sizeCfg.height, seed]);
 
   return (

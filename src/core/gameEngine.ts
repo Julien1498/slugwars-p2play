@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Vector2D, JournalEntry, SolidProp, Slug } from './types';
+import { GameState, GameConfig, Vector2D, JournalEntry, SolidProp, Slug, MAP_SIZE_CONFIGS } from './types';
 import { DestructibleTerrain } from './terrain';
 import {
   createInitialConfig,
@@ -69,7 +69,15 @@ export class SlugWarsEngine {
     if (this.state.phase !== 'LOBBY') return false;
     this.state.config = { ...this.state.config, ...partial };
     if (partial.mapSeed !== undefined || partial.mapTheme !== undefined || partial.mapSize !== undefined) {
-      this.initTerrain();
+      const sizeCfg = MAP_SIZE_CONFIGS[this.state.config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
+      this.state.waterLevel = sizeCfg.height - 80;
+      if (this.terrain?.data) {
+        this.terrain.data.theme = this.state.config.mapTheme;
+        this.terrain.data.seed = this.state.config.mapSeed;
+        this.terrain.data.width = sizeCfg.width;
+        this.terrain.data.height = sizeCfg.height;
+        this.terrain.data.waterLevel = this.state.waterLevel;
+      }
     }
     return true;
   }

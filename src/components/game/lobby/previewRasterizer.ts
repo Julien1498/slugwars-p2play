@@ -28,8 +28,8 @@ const _TEMP_STRATA: RGB = [0, 0, 0];
 const _TEMP_COLOR: RGB = [0, 0, 0];
 
 /**
- * Zero-Allocation preview rasterizer.
- * Reuses shared typed arrays and cached ImageData buffers to prevent V8 Garbage Collection pauses.
+ * Ultra-High Performance Zero-Allocation preview rasterizer.
+ * Employs 32-bit integer direct memory store instructions and static buffer recycling.
  */
 export function rasterizePreviewToCanvas(
   ctx: CanvasRenderingContext2D,
@@ -43,7 +43,7 @@ export function rasterizePreviewToCanvas(
 ): void {
   const totalPixels = previewW * previewH;
   const palette = PREVIEW_RGB_PALETTES[theme] || PREVIEW_RGB_PALETTES.ISLAND;
-  const { skyTop, skyBottom, surface, shadow, topsoil, strataA, strataB, denseRock, bedrock } = palette;
+  const { skyTop, skyBottom, surface, shadow, topsoil, strataA, strataB, denseRock, bedrock, packedSurface, packedTopsoil, packedDenseRock, packedBedrock } = palette;
 
   // 1. Zero-Alloc Downsampling of the real physical simulation grid
   for (let py = 0; py < previewH; py++) {
@@ -95,61 +95,58 @@ export function rasterizePreviewToCanvas(
     }
   }
 
-  // 3. Fast Pixel Rasterization into Cached ImageData
+  // 3. Ultra-Fast 32-Bit Direct Memory Store into Cached ImageData Buffer
   const imgData = getSharedImageData(ctx, previewW, previewH);
-  const data = imgData.data;
+  const data32 = new Uint32Array(imgData.data.buffer);
 
   for (let py = 0; py < previewH; py++) {
     const skyT = py / previewH;
     const skyR = (skyTop[0] + (skyBottom[0] - skyTop[0]) * skyT) | 0;
     const skyG = (skyTop[1] + (skyBottom[1] - skyTop[1]) * skyT) | 0;
     const skyB = (skyTop[2] + (skyBottom[2] - skyTop[2]) * skyT) | 0;
+    const skyPacked = ((255 << 24) | (skyB << 16) | (skyG << 8) | skyR) >>> 0;
     const rowOffset = py * previewW;
 
     for (let px = 0; px < previewW; px++) {
       const pIdx = rowOffset + px;
-      const idx = pIdx * 4;
 
       if (_SHARED_GRID[pIdx] === 1) {
         const d = _SHARED_DIST[pIdx];
-        const wave = Math.sin(py * 0.35 + Math.sin(px * 0.05) * 1.8);
-        const strataT = 0.5 + 0.5 * wave;
-        lerpRGB(strataA, strataB, strataT, _TEMP_STRATA);
 
-        let color = surface;
         if (d <= 1.0) {
-          color = surface;
+          data32[pIdx] = packedSurface;
         } else if (d <= 2.2) {
           lerpRGB(surface, shadow, (d - 1.0) / 1.2, _TEMP_COLOR);
-          color = _TEMP_COLOR;
+          data32[pIdx] = ((255 << 24) | (_TEMP_COLOR[2] << 16) | (_TEMP_COLOR[1] << 8) | _TEMP_COLOR[0]) >>> 0;
         } else if (d <= 3.5) {
           lerpRGB(shadow, topsoil, (d - 2.2) / 1.3, _TEMP_COLOR);
-          color = _TEMP_COLOR;
+          data32[pIdx] = ((255 << 24) | (_TEMP_COLOR[2] << 16) | (_TEMP_COLOR[1] << 8) | _TEMP_COLOR[0]) >>> 0;
         } else if (d <= 8.0) {
-          color = topsoil;
+          data32[pIdx] = packedTopsoil;
         } else if (d <= 14.0) {
+          const wave = Math.sin(py * 0.35 + Math.sin(px * 0.05) * 1.8);
+          const strataT = 0.5 + 0.5 * wave;
+          lerpRGB(strataA, strataB, strataT, _TEMP_STRATA);
           lerpRGB(topsoil, _TEMP_STRATA, (d - 8.0) / 6.0, _TEMP_COLOR);
-          color = _TEMP_COLOR;
+          data32[pIdx] = ((255 << 24) | (_TEMP_COLOR[2] << 16) | (_TEMP_COLOR[1] << 8) | _TEMP_COLOR[0]) >>> 0;
         } else if (d <= 22.0) {
-          color = _TEMP_STRATA;
+          const wave = Math.sin(py * 0.35 + Math.sin(px * 0.05) * 1.8);
+          const strataT = 0.5 + 0.5 * wave;
+          lerpRGB(strataA, strataB, strataT, _TEMP_STRATA);
+          data32[pIdx] = ((255 << 24) | (_TEMP_STRATA[2] << 16) | (_TEMP_STRATA[1] << 8) | _TEMP_STRATA[0]) >>> 0;
         } else if (d <= 30.0) {
+          const wave = Math.sin(py * 0.35 + Math.sin(px * 0.05) * 1.8);
+          const strataT = 0.5 + 0.5 * wave;
+          lerpRGB(strataA, strataB, strataT, _TEMP_STRATA);
           lerpRGB(_TEMP_STRATA, denseRock, (d - 22.0) / 8.0, _TEMP_COLOR);
-          color = _TEMP_COLOR;
+          data32[pIdx] = ((255 << 24) | (_TEMP_COLOR[2] << 16) | (_TEMP_COLOR[1] << 8) | _TEMP_COLOR[0]) >>> 0;
         } else if (d <= 42.0) {
-          color = denseRock;
+          data32[pIdx] = packedDenseRock;
         } else {
-          color = bedrock;
+          data32[pIdx] = packedBedrock;
         }
-
-        data[idx] = color[0];
-        data[idx + 1] = color[1];
-        data[idx + 2] = color[2];
-        data[idx + 3] = 255;
       } else {
-        data[idx] = skyR;
-        data[idx + 1] = skyG;
-        data[idx + 2] = skyB;
-        data[idx + 3] = 255;
+        data32[pIdx] = skyPacked;
       }
     }
   }
