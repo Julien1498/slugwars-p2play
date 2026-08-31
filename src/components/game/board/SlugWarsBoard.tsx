@@ -157,8 +157,10 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             activeDevTool={devMode.activeCursorTool}
             onDevClick={(pos) => {
               if (devMode.activeCursorTool) {
-                executeDevCursorAction(devMode.activeCursorTool, pos, gameState, engine, onDevAction);
-                devMode.clearCursorTool();
+                executeDevCursorAction(devMode.activeCursorTool, pos, gameState, engine, onDevAction, devMode.brushRadius);
+                if (devMode.activeCursorTool !== 'dig_terrain' && devMode.activeCursorTool !== 'build_terrain') {
+                  devMode.clearCursorTool();
+                }
               }
             }}
           />
@@ -284,6 +286,8 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             showPerfMetrics={showMetrics}
             onTogglePerfMetrics={handleOpenMetrics}
             roomCode={isHost ? myPeerId : hostPeerId}
+            brushRadius={devMode.brushRadius}
+            onSetBrushRadius={devMode.setBrushRadius}
           />
         </>
       )}

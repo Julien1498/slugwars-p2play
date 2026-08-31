@@ -85,7 +85,7 @@ export function useCanvasRenderLoop({
 
   useEffect(() => {
     const matchKey = `${terrain.data.seed}_${terrain.data.theme}`;
-    if (lastSeedRef.current !== matchKey || lastTerrainRevisionRef.current > terrain.revision) {
+    if (lastSeedRef.current !== matchKey || lastTerrainRevisionRef.current !== terrain.revision) {
       lastSeedRef.current = matchKey;
       lastTerrainRevisionRef.current = terrain.revision;
       resetEffectsCache();
@@ -105,6 +105,11 @@ export function useCanvasRenderLoop({
     const render = () => {
       animId = requestAnimationFrame(render);
       const renderStart = performance.now();
+
+      if (lastTerrainRevisionRef.current !== terrain.revision) {
+        lastTerrainRevisionRef.current = terrain.revision;
+        redrawTerrain();
+      }
 
       const curState = gameStateRef.current;
       const { width, height, waterLevel } = terrain.data;

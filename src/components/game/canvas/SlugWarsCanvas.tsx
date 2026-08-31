@@ -28,20 +28,9 @@ export interface SlugWarsCanvasProps {
 }
 
 const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
-  gameState,
-  terrain,
-  isMyTurn,
-  showHitboxes = false,
-  onFire,
-  onPlaceSlug,
-  onSelectPlacementPoint,
-  pendingPlacementPoint,
-  onStartCharge,
-  onReleaseCharge,
-  onUpdateAim,
-  onDetonate,
-  onDevClick,
-  activeDevTool,
+  gameState, terrain, isMyTurn, showHitboxes = false, onFire, onPlaceSlug,
+  onSelectPlacementPoint, pendingPlacementPoint, onStartCharge, onReleaseCharge,
+  onUpdateAim, onDetonate, onDevClick, activeDevTool,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
@@ -57,7 +46,7 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
 
   const mousePosRef = useRef<Vector2D>({ x: 700, y: 350 });
   const lockedTargetRef = useRef<Vector2D | null>(null);
-
+  const isDevPaintingRef = useRef<boolean>(false);
   const isTouch = useIsTouchDevice();
 
   // Zero-Reflow Container Resize Observer
@@ -192,18 +181,11 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       className="relative w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair select-none"
       onMouseDown={(e) => {
         if (activeDevTool && onDevClick && e.button === 0) {
+          isDevPaintingRef.current = true;
           const container = containerRef.current;
           if (container) {
             const rect = container.getBoundingClientRect();
-            const worldPos = screenToWorldCoords(
-              e.clientX,
-              e.clientY,
-              rect,
-              terrain.data.width,
-              terrain.data.height,
-              zoomRef.current,
-              panRef.current
-            );
+            const worldPos = screenToWorldCoords(e.clientX, e.clientY, rect, terrain.data.width, terrain.data.height, zoomRef.current, panRef.current);
             onDevClick(worldPos);
             return;
           }
@@ -211,10 +193,22 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         handleMouseDown(e);
       }}
       onMouseUp={(e) => {
+        isDevPaintingRef.current = false;
         if (activeDevTool && e.button === 0) return;
         handleMouseUp(e);
       }}
-      onMouseMove={handleMouseMove}
+      onMouseLeave={() => { isDevPaintingRef.current = false; }}
+      onMouseMove={(e) => {
+        if (isDevPaintingRef.current && (activeDevTool === 'dig_terrain' || activeDevTool === 'build_terrain') && onDevClick) {
+          const container = containerRef.current;
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const worldPos = screenToWorldCoords(e.clientX, e.clientY, rect, terrain.data.width, terrain.data.height, zoomRef.current, panRef.current);
+            onDevClick(worldPos);
+          }
+        }
+        handleMouseMove(e);
+      }}
       onContextMenu={handleContextMenu}
     >
       {/* Zero-Overhead In-Game Hardware Profiler & FPS Counter HUD */}

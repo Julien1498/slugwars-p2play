@@ -27,6 +27,8 @@ interface DevToolsDrawerProps {
   showPerfMetrics: boolean;
   onTogglePerfMetrics: () => void;
   roomCode?: string;
+  brushRadius?: number;
+  onSetBrushRadius?: (r: number) => void;
 }
 
 export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
@@ -46,6 +48,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
   showPerfMetrics,
   onTogglePerfMetrics,
   roomCode,
+  brushRadius,
+  onSetBrushRadius,
 }) => {
   if (!isOpen) return null;
 
@@ -180,6 +184,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
             onTriggerArmageddon={() => triggerMutation(() => engineRef.current.devTriggerArmageddon())}
             activeCursorTool={activeCursorTool}
             onSelectCursorTool={onSelectCursorTool}
+            brushRadius={brushRadius}
+            onSetBrushRadius={onSetBrushRadius}
           />
         )}
 

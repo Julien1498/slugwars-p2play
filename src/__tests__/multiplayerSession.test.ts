@@ -72,6 +72,31 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(syncStateCalled).toBe(true);
     });
 
+    it('spawns active placed slugs for late-joining players after match has already started', () => {
+      hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
+      hostEngine.startGame();
+      expect(hostEngine.state.phase).toBe('PLACEMENT');
+      expect(hostEngine.state.slugs.length).toBe(2);
+
+      // 2nd player joins late during active match
+      const lateJoinMsg: SlugWarsNetworkMessage = {
+        type: 'ACTION',
+        actionName: 'JOIN_GAME',
+        payload: {
+          name: 'Invité LateJoin',
+          color: '#10b981',
+          avatar: '⚡',
+        },
+      };
+
+      dispatchAction('guest_peer_789', lateJoinMsg);
+
+      expect(hostEngine.state.teams.length).toBe(2);
+      const lateTeamSlugs = hostEngine.state.slugs.filter((s) => s.teamId === 'guest_peer_789');
+      expect(lateTeamSlugs.length).toBe(2);
+      expect(lateTeamSlugs.every((s) => s.isAlive && s.isPlaced)).toBe(true);
+    });
+
     it('rejects CHANGE_CONFIG from non-host players', () => {
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.addTeam('guest_peer_456', 'Guest Bob', '#3b82f6', '🐌', false);

@@ -11,6 +11,8 @@ interface DevEnvTabProps {
   onTriggerArmageddon: () => void;
   activeCursorTool?: DevCursorTool | null;
   onSelectCursorTool?: (tool: DevCursorTool | null) => void;
+  brushRadius?: number;
+  onSetBrushRadius?: (r: number) => void;
 }
 
 export const DevEnvTab: React.FC<DevEnvTabProps> = ({
@@ -21,6 +23,8 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
   onTriggerArmageddon,
   activeCursorTool,
   onSelectCursorTool,
+  brushRadius = 30,
+  onSetBrushRadius,
 }) => {
   const curWind = gameState.wind ?? 0;
   const isDigging = activeCursorTool === 'dig_terrain';
@@ -30,30 +34,50 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
     <div className="flex flex-col gap-3 text-xs">
       {/* Terrain Sculpting / Editing */}
       {onSelectCursorTool && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => onSelectCursorTool('dig_terrain')}
-            className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
-              isDigging
-                ? 'bg-amber-500 text-zinc-950 border-amber-400 animate-pulse'
-                : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border-amber-500/40'
-            }`}
-          >
-            <Bomb className="w-3.5 h-3.5" />
-            {isDigging ? 'Cliquez pour creuser...' : '⛏️ Creuser Sol (30px)'}
-          </button>
+        <div className="p-2.5 rounded-lg bg-zinc-900/80 border border-zinc-800 flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => onSelectCursorTool('dig_terrain')}
+              className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
+                isDigging
+                  ? 'bg-amber-500 text-zinc-950 border-amber-400 animate-pulse'
+                  : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border-amber-500/40'
+              }`}
+            >
+              <Bomb className="w-3.5 h-3.5" />
+              {isDigging ? 'Actif (Glissez pour creuser)' : '⛏️ Creuser Sol'}
+            </button>
 
-          <button
-            onClick={() => onSelectCursorTool('build_terrain')}
-            className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
-              isBuilding
-                ? 'bg-emerald-500 text-zinc-950 border-emerald-400 animate-pulse'
-                : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border-emerald-500/40'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            {isBuilding ? 'Cliquez pour poser...' : '🧱 Poser Sol (30px)'}
-          </button>
+            <button
+              onClick={() => onSelectCursorTool('build_terrain')}
+              className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
+                isBuilding
+                  ? 'bg-emerald-500 text-zinc-950 border-emerald-400 animate-pulse'
+                  : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border-emerald-500/40'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {isBuilding ? 'Actif (Glissez pour poser)' : '🧱 Poser Sol'}
+            </button>
+          </div>
+
+          {onSetBrushRadius && (
+            <div className="flex flex-col gap-1 pt-1 border-t border-zinc-800/60">
+              <div className="flex justify-between items-center text-[11px] font-bold text-zinc-300">
+                <span>Rayon du Pinceau :</span>
+                <span className="font-mono text-amber-400">{brushRadius} px</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="80"
+                step="5"
+                value={brushRadius}
+                onChange={(e) => onSetBrushRadius(parseInt(e.target.value, 10))}
+                className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+            </div>
+          )}
         </div>
       )}
 

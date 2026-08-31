@@ -18,6 +18,7 @@ export function useDevMode() {
   const [isDevOpen, setIsDevOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<DevTab>('time');
   const [activeCursorTool, setActiveCursorTool] = useState<DevCursorTool | null>(null);
+  const [brushRadius, setBrushRadius] = useState<number>(30);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -70,5 +71,7 @@ export function useDevMode() {
     activeCursorTool,
     selectCursorTool,
     clearCursorTool,
+    brushRadius,
+    setBrushRadius,
   };
 }

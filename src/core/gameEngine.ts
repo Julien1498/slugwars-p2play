@@ -77,7 +77,7 @@ export class SlugWarsEngine {
   }
 
   public addTeam(id: string, name: string, color: string, avatar: string, isHost: boolean): void {
-    registerTeam(this.state, id, name, color, avatar, isHost);
+    registerTeam(this.state, id, name, color, avatar, isHost, this.terrain);
   }
 
   public removeTeam(id: string): void {

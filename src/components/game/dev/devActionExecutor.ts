@@ -6,7 +6,8 @@ export function executeDevCursorAction(
   pos: Vector2D,
   gameState: GameState,
   engine: any,
-  onDevAction?: (devMethod: string, devArgs?: any[]) => void
+  onDevAction?: (devMethod: string, devArgs?: any[]) => void,
+  radius: number = 30
 ): void {
   if (!engine && !onDevAction) return;
 
@@ -42,12 +43,12 @@ export function executeDevCursorAction(
       else engine?.devSpawnHelicopter?.(pos.x, pos.y);
       break;
     case 'dig_terrain':
-      if (onDevAction) onDevAction('devDigTerrain', [pos.x, pos.y, 30]);
-      else engine?.devDigTerrain?.(pos.x, pos.y, 30);
+      if (onDevAction) onDevAction('devDigTerrain', [pos.x, pos.y, radius]);
+      else engine?.devDigTerrain?.(pos.x, pos.y, radius);
       break;
     case 'build_terrain':
-      if (onDevAction) onDevAction('devBuildTerrain', [pos.x, pos.y, 30]);
-      else engine?.devBuildTerrain?.(pos.x, pos.y, 30);
+      if (onDevAction) onDevAction('devBuildTerrain', [pos.x, pos.y, radius]);
+      else engine?.devBuildTerrain?.(pos.x, pos.y, radius);
       break;
   }
 }
