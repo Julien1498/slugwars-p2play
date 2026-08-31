@@ -9,6 +9,7 @@ interface DevSlugsTabProps {
   onHealAll: () => void;
   onSetOneHp: () => void;
   onKillActiveSlug: () => void;
+  onAutoPlaceAll?: () => void;
   activeCursorTool: DevCursorTool | null;
   onSelectCursorTool: (tool: DevCursorTool | null) => void;
 }
@@ -19,6 +20,7 @@ export const DevSlugsTab: React.FC<DevSlugsTabProps> = ({
   onHealAll,
   onSetOneHp,
   onKillActiveSlug,
+  onAutoPlaceAll,
   activeCursorTool,
   onSelectCursorTool,
 }) => {
@@ -46,6 +48,15 @@ export const DevSlugsTab: React.FC<DevSlugsTabProps> = ({
           {isGodMode ? 'ACTIF' : 'INACTIF'}
         </button>
       </div>
+
+      {onAutoPlaceAll && (
+        <button
+          onClick={onAutoPlaceAll}
+          className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40 flex items-center justify-center gap-1.5 transition-colors"
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-400" /> Fast Spawn (Déployer Toutes les Limaces)
+        </button>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <button

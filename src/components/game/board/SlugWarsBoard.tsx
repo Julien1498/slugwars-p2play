@@ -123,8 +123,20 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
       {/* Main Canvas Area */}
       <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden w-full h-full">
         {!isTouch && gameState.phase === 'PLACEMENT' && (
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 pointer-events-none px-5 py-2 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-2xl backdrop-blur-xl animate-pulse">
-            📍 Cliquez sur le terrain pour déployer votre limace ({activeSlug?.name})
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-5 py-2 bg-amber-950/90 border border-amber-500/80 rounded-full text-xs font-black text-amber-300 shadow-2xl backdrop-blur-xl">
+            <span>📍 Cliquez sur le terrain pour déployer votre limace ({activeSlug?.name})</span>
+            {devMode.isDevEnabled && (
+              <button
+                onClick={() => {
+                  if (onDevAction) onDevAction('devAutoPlaceAllSlugs');
+                  else engine?.devAutoPlaceAllSlugs?.();
+                }}
+                className="px-2 py-0.5 rounded bg-amber-400 text-zinc-950 font-black hover:bg-amber-300 text-[10px] transition-colors shadow-sm ml-1"
+                title="Déployer toutes les limaces instantanément"
+              >
+                ⚡ Fast Spawn All
+              </button>
+            )}
           </div>
         )}
 

@@ -257,6 +257,7 @@ export class SlugWarsEngine {
   public devLowerWater(amountPx?: number): void { devCtrl.devLowerWater(this.state, this.terrain, amountPx); }
   public devTriggerArmageddon(): void { devCtrl.devTriggerArmageddon(this.state, this.terrain, (m, t) => this.addLog(m, t)); }
   public devForceWin(teamId?: string): void { devCtrl.devForceWin(this.state, teamId, (m, t) => this.addLog(m, t)); }
+  public devAutoPlaceAllSlugs(): void { devCtrl.devAutoPlaceAllSlugs(this.state, this.terrain, (m, t) => this.addLog(m, t)); }
   public devToggleFreezeTimer(): boolean { return devCtrl.devToggleFreezeTimer(this.state); }
   public devToggleGodMode(): boolean { return devCtrl.devToggleGodMode(this.state); }
 }

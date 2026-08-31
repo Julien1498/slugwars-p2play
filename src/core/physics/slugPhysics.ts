@@ -61,7 +61,7 @@ export function updateSlugPhysics(
     const fallDist = slug.y - slug.fallStartY;
     if (fallDist > 90) {
       const fallDamage = Math.min(65, Math.round((fallDist - 90) * 0.35));
-      if (fallDamage > 0) {
+      if (fallDamage > 0 && !slug.isGodMode) {
         slug.hp = Math.max(0, slug.hp - fallDamage);
         if (slug.hp === 0) {
           slug.isAlive = false;

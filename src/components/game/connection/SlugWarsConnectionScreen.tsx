@@ -43,6 +43,17 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     });
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const isAutoJoin = params.get('autojoin') === '1' || params.get('autojoin') === 'true' || params.get('auto') === '1';
+    const targetRoom = extractRoomCodeFromUrl() || params.get('room');
+    if (isAutoJoin && targetRoom && !isConnecting) {
+      const guestName = `Invité_${Math.floor(100 + Math.random() * 900)}`;
+      onJoin(guestName, selectedAvatar || '🐌', targetRoom);
+    }
+  }, []);
+
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.slice(0, 16);
     setUsername(val);

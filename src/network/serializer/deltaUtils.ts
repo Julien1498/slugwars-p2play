@@ -23,6 +23,9 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     (!delta.mines || delta.mines.length === 0) &&
     (!delta.helicopters || delta.helicopters.length === 0) &&
     (!delta.journal || delta.journal.length === 0) &&
-    (!delta.floatingDamages || delta.floatingDamages.length === 0)
+    (!delta.floatingDamages || delta.floatingDamages.length === 0) &&
+    (!delta.solidProps || delta.solidProps.length === 0) &&
+    delta.isTimerFrozen === undefined &&
+    delta.godModeEnabled === undefined
   );
 }

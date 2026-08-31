@@ -92,6 +92,15 @@ describe('Engine Dev & Debug Controls (devControls.ts)', () => {
       expect(activeSlug.vx).toBe(0);
       expect(activeSlug.vy).toBe(0);
     });
+
+    it('auto-places all unplaced slugs and starts aiming phase', () => {
+      engine.state.phase = 'PLACEMENT';
+      engine.state.slugs.forEach((s) => { s.isPlaced = false; });
+      engine.devAutoPlaceAllSlugs();
+
+      expect(engine.state.slugs.every((s) => s.isPlaced)).toBe(true);
+      expect(engine.state.phase).toBe('AIMING');
+    });
   });
 
   describe('Spawns & Drops', () => {

@@ -27,6 +27,8 @@ export function shouldUpdateReactUi(
   if (prev.activeSlugId !== next.activeSlugId) return true;
   if (prev.wind !== next.wind) return true;
   if (prev.teams.length !== next.teams.length) return true;
+  if (prev.isTimerFrozen !== next.isTimerFrozen) return true;
+  if (prev.godModeEnabled !== next.godModeEnabled) return true;
 
   // 3. Whole second change on turn timers -> Instant React update
   const prevTurnSec = Math.ceil(prev.turnTimer ?? 0);

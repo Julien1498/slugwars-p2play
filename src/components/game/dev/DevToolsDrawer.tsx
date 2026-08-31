@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Clock, Briefcase, User, Package, CloudRain, Eye, Bug, ShieldAlert } from 'lucide-react';
+import { X, Clock, Briefcase, User, Package, CloudRain, Eye, Bug, ShieldAlert, UserPlus } from 'lucide-react';
 import { GameState } from '../../../core/types';
 import { SlugWarsEngine } from '../../../core/gameEngine';
 import { DevCursorTool, DevTab } from '../../../hooks/useDevMode';
@@ -72,13 +72,28 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
           <Bug className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
           <span>PANNEAU DEV / DEBUG</span>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
-          title="Fermer (Raccourci: ²)"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const currentParams = new URLSearchParams(window.location.search);
+              const room = currentParams.get('room') || (window as any).__p2playRoomId || '';
+              const url = `${window.location.origin}${window.location.pathname}?room=${room}&autojoin=1&dev=true`;
+              window.open(url, '_blank');
+            }}
+            className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition-colors"
+            title="Ouvrir un 2e joueur en nouvel onglet connecté instantanément"
+          >
+            <UserPlus className="w-3 h-3" />
+            <span>+2e Onglet</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            title="Fermer (Raccourci: ²)"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {!isHost && (
@@ -141,6 +156,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
             onKillActiveSlug={() => triggerMutation(() => {
               if (gameState.activeSlugId) engineRef.current.devKillSlug(gameState.activeSlugId);
             })}
+            onAutoPlaceAll={() => triggerMutation(() => engineRef.current.devAutoPlaceAllSlugs())}
             activeCursorTool={activeCursorTool}
             onSelectCursorTool={onSelectCursorTool}
           />

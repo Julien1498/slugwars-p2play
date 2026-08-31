@@ -3,6 +3,7 @@ import { DestructibleTerrain } from '../terrain';
 import { WEAPON_REGISTRY } from '../weapons/registry';
 import { PhaseManager } from './phaseManager';
 import { executeArmageddon } from './weapons/specialWeaponExecutors';
+import { findSafePlacementPoint } from './turnManager';
 
 const DEV_WEAPON_CRATE_POOL = [
   'holy_grenade', 'banana_bomb', 'super_sheep', 'armageddon',
@@ -89,6 +90,40 @@ export function devTeleportSlug(
     slug.vy = 0;
     slug.ropeState = undefined;
     slug.inVehicleId = undefined;
+  }
+}
+
+export function devAutoPlaceAllSlugs(
+  state: GameState,
+  terrain: DestructibleTerrain,
+  addLog: (msg: string, type?: JournalEntry['type']) => void = () => {}
+): void {
+  const unplaced = state.slugs.filter((s) => !s.isPlaced);
+  if (unplaced.length === 0) return;
+
+  const width = terrain.data.width;
+  const spawnPoints = terrain.data.spawnPoints || [];
+
+  unplaced.forEach((slug, idx) => {
+    let targetX: number;
+    let targetY = 150;
+    if (spawnPoints[idx % spawnPoints.length]) {
+      targetX = spawnPoints[idx % spawnPoints.length].x;
+      targetY = spawnPoints[idx % spawnPoints.length].y;
+    } else {
+      targetX = 100 + (idx / Math.max(1, unplaced.length)) * (width - 200) + (Math.random() - 0.5) * 60;
+    }
+    const safePt = findSafePlacementPoint(terrain, targetX, targetY, state.slugs);
+    slug.x = safePt.x;
+    slug.y = safePt.y;
+    slug.isPlaced = true;
+  });
+
+  if (state.phase === 'PLACEMENT') {
+    state.activeTeamId = state.teams[0]?.id || '';
+    state.activeSlugId = state.slugs.find((s) => s.teamId === state.activeTeamId)?.id || state.slugs[0]?.id || '';
+    PhaseManager.startAiming(state);
+    addLog('⚡ Toutes les limaces ont été déployées instantanément !', 'info');
   }
 }
 
