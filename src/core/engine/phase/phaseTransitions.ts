@@ -10,6 +10,7 @@ export function onExitPhase(state: GameState, oldPhase: GamePhase): void {
       activeSlug.isBlowtorching = false;
       activeSlug.isDrilling = false;
       activeSlug.isParachuting = false;
+      activeSlug.hasUsedParachute = false;
       if (activeSlug.jetpackState) activeSlug.jetpackState.isThrusting = false;
       activeSlug.currentTargetPoint = undefined;
     }

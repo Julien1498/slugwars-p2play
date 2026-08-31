@@ -155,11 +155,42 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       expect(activeSlug.vx).toBeLessThan(2.4);
     });
 
+    it('disallows deploying parachute in a loop during the same fall after folding it', () => {
+      const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
+      activeSlug.x = 600;
+      activeSlug.y = 100;
+      activeSlug.vy = 2.0;
+      activeSlug.isParachuting = false;
+      activeSlug.hasUsedParachute = false;
+
+      // First open
+      engine.selectWeapon('parachute');
+      engine.fireWeapon();
+      expect(activeSlug.isParachuting).toBe(true);
+      expect(activeSlug.hasUsedParachute).toBe(true);
+
+      // Fold / close in mid-air
+      engine.fireWeapon();
+      expect(activeSlug.isParachuting).toBe(false);
+      expect(activeSlug.hasUsedParachute).toBe(true);
+
+      // Attempt to reopen during the same fall
+      const reopened = engine.fireWeapon();
+      expect(reopened).toBe(false);
+      expect(activeSlug.isParachuting).toBe(false);
+
+      // Attempt to reopen via jump key during the same fall
+      const jumped = engine.jumpSlug();
+      expect(jumped).toBe(false);
+      expect(activeSlug.isParachuting).toBe(false);
+    });
+
     it('drifts with ambient wind while parachuting', () => {
       const activeSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId)!;
       activeSlug.x = 600;
       activeSlug.y = 100;
       activeSlug.vx = 0;
+      activeSlug.hasUsedParachute = false;
       engine.state.wind = 4.5;
 
       engine.selectWeapon('parachute');

@@ -146,8 +146,9 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
       hasChange = true;
     }
 
-    if (!prevSlug || prevSlug.isParachuting !== slug.isParachuting) {
-      sDelta.pa = slug.isParachuting;
+    if (!prevSlug || prevSlug.isParachuting !== slug.isParachuting || prevSlug.hasUsedParachute !== slug.hasUsedParachute) {
+      if (slug.isParachuting !== undefined) sDelta.pa = slug.isParachuting;
+      if (slug.hasUsedParachute !== undefined) sDelta.pau = slug.hasUsedParachute;
       hasChange = true;
     }
 

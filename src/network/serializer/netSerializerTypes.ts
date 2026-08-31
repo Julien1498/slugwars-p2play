@@ -48,6 +48,7 @@ export interface CompactSlugDelta {
   jpT?: boolean; // jetpack isThrusting
   dr?: boolean; // isDrilling
   pa?: boolean; // isParachuting
+  pau?: boolean; // hasUsedParachute
 }
 
 export interface CompactTeamDelta {

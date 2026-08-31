@@ -43,14 +43,21 @@ export function executeParachute(
   activeSlug: Slug,
   addLog: (msg: string, type?: JournalEntry['type']) => void
 ): boolean {
-  activeSlug.isParachuting = !activeSlug.isParachuting;
   if (activeSlug.isParachuting) {
-    activeSlug.fallStartY = undefined;
-    sfx.play('parachute');
-    addLog(`${activeSlug.name} déploie son Parachute ! 🪂`, 'weapon');
-  } else {
+    activeSlug.isParachuting = false;
+    activeSlug.hasUsedParachute = true;
     addLog(`${activeSlug.name} replie son Parachute.`, 'info');
+    return true;
   }
+  if (activeSlug.hasUsedParachute) {
+    addLog(`Impossible de redéployer le Parachute pendant le même saut !`, 'info');
+    return false;
+  }
+  activeSlug.isParachuting = true;
+  activeSlug.hasUsedParachute = true;
+  activeSlug.fallStartY = undefined;
+  sfx.play('parachute');
+  addLog(`${activeSlug.name} déploie son Parachute ! 🪂`, 'weapon');
   return true;
 }
 

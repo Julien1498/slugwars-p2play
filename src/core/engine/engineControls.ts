@@ -63,10 +63,16 @@ export function jumpSlug(state: GameState, terrain: DestructibleTerrain): boolea
   if (grounded) {
     activeSlug.vy = -7.5;
     activeSlug.vx += activeSlug.facing === 'right' ? 2 : -2;
+    activeSlug.hasUsedParachute = false;
     sfx.play('jump');
     return true;
-  } else if (activeSlug.vy > 0.5 && !activeSlug.isParachuting) {
+  } else if (activeSlug.isParachuting) {
+    activeSlug.isParachuting = false;
+    activeSlug.hasUsedParachute = true;
+    return true;
+  } else if (activeSlug.vy > 0.5 && !activeSlug.hasUsedParachute && !activeSlug.isParachuting) {
     activeSlug.isParachuting = true;
+    activeSlug.hasUsedParachute = true;
     activeSlug.fallStartY = undefined;
     sfx.play('parachute');
     return true;

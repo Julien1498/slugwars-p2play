@@ -106,6 +106,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
         if (dSlug.bt !== undefined) slug.isBlowtorching = dSlug.bt;
         if (dSlug.dr !== undefined) slug.isDrilling = dSlug.dr;
         if (dSlug.pa !== undefined) slug.isParachuting = dSlug.pa;
+        if (dSlug.pau !== undefined) slug.hasUsedParachute = dSlug.pau;
 
         if (dSlug.jpF !== undefined) {
           if (dSlug.jpF > 0) {

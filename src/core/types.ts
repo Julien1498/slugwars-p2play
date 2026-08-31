@@ -98,6 +98,7 @@ export interface Slug {
   isDrilling?: boolean;
   drillDepth?: number;
   isParachuting?: boolean;
+  hasUsedParachute?: boolean;
   fuseTimerSec?: number;
   isGodMode?: boolean;
 }

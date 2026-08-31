@@ -59,6 +59,7 @@ export function updateSlugPhysics(
   const grounded = isSlugGrounded(slug, terrain, slugs);
   if (grounded) {
     if (slug.isParachuting) slug.isParachuting = false;
+    slug.hasUsedParachute = false;
     if (slug.jetpackState) slug.jetpackState.isThrusting = false;
   }
 
