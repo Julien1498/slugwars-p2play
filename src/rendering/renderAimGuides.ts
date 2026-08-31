@@ -27,8 +27,8 @@ export function renderAimGuides(rc: AimGuidesContext) {
   const originY = activeSlug.y - 10;
 
   // 1. Classic Animated Reticle (Bazooka, Grenades, Homing Missile launch angle)
-  const showsClassicReticle = !weapon.requiresTarget || weapon.id === 'homing_missile';
-  if (isMyTurn && showsClassicReticle && weapon.id !== 'girder') {
+  const showsClassicReticle = !weapon.hideReticle && (!weapon.requiresTarget || weapon.id === 'homing_missile');
+  if (isMyTurn && showsClassicReticle) {
     renderClassicReticle(ctx, activeSlug, weapon, originX, originY, rad, dir, animTime);
   }
 

@@ -37,6 +37,7 @@ export const girderWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
+  hideReticle: true,
   requiresTarget: true,
   customSoundKey: 'girder',
   createProjectiles: () => [],
@@ -79,6 +80,7 @@ export const jetpackWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
+  hideReticle: true,
   customSoundKey: 'jetpack',
   createProjectiles: () => [],
 };
@@ -99,6 +101,7 @@ export const pneumaticDrillWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
+  hideReticle: true,
   customSoundKey: 'drill',
   createProjectiles: () => [],
 };
@@ -119,6 +122,7 @@ export const parachuteWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
+  hideReticle: true,
   customSoundKey: 'parachute',
   createProjectiles: () => [],
 };
@@ -183,6 +187,7 @@ export const skipTurnWeapon: WeaponDefinition = {
   bounces: false,
   craftable: true,
   chargeable: false,
+  hideReticle: true,
   customSoundKey: 'tick',
   createProjectiles: () => [],
 };

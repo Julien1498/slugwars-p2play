@@ -20,6 +20,13 @@ import {
   drawHeldMineStrike,
   drawHeldKamikaze,
 } from './slugMythicWeaponDrawers';
+import {
+  drawHeldMagnet,
+  drawHeldPneumaticDrill,
+  drawHeldParachute,
+  drawHeldJetpack,
+  drawHeldAirdrop,
+} from './slugUtilityWeaponDrawers';
 
 export type HeldWeaponDrawer = (ctx: CanvasRenderingContext2D, animTime: number) => void;
 
@@ -271,6 +278,11 @@ export const HELD_WEAPON_DRAWERS: Record<string, HeldWeaponDrawer> = {
   bunker_buster: (ctx) => drawHeldBunkerBuster(ctx),
   mine_strike: (ctx) => drawHeldMineStrike(ctx),
   kamikaze: (ctx) => drawHeldKamikaze(ctx),
+  magnet: (ctx, animTime) => drawHeldMagnet(ctx, animTime),
+  pneumatic_drill: (ctx, animTime) => drawHeldPneumaticDrill(ctx, animTime),
+  parachute: (ctx) => drawHeldParachute(ctx),
+  jetpack: (ctx, animTime) => drawHeldJetpack(ctx, animTime),
+  airdrop: (ctx, animTime) => drawHeldAirdrop(ctx, animTime),
 };
 
 export const drawDefaultGenericWeapon: HeldWeaponDrawer = (ctx) => {

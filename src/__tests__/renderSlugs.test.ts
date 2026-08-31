@@ -274,6 +274,10 @@ describe('RenderSlugs - Canvas Graphics Pipeline', () => {
       'ninja_rope',
       'girder',
       'airdrop',
+      'magnet',
+      'pneumatic_drill',
+      'parachute',
+      'jetpack',
       'skip_turn',
     ];
 

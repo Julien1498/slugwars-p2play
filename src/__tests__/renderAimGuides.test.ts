@@ -178,6 +178,29 @@ describe('renderAimGuides - Canvas Aiming & Reticles Pipeline', () => {
     expect(ctxLocked.strokeRect).toHaveBeenCalled();
   });
 
+  it('does not render classic reticle for utility weapons with hideReticle flag', () => {
+    const hiddenWeapons = ['jetpack', 'pneumatic_drill', 'parachute', 'skip_turn', 'girder'];
+    for (const weaponId of hiddenWeapons) {
+      const ctx = createMockContext();
+      const activeSlug = createMockSlug({ selectedWeaponId: weaponId, isChargingPower: false });
+      const rc: AimGuidesContext = {
+        ctx,
+        activeSlug,
+        isMyTurn: true,
+        terrain: mockTerrain,
+        mousePos: { x: 350, y: 350 },
+        lockedTarget: null,
+        animTime: 1.0,
+      };
+
+      renderAimGuides(rc);
+      // For classic reticle, ctx.fillText displays angle degree text
+      if (weaponId !== 'girder') {
+        expect(ctx.fillText).not.toHaveBeenCalled();
+      }
+    }
+  });
+
   it('does not render aim guides when it is not player turn', () => {
     const ctx = createMockContext();
     const activeSlug = createMockSlug({ selectedWeaponId: 'bazooka', isChargingPower: false });
