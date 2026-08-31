@@ -210,5 +210,16 @@ describe('Engine Dev & Debug Controls (devControls.ts)', () => {
       const meteors = engine.state.projectiles.filter((p) => p.weaponId === 'meteor');
       expect(meteors.length).toBeGreaterThanOrEqual(15);
     });
+
+    it('digs and builds terrain with custom radius', () => {
+      const initialRev = engine.terrain.revision;
+      engine.devDigTerrain(300, 300, 25);
+      expect(engine.terrain.revision).toBe(initialRev + 1);
+      expect(engine.state.craters?.some((c) => c.x === 300 && c.y === 300)).toBe(true);
+
+      engine.devBuildTerrain(300, 300, 25);
+      expect(engine.terrain.revision).toBe(initialRev + 2);
+      expect(engine.terrain.isSolid(300, 300)).toBe(true);
+    });
   });
 });

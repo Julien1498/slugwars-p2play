@@ -26,6 +26,7 @@ interface DevToolsDrawerProps {
   onToggleHitboxes: () => void;
   showPerfMetrics: boolean;
   onTogglePerfMetrics: () => void;
+  roomCode?: string;
 }
 
 export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
@@ -44,6 +45,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
   onToggleHitboxes,
   showPerfMetrics,
   onTogglePerfMetrics,
+  roomCode,
 }) => {
   if (!isOpen) return null;
 
@@ -60,7 +62,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
     { id: 'weapons', label: 'Armes', icon: <Briefcase className="w-3.5 h-3.5" /> },
     { id: 'slugs', label: 'Limaces', icon: <User className="w-3.5 h-3.5" /> },
     { id: 'spawns', label: 'Spawns', icon: <Package className="w-3.5 h-3.5" /> },
-    { id: 'env', label: 'Météo', icon: <CloudRain className="w-3.5 h-3.5" /> },
+    { id: 'env', label: 'Météo & Sol', icon: <CloudRain className="w-3.5 h-3.5" /> },
     { id: 'overlays', label: 'Overlays', icon: <Eye className="w-3.5 h-3.5" /> },
   ];
 
@@ -76,8 +78,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
           <button
             onClick={() => {
               const currentParams = new URLSearchParams(window.location.search);
-              const room = currentParams.get('room') || (window as any).__p2playRoomId || '';
-              const url = `${window.location.origin}${window.location.pathname}?room=${room}&autojoin=1&dev=true`;
+              const room = roomCode || currentParams.get('room') || (window as any).__p2playRoomId || '';
+              const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}&autojoin=1&dev=true`;
               window.open(url, '_blank');
             }}
             className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition-colors"
@@ -176,6 +178,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
             onRiseWater={(amount) => triggerMutation(() => engineRef.current.devRiseWater(amount))}
             onLowerWater={(amount) => triggerMutation(() => engineRef.current.devLowerWater(amount))}
             onTriggerArmageddon={() => triggerMutation(() => engineRef.current.devTriggerArmageddon())}
+            activeCursorTool={activeCursorTool}
+            onSelectCursorTool={onSelectCursorTool}
           />
         )}
 

@@ -254,3 +254,31 @@ export function devToggleGodMode(state: GameState): boolean {
   }
   return state.godModeEnabled;
 }
+
+export function devDigTerrain(
+  state: GameState,
+  terrain: DestructibleTerrain,
+  x: number,
+  y: number,
+  radius: number = 30
+): void {
+  terrain.carveExplosion(x, y, radius);
+  if (!state.craters) state.craters = [];
+  state.craters.push({
+    id: `dev_crater_${Date.now()}_${Math.random()}`,
+    x: Math.round(x),
+    y: Math.round(y),
+    radius: Math.round(radius),
+    createdAt: Date.now(),
+  });
+}
+
+export function devBuildTerrain(
+  _state: GameState,
+  terrain: DestructibleTerrain,
+  x: number,
+  y: number,
+  radius: number = 30
+): void {
+  terrain.buildTerrain(x, y, radius, 1);
+}

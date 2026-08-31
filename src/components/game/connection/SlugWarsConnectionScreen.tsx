@@ -47,7 +47,8 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const isAutoJoin = params.get('autojoin') === '1' || params.get('autojoin') === 'true' || params.get('auto') === '1';
-    const targetRoom = extractRoomCodeFromUrl() || params.get('room');
+    const rawTarget = params.get('room') || extractRoomCodeFromUrl() || (window.location.hash ? window.location.hash.replace('#', '') : '');
+    const targetRoom = rawTarget ? decodeURIComponent(rawTarget).trim() : '';
     if (isAutoJoin && targetRoom && !isConnecting) {
       const guestName = `Invité_${Math.floor(100 + Math.random() * 900)}`;
       onJoin(guestName, selectedAvatar || '🐌', targetRoom);

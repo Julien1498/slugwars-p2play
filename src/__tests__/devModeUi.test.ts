@@ -65,4 +65,13 @@ describe('Dev Mode UI Actions & Executors (devActionExecutor.ts)', () => {
 
     expect(mockOnDevAction).toHaveBeenCalledWith('devSpawnHelicopter', [250, 100]);
   });
+
+  it('dispatches devDigTerrain and devBuildTerrain at cursor position', () => {
+    const mockOnDevAction = vi.fn();
+    executeDevCursorAction('dig_terrain', { x: 300, y: 150 }, mockGameState, null, mockOnDevAction);
+    expect(mockOnDevAction).toHaveBeenCalledWith('devDigTerrain', [300, 150, 30]);
+
+    executeDevCursorAction('build_terrain', { x: 320, y: 160 }, mockGameState, null, mockOnDevAction);
+    expect(mockOnDevAction).toHaveBeenCalledWith('devBuildTerrain', [320, 160, 30]);
+  });
 });

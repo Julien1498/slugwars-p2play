@@ -283,6 +283,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
             onToggleHitboxes={handleToggleHitboxes}
             showPerfMetrics={showMetrics}
             onTogglePerfMetrics={handleOpenMetrics}
+            roomCode={isHost ? myPeerId : hostPeerId}
           />
         </>
       )}

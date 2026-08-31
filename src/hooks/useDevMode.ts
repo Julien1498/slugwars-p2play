@@ -7,7 +7,9 @@ export type DevCursorTool =
   | 'spawn_crate_utility'
   | 'spawn_mine'
   | 'spawn_drum'
-  | 'spawn_heli';
+  | 'spawn_heli'
+  | 'dig_terrain'
+  | 'build_terrain';
 
 export type DevTab = 'time' | 'weapons' | 'slugs' | 'spawns' | 'env' | 'overlays';
 

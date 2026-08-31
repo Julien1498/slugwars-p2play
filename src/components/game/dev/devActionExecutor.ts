@@ -41,5 +41,13 @@ export function executeDevCursorAction(
       if (onDevAction) onDevAction('devSpawnHelicopter', [pos.x, pos.y]);
       else engine?.devSpawnHelicopter?.(pos.x, pos.y);
       break;
+    case 'dig_terrain':
+      if (onDevAction) onDevAction('devDigTerrain', [pos.x, pos.y, 30]);
+      else engine?.devDigTerrain?.(pos.x, pos.y, 30);
+      break;
+    case 'build_terrain':
+      if (onDevAction) onDevAction('devBuildTerrain', [pos.x, pos.y, 30]);
+      else engine?.devBuildTerrain?.(pos.x, pos.y, 30);
+      break;
   }
 }

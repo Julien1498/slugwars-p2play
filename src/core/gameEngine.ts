@@ -258,6 +258,8 @@ export class SlugWarsEngine {
   public devTriggerArmageddon(): void { devCtrl.devTriggerArmageddon(this.state, this.terrain, (m, t) => this.addLog(m, t)); }
   public devForceWin(teamId?: string): void { devCtrl.devForceWin(this.state, teamId, (m, t) => this.addLog(m, t)); }
   public devAutoPlaceAllSlugs(): void { devCtrl.devAutoPlaceAllSlugs(this.state, this.terrain, (m, t) => this.addLog(m, t)); }
+  public devDigTerrain(x: number, y: number, radius?: number): void { devCtrl.devDigTerrain(this.state, this.terrain, x, y, radius); }
+  public devBuildTerrain(x: number, y: number, radius?: number): void { devCtrl.devBuildTerrain(this.state, this.terrain, x, y, radius); }
   public devToggleFreezeTimer(): boolean { return devCtrl.devToggleFreezeTimer(this.state); }
   public devToggleGodMode(): boolean { return devCtrl.devToggleGodMode(this.state); }
 }

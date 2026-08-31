@@ -158,6 +158,42 @@ export class DestructibleTerrain {
     return { carvedPixels, destroyedOilDrums };
   }
 
+  public buildTerrain(
+    cx: number,
+    cy: number,
+    radius: number,
+    materialVal: number = 1
+  ): number {
+    this.revision++;
+    let addedPixels = 0;
+    const icx = Math.floor(cx);
+    const icy = Math.floor(cy);
+    const rSq = radius * radius;
+
+    const minX = Math.max(0, Math.floor(icx - radius));
+    const maxX = Math.min(this.data.width - 1, Math.ceil(icx + radius));
+    const minY = Math.max(0, Math.floor(icy - radius));
+    const maxY = Math.min(this.data.height - 1, Math.ceil(icy + radius));
+
+    for (let y = minY; y <= maxY; y++) {
+      const dy = y - icy;
+      const dySq = dy * dy;
+      const rowOffset = y * this.data.width;
+
+      for (let x = minX; x <= maxX; x++) {
+        const dx = x - icx;
+        if (dx * dx + dySq <= rSq) {
+          const idx = rowOffset + x;
+          if (this.data.grid[idx] === 0) {
+            this.data.grid[idx] = materialVal;
+            addedPixels++;
+          }
+        }
+      }
+    }
+    return addedPixels;
+  }
+
   public raycastSolidInto(
     x0: number,
     y0: number,

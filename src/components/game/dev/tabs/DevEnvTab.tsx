@@ -1,6 +1,7 @@
 import React from 'react';
-import { Wind, Waves, Sparkles, ArrowLeftRight } from 'lucide-react';
+import { Wind, Waves, Sparkles, Layers, Bomb } from 'lucide-react';
 import { GameState } from '../../../../core/types';
+import { DevCursorTool } from '../../../../hooks/useDevMode';
 
 interface DevEnvTabProps {
   gameState: GameState;
@@ -8,6 +9,8 @@ interface DevEnvTabProps {
   onRiseWater: (amountPx: number) => void;
   onLowerWater: (amountPx: number) => void;
   onTriggerArmageddon: () => void;
+  activeCursorTool?: DevCursorTool | null;
+  onSelectCursorTool?: (tool: DevCursorTool | null) => void;
 }
 
 export const DevEnvTab: React.FC<DevEnvTabProps> = ({
@@ -16,11 +19,44 @@ export const DevEnvTab: React.FC<DevEnvTabProps> = ({
   onRiseWater,
   onLowerWater,
   onTriggerArmageddon,
+  activeCursorTool,
+  onSelectCursorTool,
 }) => {
   const curWind = gameState.wind ?? 0;
+  const isDigging = activeCursorTool === 'dig_terrain';
+  const isBuilding = activeCursorTool === 'build_terrain';
 
   return (
     <div className="flex flex-col gap-3 text-xs">
+      {/* Terrain Sculpting / Editing */}
+      {onSelectCursorTool && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onSelectCursorTool('dig_terrain')}
+            className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
+              isDigging
+                ? 'bg-amber-500 text-zinc-950 border-amber-400 animate-pulse'
+                : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border-amber-500/40'
+            }`}
+          >
+            <Bomb className="w-3.5 h-3.5" />
+            {isDigging ? 'Cliquez pour creuser...' : '⛏️ Creuser Sol (30px)'}
+          </button>
+
+          <button
+            onClick={() => onSelectCursorTool('build_terrain')}
+            className={`px-3 py-2 rounded-lg font-bold border flex items-center justify-center gap-1.5 transition-colors ${
+              isBuilding
+                ? 'bg-emerald-500 text-zinc-950 border-emerald-400 animate-pulse'
+                : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border-emerald-500/40'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            {isBuilding ? 'Cliquez pour poser...' : '🧱 Poser Sol (30px)'}
+          </button>
+        </div>
+      )}
+
       {/* Wind Slider */}
       <div className="p-2.5 rounded-lg bg-zinc-900/80 border border-zinc-800 flex flex-col gap-2">
         <div className="flex items-center justify-between font-bold text-zinc-200">
