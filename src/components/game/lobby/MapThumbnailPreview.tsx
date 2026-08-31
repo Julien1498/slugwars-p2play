@@ -13,9 +13,8 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeCfg = MAP_SIZE_CONFIGS[size || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
 
-  const targetRatio = (sizeCfg.width || 1400) / (sizeCfg.height || 800);
   const canvasWidth = 480;
-  const canvasHeight = Math.round(canvasWidth / targetRatio);
+  const canvasHeight = 240;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -217,10 +216,7 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
   }, [theme, sizeCfg.width, sizeCfg.height, seed, canvasWidth, canvasHeight]);
 
   return (
-    <div
-      className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group w-full"
-      style={{ aspectRatio: `${sizeCfg.width} / ${sizeCfg.height}` }}
-    >
+    <div className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group w-full aspect-[2/1]">
       <canvas
         ref={canvasRef}
         width={canvasWidth}
