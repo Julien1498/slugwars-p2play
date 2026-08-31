@@ -217,20 +217,23 @@ export const MapThumbnailPreview: React.FC<MapThumbnailPreviewProps> = ({ theme,
   }, [theme, sizeCfg.width, sizeCfg.height, seed, canvasWidth, canvasHeight]);
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group">
+    <div
+      className="relative rounded-xl overflow-hidden border border-violet-500/30 bg-zinc-950 shadow-inner group w-full"
+      style={{ aspectRatio: `${sizeCfg.width} / ${sizeCfg.height}`, maxHeight: '200px' }}
+    >
       <canvas
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
-        className="w-full h-[140px] block object-contain bg-zinc-950"
+        className="w-full h-full block object-cover bg-zinc-950"
       />
       
-      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-white/15 text-[9px] font-mono text-zinc-200 shadow flex items-center gap-1.5">
+      <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-white/15 text-[9px] font-mono text-zinc-200 shadow flex items-center gap-1.5 z-10">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         <span>SEED #{seed}</span>
       </div>
 
-      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-violet-500/40 text-[9px] font-bold text-violet-300 shadow flex items-center gap-1.5">
+      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/85 backdrop-blur-md rounded border border-violet-500/40 text-[9px] font-bold text-violet-300 shadow flex items-center gap-1.5 z-10">
         <span>{sizeCfg.icon}</span>
         <span>{sizeCfg.label} ({sizeCfg.width}×{sizeCfg.height})</span>
       </div>

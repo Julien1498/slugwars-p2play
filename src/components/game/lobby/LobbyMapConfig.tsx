@@ -33,6 +33,8 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
 
         <LobbyThemeSelector
           currentTheme={config.mapTheme}
+          size={config.mapSize || 'NORMAL'}
+          seed={config.mapSeed}
           isHost={isHost}
           onSelectTheme={(mapTheme) => onChangeConfig({ mapTheme })}
         />
