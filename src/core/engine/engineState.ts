@@ -52,13 +52,16 @@ export function initializeTerrainForConfig(config: GameConfig): { terrain: Destr
   return { terrain, waterLevel: data.waterLevel };
 }
 
+import { findSafePlacementPoint } from './turnManager';
+
 export function registerTeam(
   state: GameState,
   id: string,
   name: string,
   color: string,
   avatar: string,
-  isHost: boolean
+  isHost: boolean,
+  terrain?: DestructibleTerrain
 ) {
   if (state.teams.some((t) => t.id === id)) return;
   const wSet = getWeaponSet(state.config.weaponSetId);
@@ -69,8 +72,62 @@ export function registerTeam(
     avatar,
     isHost,
     inventory: { ...wSet.inventory },
+    stats: { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 },
   };
   state.teams.push(newTeam);
+
+  // If match has already started (PLACEMENT or mid-game), register the slugs for this team
+  if (state.phase !== 'LOBBY') {
+    const isPlacementPhase = state.phase === 'PLACEMENT';
+    const slugsCount = state.config.slugsPerTeam || 3;
+    const width = terrain?.data.width || 1920;
+    const spawnPoints = terrain?.data.spawnPoints || [];
+
+    for (let i = 0; i < slugsCount; i++) {
+      let posX = 0;
+      let posY = 0;
+      if (!isPlacementPhase && terrain) {
+        let targetX = 100 + (i / slugsCount) * (width - 200) + (Math.random() - 0.5) * 50;
+        let targetY = 150;
+        if (spawnPoints[i % spawnPoints.length]) {
+          targetX = spawnPoints[i % spawnPoints.length].x;
+          targetY = spawnPoints[i % spawnPoints.length].y;
+        }
+        const safePt = findSafePlacementPoint(terrain, targetX, targetY, state.slugs);
+        posX = safePt.x;
+        posY = safePt.y;
+      }
+
+      state.slugs.push({
+        id: `slug_${id}_${i}`,
+        teamId: id,
+        name: `${name} #${i + 1}`,
+        x: posX,
+        y: posY,
+        vx: 0,
+        vy: 0,
+        hp: state.config.slugHp,
+        maxHp: state.config.slugHp,
+        isAlive: true,
+        isPlaced: !isPlacementPhase,
+        facing: i % 2 === 0 ? 'right' : 'left',
+        aimAngle: 45,
+        aimPower: 0,
+        selectedWeaponId: 'bazooka',
+      });
+    }
+
+    if (isPlacementPhase) {
+      const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+      if (!activeSlug || activeSlug.isPlaced) {
+        const unplaced = state.slugs.find((s) => !s.isPlaced && s.isAlive);
+        if (unplaced) {
+          state.activeSlugId = unplaced.id;
+          state.activeTeamId = unplaced.teamId;
+        }
+      }
+    }
+  }
 }
 
 export function unregisterTeam(state: GameState, id: string) {

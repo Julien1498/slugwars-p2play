@@ -93,6 +93,9 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(hostEngine.state.teams.length).toBe(2);
       expect(hostEngine.state.teams[1].id).toBe('guest_peer_789');
       expect(hostEngine.state.teams[1].name).toBe('Invité LateJoin');
+      const lateSlugs = hostEngine.state.slugs.filter((s) => s.teamId === 'guest_peer_789');
+      expect(lateSlugs.length).toBe(2);
+      expect(lateSlugs.every((s) => !s.isPlaced && s.isAlive)).toBe(true);
     });
 
     it('rejects CHANGE_CONFIG from non-host players', () => {

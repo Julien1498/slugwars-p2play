@@ -56,12 +56,6 @@ export class DestructibleTerrain {
     const maxX = Math.min(this.data.width - 1, Math.ceil(icx + radius));
     const minY = Math.max(0, Math.floor(icy - radius));
     const maxY = Math.min(this.data.height - 1, Math.ceil(icy + radius));
-    this.lastDirtyBox = {
-      minX: Math.max(0, minX - 8),
-      maxX: Math.min(this.data.width - 1, maxX + 8),
-      minY: Math.max(0, minY - 8),
-      maxY: Math.min(this.data.height - 1, maxY + 8),
-    };
     const hasCeiling = getThemeConfig(this.data.theme).physics.hasSolidCeiling;
 
     for (let y = minY; y <= maxY; y++) {

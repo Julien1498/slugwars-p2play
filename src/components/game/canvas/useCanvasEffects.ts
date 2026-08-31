@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react';
 import { GameState } from '../../../core/types';
 import { DestructibleTerrain } from '../../../core/terrain';
 import { sfx } from '../../../core/audio';
-import { TerrainBuffers } from '../../../rendering/renderTerrain';
+import { TerrainBuffers, redrawOffscreenTerrain } from '../../../rendering/renderTerrain';
 import { WaterBubble, WaterRipple, WaterSplash } from '../../../rendering/renderWater';
 import { ClientParticle, ClientExplosion, ClientFloatingDamage } from '../../../rendering/renderEffects';
 
@@ -33,9 +33,23 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
     (x: number, y: number, radius: number) => {
       const safeRadius = Math.max(0, radius || 0);
       if (safeRadius <= 0) return;
+
       terrain.carveExplosion(x, y, safeRadius);
+
+      const buffers = getBuffers();
+      if (buffers.offscreenCanvas) {
+        const offCtx = buffers.offscreenCanvas.getContext('2d');
+        if (offCtx) {
+          offCtx.save();
+          offCtx.globalCompositeOperation = 'destination-out';
+          offCtx.beginPath();
+          offCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.restore();
+        }
+      }
     },
-    [terrain]
+    [terrain, getBuffers]
   );
 
   const buildOffscreenTerrain = useCallback(
@@ -43,8 +57,16 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       const safeRadius = Math.max(0, radius || 0);
       if (safeRadius <= 0) return;
       terrain.buildTerrain(x, y, safeRadius, 1);
+      const buffers = getBuffers();
+      const dirtyBox = {
+        minX: Math.max(0, Math.floor(x - safeRadius - 8)),
+        maxX: Math.min(terrain.data.width - 1, Math.ceil(x + safeRadius + 8)),
+        minY: Math.max(0, Math.floor(y - safeRadius - 8)),
+        maxY: Math.min(terrain.data.height - 1, Math.ceil(y + safeRadius + 8)),
+      };
+      redrawOffscreenTerrain(terrain, buffers, dirtyBox);
     },
-    [terrain]
+    [terrain, getBuffers]
   );
 
   const triggerWaterSplash = useCallback((x: number, y: number, scale = 1.0) => {

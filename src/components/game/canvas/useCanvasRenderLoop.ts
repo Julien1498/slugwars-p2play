@@ -106,7 +106,7 @@ export function useCanvasRenderLoop({
       animId = requestAnimationFrame(render);
       const renderStart = performance.now();
 
-      if (lastTerrainRevisionRef.current !== terrain.revision) {
+      if (terrain.lastDirtyBox) {
         lastTerrainRevisionRef.current = terrain.revision;
         const dirtyBox = terrain.lastDirtyBox;
         terrain.lastDirtyBox = undefined;
