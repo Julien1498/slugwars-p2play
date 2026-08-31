@@ -82,8 +82,8 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
           <button
             onClick={() => {
               const currentParams = new URLSearchParams(window.location.search);
-              const room = roomCode || currentParams.get('room') || (window as any).__p2playRoomId || '';
-              const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}&autojoin=1`;
+              const room = (roomCode || currentParams.get('room') || (window as any).__p2playRoomId || '').trim();
+              const url = room ? `${window.location.origin}/${encodeURIComponent(room)}?autojoin=1` : `${window.location.origin}/?autojoin=1`;
               window.open(url, '_blank');
             }}
             className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition-colors"

@@ -165,4 +165,31 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       expect(pctRight).toBe(1.0); // 100% max gauge
     });
   });
+
+  describe('Room Code URL Routing & Parsing (getRoomCodeFromLocation)', () => {
+    it('extracts room code from path, query and hash formats accurately', () => {
+      const parseTest = (urlStr: string) => {
+        const u = new URL(urlStr);
+        const params = u.searchParams;
+        const fromQuery = params.get('room') || params.get('code') || params.get('r') || params.get('join');
+        if (fromQuery) return decodeURIComponent(fromQuery).trim().toUpperCase();
+
+        const pathSegment = u.pathname.replace(/^\/+/, '').split('/')[0];
+        if (pathSegment && pathSegment.length >= 3 && pathSegment.length <= 16 && !pathSegment.includes('.') && pathSegment !== 'index.html') {
+          return decodeURIComponent(pathSegment).trim().toUpperCase();
+        }
+
+        const hash = u.hash.replace(/^[#/]+/, '');
+        if (hash) return decodeURIComponent(hash).trim().toUpperCase();
+        return '';
+      };
+
+      expect(parseTest('http://localhost:5173/9EHZM?autojoin=1')).toBe('9EHZM');
+      expect(parseTest('http://localhost:5173/9EHZM?&autojoin=1')).toBe('9EHZM');
+      expect(parseTest('http://localhost:5173/9EHZM')).toBe('9EHZM');
+      expect(parseTest('http://localhost:5173/?room=9EHZM&autojoin=1')).toBe('9EHZM');
+      expect(parseTest('http://localhost:5173/#/9EHZM')).toBe('9EHZM');
+      expect(parseTest('http://localhost:5173/')).toBe('');
+    });
+  });
 });

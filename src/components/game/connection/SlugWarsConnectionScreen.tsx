@@ -15,6 +15,26 @@ export interface SlugWarsConnectionScreenProps {
   onJoin: (username: string, avatar: string, roomCode: string) => void;
 }
 
+export function getRoomCodeFromLocation(): string {
+  if (typeof window === 'undefined') return '';
+  const fromCore = extractRoomCodeFromUrl();
+  if (fromCore) return fromCore;
+
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('room') || params.get('code') || params.get('r') || params.get('join');
+  if (fromQuery) return decodeURIComponent(fromQuery).trim().toUpperCase();
+
+  const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+  if (pathSegment && pathSegment.length >= 3 && pathSegment.length <= 16 && !pathSegment.includes('.') && pathSegment !== 'index.html') {
+    return decodeURIComponent(pathSegment).trim().toUpperCase();
+  }
+
+  const hash = window.location.hash.replace(/^[#/]+/, '');
+  if (hash) return decodeURIComponent(hash).trim().toUpperCase();
+
+  return '';
+}
+
 export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> = ({
   error,
   isConnecting,
@@ -22,7 +42,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   onJoin,
 }) => {
   const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
-  const initialCode = extractRoomCodeFromUrl() || '';
+  const initialCode = getRoomCodeFromLocation();
   const savedProfile = loadProfile();
   const [username, setUsername] = useState(() => {
     return savedProfile?.username || ('Limace_' + Math.floor(100 + Math.random() * 900));
@@ -36,9 +56,10 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
 
   useEffect(() => {
     return subscribeRoomUrlChanges((code) => {
-      if (code) {
-        setInvitationCode(code);
-        setRoomCode(code);
+      const activeCode = code || getRoomCodeFromLocation();
+      if (activeCode) {
+        setInvitationCode(activeCode);
+        setRoomCode(activeCode);
       }
     });
   }, []);
@@ -47,8 +68,7 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const isAutoJoin = params.get('autojoin') === '1' || params.get('autojoin') === 'true' || params.get('auto') === '1';
-    const rawTarget = params.get('room') || extractRoomCodeFromUrl() || (window.location.hash ? window.location.hash.replace('#', '') : '');
-    const targetRoom = rawTarget ? decodeURIComponent(rawTarget).trim() : '';
+    const targetRoom = getRoomCodeFromLocation();
     if (isAutoJoin && targetRoom && !isConnecting) {
       const guestName = `Invité_${Math.floor(100 + Math.random() * 900)}`;
       onJoin(guestName, selectedAvatar || '🐌', targetRoom);
