@@ -18,8 +18,8 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
   },
   WMD_CRAZY: {
     id: 'WMD_CRAZY',
-    name: 'Arsenal W.M.D Farfelu',
-    description: 'Plein d\'armes loufoques, Sainte Grenade et Âne en Béton débloqués !',
+    name: 'Armement Lourd',
+    description: 'Super-armes fournies & gros dégâts',
     turnDelaysEnabled: true,
     inventory: {
       bazooka: -1,

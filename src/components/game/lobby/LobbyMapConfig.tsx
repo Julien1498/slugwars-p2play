@@ -81,7 +81,7 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
 
       <div className="space-y-1.5 pt-2 border-t border-zinc-800">
         <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-          <Rocket className="w-3 h-3 text-violet-400" /> Arsenal W.M.D
+          <Rocket className="w-3 h-3 text-violet-400" /> Configuration de l'Arsenal
         </label>
         <div className="grid grid-cols-3 gap-1.5">
           {Object.values(WEAPON_SETS).map((wSet) => (
