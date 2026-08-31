@@ -14,7 +14,6 @@ import { generateSolidProps } from './terrain/terrainPropsPlacer';
 
 export { SeededRandom };
 export type { DecorItem, SolidProp };
-export { generateScaledTerrainGrid } from './terrain/scaledTerrainGenerator';
 
 export interface TerrainData {
   width: number;
@@ -39,19 +38,22 @@ export interface TerrainGridResult {
 }
 
 /**
- * Ultra-fast procedural terrain generator for UI previews & radar.
- * Executes the exact same topological pipeline as real game generation (1D heightmap + initial fill + carver),
- * but skips non-visual entity placement passes (mines, safe spawns, props, leaf decor) for 20x speedup with 100% topological parity.
+ * Ultra-fast scale-invariant procedural terrain generator for UI previews & radar.
+ * Executes the exact same topological pipeline as real game generation (1D heightmap + initial fill + carver)
+ * directly in target resolution (e.g. 480x240 or 172x88) while skipping non-visual entity placement passes.
  */
 export function generateTerrainGridOnly(
   seed: number,
   theme: MapTheme = 'ISLAND',
   width: number = 1400,
-  height: number = 800
+  height: number = 800,
+  worldW: number = width,
+  worldH: number = height
 ): TerrainGridResult {
   const prng = new SeededRandom(seed);
   const grid = new Uint8Array(width * height);
-  const waterLevel = height - 80;
+  const scaleY = height / worldH;
+  const waterLevel = height - Math.round(80 * scaleY);
   const config = getThemeConfig(theme);
 
   const baseFreq = prng.range(0.002, 0.004);
@@ -59,12 +61,12 @@ export function generateTerrainGridOnly(
   const p2 = prng.range(0, Math.PI * 2);
   const p3 = prng.range(0, Math.PI * 2);
 
-  // 1. Precalculate 1D Terrain Heightmap & Fill 2D Grid with Overhangs
-  const baseGroundY = generate1DHeightmap(prng, theme, width, height, baseFreq, p1, p2, p3);
-  fillInitialTerrainGrid(grid, baseGroundY, prng, theme, width, height, baseFreq, p1, p2, p3, waterLevel);
+  // 1. Precalculate 1D Terrain Heightmap & Fill 2D Grid with Overhangs in target space
+  const baseGroundY = generate1DHeightmap(prng, theme, width, height, baseFreq, p1, p2, p3, worldW, worldH);
+  fillInitialTerrainGrid(grid, baseGroundY, prng, theme, width, height, baseFreq, p1, p2, p3, waterLevel, worldW, worldH);
 
   // 2. Carve Subterranean Features (Tunnels, Arches, Caves, Bedrock Ceiling, Tactical Floating Islands)
-  carveTerrainFeatures(grid, prng, theme, width, height, waterLevel);
+  carveTerrainFeatures(grid, prng, theme, width, height, waterLevel, worldW, worldH);
 
   return { width, height, theme: config.id, seed, waterLevel, grid };
 }
