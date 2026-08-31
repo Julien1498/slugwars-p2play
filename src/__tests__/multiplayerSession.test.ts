@@ -72,7 +72,8 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(syncStateCalled).toBe(true);
     });
 
-    it('registers late-joining players into teams without automatically placing slugs', () => {
+    it('registers late-joining players into teams when host is in dev mode', () => {
+      hostEngine.state.isDevHost = true;
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.startGame();
       expect(hostEngine.state.phase).toBe('PLACEMENT');
@@ -98,6 +99,22 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       expect(lateSlugs.every((s) => !s.isPlaced && s.isAlive)).toBe(true);
     });
 
+    it('rejects late-joining players during active match when host is not in dev mode', () => {
+      hostEngine.state.isDevHost = false;
+      hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
+      hostEngine.startGame();
+      expect(hostEngine.state.phase).toBe('PLACEMENT');
+
+      const lateJoinMsg: SlugWarsNetworkMessage = {
+        type: 'ACTION',
+        actionName: 'JOIN_GAME',
+        payload: { name: 'Late Guest', color: '#10b981', avatar: '⚡' },
+      };
+
+      dispatchAction('guest_peer_999', lateJoinMsg);
+      expect(hostEngine.state.teams.length).toBe(1);
+    });
+
     it('rejects CHANGE_CONFIG from non-host players', () => {
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.addTeam('guest_peer_456', 'Guest Bob', '#3b82f6', '🐌', false);
@@ -120,17 +137,11 @@ describe('Multiplayer P2P Session & Network Replication', () => {
     it('rejects START_GAME from non-host players', () => {
       hostEngine.addTeam('host_peer_123', 'Host Alice', '#ef4444', '👑', true);
       hostEngine.addTeam('guest_peer_456', 'Guest Bob', '#3b82f6', '🐌', false);
+      const startMsg: SlugWarsNetworkMessage = { type: 'ACTION', actionName: 'START_GAME' };
 
-      const startMsg: SlugWarsNetworkMessage = {
-        type: 'ACTION',
-        actionName: 'START_GAME',
-      };
-
-      // Non-host tries to start game
       dispatchAction('guest_peer_456', startMsg);
       expect(hostEngine.state.phase).toBe('LOBBY'); // Did not start
 
-      // Host starts game
       dispatchAction('host_peer_123', startMsg);
       expect(hostEngine.state.phase).toBe('PLACEMENT'); // Started
     });
@@ -262,14 +273,11 @@ describe('Multiplayer P2P Session & Network Replication', () => {
       const prevState: GameState = JSON.parse(JSON.stringify(hostEngine.state));
       hostEngine.state.wind = -3.5;
       hostEngine.state.turnTimer = 32;
-      hostEngine.state.slugs[0].x = 450.5;
-      hostEngine.state.slugs[0].y = 220.0;
-      hostEngine.state.slugs[0].hp = 80;
+      Object.assign(hostEngine.state.slugs[0], { x: 450.5, y: 220.0, hp: 80 });
 
       const delta = buildStateDelta(prevState, hostEngine.state)!;
       expect(delta).not.toBeNull();
 
-      // Encode to binary buffer
       const binBuffer = encodeBinaryDelta(delta);
       expect(binBuffer.byteLength).toBeGreaterThan(0);
 

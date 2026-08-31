@@ -288,4 +288,5 @@ export interface GameState {
   solidProps?: SolidProp[];
   isTimerFrozen?: boolean;
   godModeEnabled?: boolean;
+  isDevHost?: boolean;
 }

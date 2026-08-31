@@ -13,7 +13,7 @@ export type DevCursorTool =
 
 export type DevTab = 'time' | 'weapons' | 'slugs' | 'spawns' | 'env' | 'overlays';
 
-export function useDevMode() {
+export function useDevMode(isHost: boolean = false) {
   const [isDevEnabled, setIsDevEnabled] = useState<boolean>(false);
   const [isDevOpen, setIsDevOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<DevTab>('time');
@@ -21,7 +21,11 @@ export function useDevMode() {
   const [brushRadius, setBrushRadius] = useState<number>(30);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isHost || typeof window === 'undefined') {
+      setIsDevEnabled(false);
+      setIsDevOpen(false);
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     const hasParam =
       params.get('dev') === 'true' ||
@@ -33,7 +37,7 @@ export function useDevMode() {
     if (!hasParam) {
       sessionStorage.removeItem('slugwars_dev_enabled');
     }
-  }, []);
+  }, [isHost]);
 
   // Global hotkey to toggle dev drawer: '²' (top-left AZERTY), 'F2', or 'Ctrl+Shift+D'
   useEffect(() => {

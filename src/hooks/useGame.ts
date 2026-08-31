@@ -41,9 +41,32 @@ export function useGame(options?: {
   const engineRef = useRef<SlugWarsEngine>(null!);
   if (!engineRef.current) {
     engineRef.current = new SlugWarsEngine();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const isDevParam =
+        params.get('dev') === 'true' ||
+        params.get('dev') === '1' ||
+        params.get('debug') === 'true' ||
+        params.get('debug') === '1';
+      if (isDevParam) {
+        engineRef.current.state.isDevHost = true;
+      }
+    }
   }
   const [gameState, setGameState] = useState<GameState>(engineRef.current.state);
   const lastSentStateRef = useRef<GameState | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isHost && engineRef.current) {
+      const params = new URLSearchParams(window.location.search);
+      const isDevParam =
+        params.get('dev') === 'true' ||
+        params.get('dev') === '1' ||
+        params.get('debug') === 'true' ||
+        params.get('debug') === '1';
+      engineRef.current.state.isDevHost = isDevParam;
+    }
+  }, [isHost]);
 
   const lastUiUpdateRef = useRef<number>(0);
   const lastUiStateRef = useRef<GameState | null>(null);

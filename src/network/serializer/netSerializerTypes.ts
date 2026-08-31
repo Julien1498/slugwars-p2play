@@ -79,4 +79,5 @@ export interface CompactStateDelta {
   solidProps?: SolidProp[];
   isTimerFrozen?: boolean;
   godModeEnabled?: boolean;
+  isDevHost?: boolean;
 }

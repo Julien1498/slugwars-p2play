@@ -27,6 +27,7 @@ export function isDeltaEmpty(delta: CompactStateDelta): boolean {
     (!delta.floatingDamages || delta.floatingDamages.length === 0) &&
     (!delta.solidProps || delta.solidProps.length === 0) &&
     delta.isTimerFrozen === undefined &&
-    delta.godModeEnabled === undefined
+    delta.godModeEnabled === undefined &&
+    delta.isDevHost === undefined
   );
 }

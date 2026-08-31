@@ -25,6 +25,10 @@ export function processHostAction(
   if (msg.type === 'ACTION') {
     switch (msg.actionName) {
       case 'JOIN_GAME': {
+        if (engine.state.phase !== 'LOBBY' && !engine.state.isDevHost) {
+          console.warn(`[P2P] Late join/autojoin rejected from player ${playerId}: Host is not in dev mode.`);
+          break;
+        }
         const requestedName = msg.payload?.name?.trim();
         const trusted = resolveLobbyPlayerName(requestedName, peerManager.getTrustedUsername?.(playerId), playerId);
         const existing = engine.state.teams.find((t) => t.id === playerId);

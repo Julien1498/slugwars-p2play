@@ -47,6 +47,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
     }
   }
   if (delta.solidProps !== undefined) localState.solidProps = delta.solidProps;
+  if (delta.isDevHost !== undefined) localState.isDevHost = delta.isDevHost;
 
   if (delta.teams) {
     for (const dTeam of delta.teams) {

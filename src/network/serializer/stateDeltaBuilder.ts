@@ -51,6 +51,7 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
 
   if (currentState.isTimerFrozen !== prevState?.isTimerFrozen) delta.isTimerFrozen = currentState.isTimerFrozen;
   if (currentState.godModeEnabled !== prevState?.godModeEnabled) delta.godModeEnabled = currentState.godModeEnabled;
+  if (currentState.isDevHost !== prevState?.isDevHost) delta.isDevHost = currentState.isDevHost;
   if (currentState.solidProps && currentState.solidProps.length !== (prevState?.solidProps?.length ?? 0)) {
     delta.solidProps = currentState.solidProps;
   }

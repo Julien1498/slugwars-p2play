@@ -29,7 +29,7 @@ export const SlugWarsBoard: React.FC<SlugWarsBoardProps> = ({
   onStartCharge, onReleaseCharge, onDetonate, onEnterVehicle, onExitVehicle,
   onSteerVehicle, onRestartGame, onExit, engine, onDevAction,
 }) => {
-  const devMode = useDevMode();
+  const devMode = useDevMode(isHost);
   const engineRef = React.useRef(engine);
   engineRef.current = engine;
   const [fpsHudActive, setFpsHudActive] = useState<boolean>(() => perfTracker.getFpsHudEnabled());
