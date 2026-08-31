@@ -17,7 +17,7 @@ export function updateJetpackTick(
   }
 
   if (activeSlug.jetpackState.isThrusting) {
-    activeSlug.jetpackState.fuelMs = Math.max(0, activeSlug.jetpackState.fuelMs - 20);
+    activeSlug.jetpackState.fuelMs = Math.max(0, activeSlug.jetpackState.fuelMs - 50);
     if (activeSlug.jetpackState.fuelMs <= 0) {
       activeSlug.jetpackState = null;
       addLog("Le Jetpack n'a plus de carburant ! 🪫", 'info');

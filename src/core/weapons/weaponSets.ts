@@ -42,7 +42,7 @@ export const WEAPON_SETS: Record<string, WeaponSetDefinition> = {
       ninja_rope: -1,
       girder: 3,
       airdrop: 2,
-      jetpack: 2,
+      jetpack: 0,
       pneumatic_drill: 3,
       parachute: -1,
       magnet: 2,

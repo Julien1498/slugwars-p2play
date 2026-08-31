@@ -20,6 +20,9 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
     while (engine.state.phase === 'PLACEMENT') {
       engine.placeSlug({ x: 300, y: 200 });
     }
+    engine.state.teams.forEach((t) => {
+      t.inventory['jetpack'] = 5;
+    });
   });
 
   describe('Jetpack (Vol dorsal & Propulsion)', () => {
@@ -37,12 +40,12 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       engine.jumpSlug();
       expect(activeSlug.vy).toBeLessThan(2.0);
 
-      // Simulates engine tick consuming fuel only when thrusting
+      // Simulates engine tick consuming 50ms fuel per tick when thrusting (20Hz physics loop)
       const initialFuel = activeSlug.jetpackState!.fuelMs;
       for (let i = 0; i < 10; i++) {
         engine.tick();
       }
-      expect(activeSlug.jetpackState!.fuelMs).toBeLessThan(initialFuel);
+      expect(activeSlug.jetpackState!.fuelMs).toBe(initialFuel - 500);
 
       // Releasing jump key stops thrust and freezes fuel consumption
       engine.stopJump();
