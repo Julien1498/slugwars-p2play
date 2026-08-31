@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameConfig, MapSize, MAP_SIZE_CONFIGS } from '../../../core/types';
 import { WEAPON_SETS } from '../../../core/weapons/weaponSets';
+import { THEME_CONFIGS } from '../../../core/terrain/themeRegistry';
 import { MapThumbnailPreview } from './MapThumbnailPreview';
 import { LobbyThemeSelector, MAP_THEMES } from './LobbyThemeSelector';
 import { LobbyEnvironmentConfig } from './LobbyEnvironmentConfig';
@@ -16,6 +17,7 @@ interface LobbyMapConfigProps {
 
 export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, onChangeConfig }) => {
   const currentSizeCfg = MAP_SIZE_CONFIGS[config.mapSize || 'NORMAL'] || MAP_SIZE_CONFIGS.NORMAL;
+  const currentThemeConfig = THEME_CONFIGS[config.mapTheme || 'ISLAND'] || THEME_CONFIGS.ISLAND;
 
   return (
     <div className="md:col-span-7 landscape:col-span-7 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3">
@@ -23,8 +25,9 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
         <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" /> Zone d'Opérations & Radar
         </h2>
-        <span className="text-[10px] font-mono text-zinc-400 bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800">
-          {currentSizeCfg.width}×{currentSizeCfg.height} px
+        <span className="text-[11px] font-bold text-violet-300 bg-zinc-950/80 px-2.5 py-0.5 rounded-lg border border-violet-500/30 flex items-center gap-1.5 shadow-sm">
+          <span>{currentThemeConfig.icon}</span>
+          <span>{currentThemeConfig.label}</span>
         </span>
       </div>
 

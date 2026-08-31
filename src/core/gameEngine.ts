@@ -68,9 +68,6 @@ export class SlugWarsEngine {
   public setConfig(partial: Partial<GameConfig>): boolean {
     if (this.state.phase !== 'LOBBY') return false;
     this.state.config = { ...this.state.config, ...partial };
-    if (partial.mapTheme !== undefined && partial.mapSeed === undefined) {
-      this.state.config.mapSeed = Math.floor(Math.random() * 1000000);
-    }
     if (partial.mapSeed !== undefined || partial.mapTheme !== undefined || partial.mapSize !== undefined) {
       this.initTerrain();
     }
