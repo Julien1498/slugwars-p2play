@@ -126,6 +126,42 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
     }
   });
 
+  it('generates solid lateral wall structures and playable alcove floors on CAVERN flanks', () => {
+    const width = 1400;
+    const height = 800;
+    const terrain = generateProceduralTerrain(555, 'CAVERN', width, height);
+
+    // Left border (x = 5) and Right border (x = width - 5) must be solidly walled
+    let leftBorderSolidCount = 0;
+    let rightBorderSolidCount = 0;
+    for (let y = 50; y < height - 100; y++) {
+      if (terrain.grid[y * width + 5] === 1) leftBorderSolidCount++;
+      if (terrain.grid[y * width + (width - 6)] === 1) rightBorderSolidCount++;
+    }
+    expect(leftBorderSolidCount).toBeGreaterThan((height - 150) * 0.7);
+    expect(rightBorderSolidCount).toBeGreaterThan((height - 150) * 0.7);
+
+    // Flank zones (x in [40, 160] and [width - 160, width - 40]) must have playable floor steps
+    let leftFlankFloors = 0;
+    let rightFlankFloors = 0;
+    for (let x = 40; x <= 160; x += 10) {
+      for (let y = 100; y < terrain.waterLevel - 20; y++) {
+        if (terrain.grid[y * width + x] === 1 && terrain.grid[(y - 1) * width + x] === 0) {
+          leftFlankFloors++;
+        }
+      }
+    }
+    for (let x = width - 160; x <= width - 40; x += 10) {
+      for (let y = 100; y < terrain.waterLevel - 20; y++) {
+        if (terrain.grid[y * width + x] === 1 && terrain.grid[(y - 1) * width + x] === 0) {
+          rightFlankFloors++;
+        }
+      }
+    }
+    expect(leftFlankFloors).toBeGreaterThan(0);
+    expect(rightFlankFloors).toBeGreaterThan(0);
+  });
+
   it('gracefully falls back to ISLAND for undefined or custom unknown theme', () => {
     const terrain = generateProceduralTerrain(444, undefined as any, 1000, 600);
     expect(terrain).toBeDefined();

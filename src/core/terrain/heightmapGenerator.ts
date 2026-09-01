@@ -40,7 +40,13 @@ export function generate1DHeightmap(
       groundY = worldH * 0.4 + noise + castleHeight;
     } else if (heightmapType === 'CAVERN') {
       const noise = prng.harmonicNoise(wx, baseFreq, p1, p2, p3);
-      groundY = worldH * 0.6 + noise * 0.9;
+      let ground = worldH * 0.6 + noise * 0.9;
+      const distFromEdge = Math.min(wx, worldW - wx);
+      if (distFromEdge < 180) {
+        const flankT = Math.pow(1.0 - distFromEdge / 180, 1.6);
+        ground -= flankT * (worldH * 0.18);
+      }
+      groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
       const noise = prng.harmonicNoise(wx, baseFreq * 1.3, p1, p2, p3) * 0.75;
       const islandMask = Math.pow(Math.sin((wx / worldW) * Math.PI * 3 + p2 * 0.5), 2);
@@ -96,7 +102,13 @@ export function fillInitialTerrainGrid(
       const wx = (x / width) * worldW;
       if (heightmapType === 'CAVERN') {
         const roofNoise = prng.harmonicNoise(wx, baseFreq * 1.2, p3, p1, p2) * 0.8;
-        const roofY = (worldH * 0.2 + roofNoise) * scaleY;
+        let rawRoof = worldH * 0.2 + roofNoise;
+        const distFromEdge = Math.min(wx, worldW - wx);
+        if (distFromEdge < 180) {
+          const flankT = Math.pow(1.0 - distFromEdge / 180, 1.6);
+          rawRoof = rawRoof * (1.0 - flankT) + (worldH * 0.52) * flankT;
+        }
+        const roofY = rawRoof * scaleY;
         const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
         for (let y = 0; y < maxRoofY; y++) {
           grid[y * width + x] = 1;

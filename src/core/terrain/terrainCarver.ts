@@ -234,4 +234,55 @@ export function carveTerrainFeatures(
       }
     }
   }
+
+  // 6. Cavern Flank Tactical Alcoves & Sniper Balconies
+  if (config.topology.heightmapType === 'CAVERN') {
+    const flankLeftX = [60, 110];
+    const flankRightX = [worldW - 110, worldW - 60];
+    const flankYs = [worldH * 0.35, worldH * 0.58];
+
+    // Left flank alcoves
+    for (let i = 0; i < flankYs.length; i++) {
+      const cy = (flankYs[i] + prng.range(-12, 12)) * scaleY;
+      const cx = (flankLeftX[i] + prng.range(-10, 10)) * scaleX;
+      const rx = prng.range(38, 55) * scaleX;
+      const ry = prng.range(18, 28) * scaleY;
+      const rySq = ry * ry;
+      const rxOverRy = rx / ry;
+      const minY = Math.max(Math.round(20 * scaleY), Math.floor(cy - ry));
+      const maxY = Math.min(height - 1, Math.ceil(cy + ry));
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - cy;
+        const dySq = dy * dy;
+        if (dySq > rySq) continue;
+        const dxMax = Math.sqrt(rySq - dySq) * rxOverRy;
+        const startX = Math.max(Math.round(18 * scaleX), Math.ceil(cx - dxMax));
+        const endX = Math.min(width - 1, Math.floor(cx + dxMax + 25 * scaleX));
+        if (startX <= endX) grid.fill(0, y * width + startX, y * width + endX + 1);
+      }
+    }
+
+    // Right flank alcoves
+    for (let i = 0; i < flankYs.length; i++) {
+      const cy = (flankYs[i] + prng.range(-12, 12)) * scaleY;
+      const cx = (flankRightX[i] + prng.range(-10, 10)) * scaleX;
+      const rx = prng.range(38, 55) * scaleX;
+      const ry = prng.range(18, 28) * scaleY;
+      const rySq = ry * ry;
+      const rxOverRy = rx / ry;
+      const minY = Math.max(Math.round(20 * scaleY), Math.floor(cy - ry));
+      const maxY = Math.min(height - 1, Math.ceil(cy + ry));
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - cy;
+        const dySq = dy * dy;
+        if (dySq > rySq) continue;
+        const dxMax = Math.sqrt(rySq - dySq) * rxOverRy;
+        const startX = Math.max(0, Math.ceil(cx - dxMax - 25 * scaleX));
+        const endX = Math.min(width - Math.round(18 * scaleX), Math.floor(cx + dxMax));
+        if (startX <= endX) grid.fill(0, y * width + startX, y * width + endX + 1);
+      }
+    }
+  }
 }
