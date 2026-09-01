@@ -82,48 +82,26 @@ export function generate1DHeightmap(
       }
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
-      const u = wx / worldW;
-      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * (worldH * 0.05);
-
-      // 2 or 3 wide, walkable tropical islands based on seed
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.3, p1, p2, p3) * 0.65;
       const useThreeIslands = Math.sin(p3) > -0.2;
-      let islandElevation = 0;
 
+      let distToNearest = 999;
       if (useThreeIslands) {
-        const c1 = 0.20 + Math.sin(p1) * 0.025;
-        const w1 = 0.17 + Math.cos(p2) * 0.02;
-        const c2 = 0.50 + Math.cos(p1) * 0.025;
-        const w2 = 0.18 + Math.sin(p2) * 0.02;
-        const c3 = 0.80 + Math.sin(p2) * 0.025;
-        const w3 = 0.17 + Math.cos(p1) * 0.02;
-
-        for (const [c, w] of [[c1, w1], [c2, w2], [c3, w3]]) {
-          const dist = Math.abs(u - c) / w;
-          if (dist < 1.0) {
-            const dome = Math.cos(dist * Math.PI * 0.5);
-            // pow 0.55 gives a wide, walkable rolling plateau on top with gentle beach slopes
-            islandElevation = Math.max(islandElevation, Math.pow(dome, 0.55));
-          }
-        }
+        const c1 = worldW * (0.20 + Math.sin(p1) * 0.02);
+        const c2 = worldW * (0.50 + Math.cos(p1) * 0.02);
+        const c3 = worldW * (0.80 + Math.sin(p2) * 0.02);
+        const radius = worldW * 0.16;
+        distToNearest = Math.min(Math.abs(wx - c1), Math.abs(wx - c2), Math.abs(wx - c3)) / radius;
       } else {
-        const c1 = 0.29 + Math.sin(p1) * 0.03;
-        const w1 = 0.24 + Math.cos(p2) * 0.02;
-        const c2 = 0.71 + Math.cos(p1) * 0.03;
-        const w2 = 0.24 + Math.sin(p2) * 0.02;
-
-        for (const [c, w] of [[c1, w1], [c2, w2]]) {
-          const dist = Math.abs(u - c) / w;
-          if (dist < 1.0) {
-            const dome = Math.cos(dist * Math.PI * 0.5);
-            islandElevation = Math.max(islandElevation, Math.pow(dome, 0.55));
-          }
-        }
+        const c1 = worldW * (0.29 + Math.sin(p1) * 0.025);
+        const c2 = worldW * (0.71 + Math.cos(p1) * 0.025);
+        const radius = worldW * 0.23;
+        distToNearest = Math.min(Math.abs(wx - c1), Math.abs(wx - c2)) / radius;
       }
 
-      if (islandElevation > 0) {
-        // Island peak rises moderately above water, offering comfortable walkable terrain
-        const islandPeakRise = worldH * 0.36 + noise;
-        groundY = (worldH - 45) - islandElevation * islandPeakRise;
+      if (distToNearest < 1.0) {
+        const islandDrop = Math.pow(distToNearest, 2.2) * (worldH * 0.50);
+        groundY = worldH * 0.46 + noise + islandDrop;
       } else {
         // Deep open ocean water between islands
         groundY = worldH - 35;
