@@ -177,9 +177,9 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
       }
     }
 
-    // 2. High Bastion Tower (x ~ 450 or 950) must be elevated high up
+    // 2. High Bastion Tower (x ~ width * 0.25 or 0.75) must be elevated high up
     let bastionSolidY = height;
-    const bastionX = Math.floor(width * 0.32);
+    const bastionX = Math.floor(width * 0.25);
     for (let y = 0; y < height; y++) {
       if (terrain.grid[y * width + bastionX] === 1) {
         bastionSolidY = y;

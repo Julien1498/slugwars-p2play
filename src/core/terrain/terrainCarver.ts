@@ -243,8 +243,8 @@ export function carveTerrainFeatures(
 
   // 7. Fortress Subterranean Artillery Vaults & Canyon Firing Embrasures
   if (config.topology.heightmapType === 'FORTRESS') {
-    const leftVaultX = prng.range(worldW * 0.22, worldW * 0.32) * scaleX;
-    const rightVaultX = prng.range(worldW * 0.68, worldW * 0.78) * scaleX;
+    const leftVaultX = prng.range(worldW * 0.16, worldW * 0.25) * scaleX;
+    const rightVaultX = prng.range(worldW * 0.75, worldW * 0.84) * scaleX;
     const vaultY = (worldH * 0.52 + prng.range(-15, 15)) * scaleY;
     const rx = prng.range(42, 65) * scaleX;
     const ry = prng.range(22, 34) * scaleY;
@@ -271,8 +271,8 @@ export function carveTerrainFeatures(
       const isLeft = vx < width * 0.5;
       const slitYMin = Math.max(0, Math.floor(vaultY - 8 * scaleY));
       const slitYMax = Math.min(height - 1, Math.ceil(vaultY + 8 * scaleY));
-      const slitStartX = isLeft ? Math.floor(vx) : Math.max(0, Math.floor(vx - rx - 45 * scaleX));
-      const slitEndX = isLeft ? Math.min(width - 1, Math.ceil(vx + rx + 45 * scaleX)) : Math.floor(vx);
+      const slitStartX = isLeft ? Math.floor(vx) : Math.max(0, Math.floor(vx - rx - 55 * scaleX));
+      const slitEndX = isLeft ? Math.min(width - 1, Math.ceil(vx + rx + 55 * scaleX)) : Math.floor(vx);
       for (let y = slitYMin; y <= slitYMax; y++) {
         grid.fill(0, y * width + slitStartX, y * width + slitEndX + 1);
       }
