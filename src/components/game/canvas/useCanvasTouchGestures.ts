@@ -260,6 +260,7 @@ export function useCanvasTouchGestures({
         }
         g.isPinching = false;
         g.touchIsAiming = false;
+        g.singleTouchMoved = false;
       } else if (e.touches.length === 1) {
         g.isPinching = false;
         g.touchIsAiming = false;

@@ -70,6 +70,7 @@ export const RightThumbCluster: React.FC<RightThumbClusterProps> = ({
     lastDirectFireTimeRef.current = now;
     setShowWeaponPicker(false);
     triggerHaptic(30);
+    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
     onFire?.(activeSlug?.currentTargetPoint);
   };
 
@@ -81,6 +82,7 @@ export const RightThumbCluster: React.FC<RightThumbClusterProps> = ({
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
     triggerHaptic(20);
+    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
     const isChargeable = isWeaponChargeable(currentWeapon);
     if (currentWeapon?.id === 'blowtorch' || !isChargeable) {
       onFire?.(activeSlug?.currentTargetPoint);
@@ -104,6 +106,7 @@ export const RightThumbCluster: React.FC<RightThumbClusterProps> = ({
     isHoldingFireRef.current = false;
     lastDirectFireTimeRef.current = Date.now();
     triggerHaptic(25);
+    try { window.dispatchEvent(new CustomEvent('slugwars:recenter-camera')); } catch {}
     onReleaseCharge?.(activeSlug?.currentTargetPoint);
   };
 

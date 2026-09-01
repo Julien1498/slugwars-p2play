@@ -54,7 +54,7 @@ export function updateCameraFollow({
     cameraModeRef.current = 'FOLLOW_PROJECTILE';
   }
 
-  // 4. If in FREE_LOOK, respect the user's view and do not snap back on slug movement!
+  // 4. If in FREE_LOOK, respect the user's manual pan and do not snap back
   if (cameraModeRef.current === 'FREE_LOOK') {
     return;
   }
