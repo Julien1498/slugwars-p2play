@@ -82,28 +82,28 @@ export function generate1DHeightmap(
       }
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
-      const noise = prng.harmonicNoise(wx, baseFreq * 1.3, p1, p2, p3) * 0.65;
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.3, p1, p2, p3) * 0.60;
       const useThreeIslands = Math.sin(p3) > -0.2;
 
       let distToNearest = 999;
       if (useThreeIslands) {
-        const c1 = worldW * (0.20 + Math.sin(p1) * 0.02);
-        const c2 = worldW * (0.50 + Math.cos(p1) * 0.02);
-        const c3 = worldW * (0.80 + Math.sin(p2) * 0.02);
-        const radius = worldW * 0.16;
+        const c1 = worldW * (0.19 + Math.sin(p1) * 0.015);
+        const c2 = worldW * (0.50 + Math.cos(p1) * 0.015);
+        const c3 = worldW * (0.81 + Math.sin(p2) * 0.015);
+        const radius = worldW * 0.115;
         distToNearest = Math.min(Math.abs(wx - c1), Math.abs(wx - c2), Math.abs(wx - c3)) / radius;
       } else {
-        const c1 = worldW * (0.29 + Math.sin(p1) * 0.025);
-        const c2 = worldW * (0.71 + Math.cos(p1) * 0.025);
-        const radius = worldW * 0.23;
+        const c1 = worldW * (0.26 + Math.sin(p1) * 0.02);
+        const c2 = worldW * (0.74 + Math.cos(p1) * 0.02);
+        const radius = worldW * 0.17;
         distToNearest = Math.min(Math.abs(wx - c1), Math.abs(wx - c2)) / radius;
       }
 
       if (distToNearest < 1.0) {
-        const islandDrop = Math.pow(distToNearest, 2.2) * (worldH * 0.50);
-        groundY = worldH * 0.46 + noise + islandDrop;
+        const islandDrop = Math.pow(distToNearest, 1.8) * (worldH * 0.52);
+        groundY = worldH * 0.44 + noise + islandDrop;
       } else {
-        // Deep open ocean water between islands
+        // Deep open ocean water channel between islands
         groundY = worldH - 35;
       }
     } else if (heightmapType === 'ARCHES') {
