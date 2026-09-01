@@ -39,12 +39,19 @@ export function generate1DHeightmap(
       const noise = prng.harmonicNoise(wx, baseFreq * 0.8, p1, p2, p3) * 0.8;
       groundY = worldH * 0.4 + noise + castleHeight;
     } else if (heightmapType === 'CAVERN') {
-      const noise = prng.harmonicNoise(wx, baseFreq, p1, p2, p3);
-      let ground = worldH * 0.6 + noise * 0.9;
-      const distFromEdge = Math.min(wx, worldW - wx);
-      if (distFromEdge < 180) {
-        const flankT = Math.pow(1.0 - distFromEdge / 180, 1.6);
-        ground -= flankT * (worldH * 0.18);
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * 1.2;
+      const macroWave = Math.sin((wx / worldW) * Math.PI * 2.5 + p2) * (worldH * 0.12);
+      const microChamber = Math.cos((wx / worldW) * Math.PI * 5 + p1) * (worldH * 0.05);
+      let ground = worldH * 0.58 + noise + macroWave + microChamber;
+
+      const leftFlankW = 140 + Math.sin(p1) * 60;
+      const rightFlankW = 140 + Math.cos(p2) * 60;
+      if (wx < leftFlankW) {
+        const flankT = Math.pow(1.0 - wx / leftFlankW, 1.5);
+        ground -= flankT * (worldH * 0.22);
+      } else if (wx > worldW - rightFlankW) {
+        const flankT = Math.pow(1.0 - (worldW - wx) / rightFlankW, 1.5);
+        ground -= flankT * (worldH * 0.22);
       }
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
@@ -101,13 +108,20 @@ export function fillInitialTerrainGrid(
     for (let x = 0; x < width; x++) {
       const wx = (x / width) * worldW;
       if (heightmapType === 'CAVERN') {
-        const roofNoise = prng.harmonicNoise(wx, baseFreq * 1.2, p3, p1, p2) * 0.8;
-        let rawRoof = worldH * 0.2 + roofNoise;
-        const distFromEdge = Math.min(wx, worldW - wx);
-        if (distFromEdge < 180) {
-          const flankT = Math.pow(1.0 - distFromEdge / 180, 1.6);
+        const roofNoise = prng.harmonicNoise(wx, baseFreq * 1.3, p3, p1, p2) * 1.0;
+        const roofMacro = Math.sin((wx / worldW) * Math.PI * 3 + p3) * (worldH * 0.08);
+        let rawRoof = worldH * 0.22 + roofNoise + roofMacro;
+
+        const leftFlankW = 140 + Math.sin(p1) * 60;
+        const rightFlankW = 140 + Math.cos(p2) * 60;
+        if (wx < leftFlankW) {
+          const flankT = Math.pow(1.0 - wx / leftFlankW, 1.5);
+          rawRoof = rawRoof * (1.0 - flankT) + (worldH * 0.52) * flankT;
+        } else if (wx > worldW - rightFlankW) {
+          const flankT = Math.pow(1.0 - (worldW - wx) / rightFlankW, 1.5);
           rawRoof = rawRoof * (1.0 - flankT) + (worldH * 0.52) * flankT;
         }
+
         const roofY = rawRoof * scaleY;
         const maxRoofY = Math.min(height, Math.max(0, Math.floor(roofY)));
         for (let y = 0; y < maxRoofY; y++) {
