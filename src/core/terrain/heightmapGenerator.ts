@@ -83,48 +83,50 @@ export function generate1DHeightmap(
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
       const u = wx / worldW;
-      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * (worldH * 0.06);
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * (worldH * 0.05);
 
-      // 2 or 3 distinct tropical islands based on seed
+      // 2 or 3 wide, walkable tropical islands based on seed
       const useThreeIslands = Math.sin(p3) > -0.2;
       let islandElevation = 0;
 
       if (useThreeIslands) {
-        const c1 = 0.20 + Math.sin(p1) * 0.03;
-        const w1 = 0.14 + Math.cos(p2) * 0.02;
-        const c2 = 0.50 + Math.cos(p1) * 0.03;
-        const w2 = 0.15 + Math.sin(p2) * 0.02;
-        const c3 = 0.80 + Math.sin(p2) * 0.03;
-        const w3 = 0.14 + Math.cos(p1) * 0.02;
+        const c1 = 0.20 + Math.sin(p1) * 0.025;
+        const w1 = 0.17 + Math.cos(p2) * 0.02;
+        const c2 = 0.50 + Math.cos(p1) * 0.025;
+        const w2 = 0.18 + Math.sin(p2) * 0.02;
+        const c3 = 0.80 + Math.sin(p2) * 0.025;
+        const w3 = 0.17 + Math.cos(p1) * 0.02;
 
         for (const [c, w] of [[c1, w1], [c2, w2], [c3, w3]]) {
           const dist = Math.abs(u - c) / w;
           if (dist < 1.0) {
             const dome = Math.cos(dist * Math.PI * 0.5);
-            islandElevation = Math.max(islandElevation, Math.pow(dome, 1.4));
+            // pow 0.55 gives a wide, walkable rolling plateau on top with gentle beach slopes
+            islandElevation = Math.max(islandElevation, Math.pow(dome, 0.55));
           }
         }
       } else {
-        const c1 = 0.30 + Math.sin(p1) * 0.04;
-        const w1 = 0.20 + Math.cos(p2) * 0.03;
-        const c2 = 0.70 + Math.cos(p1) * 0.04;
-        const w2 = 0.20 + Math.sin(p2) * 0.03;
+        const c1 = 0.29 + Math.sin(p1) * 0.03;
+        const w1 = 0.24 + Math.cos(p2) * 0.02;
+        const c2 = 0.71 + Math.cos(p1) * 0.03;
+        const w2 = 0.24 + Math.sin(p2) * 0.02;
 
         for (const [c, w] of [[c1, w1], [c2, w2]]) {
           const dist = Math.abs(u - c) / w;
           if (dist < 1.0) {
             const dome = Math.cos(dist * Math.PI * 0.5);
-            islandElevation = Math.max(islandElevation, Math.pow(dome, 1.4));
+            islandElevation = Math.max(islandElevation, Math.pow(dome, 0.55));
           }
         }
       }
 
       if (islandElevation > 0) {
-        const islandPeakHeight = worldH * 0.48 + noise;
-        groundY = (worldH - 40) - islandElevation * islandPeakHeight;
+        // Island peak rises moderately above water, offering comfortable walkable terrain
+        const islandPeakRise = worldH * 0.36 + noise;
+        groundY = (worldH - 45) - islandElevation * islandPeakRise;
       } else {
         // Deep open ocean water between islands
-        groundY = worldH - 30;
+        groundY = worldH - 35;
       }
     } else if (heightmapType === 'ARCHES') {
       const noise = prng.harmonicNoise(wx, baseFreq * 0.9, p1, p2, p3);
