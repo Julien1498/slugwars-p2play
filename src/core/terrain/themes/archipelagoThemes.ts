@@ -3,9 +3,9 @@ import { THEME_PALETTES } from '../terrainPalettes';
 
 export const FLOATING_CHAOS_THEME: ThemeConfig = {
   id: 'FLOATING_CHAOS',
-  label: 'Archipel Flottant',
-  icon: '☁️',
-  desc: 'Îlots suspendus & ciel azur',
+  label: "Île d'Opale",
+  icon: '💎',
+  desc: 'Falaises claires & galeries marines',
   topology: {
     heightmapType: 'CHAOS',
     tunnels: 4,
