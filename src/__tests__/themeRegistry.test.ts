@@ -12,9 +12,10 @@ describe('Theme Registry Architecture & Data Integrity', () => {
     'NATURAL_ARCHES',
     'SPIRES',
     'ORGANIC_CAVES',
+    'FLOATING_ARCHIPELAGO',
   ];
 
-  it('contains complete registration for all 8 official MapTheme biomes', () => {
+  it('contains complete registration for all 9 official MapTheme biomes', () => {
     for (const theme of allThemes) {
       expect(THEME_CONFIGS[theme]).toBeDefined();
       expect(THEME_CONFIGS[theme].id).toBe(theme);
@@ -126,7 +127,7 @@ describe('Theme Registry Architecture & Data Integrity', () => {
   });
 
   describe('Lobby UI Options Integration', () => {
-    it('produces 8 valid selectable lobby map options with id, label, icon, desc', () => {
+    it('produces 9 valid selectable lobby map options with id, label, icon, desc', () => {
       const lobbyOptions = Object.values(THEME_CONFIGS).map((c) => ({
         id: c.id,
         label: c.label,
@@ -134,7 +135,7 @@ describe('Theme Registry Architecture & Data Integrity', () => {
         desc: c.desc,
       }));
 
-      expect(lobbyOptions.length).toBe(8);
+      expect(lobbyOptions.length).toBe(9);
       for (const opt of lobbyOptions) {
         expect(allThemes).toContain(opt.id);
         expect(opt.label.length).toBeGreaterThan(0);

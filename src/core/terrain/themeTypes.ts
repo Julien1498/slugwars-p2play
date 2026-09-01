@@ -4,7 +4,7 @@ import { TerrainPalette } from './terrainPalettes';
 export type GeologicalPalette = TerrainPalette;
 
 export interface ThemeTopologyConfig {
-  heightmapType: 'HILLS' | 'CAVERN' | 'FORTRESS' | 'ARCHIPELAGO' | 'ARCHES' | 'SPIRES' | 'FULL_SLAB' | 'OPAL_ISLAND';
+  heightmapType: 'HILLS' | 'CAVERN' | 'FORTRESS' | 'ARCHIPELAGO' | 'ARCHES' | 'SPIRES' | 'FULL_SLAB' | 'OPAL_ISLAND' | 'FLOATING_ISLANDS';
   tunnels: number;
   diggers: number;
   arches: number;

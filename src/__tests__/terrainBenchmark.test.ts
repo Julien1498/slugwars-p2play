@@ -43,6 +43,7 @@ describe('Terrain Benchmark & Performance Integrity', () => {
     'NATURAL_ARCHES',
     'SPIRES',
     'ORGANIC_CAVES',
+    'FLOATING_ARCHIPELAGO',
   ];
 
   it('generates a standard 1400x800 map under performance budget', () => {

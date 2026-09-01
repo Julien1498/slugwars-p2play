@@ -110,4 +110,16 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     bedrock: 0xff2a170f,      // #0f172a Abyssal core stone
     seam: 0xff1a0d07,         // #070d1a Sky fissure seam
   },
+  FLOATING_ARCHIPELAGO: {
+    highlight: 0xff86efac,    // #acef86 Lime celestial edge
+    surfaceBody: 0xff22c55e,  // #5ec522 Luminous emerald sky grass
+    surfaceShadow: 0xff15803d,// #3d8015 Deep alpine moss
+    surfaceDeep: 0xff14532d,  // #2d5314 Undercoat shadow
+    soilLight: 0xff78716c,    // #6c7178 Aerial sandstone
+    strataA: 0xff44403c,      // #3c4044 Basalt strata band
+    strataB: 0xff292524,      // #242529 Deep floating rock
+    denseRock: 0xff1c1917,    // #17191c Heavy floating core
+    bedrock: 0xff0c0a09,      // #090a0c Abyssal island root
+    seam: 0xff050404,         // #040405 Mineral fissure
+  },
 };

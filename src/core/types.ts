@@ -158,7 +158,8 @@ export type MapTheme =
   | 'ARCHIPELAGO'
   | 'NATURAL_ARCHES'
   | 'SPIRES'
-  | 'ORGANIC_CAVES';
+  | 'ORGANIC_CAVES'
+  | 'FLOATING_ARCHIPELAGO';
 
 export type MapSize = 'SMALL' | 'NORMAL' | 'LARGE';
 

@@ -81,6 +81,7 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
       'NATURAL_ARCHES',
       'SPIRES',
       'ORGANIC_CAVES',
+      'FLOATING_ARCHIPELAGO',
     ];
 
     it.each(allThemes)('computes distance transform and renders offscreen strata for theme %s', (theme) => {

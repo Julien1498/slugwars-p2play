@@ -45,6 +45,7 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
     'NATURAL_ARCHES',
     'SPIRES',
     'ORGANIC_CAVES',
+    'FLOATING_ARCHIPELAGO',
   ];
 
   it.each(allThemes)('generates valid terrain structure and entities for theme %s', (theme) => {
@@ -189,6 +190,35 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
 
     expect(centerSolidY).toBeGreaterThan(bastionSolidY + 120);
     expect(bastionSolidY).toBeLessThan(height * 0.45);
+  });
+
+  it('generates distinct suspended floating islands with open air underneath on FLOATING_ARCHIPELAGO maps', () => {
+    const width = 1400;
+    const height = 800;
+    const terrain = generateProceduralTerrain(888, 'FLOATING_ARCHIPELAGO', width, height);
+
+    expect(terrain.spawnPoints.length).toBeGreaterThanOrEqual(4);
+
+    // Verify that at least one column with a floating island has solid top and open air beneath before water
+    let foundSuspendedAir = false;
+    for (let x = 100; x < width - 100; x += 20) {
+      let hitSolid = false;
+      let hitAirAfterSolid = false;
+      for (let y = 100; y < terrain.waterLevel; y++) {
+        const isSolid = terrain.grid[y * width + x] === 1;
+        if (isSolid) {
+          hitSolid = true;
+        } else if (hitSolid && !isSolid) {
+          hitAirAfterSolid = true;
+          break;
+        }
+      }
+      if (hitSolid && hitAirAfterSolid) {
+        foundSuspendedAir = true;
+        break;
+      }
+    }
+    expect(foundSuspendedAir).toBe(true);
   });
 
   it('gracefully falls back to ISLAND for undefined or custom unknown theme', () => {

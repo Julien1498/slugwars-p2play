@@ -5,8 +5,8 @@ import { BiomeMiniPreview } from '../components/game/lobby/BiomeMiniPreview';
 import { MapTheme } from '../core/types';
 
 describe('LobbyThemeSelector - Real Map Biome Carousel', () => {
-  it('registers all 8 procedural biomes with valid labels and icons', () => {
-    expect(MAP_THEMES).toHaveLength(8);
+  it('registers all 9 procedural biomes with valid labels and icons', () => {
+    expect(MAP_THEMES).toHaveLength(9);
     const themeIds = MAP_THEMES.map((t) => t.id);
     expect(themeIds).toContain('ISLAND');
     expect(themeIds).toContain('CAVERN');
@@ -16,6 +16,7 @@ describe('LobbyThemeSelector - Real Map Biome Carousel', () => {
     expect(themeIds).toContain('NATURAL_ARCHES');
     expect(themeIds).toContain('SPIRES');
     expect(themeIds).toContain('ORGANIC_CAVES');
+    expect(themeIds).toContain('FLOATING_ARCHIPELAGO');
   });
 
   it('instantiates declarative React element for LobbyThemeSelector without errors', () => {

@@ -16,6 +16,7 @@ export function runPhysicsDeterminismAudit() {
     'NATURAL_ARCHES',
     'SPIRES',
     'ORGANIC_CAVES',
+    'FLOATING_ARCHIPELAGO',
   ];
 
   const SEED = 424242;

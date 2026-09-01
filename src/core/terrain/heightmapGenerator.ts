@@ -98,6 +98,8 @@ export function generate1DHeightmap(
       groundY = worldH * 0.56 + noise + spireHarmonic + edgeDrop;
     } else if (heightmapType === 'FULL_SLAB') {
       groundY = 16;
+    } else if (heightmapType === 'FLOATING_ISLANDS') {
+      groundY = worldH;
     } else {
       const noise = prng.harmonicNoise(wx, baseFreq * 1.4, p1, p2, p3);
       const channel = Math.sin(wx * 0.007 + p2) * 200;
@@ -131,6 +133,8 @@ export function fillInitialTerrainGrid(
 
   if (heightmapType === 'FULL_SLAB') {
     grid.fill(1, Math.round(16 * scaleY) * width, height * width);
+  } else if (heightmapType === 'FLOATING_ISLANDS') {
+    // Base grid is open sky air; floating islands are stamped in terrainCarver
   } else {
     for (let x = 0; x < width; x++) {
       const wx = (x / width) * worldW;

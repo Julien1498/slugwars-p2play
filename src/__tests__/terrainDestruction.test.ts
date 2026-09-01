@@ -150,7 +150,7 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
     expect(dt.isSolid(300, 10)).toBe(true);
   });
 
-  it('generates all 8 procedural terrain archetypes deterministically with valid spawn points', () => {
+  it('generates all 9 procedural terrain archetypes deterministically with valid spawn points', () => {
     const themes = [
       'ISLAND',
       'CAVERN',
@@ -160,6 +160,7 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
       'NATURAL_ARCHES',
       'SPIRES',
       'ORGANIC_CAVES',
+      'FLOATING_ARCHIPELAGO',
     ] as const;
 
     for (const theme of themes) {
