@@ -12,7 +12,7 @@ export const ARCHIPELAGO_THEME: ThemeConfig = {
     diggers: 0,
     arches: 0,
     overhangs: 4,
-    floatingIslands: 2,
+    floatingIslands: 1,
   },
   physics: {
     hasSolidCeiling: false,

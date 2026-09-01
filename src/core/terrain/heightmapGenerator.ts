@@ -82,11 +82,13 @@ export function generate1DHeightmap(
       }
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
-      const noise = prng.harmonicNoise(wx, baseFreq * 1.3, p1, p2, p3) * 0.75;
-      const islandMask = Math.pow(Math.sin((wx / worldW) * Math.PI * 3 + p2 * 0.5), 2);
-      const trench = (1 - islandMask) * 440;
-      const edgeDrop = Math.pow(Math.abs(wx - worldW / 2) / (worldW / 2), 3.2) * 500;
-      groundY = worldH * 0.42 + noise + trench + edgeDrop;
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.2, p1, p2, p3) * (worldH * 0.08);
+      const islandFreq = Math.sin(p3) > 0 ? 2.0 : 3.0;
+      const u = wx / worldW;
+      const islandMask = Math.pow(Math.sin(u * Math.PI * islandFreq + p2 * 0.35), 2);
+      const trench = (1.0 - islandMask) * (worldH * 0.68);
+      const edgeDrop = Math.pow(Math.abs(u - 0.5) * 2.0, 2.8) * (worldH * 0.55);
+      groundY = worldH * 0.36 + noise + trench + edgeDrop;
     } else if (heightmapType === 'ARCHES') {
       const noise = prng.harmonicNoise(wx, baseFreq * 0.9, p1, p2, p3);
       const edgeDrop = Math.pow(Math.abs(wx - worldW / 2) / (worldW / 2), 2.5) * 400;
