@@ -139,6 +139,8 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
           carveOffscreenCrater(c.x, c.y, c.radius);
         }
       }
+    } else if (knownCraterIdsCanvasRef.current.size > 0) {
+      knownCraterIdsCanvasRef.current.clear();
     }
 
     // 1b. Terrain Builds (Dev Mode ground placement)
@@ -149,6 +151,8 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
           buildOffscreenTerrain(b.x, b.y, b.radius);
         }
       }
+    } else if (knownBuildIdsCanvasRef.current.size > 0) {
+      knownBuildIdsCanvasRef.current.clear();
     }
 
     // 2. Explosions

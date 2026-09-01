@@ -40,6 +40,7 @@ export function useGuestStateReceiver(
   const knownExplosionIdsRef = useRef<Set<string>>(new Set());
   const knownGirderIdsRef = useRef<Set<string>>(new Set());
   const knownCraterIdsRef = useRef<Set<string>>(new Set());
+  const knownBuildIdsRef = useRef<Set<string>>(new Set());
   const knownCrateIdsRef = useRef<Set<string>>(new Set());
   const knownMineTriggerIdsRef = useRef<Set<string>>(new Set());
   const prevPhaseRef = useRef<string>('LOBBY');
@@ -151,6 +152,7 @@ export function useGuestStateReceiver(
             engine.initTerrain();
             knownGirderIdsRef.current.clear();
             knownCraterIdsRef.current.clear();
+            knownBuildIdsRef.current.clear();
             knownProjIdsRef.current.clear();
             knownExplosionIdsRef.current.clear();
           }
@@ -245,6 +247,7 @@ export function useGuestStateReceiver(
             engine.initTerrain();
             knownGirderIdsRef.current.clear();
             knownCraterIdsRef.current.clear();
+            knownBuildIdsRef.current.clear();
             knownProjIdsRef.current.clear();
             knownExplosionIdsRef.current.clear();
           }
@@ -264,6 +267,15 @@ export function useGuestStateReceiver(
               if (!knownCraterIdsRef.current.has(c.id)) {
                 knownCraterIdsRef.current.add(c.id);
                 engine.terrain.carveExplosion(c.x, c.y, c.radius);
+              }
+            }
+          }
+
+          if (newState.terrainBuilds && newState.terrainBuilds.length > 0) {
+            for (const b of newState.terrainBuilds) {
+              if (!knownBuildIdsRef.current.has(b.id)) {
+                knownBuildIdsRef.current.add(b.id);
+                engine.terrain.buildTerrain(b.x, b.y, b.radius, 1);
               }
             }
           }

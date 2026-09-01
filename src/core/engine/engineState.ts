@@ -35,6 +35,8 @@ export function createInitialState(config: GameConfig): GameState {
     explosions: [],
     particles: [],
     floatingDamages: [],
+    craters: [],
+    terrainBuilds: [],
     journal: [],
     turnCount: 0,
   };

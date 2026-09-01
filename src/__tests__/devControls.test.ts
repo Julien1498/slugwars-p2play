@@ -220,6 +220,12 @@ describe('Engine Dev & Debug Controls (devControls.ts)', () => {
       engine.devBuildTerrain(300, 300, 25);
       expect(engine.terrain.revision).toBe(initialRev + 2);
       expect(engine.terrain.isSolid(300, 300)).toBe(true);
+      expect(engine.state.terrainBuilds?.length).toBeGreaterThan(0);
+
+      // Starting a new game must reset all dev builds and craters
+      engine.startGame();
+      expect(engine.state.terrainBuilds).toEqual([]);
+      expect(engine.state.craters).toEqual([]);
     });
   });
 });

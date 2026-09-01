@@ -51,6 +51,7 @@ export function useCanvasRenderLoop({
   const buffersRef = useRef<TerrainBuffers | null>(null);
   const lastSeedRef = useRef<string | null>(null);
   const lastTerrainRevisionRef = useRef<number>(-1);
+  const prevTerrainRef = useRef<DestructibleTerrain | null>(null);
 
   const interpolationCacheRef = useRef(createInterpolationCache());
   const lastRenderTimeRef = useRef<number>(0);
@@ -84,10 +85,17 @@ export function useCanvasRenderLoop({
   } = useCanvasEffects({ terrain, getBuffers });
 
   useEffect(() => {
-    const matchKey = `${terrain.data.seed}_${terrain.data.theme}`;
-    if (lastSeedRef.current !== matchKey || lastTerrainRevisionRef.current !== terrain.revision) {
+    const matchKey = `${terrain.data.seed}_${terrain.data.theme}_${terrain.data.width}_${terrain.data.height}`;
+    const terrainChanged =
+      lastSeedRef.current !== matchKey ||
+      lastTerrainRevisionRef.current !== terrain.revision ||
+      prevTerrainRef.current !== terrain;
+
+    if (terrainChanged) {
       lastSeedRef.current = matchKey;
       lastTerrainRevisionRef.current = terrain.revision;
+      prevTerrainRef.current = terrain;
+      buffersRef.current = null;
       resetEffectsCache();
       lockedTargetRef.current = null;
       redrawTerrain();

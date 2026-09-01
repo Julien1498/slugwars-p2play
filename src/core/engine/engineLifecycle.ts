@@ -35,6 +35,7 @@ export function setupGameStart(
   state.supplyCrates = [];
   state.girders = [];
   state.craters = [];
+  state.terrainBuilds = [];
   state.journal = [];
   state.turnCount = 0;
 
