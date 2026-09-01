@@ -231,6 +231,14 @@ export interface ActiveProjectile {
   behaviorData?: Record<string, any>;
 }
 
+export interface ProjectilePhysicsResult {
+  exploded: boolean;
+  collisionPoint?: { x: number; y: number };
+  carveStep?: { x: number; y: number; radius: number };
+  landAsMine?: { x: number; y: number };
+  landAsMagnet?: { x: number; y: number; polarity: 'ATTRACT' | 'REPEL' };
+}
+
 export interface ExplosionEvent { id: string; x: number; y: number; radius: number; damage: number; customSound?: string; createdAt: number; }
 export interface JournalEntry { id: string; timestamp: number; message: string; type?: 'info' | 'combat' | 'death' | 'weapon'; }
 export interface Landmine { id: string; x: number; y: number; isTriggered: boolean; fuseTimerMs?: number; }

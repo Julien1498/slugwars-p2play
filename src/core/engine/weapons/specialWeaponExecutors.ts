@@ -200,6 +200,30 @@ export function executeMeleePush(
     }
 
     addLog(`${activeSlug.name} a frappé ${targetSlug.name} à la batte !`, 'combat');
+  } else if (state.helicopters && state.helicopters.length > 0) {
+    const targetHeli = state.helicopters.find(
+      (h) => h.hp > 0 && Math.hypot(h.x - activeSlug.x, h.y - activeSlug.y) < 55
+    );
+    if (targetHeli) {
+      const dir = activeSlug.facing === 'right' ? 1 : -1;
+      const actualDamage = Math.min(targetHeli.hp, weapon.damage);
+      targetHeli.hp = Math.max(0, targetHeli.hp - weapon.damage);
+      targetHeli.vx = dir * 16;
+      targetHeli.vy = -8;
+      if (!state.floatingDamages) state.floatingDamages = [];
+      state.floatingDamages.push({
+        id: `fd_${Date.now()}_${Math.random()}`,
+        x: targetHeli.x,
+        y: targetHeli.y - 25,
+        damage: actualDamage,
+        createdAt: Date.now(),
+      });
+      if (activeTeam) {
+        if (!activeTeam.stats) activeTeam.stats = { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 };
+        activeTeam.stats.damageDealt += actualDamage;
+      }
+      addLog(`${activeSlug.name} a frappé l'hélicoptère !`, 'combat');
+    }
   }
   sfx.play('melee');
   PhaseManager.startResolving(state, { settleTimer: 1.2, phaseTimeout: 30.0 });

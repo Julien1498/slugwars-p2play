@@ -193,7 +193,17 @@ export function detonateSheep(
     createdAt: Date.now(),
   });
 
-  applyExplosionToSlugs(sheep.x, sheep.y, weapon.radius, weapon.damage, state.slugs, terrain, state.teams, sheep.ownerSlugId);
+  applyExplosionToSlugs(
+    sheep.x,
+    sheep.y,
+    weapon.radius,
+    weapon.damage,
+    state.slugs,
+    terrain,
+    state.teams,
+    sheep.ownerSlugId,
+    state.helicopters
+  );
   state.phase = 'RESOLVING';
   state.phaseTimer = 5.0;
   state.settleTimer = 1.2;

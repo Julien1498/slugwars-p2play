@@ -66,7 +66,17 @@ export function updateMines(
         createdAt: now,
       });
       sfx.play('explosion');
-      const mineExpRes = applyExplosionToSlugs(mine.x, mine.y, radius, damage, state.slugs, terrain, state.teams);
+      const mineExpRes = applyExplosionToSlugs(
+        mine.x,
+        mine.y,
+        radius,
+        damage,
+        state.slugs,
+        terrain,
+        state.teams,
+        undefined,
+        state.helicopters
+      );
       for (const dm of mineExpRes.damageEvents) {
         state.floatingDamages.push({
           id: `fd_${now}_${Math.random()}`,
@@ -165,7 +175,17 @@ export function updateSupplyCrates(
         createdAt: now,
       });
       sfx.play('explosion');
-      const crateExpRes = applyExplosionToSlugs(crate.x, crate.y, radius, damage, state.slugs, terrain, state.teams);
+      const crateExpRes = applyExplosionToSlugs(
+        crate.x,
+        crate.y,
+        radius,
+        damage,
+        state.slugs,
+        terrain,
+        state.teams,
+        undefined,
+        state.helicopters
+      );
       for (const dm of crateExpRes.damageEvents) {
         state.floatingDamages.push({
           id: `fd_${now}_${Math.random()}`,

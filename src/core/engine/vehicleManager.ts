@@ -168,7 +168,17 @@ export function updateHelicopters(
         pilot.hp = Math.max(0, pilot.hp - 35);
         pilot.vy = -8;
       }
-      applyExplosionToSlugs(heli.x, heli.y, 55, 45, state.slugs, terrain, state.teams, heli.pilotSlugId || undefined);
+      applyExplosionToSlugs(
+        heli.x,
+        heli.y,
+        55,
+        45,
+        state.slugs,
+        terrain,
+        state.teams,
+        heli.pilotSlugId || undefined,
+        state.helicopters.filter((h) => h.id !== heli.id)
+      );
       addLog(`💥 L'hélicoptère s'est crashé et a explosé !`, 'combat');
       heli.hp = 0;
     }

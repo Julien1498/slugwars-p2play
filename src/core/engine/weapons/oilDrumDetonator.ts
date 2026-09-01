@@ -34,7 +34,9 @@ export function detonateOilDrum(
     blastDamage,
     state.slugs,
     terrain,
-    state.teams
+    state.teams,
+    drum.detonatedBySlugId,
+    state.helicopters
   );
 
   for (const dm of expRes.damageEvents) {

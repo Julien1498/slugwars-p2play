@@ -26,7 +26,7 @@ export function updateProjectilesInTick(
       });
     }
 
-    const res = updateProjectilePhysics(proj, terrain, state.wind, state.slugs, state.magnets);
+    const res = updateProjectilePhysics(proj, terrain, state.wind, state.slugs, state.magnets, state.helicopters);
     if (res.carveStep) {
       carveCrater(res.carveStep.x, res.carveStep.y, res.carveStep.radius);
       if (state.particles.length < 50) {
@@ -85,7 +85,17 @@ export function updateProjectilesInTick(
       });
 
       sfx.play('explosion');
-      const expRes = applyExplosionToSlugs(pt.x, pt.y, weapon.radius, weapon.damage, state.slugs, terrain, state.teams, proj.ownerSlugId);
+      const expRes = applyExplosionToSlugs(
+        pt.x,
+        pt.y,
+        weapon.radius,
+        weapon.damage,
+        state.slugs,
+        terrain,
+        state.teams,
+        proj.ownerSlugId,
+        state.helicopters
+      );
       for (const dm of expRes.damageEvents) {
         state.floatingDamages.push({
           id: `fd_${now}_${Math.random()}`,

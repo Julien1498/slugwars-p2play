@@ -82,7 +82,7 @@ export function updateHelicopterPhysics(
       terrain.isSolid(Math.floor(heli.x + 10), skidY) ||
       terrain.isSolid(Math.floor(heli.x), skidY + 1);
 
-    if (isSolidBelow) {
+    if (isSolidBelow && heli.vy >= 0 && Math.abs(heli.vx) < 0.1) {
       heli.vx = 0;
       heli.vy = 0;
     } else {

@@ -67,6 +67,17 @@ function createDummySlug(partial: Partial<Slug> = {}): Slug {
   };
 }
 
+function createDummyTeam(id = 'team_1'): Team {
+  return {
+    id,
+    name: 'Team 1',
+    color: '#ff0000',
+    avatar: '🐌',
+    isHost: true,
+    inventory: {},
+  };
+}
+
 describe('Physics: Slug Movement & Collision', () => {
   it('detects a slug is grounded on flat terrain', () => {
     const terrain = createFlatTerrain(400, 300, 200);
@@ -210,5 +221,60 @@ describe('Physics: Helicopter Vehicles & Piloting', () => {
 
     const res = updateHelicopterPhysics(heli, terrain, pilotSlug);
     expect(res.crashed).toBe(true);
+  });
+
+  it('damages helicopter and applies blast impulse when hit by an explosion', () => {
+    const terrain = createFlatTerrain(600, 400, 300);
+    const dummyTeam = createDummyTeam('t1');
+    const heli: HelicopterVehicle = {
+      id: 'heli_test',
+      x: 300,
+      y: 200,
+      vx: 0,
+      vy: 0,
+      hp: 150,
+      maxHp: 150,
+      facing: 'right',
+      rotorAngle: 0,
+    };
+
+    const res = applyExplosionToSlugs(300, 210, 40, 60, [], terrain, [dummyTeam], undefined, [heli]);
+    expect(res.hitCount).toBe(1);
+    expect(heli.hp).toBeLessThan(150);
+    expect(res.damageEvents.length).toBe(1);
+    expect(res.damageEvents[0].damage).toBeGreaterThan(0);
+    expect(heli.vy).toBeLessThan(0); // Upward blast impulse
+  });
+
+  it('triggers direct collision when a ballistic projectile strikes a helicopter', () => {
+    const terrain = createFlatTerrain(600, 400, 300);
+    const heli: HelicopterVehicle = {
+      id: 'heli_target',
+      x: 250,
+      y: 150,
+      vx: 0,
+      vy: 0,
+      hp: 150,
+      maxHp: 150,
+      facing: 'right',
+      rotorAngle: 0,
+    };
+
+    const proj: ActiveProjectile = {
+      id: 'proj_bazooka',
+      weaponId: 'bazooka',
+      x: 230,
+      y: 150,
+      vx: 25, // Traveling right towards helicopter at x=250
+      vy: 0,
+      radius: 4,
+      bounces: false,
+      windAffected: false,
+      ownerSlugId: 'slug_enemy',
+    };
+
+    const res = updateProjectilePhysics(proj, terrain, 0, [], undefined, [heli]);
+    expect(res.exploded).toBe(true);
+    expect(res.collisionPoint).toBeDefined();
   });
 });

@@ -1,4 +1,4 @@
-import { ActiveProjectile, Slug, ProjectileImpactBehavior, PlacedMagnet } from '../types';
+import { ActiveProjectile, Slug, ProjectileImpactBehavior, PlacedMagnet, HelicopterVehicle, ProjectilePhysicsResult } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { updateWalkingEntityPhysics } from './walkingEntityPhysics';
 import {
@@ -6,23 +6,18 @@ import {
   updateBurrowingBusterPhysics,
   updateKamikazePhysics,
 } from './specialKinematicPhysics';
+import { checkProjectileEntityCollisions } from './projectileEntityCollisions';
 
 export const GRAVITY = 0.28;
-
-export interface ProjectilePhysicsResult {
-  exploded: boolean;
-  collisionPoint?: { x: number; y: number };
-  carveStep?: { x: number; y: number; radius: number };
-  landAsMine?: { x: number; y: number };
-  landAsMagnet?: { x: number; y: number; polarity: 'ATTRACT' | 'REPEL' };
-}
+export type { ProjectilePhysicsResult };
 
 export function updateProjectilePhysics(
   proj: ActiveProjectile,
   terrain: DestructibleTerrain,
   arg3?: number | Slug[],
   arg4?: number | Slug[],
-  magnets?: PlacedMagnet[]
+  magnets?: PlacedMagnet[],
+  helicopters?: HelicopterVehicle[]
 ): ProjectilePhysicsResult {
   const wind: number = typeof arg3 === 'number' ? arg3 : typeof arg4 === 'number' ? arg4 : 0;
   const slugs: Slug[] = Array.isArray(arg3) ? arg3 : Array.isArray(arg4) ? arg4 : [];
@@ -133,65 +128,10 @@ export function updateProjectilePhysics(
   const impact: ProjectileImpactBehavior =
     proj.impactBehavior || (proj.bounces ? 'BOUNCE' : 'EXPLODE');
 
-  // 3. Collision with Slugs
-  for (const slug of slugs) {
-    if (!slug.isAlive || slug.isPlaced === false) continue;
-
-    const slugRadius = 10;
-    const slugCenterY = slug.y - 8;
-
-    // Continuous segment-to-point collision to prevent tunneling on fast bullets
-    const segDx = nextX - proj.x;
-    const segDy = nextY - proj.y;
-    const segLenSq = segDx * segDx + segDy * segDy;
-    let distToSlug: number;
-    if (segLenSq === 0) {
-      distToSlug = Math.hypot(nextX - slug.x, nextY - slugCenterY);
-    } else {
-      const t = Math.max(0, Math.min(1, ((slug.x - proj.x) * segDx + (slugCenterY - proj.y) * segDy) / segLenSq));
-      const closestX = proj.x + t * segDx;
-      const closestY = proj.y + t * segDy;
-      distToSlug = Math.hypot(closestX - slug.x, closestY - slugCenterY);
-    }
-
-    // Clearance for owner slug during launch
-    if (slug.id === proj.ownerSlugId && distToSlug < Math.max(28, proj.radius + slugRadius + 8)) {
-      continue;
-    }
-
-    if (distToSlug <= proj.radius + slugRadius) {
-      if (impact === 'REST') {
-        proj.vx = 0;
-        proj.vy = 0;
-        return { exploded: false };
-      } else if (impact === 'BOUNCE') {
-        const dx = nextX - slug.x;
-        const dy = nextY - slugCenterY;
-        const dist = Math.hypot(dx, dy) || 1;
-        const nx = dx / dist;
-        const ny = dy / dist;
-
-        const dot = proj.vx * nx + proj.vy * ny;
-        if (dot < 0) {
-          const elasticity = 0.55;
-          proj.vx = (proj.vx - 2 * dot * nx) * elasticity;
-          proj.vy = (proj.vy - 2 * dot * ny) * elasticity;
-        }
-
-        const pushDist = proj.radius + slugRadius + 1;
-        proj.x = slug.x + nx * pushDist;
-        proj.y = slugCenterY + ny * pushDist;
-
-        if (Math.hypot(proj.vx, proj.vy) < 0.3) {
-          proj.vx = 0;
-          proj.vy = 0;
-        }
-
-        return { exploded: false };
-      } else {
-        return { exploded: true, collisionPoint: { x: slug.x, y: slugCenterY } };
-      }
-    }
+  // 3. Collision with Living Entities (Slugs & Helicopters)
+  const entityHit = checkProjectileEntityCollisions(proj, nextX, nextY, impact, slugs, helicopters);
+  if (entityHit) {
+    return entityHit;
   }
 
   // 4. Collision with Terrain Surface
