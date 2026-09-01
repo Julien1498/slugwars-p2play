@@ -82,13 +82,50 @@ export function generate1DHeightmap(
       }
       groundY = ground;
     } else if (heightmapType === 'ARCHIPELAGO') {
-      const noise = prng.harmonicNoise(wx, baseFreq * 1.2, p1, p2, p3) * (worldH * 0.08);
-      const islandFreq = Math.sin(p3) > 0 ? 2.0 : 3.0;
       const u = wx / worldW;
-      const islandMask = Math.pow(Math.sin(u * Math.PI * islandFreq + p2 * 0.35), 2);
-      const trench = (1.0 - islandMask) * (worldH * 0.68);
-      const edgeDrop = Math.pow(Math.abs(u - 0.5) * 2.0, 2.8) * (worldH * 0.55);
-      groundY = worldH * 0.36 + noise + trench + edgeDrop;
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * (worldH * 0.06);
+
+      // 2 or 3 distinct tropical islands based on seed
+      const useThreeIslands = Math.sin(p3) > -0.2;
+      let islandElevation = 0;
+
+      if (useThreeIslands) {
+        const c1 = 0.20 + Math.sin(p1) * 0.03;
+        const w1 = 0.14 + Math.cos(p2) * 0.02;
+        const c2 = 0.50 + Math.cos(p1) * 0.03;
+        const w2 = 0.15 + Math.sin(p2) * 0.02;
+        const c3 = 0.80 + Math.sin(p2) * 0.03;
+        const w3 = 0.14 + Math.cos(p1) * 0.02;
+
+        for (const [c, w] of [[c1, w1], [c2, w2], [c3, w3]]) {
+          const dist = Math.abs(u - c) / w;
+          if (dist < 1.0) {
+            const dome = Math.cos(dist * Math.PI * 0.5);
+            islandElevation = Math.max(islandElevation, Math.pow(dome, 1.4));
+          }
+        }
+      } else {
+        const c1 = 0.30 + Math.sin(p1) * 0.04;
+        const w1 = 0.20 + Math.cos(p2) * 0.03;
+        const c2 = 0.70 + Math.cos(p1) * 0.04;
+        const w2 = 0.20 + Math.sin(p2) * 0.03;
+
+        for (const [c, w] of [[c1, w1], [c2, w2]]) {
+          const dist = Math.abs(u - c) / w;
+          if (dist < 1.0) {
+            const dome = Math.cos(dist * Math.PI * 0.5);
+            islandElevation = Math.max(islandElevation, Math.pow(dome, 1.4));
+          }
+        }
+      }
+
+      if (islandElevation > 0) {
+        const islandPeakHeight = worldH * 0.48 + noise;
+        groundY = (worldH - 40) - islandElevation * islandPeakHeight;
+      } else {
+        // Deep open ocean water between islands
+        groundY = worldH - 30;
+      }
     } else if (heightmapType === 'ARCHES') {
       const noise = prng.harmonicNoise(wx, baseFreq * 0.9, p1, p2, p3);
       const edgeDrop = Math.pow(Math.abs(wx - worldW / 2) / (worldW / 2), 2.5) * 400;
