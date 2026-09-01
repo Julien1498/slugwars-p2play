@@ -162,6 +162,35 @@ describe('Terrain Generator: Procedural World Generation & Entity Placement', ()
     expect(rightFlankFloors).toBeGreaterThan(0);
   });
 
+  it('generates deep canyon chasm, elevated bastions and covered vaults on FORTRESS maps', () => {
+    const width = 1400;
+    const height = 800;
+    const terrain = generateProceduralTerrain(777, 'FORTRESS', width, height);
+
+    // 1. Canyon Center Abyss (x ~ 700) must have significantly lower ground / deeper drop than bastions
+    let centerSolidY = height;
+    const centerX = Math.floor(width * 0.5);
+    for (let y = 0; y < height; y++) {
+      if (terrain.grid[y * width + centerX] === 1) {
+        centerSolidY = y;
+        break;
+      }
+    }
+
+    // 2. High Bastion Tower (x ~ 450 or 950) must be elevated high up
+    let bastionSolidY = height;
+    const bastionX = Math.floor(width * 0.32);
+    for (let y = 0; y < height; y++) {
+      if (terrain.grid[y * width + bastionX] === 1) {
+        bastionSolidY = y;
+        break;
+      }
+    }
+
+    expect(centerSolidY).toBeGreaterThan(bastionSolidY + 120);
+    expect(bastionSolidY).toBeLessThan(height * 0.45);
+  });
+
   it('gracefully falls back to ISLAND for undefined or custom unknown theme', () => {
     const terrain = generateProceduralTerrain(444, undefined as any, 1000, 600);
     expect(terrain).toBeDefined();

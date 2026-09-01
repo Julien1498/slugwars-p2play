@@ -240,4 +240,42 @@ export function carveTerrainFeatures(
   if (config.topology.heightmapType === 'CAVERN') {
     carveCavernFlanksAndPillars(grid, prng, width, height, worldW, worldH, scaleX, scaleY);
   }
+
+  // 7. Fortress Subterranean Artillery Vaults & Canyon Firing Embrasures
+  if (config.topology.heightmapType === 'FORTRESS') {
+    const leftVaultX = prng.range(worldW * 0.22, worldW * 0.32) * scaleX;
+    const rightVaultX = prng.range(worldW * 0.68, worldW * 0.78) * scaleX;
+    const vaultY = (worldH * 0.52 + prng.range(-15, 15)) * scaleY;
+    const rx = prng.range(42, 65) * scaleX;
+    const ry = prng.range(22, 34) * scaleY;
+
+    for (const vx of [leftVaultX, rightVaultX]) {
+      const minX = Math.max(0, Math.floor(vx - rx));
+      const maxX = Math.min(width - 1, Math.ceil(vx + rx));
+      const minY = Math.max(0, Math.floor(vaultY - ry));
+      const maxY = Math.min(height - 1, Math.ceil(vaultY + ry));
+      const rySq = ry * ry;
+      const rxOverRy = rx / ry;
+
+      for (let y = minY; y <= maxY; y++) {
+        const dy = y - vaultY;
+        const dySq = dy * dy;
+        if (dySq > rySq) continue;
+        const dxMax = Math.sqrt(rySq - dySq) * rxOverRy;
+        const startX = Math.max(0, Math.ceil(vx - dxMax));
+        const endX = Math.min(width - 1, Math.floor(vx + dxMax));
+        if (startX <= endX) grid.fill(0, y * width + startX, y * width + endX + 1);
+      }
+
+      // Canyon firing embrasure slit
+      const isLeft = vx < width * 0.5;
+      const slitYMin = Math.max(0, Math.floor(vaultY - 8 * scaleY));
+      const slitYMax = Math.min(height - 1, Math.ceil(vaultY + 8 * scaleY));
+      const slitStartX = isLeft ? Math.floor(vx) : Math.max(0, Math.floor(vx - rx - 45 * scaleX));
+      const slitEndX = isLeft ? Math.min(width - 1, Math.ceil(vx + rx + 45 * scaleX)) : Math.floor(vx);
+      for (let y = slitYMin; y <= slitYMax; y++) {
+        grid.fill(0, y * width + slitStartX, y * width + slitEndX + 1);
+      }
+    }
+  }
 }

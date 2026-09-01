@@ -29,15 +29,40 @@ export function generate1DHeightmap(
       const noise = prng.harmonicNoise(wx, baseFreq, p1, p2, p3);
       groundY = worldH * 0.42 + noise + edgeDrop;
     } else if (heightmapType === 'FORTRESS') {
-      const centerDist = Math.abs(wx - worldW / 2);
-      let castleHeight = 0;
-      if (centerDist < 120) {
-        castleHeight = 260;
-      } else if (centerDist > 120 && centerDist < 200) {
-        castleHeight = -50;
+      const centerDist = Math.abs(wx - worldW * 0.5);
+      const canyonHalfW = 160 + Math.sin(p1) * 40;
+
+      // 1. Deep Central Abyss Chasm
+      let canyonDrop = 0;
+      if (centerDist < canyonHalfW) {
+        const dropT = Math.pow(1.0 - centerDist / canyonHalfW, 1.4);
+        canyonDrop = dropT * (worldH * 0.55);
+        if (Math.sin(p3) > 0.05 && centerDist < 35) {
+          const stoneT = 1.0 - centerDist / 35;
+          canyonDrop -= stoneT * (worldH * 0.28);
+        }
       }
-      const noise = prng.harmonicNoise(wx, baseFreq * 0.8, p1, p2, p3) * 0.8;
-      groundY = worldH * 0.4 + noise + castleHeight;
+
+      // 2. High Bastion Tower on Canyon Rim & Battlements
+      let towerRise = 0;
+      let crenel = 0;
+      if (centerDist >= canyonHalfW && centerDist < canyonHalfW + 180) {
+        const towerT = Math.sin(((centerDist - canyonHalfW) / 180) * Math.PI);
+        towerRise = towerT * (worldH * 0.18 + Math.cos(p2) * 30);
+      } else if (centerDist >= canyonHalfW + 180) {
+        const crenelWave = Math.sin((wx / 36) * Math.PI);
+        crenel = crenelWave > 0.2 ? -18 : 0;
+      }
+
+      // 3. Outer Sea Edge Drop
+      const edgeDist = Math.min(wx, worldW - wx);
+      let edgeDrop = 0;
+      if (edgeDist < 140) {
+        edgeDrop = Math.pow(1.0 - edgeDist / 140, 2.2) * (worldH * 0.45);
+      }
+
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.0, p1, p2, p3) * 0.6;
+      groundY = worldH * 0.38 + noise + canyonDrop - towerRise + crenel + edgeDrop;
     } else if (heightmapType === 'CAVERN') {
       const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * 1.2;
       const macroWave = Math.sin((wx / worldW) * Math.PI * 2.5 + p2) * (worldH * 0.12);
