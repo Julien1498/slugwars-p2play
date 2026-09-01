@@ -38,7 +38,7 @@ describe('Terrain Benchmark & Performance Integrity', () => {
     'ISLAND',
     'CAVERN',
     'FORTRESS',
-    'FLOATING_CHAOS',
+    'OPAL_ISLAND',
     'ARCHIPELAGO',
     'NATURAL_ARCHES',
     'SPIRES',

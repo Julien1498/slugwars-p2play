@@ -98,7 +98,7 @@ export const THEME_PALETTES: Record<MapTheme, TerrainPalette> = {
     bedrock: 0xff0c0a08,      // #080a0c Keep bedrock
     seam: 0xff070605,         // #050607 Mortar seam
   },
-  FLOATING_CHAOS: {
+  OPAL_ISLAND: {
     highlight: 0xffb7e76e,    // #6ee7b7 Mint celestial moss rim
     surfaceBody: 0xff81b910,  // #10b981 Vibrant sky emerald grass
     surfaceShadow: 0xff577804,// #047857 Deep forest moss shadow

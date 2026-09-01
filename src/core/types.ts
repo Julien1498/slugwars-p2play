@@ -154,7 +154,7 @@ export type MapTheme =
   | 'ISLAND'
   | 'CAVERN'
   | 'FORTRESS'
-  | 'FLOATING_CHAOS'
+  | 'OPAL_ISLAND'
   | 'ARCHIPELAGO'
   | 'NATURAL_ARCHES'
   | 'SPIRES'

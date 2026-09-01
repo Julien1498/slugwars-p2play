@@ -46,7 +46,7 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
   });
 
   it('carves explosions into terrain grid and increments revision', () => {
-    const terrainData = generateProceduralTerrain(777, 'FLOATING_CHAOS', 600, 400);
+    const terrainData = generateProceduralTerrain(777, 'OPAL_ISLAND', 600, 400);
     const dt = new DestructibleTerrain(terrainData);
 
     // Find a solid ground coordinate
@@ -155,7 +155,7 @@ describe('Terrain: Generation, Solid Checks & Crater Destruction', () => {
       'ISLAND',
       'CAVERN',
       'FORTRESS',
-      'FLOATING_CHAOS',
+      'OPAL_ISLAND',
       'ARCHIPELAGO',
       'NATURAL_ARCHES',
       'SPIRES',

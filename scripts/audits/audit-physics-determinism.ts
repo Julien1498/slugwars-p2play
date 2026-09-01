@@ -11,7 +11,7 @@ export function runPhysicsDeterminismAudit() {
     'ISLAND',
     'CAVERN',
     'FORTRESS',
-    'FLOATING_CHAOS',
+    'OPAL_ISLAND',
     'ARCHIPELAGO',
     'NATURAL_ARCHES',
     'SPIRES',

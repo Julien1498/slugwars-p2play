@@ -1,7 +1,8 @@
 import { MapTheme } from '../types';
 import { ISLAND_THEME } from './themes/islandTheme';
 import { CAVERN_THEME, ORGANIC_CAVES_THEME } from './themes/cavernThemes';
-import { ARCHIPELAGO_THEME, FLOATING_CHAOS_THEME } from './themes/archipelagoThemes';
+import { ARCHIPELAGO_THEME } from './themes/archipelagoThemes';
+import { OPAL_ISLAND_THEME } from './themes/opalIslandTheme';
 import {
   FORTRESS_THEME,
   NATURAL_ARCHES_THEME,
@@ -16,7 +17,7 @@ export const THEME_CONFIGS: Record<MapTheme, ThemeConfig> = {
   CAVERN: CAVERN_THEME,
   ORGANIC_CAVES: ORGANIC_CAVES_THEME,
   FORTRESS: FORTRESS_THEME,
-  FLOATING_CHAOS: FLOATING_CHAOS_THEME,
+  OPAL_ISLAND: OPAL_ISLAND_THEME,
   ARCHIPELAGO: ARCHIPELAGO_THEME,
   NATURAL_ARCHES: NATURAL_ARCHES_THEME,
   SPIRES: SPIRES_THEME,

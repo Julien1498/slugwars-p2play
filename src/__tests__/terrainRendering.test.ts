@@ -76,7 +76,7 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
       'ISLAND',
       'CAVERN',
       'FORTRESS',
-      'FLOATING_CHAOS',
+      'OPAL_ISLAND',
       'ARCHIPELAGO',
       'NATURAL_ARCHES',
       'SPIRES',

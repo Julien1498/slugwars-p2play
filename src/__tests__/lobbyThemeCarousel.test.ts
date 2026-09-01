@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { LobbyThemeSelector, MAP_THEMES } from '../components/game/lobby/LobbyThemeSelector';
 import { BiomeMiniPreview } from '../components/game/lobby/BiomeMiniPreview';
@@ -11,7 +11,7 @@ describe('LobbyThemeSelector - Real Map Biome Carousel', () => {
     expect(themeIds).toContain('ISLAND');
     expect(themeIds).toContain('CAVERN');
     expect(themeIds).toContain('FORTRESS');
-    expect(themeIds).toContain('FLOATING_CHAOS');
+    expect(themeIds).toContain('OPAL_ISLAND');
     expect(themeIds).toContain('ARCHIPELAGO');
     expect(themeIds).toContain('NATURAL_ARCHES');
     expect(themeIds).toContain('SPIRES');

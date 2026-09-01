@@ -78,7 +78,7 @@ describe('renderEnvironmentAndEffects - Sky, Water, Aim Guides, Projectiles & FX
   };
 
   describe('renderSkyAndAtmosphere', () => {
-    const themes: MapTheme[] = ['ISLAND', 'CAVERN', 'ORGANIC_CAVES', 'NATURAL_ARCHES', 'SPIRES', 'ARCHIPELAGO', 'FORTRESS', 'FLOATING_CHAOS'];
+    const themes: MapTheme[] = ['ISLAND', 'CAVERN', 'ORGANIC_CAVES', 'NATURAL_ARCHES', 'SPIRES', 'ARCHIPELAGO', 'FORTRESS', 'OPAL_ISLAND'];
 
     it.each(themes)('renders sky and background ocean horizon for theme %s without throwing', (theme) => {
       const ctx = createMockContext();

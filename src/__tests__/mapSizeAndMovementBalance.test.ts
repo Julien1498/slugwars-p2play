@@ -28,7 +28,7 @@ describe('Map Size & Movement Speed Balance (TDD)', () => {
   });
 
   describe('2. Procedural Terrain Generation across Balanced Dimensions', () => {
-    const testThemes: MapTheme[] = ['ISLAND', 'CAVERN', 'FORTRESS', 'FLOATING_CHAOS', 'ORGANIC_CAVES'];
+    const testThemes: MapTheme[] = ['ISLAND', 'CAVERN', 'FORTRESS', 'OPAL_ISLAND', 'ORGANIC_CAVES'];
     const mapSizes: MapSize[] = ['SMALL', 'NORMAL', 'LARGE'];
 
     it.each(mapSizes)('generates valid terrain structure on size %s', (sizeKey) => {

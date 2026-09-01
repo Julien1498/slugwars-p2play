@@ -197,7 +197,7 @@ export function carveTerrainFeatures(
   };
 
   if (floatingIslands > 0) {
-    if (config.topology.heightmapType === 'CHAOS') {
+    if (config.topology.heightmapType === 'OPAL_ISLAND') {
       for (let i = 0; i < 6; i++) {
         const fx = prng.range(180, worldW - 180) * scaleX;
         const fy = prng.range(worldH * 0.25, (worldH - 80) - 140) * scaleY;
