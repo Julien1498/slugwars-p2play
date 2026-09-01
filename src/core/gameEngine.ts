@@ -111,7 +111,7 @@ export class SlugWarsEngine {
   public startGame(): boolean {
     return setupGameStart(
       this.state,
-      this.terrain,
+      () => this.terrain,
       this.teamLastPlayedSlugId,
       () => this.initTerrain(),
       (msg, type) => this.addLog(msg, type)

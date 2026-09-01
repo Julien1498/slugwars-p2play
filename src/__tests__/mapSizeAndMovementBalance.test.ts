@@ -5,6 +5,7 @@ import { startMove, stopMove, moveSlug } from '../core/engine/engineControls';
 import { updateSlugPhysics } from '../core/physics';
 import { DestructibleTerrain } from '../core/terrain';
 import { clampPanOffset } from '../rendering/cameraUtils';
+import { SlugWarsEngine } from '../core/gameEngine';
 
 describe('Map Size & Movement Speed Balance (TDD)', () => {
   describe('1. Map Size Configurations (MAP_SIZE_CONFIGS)', () => {
@@ -223,6 +224,37 @@ describe('Map Size & Movement Speed Balance (TDD)', () => {
       const clampedExcessive = clampPanOffset({ x: 9999, y: -9999 }, 1.0, 1920, 1080, 2600, 1200);
       expect(clampedExcessive.x).toBeLessThan(9999);
       expect(clampedExcessive.y).toBeGreaterThan(-9999);
+    });
+  });
+
+  describe('6. Map Size Switch in Lobby & Entity Placement Consistency', () => {
+    it('spawns mines and helicopters on correct terrain geometry when mapSize is changed in lobby', () => {
+      const engine = new SlugWarsEngine();
+      engine.addTeam('t1', 'Team 1', '#ef4444', 'avatar1', true);
+      engine.addTeam('t2', 'Team 2', '#3b82f6', 'avatar2', false);
+
+      engine.setConfig({ mapSize: 'LARGE', mapSeed: 98765 });
+      expect(engine.state.config.mapSize).toBe('LARGE');
+
+      engine.startGame();
+      expect(engine.terrain.data.width).toBe(2600);
+      expect(engine.terrain.data.height).toBe(1200);
+
+      expect(engine.state.mines.length).toBeGreaterThan(0);
+      for (const mine of engine.state.mines) {
+        expect(mine.x).toBeGreaterThanOrEqual(100);
+        expect(mine.x).toBeLessThanOrEqual(2500);
+        const groundY = Math.round(mine.y + 3);
+        expect(engine.terrain.isSolid(Math.round(mine.x), groundY)).toBe(true);
+      }
+
+      if (engine.state.helicopters.length > 0) {
+        const heli = engine.state.helicopters[0];
+        expect(heli.x).toBeGreaterThanOrEqual(100);
+        expect(heli.x).toBeLessThanOrEqual(2500);
+        const heliGroundY = Math.round(heli.y + 14);
+        expect(engine.terrain.isSolid(Math.round(heli.x), heliGroundY)).toBe(true);
+      }
     });
   });
 });

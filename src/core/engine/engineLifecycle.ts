@@ -8,7 +8,7 @@ import { sfx } from '../audio';
 
 export function setupGameStart(
   state: GameState,
-  terrain: DestructibleTerrain,
+  getTerrain: (() => DestructibleTerrain) | DestructibleTerrain,
   teamLastPlayedSlugId: Record<string, string>,
   initTerrain: () => void,
   addLog: (msg: string, type: 'info' | 'combat' | 'weapon') => void
@@ -18,6 +18,7 @@ export function setupGameStart(
     state.config.mapSeed = Math.floor(Math.random() * 1000000);
   }
   initTerrain();
+  const terrain = typeof getTerrain === 'function' ? getTerrain() : getTerrain;
   state.slugs = [];
   Object.keys(teamLastPlayedSlugId).forEach((k) => delete teamLastPlayedSlugId[k]);
 
@@ -65,6 +66,7 @@ export function setupGameStart(
     y: pt.y,
     isTriggered: false,
   }));
+  state.solidProps = terrain.data.solidProps ? [...terrain.data.solidProps] : [];
 
   if (state.config.vehiclesEnabled) {
     const { width, theme, waterLevel } = terrain.data;

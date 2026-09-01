@@ -5,7 +5,7 @@ import { TerrainBuffers } from '../../../rendering/renderTerrain';
 import { renderSkyAndAtmosphere } from '../../../rendering/renderSky';
 import { renderHDDestructibleGirder, renderHDDestructibleProp } from '../../../rendering/renderProps';
 import { renderDecorItems } from '../../../rendering/renderDecorItems';
-import { renderMines, renderHelicopters, renderTombstones } from '../../../rendering/renderEffects';
+import { renderHelicopters, renderTombstones } from '../../../rendering/renderEffects';
 
 export interface RenderBackgroundLayerParams {
   ctx: CanvasRenderingContext2D;
@@ -115,16 +115,10 @@ export function renderBackgroundLayer({
   }
   perfTracker.recordRenderPass('props_solids', performance.now() - pSolidsStart);
 
-  // 4. Decor Foliage, Mines, Helicopters & Tombstones
+  // 4. Decor Foliage, Helicopters & Tombstones
   const pDecorStart = performance.now();
   renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
   perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);
-
-  const pMinesStart = performance.now();
-  if (gameState.mines) {
-    renderMines(ctx, gameState.mines, viewLeft, viewRight);
-  }
-  perfTracker.recordRenderPass('decor_mines', performance.now() - pMinesStart);
 
   const pHelisStart = performance.now();
   if (gameState.helicopters) {
