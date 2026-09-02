@@ -41,7 +41,7 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
           isHost={isHost}
           onSelectTheme={(mapTheme) => {
             if (mapTheme === config.mapTheme) {
-              onChangeConfig({ mapTheme, mapSeed: Math.floor(Math.random() * 1000000) });
+              onChangeConfig({ mapTheme, mapSeed: Math.floor(Math.random() * 1_000_000_000) });
             } else {
               onChangeConfig({ mapTheme });
             }
@@ -68,7 +68,7 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
 
           {isHost && (
             <button
-              onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1000000) })}
+              onClick={() => onChangeConfig({ mapSeed: Math.floor(Math.random() * 1_000_000_000) })}
               className="py-1.5 px-3 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.99] border border-zinc-700 rounded-xl text-[11px] font-bold text-zinc-200 flex items-center gap-1.5 transition whitespace-nowrap"
               title="Générer une nouvelle seed"
             >

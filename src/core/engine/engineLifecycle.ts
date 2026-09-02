@@ -15,7 +15,7 @@ export function setupGameStart(
 ): boolean {
   if (state.teams.length === 0) return false;
   if (state.config.mapSeed === undefined || state.config.mapSeed === null) {
-    state.config.mapSeed = Math.floor(Math.random() * 1000000);
+    state.config.mapSeed = Math.floor(Math.random() * 1_000_000_000);
   }
   initTerrain();
   const terrain = typeof getTerrain === 'function' ? getTerrain() : getTerrain;

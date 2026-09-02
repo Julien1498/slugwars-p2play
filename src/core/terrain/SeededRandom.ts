@@ -1,13 +1,21 @@
+/**
+ * Ultra-fast 32-bit PRNG (Mulberry32) with a period of 2^32 (4.29 billion states).
+ * Uses native bitwise arithmetic and Math.imul for maximum V8/JIT throughput,
+ * guaranteeing byte-for-byte mathematical determinism across all platforms & WebRTC peers.
+ */
 export class SeededRandom {
-  private seed: number;
+  private s: number;
 
   constructor(seed: number) {
-    this.seed = seed;
+    // Coerce into a non-zero 32-bit unsigned integer
+    this.s = (seed >>> 0) || 1;
   }
 
   public next(): number {
-    this.seed = (this.seed * 9301 + 49297) % 233280;
-    return this.seed / 233280;
+    let t = (this.s += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 
   public range(min: number, max: number): number {

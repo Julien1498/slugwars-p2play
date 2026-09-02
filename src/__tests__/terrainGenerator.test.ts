@@ -33,6 +33,15 @@ describe('Terrain Generator: SeededRandom & PRNG', () => {
       expect(Number.isNaN(noiseA)).toBe(false);
     }
   });
+
+  it('supports full 32-bit seeds and eliminates old LCG 233280 modulo collisions', () => {
+    const rng1 = new SeededRandom(0);
+    const rng2 = new SeededRandom(233280);
+    const rng3 = new SeededRandom(3000000000);
+
+    expect(rng1.next()).not.toBe(rng2.next());
+    expect(rng1.next()).not.toBe(rng3.next());
+  });
 });
 
 describe('Terrain Generator: Procedural World Generation & Entity Placement', () => {

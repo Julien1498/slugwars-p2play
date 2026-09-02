@@ -305,7 +305,9 @@ describe('PhaseManager State Machine & Turn Progression', () => {
       state.phaseTimer = 25.0;
 
       // Position slugs solidly on ground so isWorldAtRest is true
-      for (const slug of state.slugs) {
+      for (let i = 0; i < state.slugs.length; i++) {
+        const slug = state.slugs[i];
+        slug.x = 400 + i * 100;
         for (let y = 100; y < 700; y++) {
           if (terrain.isSolid(slug.x, y)) {
             slug.y = y - 1; // resting on solid ground

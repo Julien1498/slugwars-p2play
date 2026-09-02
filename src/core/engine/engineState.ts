@@ -14,7 +14,7 @@ export function createInitialConfig(initialConfig?: Partial<GameConfig>): GameCo
     dayNightCycle: 'DAY',
     mapTheme: 'ISLAND',
     mapSize: 'NORMAL',
-    mapSeed: Math.floor(Math.random() * 1000000),
+    mapSeed: Math.floor(Math.random() * 1_000_000_000),
     ...initialConfig,
   };
 }
