@@ -96,15 +96,22 @@ function renderTwinfoxEars(ctx: CanvasRenderingContext2D): void {
 }
 
 function renderMadScientist(ctx: CanvasRenderingContext2D): void {
+  // Goggles over real eyes
   ctx.fillStyle = '#0284c7';
   ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.arc(1.5, -14, 2.5, 0, Math.PI * 2);
-  ctx.arc(6.5, -14, 2.5, 0, Math.PI * 2);
+  ctx.arc(2.0, -10, 3.0, 0, Math.PI * 2);
+  ctx.arc(8.0, -9, 2.8, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
+  // Bridge
+  ctx.beginPath();
+  ctx.moveTo(4.8, -10); ctx.lineTo(5.2, -9.5);
+  ctx.stroke();
+
+  // Huge bushy moustache under eyes
   ctx.fillStyle = '#c2410c';
   ctx.strokeStyle = '#7c2d12';
   ctx.lineWidth = 1.2;
@@ -119,16 +126,18 @@ function renderBanditBalaclava(ctx: CanvasRenderingContext2D): void {
   ctx.fill(HAT_BANDIT_BALACLAVA);
   ctx.stroke(HAT_BANDIT_BALACLAVA);
 
+  // Eye openings showing skin around real eyes
   ctx.fillStyle = '#fde047';
   ctx.beginPath();
-  ctx.ellipse(2.5, -8, 2.5, 1.8, 0, 0, Math.PI * 2);
-  ctx.ellipse(6.5, -7.5, 2.3, 1.8, 0, 0, Math.PI * 2);
+  ctx.ellipse(2.0, -10, 3.2, 2.2, 0, 0, Math.PI * 2);
+  ctx.ellipse(8.0, -9, 3.0, 2.2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#000000';
+  // Black pupils
+  ctx.fillStyle = '#09090b';
   ctx.beginPath();
-  ctx.arc(2.8, -8, 0.9, 0, Math.PI * 2);
-  ctx.arc(6.8, -7.5, 0.9, 0, Math.PI * 2);
+  ctx.arc(2.3, -10, 1.4, 0, Math.PI * 2);
+  ctx.arc(8.3, -9, 1.3, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -139,18 +148,20 @@ function renderSwatHelmet(ctx: CanvasRenderingContext2D): void {
   ctx.fill(HAT_SWAT_POT);
   ctx.stroke(HAT_SWAT_POT);
 
-  ctx.fillStyle = 'rgba(147, 197, 253, 0.4)';
+  // Transparent riot visor reaching down to cover eyes
+  ctx.fillStyle = 'rgba(147, 197, 253, 0.45)';
   ctx.strokeStyle = '#60a5fa';
   ctx.lineWidth = 1.0;
   ctx.beginPath();
-  ctx.moveTo(-3, -11.5);
-  ctx.quadraticCurveTo(4, -14, 11, -11.5);
-  ctx.lineTo(11.5, -6);
-  ctx.quadraticCurveTo(4, -8, -2.5, -6);
+  ctx.moveTo(-3.5, -12);
+  ctx.quadraticCurveTo(4, -14.5, 12, -12);
+  ctx.lineTo(12.5, -5);
+  ctx.quadraticCurveTo(4, -7.5, -3.0, -5);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
+  // Boom microphone
   ctx.strokeStyle = '#09090b';
   ctx.lineWidth = 1.4;
   ctx.beginPath();
@@ -201,8 +212,8 @@ function renderArachnidMask(ctx: CanvasRenderingContext2D): void {
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
   ctx.lineWidth = 0.7;
   ctx.beginPath();
-  ctx.moveTo(4, -18.5); ctx.lineTo(4, -1);
-  ctx.moveTo(-3, -8); ctx.lineTo(11, -8);
+  ctx.moveTo(4, -18.5); ctx.lineTo(4, 1);
+  ctx.moveTo(-3.5, -9.5); ctx.lineTo(12, -9.5);
   ctx.stroke();
 
   ctx.fillStyle = '#ffffff';
@@ -240,8 +251,8 @@ function renderBioElectricMask(ctx: CanvasRenderingContext2D): void {
   ctx.strokeStyle = '#ef4444';
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(4, -18.5); ctx.lineTo(4, -1);
-  ctx.moveTo(-3, -8); ctx.lineTo(11, -8);
+  ctx.moveTo(4, -18.5); ctx.lineTo(4, 1);
+  ctx.moveTo(-3.5, -9.5); ctx.lineTo(12, -9.5);
   ctx.stroke();
 
   ctx.fillStyle = '#ffffff';

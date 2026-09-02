@@ -10,12 +10,12 @@ export const HAT_PATRIOT_DOME = createPath((p) => {
 
 // 2. Masque Titane Doré
 export const HAT_TITANIUM_FACEPLATE = createPath((p) => {
-  p.moveTo(0, -13.5);
-  p.lineTo(8.5, -13.5);
-  p.lineTo(9.5, -6);
-  p.lineTo(7.5, -4);
-  p.lineTo(1, -4);
-  p.lineTo(-0.5, -6);
+  p.moveTo(-0.5, -14.5);
+  p.lineTo(10.5, -14.5);
+  p.lineTo(11, -5.5);
+  p.lineTo(8, -3.5);
+  p.lineTo(1.5, -3.5);
+  p.lineTo(-1, -5.5);
   p.closePath();
 });
 

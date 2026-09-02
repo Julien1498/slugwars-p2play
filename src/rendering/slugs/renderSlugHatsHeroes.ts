@@ -51,11 +51,11 @@ function renderTitaniumMask(ctx: CanvasRenderingContext2D): void {
   ctx.fill(HAT_TITANIUM_FACEPLATE);
   ctx.stroke(HAT_TITANIUM_FACEPLATE);
 
-  // Glowing cyan eyes
+  // Glowing cyan eyes matching real slug eye centers
   ctx.fillStyle = '#22d3ee';
   ctx.beginPath();
-  ctx.fillRect(1.5, -8.5, 2.5, 1.0);
-  ctx.fillRect(5.5, -8.5, 2.5, 1.0);
+  ctx.fillRect(0.8, -10.8, 3.2, 1.3);
+  ctx.fillRect(6.6, -9.8, 3.2, 1.3);
 }
 
 function renderMischiefHorns(ctx: CanvasRenderingContext2D): void {

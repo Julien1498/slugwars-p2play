@@ -92,11 +92,14 @@ function renderDetectiveHat(ctx: CanvasRenderingContext2D): void {
 
   ctx.fillStyle = '#09090b';
   ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 0.8;
+  ctx.lineWidth = 1.0;
   ctx.beginPath();
-  ctx.arc(2.5, -8, 2.3, 0, Math.PI * 2);
-  ctx.arc(6.5, -7.5, 2.1, 0, Math.PI * 2);
+  ctx.arc(2.0, -10, 2.6, 0, Math.PI * 2);
+  ctx.arc(8.0, -9, 2.4, 0, Math.PI * 2);
   ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(4.4, -10); ctx.lineTo(5.8, -9.5);
   ctx.stroke();
 }
 
@@ -110,15 +113,15 @@ function renderSnorkelHat(ctx: CanvasRenderingContext2D, teamColor: string): voi
   ctx.strokeStyle = '#facc15';
   ctx.lineWidth = 2.0;
   ctx.beginPath();
-  ctx.moveTo(0, -7.5);
-  ctx.lineTo(-3, -7.5);
-  ctx.lineTo(-3.5, -18);
-  ctx.quadraticCurveTo(-3.5, -21, -1, -21);
+  ctx.moveTo(0, -9.5);
+  ctx.lineTo(-3, -9.5);
+  ctx.lineTo(-3.5, -20);
+  ctx.quadraticCurveTo(-3.5, -23, -1, -23);
   ctx.stroke();
 
   ctx.fillStyle = '#ef4444';
   ctx.beginPath();
-  ctx.arc(-1, -21, 1.2, 0, Math.PI * 2);
+  ctx.arc(-1, -23, 1.2, 0, Math.PI * 2);
   ctx.fill();
 }
 

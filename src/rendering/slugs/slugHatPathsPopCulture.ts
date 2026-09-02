@@ -87,20 +87,20 @@ export const HAT_MAD_MOUSTACHE = createPath((p) => {
 
 // 7. Cagoule de Braqueur
 export const HAT_BANDIT_BALACLAVA = createPath((p) => {
-  p.moveTo(-2.5, -2);
-  p.lineTo(-3, -13);
-  p.quadraticCurveTo(4, -18.5, 11.5, -13);
-  p.lineTo(11, -2);
-  p.quadraticCurveTo(4, 0, -2.5, -2);
+  p.moveTo(-3.5, 1);
+  p.lineTo(-4, -14.5);
+  p.quadraticCurveTo(4, -19.5, 12, -14.5);
+  p.lineTo(12, 1);
+  p.quadraticCurveTo(4, 3, -3.5, 1);
   p.closePath();
 });
 
 // 8. Casque d'Assaut Tactique
 export const HAT_SWAT_POT = createPath((p) => {
-  p.moveTo(-4, -11.5);
-  p.quadraticCurveTo(4, -19.5, 12, -11.5);
+  p.moveTo(-4, -12);
+  p.quadraticCurveTo(4, -20, 12, -12);
   p.lineTo(13.5, -11);
-  p.quadraticCurveTo(4, -13, -4.5, -11);
+  p.quadraticCurveTo(4, -13.5, -4.5, -11);
   p.closePath();
 });
 
@@ -115,24 +115,24 @@ export const HAT_CHICKEN_BODY = createPath((p) => {
 
 // 10. Masques Arachnides
 export const HAT_ARACHNID_COWL = createPath((p) => {
-  p.moveTo(-3, -3);
-  p.lineTo(-3.5, -13);
-  p.quadraticCurveTo(4, -18.5, 11.5, -13);
-  p.lineTo(11, -3);
-  p.quadraticCurveTo(4, -0.5, -3, -3);
+  p.moveTo(-3.5, 1);
+  p.lineTo(-4, -14.5);
+  p.quadraticCurveTo(4, -19.5, 12, -14.5);
+  p.lineTo(12, 1);
+  p.quadraticCurveTo(4, 3, -3.5, 1);
   p.closePath();
 });
 
 export const HAT_ARACHNID_EYE_L = createPath((p) => {
-  p.moveTo(0.5, -9.5);
-  p.lineTo(4.5, -6.5);
-  p.lineTo(4, -10.5);
+  p.moveTo(-0.5, -12);
+  p.lineTo(4.2, -7.5);
+  p.lineTo(3.8, -12.5);
   p.closePath();
 });
 
 export const HAT_ARACHNID_EYE_R = createPath((p) => {
-  p.moveTo(5.5, -9.5);
-  p.lineTo(9.5, -6.5);
-  p.lineTo(9, -10.5);
+  p.moveTo(5.8, -11.5);
+  p.lineTo(10.5, -7.0);
+  p.lineTo(10.0, -12.0);
   p.closePath();
 });

@@ -61,7 +61,7 @@ export const HAT_DETECTIVE_CROWN_PATH = createPath((p) => {
 // 5. Masque & Tuba
 export const HAT_SNORKEL_MASK_PATH = createPath((p) => {
   if (p.ellipse) {
-    p.ellipse(4.5, -7.5, 6.2, 3.2, 0.05, 0, Math.PI * 2);
+    p.ellipse(5.0, -9.5, 7.5, 4.0, 0.05, 0, Math.PI * 2);
   }
 });
 
@@ -119,14 +119,14 @@ export const HAT_GASMASK_SNOUT_PATH = createPath((p) => {
 
 // 12. Casque de Boxe
 export const HAT_BOXER_GUARD_PATH = createPath((p) => {
-  p.moveTo(-3, -4.5);
-  p.lineTo(-3.5, -12.5);
-  p.quadraticCurveTo(4, -18, 11.5, -12.5);
-  p.lineTo(11, -4.5);
-  p.lineTo(8.5, -5);
-  p.lineTo(9, -10.5);
-  p.quadraticCurveTo(4, -13, -1, -10.5);
-  p.lineTo(-0.5, -5);
+  p.moveTo(-3.5, -4.0);
+  p.lineTo(-4.0, -13.0);
+  p.quadraticCurveTo(4, -18.5, 12.0, -13.0);
+  p.lineTo(11.5, -4.0);
+  p.lineTo(9.5, -4.5);
+  p.lineTo(10.0, -13.5);
+  p.quadraticCurveTo(4, -15.0, -1.5, -13.5);
+  p.lineTo(-1.0, -4.5);
   p.closePath();
 });
 

@@ -70,8 +70,8 @@ function renderGasMaskHat(ctx: CanvasRenderingContext2D): void {
   ctx.strokeStyle = '#18181b';
   ctx.lineWidth = 1.0;
   ctx.beginPath();
-  ctx.arc(2.5, -8, 2.4, 0, Math.PI * 2);
-  ctx.arc(6.5, -7.5, 2.2, 0, Math.PI * 2);
+  ctx.arc(2.0, -10, 2.7, 0, Math.PI * 2);
+  ctx.arc(8.0, -9, 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 }
