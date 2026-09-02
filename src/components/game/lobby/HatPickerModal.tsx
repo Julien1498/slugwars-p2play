@@ -48,7 +48,7 @@ export const HatPickerModal: React.FC<HatPickerModalProps> = ({
       aria-label="Sélection de couvre-chef"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-zinc-900 border border-violet-500/40 rounded-2xl shadow-2xl shadow-violet-950/80 overflow-hidden">
+      <div className="relative w-full max-w-md max-h-[90vh] flex flex-col bg-zinc-900 border border-violet-500/40 rounded-2xl shadow-2xl shadow-violet-950/80 overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 bg-zinc-950/60">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -79,41 +79,39 @@ export const HatPickerModal: React.FC<HatPickerModalProps> = ({
           </button>
         </div>
 
-        {/* Hats Grid Content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh] grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {/* Pure Visual Cosmetic Grid */}
+        <div className="p-4 overflow-y-auto max-h-[60vh] grid grid-cols-3 sm:grid-cols-4 gap-2.5">
           {HATS.map((hat) => {
             const isSelected = (currentHatId || 'military') === hat.id;
             const cardBg = isSelected
-              ? 'bg-violet-950/50 border-violet-500 shadow-md shadow-violet-950/40 ring-1 ring-violet-500'
-              : 'bg-zinc-950/60 border-zinc-800 hover:border-violet-500/40 hover:bg-zinc-800/40';
+              ? 'bg-violet-950/70 border-violet-500 shadow-md shadow-violet-950/60 ring-2 ring-violet-500/80'
+              : 'bg-zinc-950/60 border-zinc-800 hover:border-violet-500/50 hover:bg-zinc-800/50';
 
             return (
               <button
                 key={hat.id}
                 type="button"
                 onClick={() => handleChoose(hat)}
-                className={`relative p-2.5 rounded-xl border text-left flex items-center gap-3 transition cursor-pointer select-none group ${cardBg}`}
+                title={hat.name}
+                aria-label={hat.name}
+                className={`relative p-2 rounded-2xl border flex items-center justify-center transition cursor-pointer select-none group aspect-square ${cardBg}`}
               >
                 {/* Visual Cosmetic Preview */}
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner border border-white/10 group-hover:scale-105 transition-transform overflow-hidden"
+                  className="w-full h-full rounded-xl flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform"
                   style={{
-                    backgroundColor: isSelected ? `${teamColor}22` : '#18181b',
-                    borderColor: isSelected ? teamColor : 'rgba(255,255,255,0.1)',
+                    backgroundColor: isSelected ? `${teamColor}22` : 'transparent',
                   }}
                 >
-                  <HatPreviewCanvas hatId={hat.id} teamColor={teamColor} size={48} />
+                  <HatPreviewCanvas hatId={hat.id} teamColor={teamColor} size={52} />
                 </div>
 
-                {/* Name & Equipped Status */}
-                <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                  <span className="font-bold text-xs text-zinc-100 truncate">{hat.name}</span>
-                  {isSelected && (
-                    <span className="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 text-[9px] font-black uppercase flex items-center gap-0.5 flex-shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" /> Équipé
-                    </span>
-                  )}
-                </div>
+                {/* Equipped Checkmark Badge */}
+                {isSelected && (
+                  <span className="absolute top-1.5 right-1.5 p-1 rounded-full bg-violet-500 text-white shadow-md">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </span>
+                )}
               </button>
             );
           })}

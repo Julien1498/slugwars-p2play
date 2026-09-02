@@ -82,15 +82,15 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
                   type="button"
                   disabled={!canCustomize}
                   onClick={() => canCustomize && setSelectedTeamId(t.id)}
-                  className={`px-2 py-1 rounded-lg border flex items-center gap-1.5 transition text-xs font-bold ${
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition flex-shrink-0 ${
                     canCustomize
                       ? 'bg-zinc-900 hover:bg-violet-950/60 border-zinc-700 hover:border-violet-500/50 text-zinc-200 cursor-pointer shadow-sm active:scale-95'
                       : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 cursor-default'
                   }`}
-                  title={canCustomize ? "Changer de couvre-chef" : `Couvre-chef : ${hatDef.name}`}
+                  title={canCustomize ? `Changer de couvre-chef (${hatDef.name})` : `Couvre-chef : ${hatDef.name}`}
+                  aria-label={canCustomize ? `Changer de couvre-chef (${hatDef.name})` : `Couvre-chef : ${hatDef.name}`}
                 >
-                  <HatPreviewCanvas hatId={t.hat || 'military'} teamColor={t.color} size={20} />
-                  <span className="text-[10px] hidden sm:inline truncate max-w-[70px]">{hatDef.name}</span>
+                  <HatPreviewCanvas hatId={t.hat || 'military'} teamColor={t.color} size={24} />
                 </button>
 
                 <div
