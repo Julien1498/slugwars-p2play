@@ -1,15 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Team, GameConfig } from '../../../core/types';
 import { Users, Play, RefreshCw } from 'lucide-react';
+import { getHat } from '../../../core/cosmetics/hatsRegistry';
+import { HatPickerModal } from './HatPickerModal';
 
 interface LobbyTeamListProps {
   teams: Team[];
   config: GameConfig;
   isHost: boolean;
+  myPeerId?: string | null;
   onStartGame: () => void;
+  onSetTeamHat?: (teamId: string, hatId: string) => void;
 }
 
-export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({ teams, config, isHost, onStartGame }) => {
+export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
+  teams,
+  config,
+  isHost,
+  myPeerId,
+  onStartGame,
+  onSetTeamHat,
+}) => {
+  const [selectedTeamForHat, setSelectedTeamForHat] = useState<Team | null>(null);
+
   return (
     <div className="md:col-span-5 landscape:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
@@ -23,46 +36,69 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({ teams, config, isH
 
       {/* Squad Dossier Cards List */}
       <div className="space-y-2 flex-1">
-        {teams.map((t, idx) => (
-          <div
-            key={t.id}
-            className="p-2.5 bg-zinc-950/80 border border-zinc-800 hover:border-violet-500/40 rounded-xl flex items-center justify-between transition shadow-sm"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative flex-shrink-0">
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-inner border border-white/20"
-                  style={{ backgroundColor: `${t.color}33` }}
-                >
-                  {t.avatar}
+        {teams.map((t, idx) => {
+          const hatDef = getHat(t.hat);
+          const canCustomize = isHost || t.id === myPeerId;
+
+          return (
+            <div
+              key={t.id}
+              className="p-2.5 bg-zinc-950/80 border border-zinc-800 hover:border-violet-500/40 rounded-xl flex items-center justify-between transition shadow-sm gap-2"
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="relative flex-shrink-0">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-inner border border-white/20"
+                    style={{ backgroundColor: `${t.color}33` }}
+                  >
+                    {t.avatar}
+                  </div>
+                  <div
+                    className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-950 shadow"
+                    style={{ backgroundColor: t.color }}
+                  />
                 </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-xs text-zinc-100 flex items-center gap-1.5 truncate">
+                    <span className="truncate">{t.name}</span>
+                    {t.isHost && (
+                      <span className="px-1.5 py-0.2 bg-violet-950 text-violet-300 border border-violet-600/50 text-[8px] rounded font-black uppercase flex-shrink-0">
+                        Commandant
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-0.5">
+                    Équipe #{idx + 1} • <span className="text-violet-300 font-semibold">{config.slugsPerTeam} limaces ({config.slugHp} HP)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hat Customization Button & Color Indicator */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  disabled={!canCustomize}
+                  onClick={() => canCustomize && setSelectedTeamForHat(t)}
+                  className={`px-2 py-1 rounded-lg border flex items-center gap-1.5 transition text-xs font-bold ${
+                    canCustomize
+                      ? 'bg-zinc-900 hover:bg-violet-950/60 border-zinc-700 hover:border-violet-500/50 text-zinc-200 cursor-pointer shadow-sm active:scale-95'
+                      : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 cursor-default'
+                  }`}
+                  title={canCustomize ? "Changer de couvre-chef" : `Couvre-chef : ${hatDef.name}`}
+                >
+                  <span className="text-sm leading-none">{hatDef.icon}</span>
+                  <span className="text-[10px] hidden sm:inline truncate max-w-[65px]">{hatDef.name}</span>
+                </button>
+
                 <div
-                  className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-950 shadow"
+                  className="w-2.5 h-6 rounded-full border border-white/20 shadow-sm flex-shrink-0"
                   style={{ backgroundColor: t.color }}
                 />
               </div>
-
-              <div className="min-w-0">
-                <div className="font-bold text-xs text-zinc-100 flex items-center gap-1.5 truncate">
-                  <span className="truncate">{t.name}</span>
-                  {t.isHost && (
-                    <span className="px-1.5 py-0.2 bg-violet-950 text-violet-300 border border-violet-600/50 text-[8px] rounded font-black uppercase flex-shrink-0">
-                      Commandant
-                    </span>
-                  )}
-                </div>
-                <div className="text-[10px] text-zinc-400 mt-0.5">
-                  Équipe #{idx + 1} • <span className="text-violet-300 font-semibold">{config.slugsPerTeam} limaces ({config.slugHp} HP)</span>
-                </div>
-              </div>
             </div>
-
-            <div
-              className="w-2.5 h-6 rounded-full border border-white/20 shadow-sm flex-shrink-0"
-              style={{ backgroundColor: t.color }}
-            />
-          </div>
-        ))}
+          );
+        })}
 
         {/* Waiting Slot Placeholder */}
         {teams.length < 6 && (
@@ -95,6 +131,19 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({ teams, config, isH
           Terrain destructible • Tour par tour • P2P
         </div>
       </div>
+
+      {selectedTeamForHat && (
+        <HatPickerModal
+          isOpen={true}
+          onClose={() => setSelectedTeamForHat(null)}
+          currentHatId={selectedTeamForHat.hat}
+          teamName={selectedTeamForHat.name}
+          teamColor={selectedTeamForHat.color}
+          onSelectHat={(hatId) => {
+            onSetTeamHat?.(selectedTeamForHat.id, hatId);
+          }}
+        />
+      )}
     </div>
   );
 };

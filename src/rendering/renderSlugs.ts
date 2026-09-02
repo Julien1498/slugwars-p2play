@@ -205,10 +205,8 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     }
 
     // Team Hat
-    const hatIndex = (slug as any).hatId !== undefined
-      ? ['military', 'bandana', 'cyber', 'cowboy'].indexOf((slug as any).hatId)
-      : teamIndex >= 0 ? teamIndex : 0;
-    renderSlugHat(ctx, hatIndex >= 0 ? hatIndex : 0, teamColor, animTime);
+    const hatId = (slug as any).hatId || team?.hat;
+    renderSlugHat(ctx, hatId, teamIndex >= 0 ? teamIndex : 0, teamColor, animTime);
 
     // Mouth
     if (isAirbornePanic) {

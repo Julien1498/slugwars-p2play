@@ -22,6 +22,7 @@ export const LIFECYCLE_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Netwo
       if (existing) {
         if (requestedName && !requestedName.startsWith('Joueur-')) existing.name = requestedName;
         if (payload?.avatar) existing.avatar = payload.avatar;
+        if (payload?.hat) existing.hat = payload.hat;
       } else {
         const colorIdx = engine.state.teams.length % TEAM_COLORS.length;
         engine.addTeam(
@@ -29,7 +30,8 @@ export const LIFECYCLE_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Netwo
           trusted,
           payload?.color || TEAM_COLORS[colorIdx],
           payload?.avatar || '🐌',
-          playerId === hostId
+          playerId === hostId,
+          payload?.hat
         );
       }
       syncState();
@@ -99,6 +101,21 @@ export const LIFECYCLE_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Netwo
     permission: 'HOST_ONLY',
     executeHost: ({ engine }) => {
       engine.endTurn();
+    },
+  },
+
+  SET_TEAM_HAT: {
+    permission: 'ANY',
+    allowedPhases: ['LOBBY'],
+    executeHost: ({ engine, playerId, hostId, syncState, broadcastState }, payload) => {
+      const targetTeamId = payload?.teamId || playerId;
+      if (playerId !== targetTeamId && playerId !== hostId) return;
+      const team = engine.state.teams.find((t) => t.id === targetTeamId);
+      if (team && payload?.hat) {
+        team.hat = payload.hat;
+        syncState();
+        broadcastState(engine.state);
+      }
     },
   },
 

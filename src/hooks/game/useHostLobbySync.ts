@@ -40,7 +40,8 @@ export function useHostLobbySync({
       if (myPeerId && !engineRef.current.state.teams.some((t) => t.id === myPeerId)) {
         const hostName = playerName || peerManager.getTrustedUsername?.(myPeerId) || 'Hôte';
         const hostAvatar = playerAvatar || '🐌';
-        engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true);
+        const savedHat = typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat) : undefined;
+        engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true, savedHat);
         changed = true;
       }
 

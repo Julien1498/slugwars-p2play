@@ -82,8 +82,15 @@ export class SlugWarsEngine {
     return true;
   }
 
-  public addTeam(id: string, name: string, color: string, avatar: string, isHost: boolean): void {
-    registerTeam(this.state, id, name, color, avatar, isHost, this.terrain);
+  public addTeam(id: string, name: string, color: string, avatar: string, isHost: boolean, hat?: string): void {
+    registerTeam(this.state, id, name, color, avatar, isHost, this.terrain, hat);
+  }
+
+  public setTeamHat(teamId: string, hatId: string): void {
+    const team = this.state.teams.find((t) => t.id === teamId);
+    if (team) {
+      team.hat = hatId;
+    }
   }
 
   public removeTeam(id: string): void {

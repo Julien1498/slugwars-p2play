@@ -139,6 +139,7 @@ export function useGame(options?: {
           payload: {
             name: options.playerName || peerManager.getTrustedUsername?.(myPeerId),
             avatar: options.playerAvatar || '🐌',
+            hat: (options as any).playerHat || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat : undefined),
           },
         });
         peerManager.sendToHost('ACTION', {
@@ -189,10 +190,11 @@ export function useGame(options?: {
       const { peerId } = await joinGame(roomId, { username: name, avatar });
       syncRoomUrlToAddressBar(roomId);
       const sendJoin = () => {
+        const savedHat = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat : undefined;
         peerManager.sendToHost('ACTION', {
           actionName: 'JOIN_GAME',
           playerId: peerId,
-          payload: { name, avatar },
+          payload: { name, avatar, hat: savedHat },
         });
       };
       const reqState = () => {

@@ -133,6 +133,7 @@ export interface Team {
   isHost: boolean;
   inventory: Record<string, number>;
   stats?: TeamStats;
+  hat?: string;
 }
 
 export type GamePhase =

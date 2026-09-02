@@ -103,6 +103,7 @@ export const App: React.FC<AppProps> = ({
         onExit={onExit}
         onChangeConfig={(config) => sendAction('CHANGE_CONFIG', { config })}
         onStartGame={() => sendAction('START_GAME')}
+        onSetTeamHat={(teamId, hat) => sendAction('SET_TEAM_HAT', { teamId, hat })}
       />
     );
   }

@@ -17,6 +17,7 @@ export interface SlugWarsLobbyProps {
   onExit?: () => void;
   onChangeConfig: (partial: Partial<GameConfig>) => void;
   onStartGame: () => void;
+  onSetTeamHat?: (teamId: string, hatId: string) => void;
 }
 
 export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
@@ -29,6 +30,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   onExit,
   onChangeConfig,
   onStartGame,
+  onSetTeamHat,
 }) => {
   const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
 
@@ -92,7 +94,14 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
           <LobbyMapConfig config={config} isHost={isHost} onChangeConfig={onChangeConfig} />
 
           {/* Right Column: Squads List & Battle Launch (5 Cols) */}
-          <LobbyTeamList teams={teams} config={config} isHost={isHost} onStartGame={onStartGame} />
+          <LobbyTeamList
+            teams={teams}
+            config={config}
+            isHost={isHost}
+            myPeerId={myPeerId}
+            onStartGame={onStartGame}
+            onSetTeamHat={onSetTeamHat}
+          />
         </div>
       </div>
     </div>

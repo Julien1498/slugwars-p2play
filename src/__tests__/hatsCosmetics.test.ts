@@ -1,0 +1,199 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { HATS, getHat, getDefaultHatForTeam, DEFAULT_HATS_BY_INDEX } from '../core/cosmetics/hatsRegistry';
+import { saveProfile, loadProfile } from '../core/profile';
+import { SlugWarsEngine } from '../core/gameEngine';
+import { LIFECYCLE_ACTION_REGISTRY } from '../network/actions/actionRegistryLifecycle';
+import { renderSlugHat } from '../rendering/slugs/renderSlugHats';
+
+describe('Hats Cosmetics & Headwear System', () => {
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    const mockStorage = {
+      getItem: vi.fn((k: string) => store.get(k) ?? null),
+      setItem: vi.fn((k: string, v: string) => store.set(k, v)),
+      clear: vi.fn(() => store.clear()),
+      removeItem: vi.fn((k: string) => store.delete(k)),
+    };
+    (globalThis as any).window = { localStorage: mockStorage };
+    (globalThis as any).localStorage = mockStorage;
+  });
+
+  describe('Hats Registry Integrity', () => {
+    it('contains all 11 defined hats including existing and new ones', () => {
+      expect(HATS.length).toBe(11);
+      const ids = HATS.map((h) => h.id);
+      expect(ids).toContain('military');
+      expect(ids).toContain('cowboy');
+      expect(ids).toContain('bandana');
+      expect(ids).toContain('cyber');
+      expect(ids).toContain('crown');
+      expect(ids).toContain('pirate');
+      expect(ids).toContain('tophat');
+      expect(ids).toContain('ninja');
+      expect(ids).toContain('viking');
+      expect(ids).toContain('sombrero');
+      expect(ids).toContain('none');
+    });
+
+    it('returns default hat when getHat is passed null or undefined', () => {
+      expect(getHat(null).id).toBe('military');
+      expect(getHat(undefined).id).toBe('military');
+      expect(getHat('unknown_hat').id).toBe('military');
+      expect(getHat('crown').id).toBe('crown');
+      expect(getHat('pirate').name).toBe('Tricorne Pirate');
+    });
+
+    it('cycles default hats deterministically by team index', () => {
+      expect(getDefaultHatForTeam(0)).toBe('military');
+      expect(getDefaultHatForTeam(1)).toBe('bandana');
+      expect(getDefaultHatForTeam(2)).toBe('cyber');
+      expect(getDefaultHatForTeam(3)).toBe('cowboy');
+      expect(getDefaultHatForTeam(DEFAULT_HATS_BY_INDEX.length)).toBe(DEFAULT_HATS_BY_INDEX[0]);
+    });
+  });
+
+  describe('Player Profile Hat Persistence', () => {
+    it('saves and loads selected hat in localStorage', () => {
+      saveProfile({ username: 'Capitaine Slime', avatar: '??', hat: 'pirate' });
+      const loaded = loadProfile();
+      expect(loaded?.username).toBe('Capitaine Slime');
+      expect(loaded?.hat).toBe('pirate');
+    });
+
+    it('preserves existing hat when only updating username', () => {
+      saveProfile({ username: 'Initial', hat: 'crown' });
+      saveProfile({ username: 'Updated' });
+      const loaded = loadProfile();
+      expect(loaded?.username).toBe('Updated');
+      expect(loaded?.hat).toBe('crown');
+    });
+  });
+
+  describe('Engine Team Hat Management', () => {
+    it('assigns default hat to teams registered without hat', () => {
+      const engine = new SlugWarsEngine();
+      engine.addTeam('team_alpha', 'Alpha', '#ef4444', '??', true);
+      engine.addTeam('team_bravo', 'Bravo', '#3b82f6', '??', false);
+
+      expect(engine.state.teams[0].hat).toBe('military');
+      expect(engine.state.teams[1].hat).toBe('bandana');
+    });
+
+    it('preserves custom hat passed on team registration', () => {
+      const engine = new SlugWarsEngine();
+      engine.addTeam('team_custom', 'Custom', '#10b981', '??', true, 'cowboy');
+      expect(engine.state.teams[0].hat).toBe('cowboy');
+    });
+
+    it('updates team hat via setTeamHat method', () => {
+      const engine = new SlugWarsEngine();
+      engine.addTeam('team_1', 'Team 1', '#ef4444', '??', true);
+      expect(engine.state.teams[0].hat).toBe('military');
+
+      engine.setTeamHat('team_1', 'tophat');
+      expect(engine.state.teams[0].hat).toBe('tophat');
+    });
+  });
+
+  describe('Network Action SET_TEAM_HAT', () => {
+    it('allows a player to update their own team hat in LOBBY phase', () => {
+      const engine = new SlugWarsEngine();
+      engine.state.phase = 'LOBBY';
+      engine.addTeam('player_1', 'P1', '#ef4444', '??', false);
+
+      const syncState = vi.fn();
+      const broadcastState = vi.fn();
+
+      LIFECYCLE_ACTION_REGISTRY.SET_TEAM_HAT?.executeHost(
+        {
+          engine,
+          playerId: 'player_1',
+          hostId: 'host_peer',
+          peerManager: {} as any,
+          syncState,
+          broadcastState,
+        },
+        { teamId: 'player_1', hat: 'ninja' }
+      );
+
+      expect(engine.state.teams[0].hat).toBe('ninja');
+      expect(syncState).toHaveBeenCalled();
+      expect(broadcastState).toHaveBeenCalled();
+    });
+
+    it('allows the host to update any team hat in LOBBY phase', () => {
+      const engine = new SlugWarsEngine();
+      engine.state.phase = 'LOBBY';
+      engine.addTeam('player_guest', 'Guest', '#3b82f6', '??', false);
+
+      const syncState = vi.fn();
+      const broadcastState = vi.fn();
+
+      LIFECYCLE_ACTION_REGISTRY.SET_TEAM_HAT?.executeHost(
+        {
+          engine,
+          playerId: 'host_peer',
+          hostId: 'host_peer',
+          peerManager: {} as any,
+          syncState,
+          broadcastState,
+        },
+        { teamId: 'player_guest', hat: 'viking' }
+      );
+
+      expect(engine.state.teams[0].hat).toBe('viking');
+    });
+
+    it('rejects hat updates from non-owner and non-host players', () => {
+      const engine = new SlugWarsEngine();
+      engine.state.phase = 'LOBBY';
+      engine.addTeam('player_target', 'Target', '#3b82f6', '??', false);
+
+      const syncState = vi.fn();
+      const broadcastState = vi.fn();
+
+      LIFECYCLE_ACTION_REGISTRY.SET_TEAM_HAT?.executeHost(
+        {
+          engine,
+          playerId: 'player_imposter',
+          hostId: 'host_peer',
+          peerManager: {} as any,
+          syncState,
+          broadcastState,
+        },
+        { teamId: 'player_target', hat: 'sombrero' }
+      );
+
+      expect(engine.state.teams[0].hat).not.toBe('sombrero');
+      expect(syncState).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Canvas Hat Renderer Zero-Crash Integrity', () => {
+    it('safely renders all hat styles without crashing in mock canvas context', () => {
+      const mockCtx: any = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        beginPath: vi.fn(),
+        closePath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        arc: vi.fn(),
+        fill: vi.fn(),
+        stroke: vi.fn(),
+        createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      };
+
+      for (const hat of HATS) {
+        expect(() => {
+          renderSlugHat(mockCtx, hat.id, 0, '#ef4444', 1.0);
+        }).not.toThrow();
+      }
+
+      // Also test fallback number index call
+      expect(() => {
+        renderSlugHat(mockCtx, 2, '#3b82f6', 1.0);
+      }).not.toThrow();
+    });
+  });
+});

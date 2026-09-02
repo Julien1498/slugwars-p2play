@@ -55,6 +55,7 @@ export function initializeTerrainForConfig(config: GameConfig): { terrain: Destr
 }
 
 import { findSafePlacementPoint } from './turnManager';
+import { getDefaultHatForTeam } from '../cosmetics/hatsRegistry';
 
 export function registerTeam(
   state: GameState,
@@ -63,7 +64,8 @@ export function registerTeam(
   color: string,
   avatar: string,
   isHost: boolean,
-  terrain?: DestructibleTerrain
+  terrain?: DestructibleTerrain,
+  hat?: string
 ) {
   if (state.teams.some((t) => t.id === id)) return;
   const wSet = getWeaponSet(state.config.weaponSetId);
@@ -75,6 +77,7 @@ export function registerTeam(
     isHost,
     inventory: { ...wSet.inventory },
     stats: { kills: 0, deaths: 0, damageDealt: 0, damageTaken: 0 },
+    hat: hat || getDefaultHatForTeam(state.teams.length),
   };
   state.teams.push(newTeam);
 

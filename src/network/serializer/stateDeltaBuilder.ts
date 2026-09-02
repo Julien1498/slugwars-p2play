@@ -1,13 +1,5 @@
-import {
-  GameState,
-  HelicopterVehicle,
-} from '../../core/types';
-import {
-  CompactStateDelta,
-  CompactTeamDelta,
-  CompactSlugDelta,
-  quantizeFloat,
-} from './netSerializerTypes';
+import { GameState, HelicopterVehicle } from '../../core/types';
+import { CompactStateDelta, CompactTeamDelta, CompactSlugDelta, quantizeFloat } from './netSerializerTypes';
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
   const delta: CompactStateDelta = {};
@@ -56,8 +48,12 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.solidProps = currentState.solidProps;
   }
 
-  // Team stats & inventory delta
-  if (currentState.teams.length !== (prevState?.teams.length ?? 0)) {
+  // Team stats, meta (hat, avatar) & inventory delta
+  const teamMetaChanged = currentState.teams.some((t) => {
+    const p = prevState?.teams.find((pt) => pt.id === t.id);
+    return !p || p.hat !== t.hat || p.avatar !== t.avatar || p.color !== t.color;
+  });
+  if (currentState.teams.length !== (prevState?.teams.length ?? 0) || teamMetaChanged) {
     delta.fullTeams = currentState.teams;
   }
   const teamDeltas: CompactTeamDelta[] = [];

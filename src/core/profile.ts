@@ -1,6 +1,7 @@
 export interface PlayerProfile {
   username: string;
   avatar: string;
+  hat?: string;
   updatedAt?: number;
 }
 
@@ -16,6 +17,7 @@ export function loadProfile(): PlayerProfile | null {
       return {
         username: parsed.username.trim(),
         avatar: typeof parsed.avatar === 'string' && parsed.avatar ? parsed.avatar : '🐌',
+        hat: typeof parsed.hat === 'string' ? parsed.hat : undefined,
         updatedAt: parsed.updatedAt || Date.now(),
       };
     }
@@ -25,14 +27,16 @@ export function loadProfile(): PlayerProfile | null {
   }
 }
 
-export function saveProfile(data: { username: string; avatar?: string }): void {
+export function saveProfile(data: { username: string; avatar?: string; hat?: string }): void {
   if (typeof window === 'undefined' || !window.localStorage) return;
   const username = data.username.trim();
   if (!username) return;
   try {
+    const existing = loadProfile();
     const profile: PlayerProfile = {
       username,
-      avatar: data.avatar || '🐌',
+      avatar: data.avatar || existing?.avatar || '🐌',
+      hat: data.hat !== undefined ? data.hat : existing?.hat,
       updatedAt: Date.now(),
     };
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));

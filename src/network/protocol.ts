@@ -25,6 +25,7 @@ export type SlugWarsActionType =
   | 'STEER_VEHICLE'
   | 'REQUEST_FULL_STATE'
   | 'SET_FUSE_TIMER'
+  | 'SET_TEAM_HAT'
   | 'RESTART_GAME'
   | 'DEV_ACTION';
 
@@ -32,6 +33,8 @@ export interface SlugWarsNetworkPayload {
   name?: string;
   avatar?: string;
   color?: string;
+  hat?: string;
+  teamId?: string;
   config?: any;
   dir?: 'left' | 'right';
   steerDir?: 'left' | 'right' | 'up' | 'down';
