@@ -20,8 +20,8 @@ describe('Hats Cosmetics & Headwear System', () => {
   });
 
   describe('Hats Registry Integrity', () => {
-    it('contains all 27 defined hats including classic, fun, combat and fantasy ones', () => {
-      expect(HATS.length).toBe(27);
+    it('contains all 47 defined hats including classic, fun, combat, fantasy and pop culture ones', () => {
+      expect(HATS.length).toBe(47);
       const ids = HATS.map((h) => h.id);
       expect(ids).toContain('military');
       expect(ids).toContain('cowboy');
@@ -49,6 +49,26 @@ describe('Hats Cosmetics & Headwear System', () => {
       expect(ids).toContain('mushroom');
       expect(ids).toContain('frog');
       expect(ids).toContain('unicorn');
+      expect(ids).toContain('swamp_ears');
+      expect(ids).toContain('feline_plume');
+      expect(ids).toContain('mini_coronet');
+      expect(ids).toContain('patriot_helmet');
+      expect(ids).toContain('titanium_mask');
+      expect(ids).toContain('mischief_horns');
+      expect(ids).toContain('thunder_wings');
+      expect(ids).toContain('supersonic_quills');
+      expect(ids).toContain('twinfox_ears');
+      expect(ids).toContain('mad_scientist');
+      expect(ids).toContain('village_headband');
+      expect(ids).toContain('super_shinobi_hair');
+      expect(ids).toContain('renegade_straw');
+      expect(ids).toContain('shadow_mask');
+      expect(ids).toContain('bandit_balaclava');
+      expect(ids).toContain('swat_helmet');
+      expect(ids).toContain('tactical_chicken');
+      expect(ids).toContain('arachnid_mask');
+      expect(ids).toContain('alien_symbiote');
+      expect(ids).toContain('bio_electric_mask');
       expect(ids).toContain('none');
     });
 
@@ -201,6 +221,7 @@ describe('Hats Cosmetics & Headwear System', () => {
         ellipse: vi.fn(),
         fill: vi.fn(),
         stroke: vi.fn(),
+        fillRect: vi.fn(),
         createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
       };
 

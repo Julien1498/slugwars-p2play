@@ -21,6 +21,8 @@ import {
 } from './slugHatPaths';
 import { FUN_HAT_STRATEGIES } from './renderSlugHatsFun';
 import { COMBAT_HAT_STRATEGIES } from './renderSlugHatsCombat';
+import { POP_HAT_STRATEGIES } from './renderSlugHatsPopCulture';
+import { HEROES_HAT_STRATEGIES } from './renderSlugHatsHeroes';
 import { HatRendererFn } from './renderSlugHatTypes';
 
 export {
@@ -236,6 +238,8 @@ export const HAT_RENDER_STRATEGIES: Record<string, HatRendererFn> = {
   sombrero: renderSombreroHat,
   ...FUN_HAT_STRATEGIES,
   ...COMBAT_HAT_STRATEGIES,
+  ...POP_HAT_STRATEGIES,
+  ...HEROES_HAT_STRATEGIES,
 };
 
 export function renderSlugHat(
