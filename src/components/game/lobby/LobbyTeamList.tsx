@@ -3,6 +3,7 @@ import { Team, GameConfig } from '../../../core/types';
 import { Users, Play, RefreshCw } from 'lucide-react';
 import { getHat } from '../../../core/cosmetics/hatsRegistry';
 import { HatPickerModal } from './HatPickerModal';
+import { HatPreviewCanvas } from './HatPreviewCanvas';
 
 interface LobbyTeamListProps {
   teams: Team[];
@@ -88,8 +89,8 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
                   }`}
                   title={canCustomize ? "Changer de couvre-chef" : `Couvre-chef : ${hatDef.name}`}
                 >
-                  <span className="text-sm leading-none">{hatDef.icon}</span>
-                  <span className="text-[10px] hidden sm:inline truncate max-w-[65px]">{hatDef.name}</span>
+                  <HatPreviewCanvas hatId={t.hat || 'military'} teamColor={t.color} size={20} />
+                  <span className="text-[10px] hidden sm:inline truncate max-w-[70px]">{hatDef.name}</span>
                 </button>
 
                 <div
