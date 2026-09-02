@@ -61,9 +61,9 @@ describe('Theme Registry Architecture & Data Integrity', () => {
       expect(THEME_CONFIGS.ORGANIC_CAVES.topology.heightmapType).toBe('FULL_SLAB');
     });
 
-    it('specifically configures 3 natural arches for NATURAL_ARCHES', () => {
-      expect(THEME_CONFIGS.NATURAL_ARCHES.topology.arches).toBe(3);
+    it('specifically configures ARCHES heightmap for NATURAL_ARCHES', () => {
       expect(THEME_CONFIGS.NATURAL_ARCHES.topology.heightmapType).toBe('ARCHES');
+      expect(THEME_CONFIGS.NATURAL_ARCHES.topology.tunnels).toBe(0);
     });
   });
 

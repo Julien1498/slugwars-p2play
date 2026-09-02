@@ -107,9 +107,36 @@ export function generate1DHeightmap(
         groundY = worldH - 35;
       }
     } else if (heightmapType === 'ARCHES') {
-      const noise = prng.harmonicNoise(wx, baseFreq * 0.9, p1, p2, p3);
-      const edgeDrop = Math.pow(Math.abs(wx - worldW / 2) / (worldW / 2), 2.5) * 400;
-      groundY = worldH * 0.38 + noise + edgeDrop;
+      const noise = prng.harmonicNoise(wx, baseFreq * 1.5, p1, p2, p3) * 0.7;
+      const isTriPillar = Math.sin(p3) > -0.1; // ~55% tri-pillar, ~45% canyon gorge
+
+      let distToPillar = 999;
+      if (isTriPillar) {
+        const c1 = worldW * (0.22 + Math.sin(p1) * 0.02);
+        const c2 = worldW * (0.50 + Math.cos(p1) * 0.02);
+        const c3 = worldW * (0.78 + Math.sin(p2) * 0.02);
+        const r1 = worldW * 0.13;
+        const r2 = worldW * 0.11;
+        const r3 = worldW * 0.13;
+        distToPillar = Math.min(
+          Math.abs(wx - c1) / r1,
+          Math.abs(wx - c2) / r2,
+          Math.abs(wx - c3) / r3
+        );
+      } else {
+        const c1 = worldW * (0.25 + Math.sin(p1) * 0.025);
+        const c2 = worldW * (0.75 + Math.cos(p2) * 0.025);
+        const r = worldW * 0.18;
+        distToPillar = Math.min(Math.abs(wx - c1) / r, Math.abs(wx - c2) / r);
+      }
+
+      if (distToPillar < 1.0) {
+        const drop = Math.pow(distToPillar, 2.2) * (worldH * 0.50);
+        groundY = worldH * 0.34 + noise + drop;
+      } else {
+        // Deep water canyon / open sea channel under the arches
+        groundY = worldH - 35;
+      }
     } else if (heightmapType === 'SPIRES') {
       const noise = prng.harmonicNoise(wx, baseFreq * 2.2, p1, p2, p3) * 0.6;
       const spireHarmonic = Math.pow(Math.sin((wx / worldW) * Math.PI * 5 + p1), 6) * -260;

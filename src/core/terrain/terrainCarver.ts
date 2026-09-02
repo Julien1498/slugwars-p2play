@@ -3,6 +3,7 @@ import { SeededRandom } from './SeededRandom';
 import { getThemeConfig } from './themeRegistry';
 import { carveCavernFlanksAndPillars } from './cavernCarver';
 import { stampFloatingArchipelagoIslands } from './floatingIslandsCarver';
+import { carveNaturalArchesAndBridges } from './archesCarver';
 
 export function carveTerrainFeatures(
   grid: Uint8Array,
@@ -283,5 +284,10 @@ export function carveTerrainFeatures(
   // 8. Procedural Floating Archipelago Islands
   if (config.topology.heightmapType === 'FLOATING_ISLANDS') {
     stampFloatingArchipelagoIslands(grid, prng, width, height, waterLevel, worldW, worldH, scaleX, scaleY);
+  }
+
+  // 9. Procedural Natural Arches & Rock Bridges
+  if (config.topology.heightmapType === 'ARCHES') {
+    carveNaturalArchesAndBridges(grid, prng, width, height, waterLevel, worldW, worldH, scaleX, scaleY);
   }
 }
