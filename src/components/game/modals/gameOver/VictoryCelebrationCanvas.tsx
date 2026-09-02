@@ -42,21 +42,21 @@ export const VictoryCelebrationCanvas: React.FC<VictoryCelebrationCanvasProps> =
     const startTime = performance.now();
 
     const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-    const width = 230;
-    const height = 96;
+    const width = 320;
+    const height = 160;
 
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
 
     // Pre-create confetti pieces (zero allocation in loop)
     const confColors = [teamColor, '#facc15', '#a855f7', '#38bdf8', '#ef4444', '#10b981'];
-    const confettis: ConfettiPiece[] = Array.from({ length: 14 }, (_, i) => ({
-      x: (i * 17 + 8) % width,
-      y: (i * 23) % height,
-      speedY: 22 + (i % 5) * 8,
+    const confettis: ConfettiPiece[] = Array.from({ length: 20 }, (_, i) => ({
+      x: (i * 23 + 13) % width,
+      y: (i * 29) % height,
+      speedY: 28 + (i % 5) * 10,
       rotation: i * 0.8,
       rotSpeed: (i % 2 === 0 ? 1 : -1) * (2 + (i % 4)),
-      size: 2.5 + (i % 3) * 1.2,
+      size: 3.5 + (i % 3) * 1.5,
       color: confColors[i % confColors.length],
     }));
 
@@ -142,8 +142,8 @@ export const VictoryCelebrationCanvas: React.FC<VictoryCelebrationCanvasProps> =
       // Captain Floating Crown
       if (isCaptain) {
         ctx.save();
-        const crownHoverY = Math.sin(time * 4) * 2 - 26;
-        ctx.font = '14px sans-serif';
+        const crownHoverY = Math.sin(time * 4) * 3 - 25;
+        ctx.font = '26px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('👑', 4, crownHoverY);
@@ -173,18 +173,18 @@ export const VictoryCelebrationCanvas: React.FC<VictoryCelebrationCanvasProps> =
         ctx.restore();
       }
 
-      // Three Celebrating Slugs
+      // Three Celebrating Slugs (Giant, Heroic & Prominent)
       // 1. Left slug
-      const bounceL = Math.abs(Math.sin(elapsed * 4.2 + 1.1)) * 9;
-      drawSlug(width * 0.5 - 56, height * 0.75, 0.9, false, elapsed, bounceL, false);
+      const bounceL = Math.abs(Math.sin(elapsed * 4.2 + 1.1)) * 12;
+      drawSlug(width * 0.5 - 78, height * 0.82, 2.0, false, elapsed, bounceL, false);
 
-      // 2. Right slug (facing left)
-      const bounceR = Math.abs(Math.sin(elapsed * 4.2 + 2.3)) * 9;
-      drawSlug(width * 0.5 + 56, height * 0.75, 0.9, true, elapsed, bounceR, false);
+      // 2. Right slug (facing left towards center)
+      const bounceR = Math.abs(Math.sin(elapsed * 4.2 + 2.3)) * 12;
+      drawSlug(width * 0.5 + 78, height * 0.82, 2.0, true, elapsed, bounceR, false);
 
-      // 3. Center Captain Slug
-      const bounceC = Math.abs(Math.sin(elapsed * 4.2)) * 12;
-      drawSlug(width * 0.5, height * 0.73, 1.15, false, elapsed, bounceC, true);
+      // 3. Center Captain Slug (Largest, in front with floating crown)
+      const bounceC = Math.abs(Math.sin(elapsed * 4.2)) * 16;
+      drawSlug(width * 0.5, height * 0.80, 2.7, false, elapsed, bounceC, true);
 
       ctx.restore();
 
@@ -202,8 +202,8 @@ export const VictoryCelebrationCanvas: React.FC<VictoryCelebrationCanvasProps> =
     <div className={`flex items-center justify-center ${className || ''}`}>
       <canvas
         ref={canvasRef}
-        style={{ width: 230, height: 96 }}
-        className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)] pointer-events-none select-none"
+        style={{ width: 320, height: 160 }}
+        className="drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)] pointer-events-none select-none max-w-full"
       />
     </div>
   );
