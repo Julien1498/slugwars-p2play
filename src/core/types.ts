@@ -12,6 +12,7 @@ export interface SolidProp {
   angleRad?: number;
   variant?: number;
   destroyed?: boolean;
+  detonatedBySlugId?: string;
 }
 
 export interface RopeState {
