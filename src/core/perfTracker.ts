@@ -53,6 +53,8 @@ class PerformanceTracker {
     reactStatsMap: new Map(),
     currentFramePasses: {},
     renderPassStatsMap: new Map(),
+    lastFrameMarkedTime: 0,
+    fallbackRafId: null,
   };
 
   private lastRafTime = 0;
@@ -153,6 +155,7 @@ class PerformanceTracker {
     }
   ): void {
     const now = performance.now();
+    this.sessionState.lastFrameMarkedTime = now;
     const frameIntervalMs = this.lastRafTime > 0 ? now - this.lastRafTime : 16.6;
     this.lastRafTime = now;
 

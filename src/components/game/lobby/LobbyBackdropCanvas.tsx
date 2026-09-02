@@ -13,6 +13,7 @@ import {
   drawRadarOutpost,
   drawTacticalDrone,
 } from './backdrop/lobbyBastions';
+import { perfTracker } from '../../../core/perfTracker';
 
 export const LobbyBackdropCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -58,6 +59,7 @@ export const LobbyBackdropCanvas: React.FC = () => {
       if (!isRunning) return;
       animId = requestAnimationFrame(renderBackdrop);
       t += 0.025;
+      const renderStart = performance.now();
 
       try {
         ctx.clearRect(0, 0, width, height);
@@ -144,6 +146,18 @@ export const LobbyBackdropCanvas: React.FC = () => {
         flarePool.updateAndRender(ctx, height);
       } catch (err) {
         console.error('Lobby backdrop render error:', err);
+      } finally {
+        const dt = Math.max(0.1, performance.now() - renderStart);
+        perfTracker.recordRenderPass('lobby_backdrop', dt);
+        perfTracker.markFrame(dt, {
+          slugs: width >= 1024 ? 2 : 0,
+          livingSlugs: width >= 1024 ? 2 : 0,
+          projectiles: 0,
+          explosions: 0,
+          particles: stars.length + nebulaClouds.length,
+          mines: 0,
+          crates: 0,
+        });
       }
     };
 

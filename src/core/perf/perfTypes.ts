@@ -5,6 +5,7 @@ export const RENDER_PASS_LABELS: Record<string, string> = {
   sky_celestial: '☀️ Soleil / Lune / Phare',
   sky_mountains: '🏔️ Montagnes & Collines',
   sky_back_ocean: '🌊 Océan Arrière-Plan',
+  lobby_backdrop: '🏛️ Toile de Fond QG Lobby',
   // Terrain
   terrain_buffer: '🏜️ Terrain Destructible',
   // Décors & Poutres
