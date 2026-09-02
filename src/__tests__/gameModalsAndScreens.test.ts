@@ -194,4 +194,13 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       expect(parseFromUrl('http://localhost:5173/')).toBe('');
     });
   });
+
+  describe('Victory Celebration Canvas & Top 1 Card', () => {
+    it('exports VictoryCelebrationCanvas and Top1SpotlightCard cleanly without runtime errors', async () => {
+      const { VictoryCelebrationCanvas } = await import('../components/game/modals/gameOver/VictoryCelebrationCanvas');
+      const { Top1SpotlightCard } = await import('../components/game/modals/gameOver/Top1SpotlightCard');
+      expect(typeof VictoryCelebrationCanvas).toBe('function');
+      expect(typeof Top1SpotlightCard).toBe('function');
+    });
+  });
 });

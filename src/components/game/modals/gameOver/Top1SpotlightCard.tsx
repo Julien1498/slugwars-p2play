@@ -1,6 +1,6 @@
-import React from 'react';
 import { Crown, Heart } from 'lucide-react';
 import { TeamSummary } from './gameOverTypes';
+import { VictoryCelebrationCanvas } from './VictoryCelebrationCanvas';
 
 interface Top1SpotlightCardProps {
   topTeam: TeamSummary;
@@ -27,16 +27,13 @@ export const Top1SpotlightCard: React.FC<Top1SpotlightCardProps> = ({
           </div>
         </div>
 
-        {/* Big Slug Mascot with Crown */}
+        {/* Celebrating Slugs with Hat & Floating Crown */}
         <div className="my-auto py-1 flex flex-col items-center">
-          <div className="relative inline-block mb-1">
-            <span className="text-5xl sm:text-6xl drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-              {topTeam.team.avatar || '🐌'}
-            </span>
-            <span className="absolute -top-2 -right-2 text-xl animate-bounce">
-              👑
-            </span>
-          </div>
+          <VictoryCelebrationCanvas
+            teamColor={topTeam.team.color}
+            hatId={topTeam.team.hat}
+            className="mb-1"
+          />
 
           {/* Team Name with Color Dots */}
           <div className="flex items-center gap-1.5 justify-center mt-1">
