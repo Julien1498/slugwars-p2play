@@ -100,6 +100,7 @@ export const App: React.FC<AppProps> = ({
         config={gameState.config}
         teams={gameState.teams}
         isEmbedded={isEmbedded}
+        gameState={gameState}
         onExit={onExit}
         onChangeConfig={(config) => sendAction('CHANGE_CONFIG', { config })}
         onStartGame={() => sendAction('START_GAME')}

@@ -1,11 +1,14 @@
-import React from 'react';
-import { GameConfig, Team } from '../../../core/types';
+import React, { useState, useEffect } from 'react';
+import { GameConfig, Team, GameState } from '../../../core/types';
 import { RoomCodeBadge } from 'p2play-core';
 import { LobbyBackdropCanvas } from './LobbyBackdropCanvas';
 import { LobbyMapConfig } from './LobbyMapConfig';
 import { LobbyTeamList } from './LobbyTeamList';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Activity, Maximize2, Minimize2 } from 'lucide-react';
 import { useFullscreen } from '../../../hooks/useFullscreen';
+import { MetricsModal } from '../modals/MetricsModal';
+import { detectDevModeFromEnvironment } from '../../../network/devSession';
+import { createInitialState } from '../../../core/engine/engineState';
 
 export interface SlugWarsLobbyProps {
   isHost: boolean;
@@ -14,6 +17,8 @@ export interface SlugWarsLobbyProps {
   config: GameConfig;
   teams: Team[];
   isEmbedded?: boolean;
+  isDevMode?: boolean;
+  gameState?: GameState;
   onExit?: () => void;
   onChangeConfig: (partial: Partial<GameConfig>) => void;
   onStartGame: () => void;
@@ -27,12 +32,31 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   config,
   teams,
   isEmbedded,
+  isDevMode,
+  gameState,
   onExit,
   onChangeConfig,
   onStartGame,
   onSetTeamHat,
 }) => {
   const { isFullscreen, isSupported: isFullscreenSupported, toggleFullscreen } = useFullscreen();
+  const [showMetrics, setShowMetrics] = useState(false);
+  const isDev = isDevMode ?? detectDevModeFromEnvironment();
+
+  // Hotkey 'M' to toggle metrics in dev mode
+  useEffect(() => {
+    if (!isDev) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setShowMetrics((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDev]);
 
   return (
     <div className="h-[100dvh] w-full bg-zinc-950 text-zinc-100 flex flex-col items-center p-3 md:p-5 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
@@ -62,8 +86,21 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             </div>
           </div>
 
-          {/* Room Code Badge, Fullscreen & Optional Hub Exit Button */}
+          {/* Dev Metrics, Fullscreen, Room Code Badge & Optional Hub Exit Button */}
           <div className="flex items-center gap-2">
+            {isDev && (
+              <button
+                type="button"
+                onClick={() => setShowMetrics(true)}
+                className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 bg-emerald-950/70 hover:bg-emerald-900/80 border-emerald-500/40 text-emerald-300 cursor-pointer animate-in fade-in"
+                title="Métriques & Télémétrie en temps réel (Mode Dev - Touche M)"
+              >
+                <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
+                <span className="hidden sm:inline text-[11px] font-extrabold tracking-wide uppercase">
+                  Métriques
+                </span>
+              </button>
+            )}
             {isFullscreenSupported && (
               <button
                 type="button"
@@ -103,6 +140,16 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
             onSetTeamHat={onSetTeamHat}
           />
         </div>
+
+        {/* Modale des Métriques en Mode Dev */}
+        {showMetrics && (
+          <MetricsModal
+            isOpen={showMetrics}
+            onClose={() => setShowMetrics(false)}
+            gameState={gameState || { ...createInitialState(config), teams }}
+            hostPeerId={hostPeerId}
+          />
+        )}
       </div>
     </div>
   );

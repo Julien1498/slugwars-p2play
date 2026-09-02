@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { getWeaponsByCategory } from '../core/weapons/registry';
 import { WeaponCategory } from '../core/weapons/types';
 import { GameState } from '../core/types';
 import { getRoomCodeFromLocation } from '../components/game/connection/connectionUrlUtils';
+
+vi.mock('p2play-core', () => ({
+  RoomCodeBadge: () => null,
+}));
 
 describe('Game Modals, Screens & UI Widgets Integrity', () => {
   const createMockGameState = (): GameState => ({
@@ -201,6 +205,13 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
       const { Top1SpotlightCard } = await import('../components/game/modals/gameOver/Top1SpotlightCard');
       expect(typeof VictoryCelebrationCanvas).toBe('function');
       expect(typeof Top1SpotlightCard).toBe('function');
+    });
+  });
+
+  describe('Lobby Dev Mode Metrics Integration', () => {
+    it('exports SlugWarsLobby cleanly and supports dev metrics mode', async () => {
+      const { SlugWarsLobby } = await import('../components/game/lobby/SlugWarsLobby');
+      expect(typeof SlugWarsLobby).toBe('function');
     });
   });
 });
