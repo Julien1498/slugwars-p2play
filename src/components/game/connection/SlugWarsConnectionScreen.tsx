@@ -15,25 +15,8 @@ export interface SlugWarsConnectionScreenProps {
   onJoin: (username: string, avatar: string, roomCode: string) => void;
 }
 
-export function getRoomCodeFromLocation(): string {
-  if (typeof window === 'undefined') return '';
-  const fromCore = extractRoomCodeFromUrl();
-  if (fromCore) return fromCore;
-
-  const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get('room') || params.get('code') || params.get('r') || params.get('join');
-  if (fromQuery) return decodeURIComponent(fromQuery).trim().toUpperCase();
-
-  const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0];
-  if (pathSegment && pathSegment.length >= 3 && pathSegment.length <= 16 && !pathSegment.includes('.') && pathSegment !== 'index.html') {
-    return decodeURIComponent(pathSegment).trim().toUpperCase();
-  }
-
-  const hash = window.location.hash.replace(/^[#/]+/, '');
-  if (hash) return decodeURIComponent(hash).trim().toUpperCase();
-
-  return '';
-}
+import { getRoomCodeFromLocation } from './connectionUrlUtils';
+export { getRoomCodeFromLocation };
 
 export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> = ({
   error,
@@ -55,12 +38,10 @@ export const SlugWarsConnectionScreen: React.FC<SlugWarsConnectionScreenProps> =
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    return subscribeRoomUrlChanges((code) => {
-      const activeCode = code || getRoomCodeFromLocation();
-      if (activeCode) {
-        setInvitationCode(activeCode);
-        setRoomCode(activeCode);
-      }
+    return subscribeRoomUrlChanges(() => {
+      const activeCode = getRoomCodeFromLocation();
+      setInvitationCode(activeCode);
+      setRoomCode(activeCode);
     });
   }, []);
 

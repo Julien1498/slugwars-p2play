@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getWeaponsByCategory } from '../core/weapons/registry';
 import { WeaponCategory } from '../core/weapons/types';
 import { GameState } from '../core/types';
+import { getRoomCodeFromLocation } from '../components/game/connection/connectionUrlUtils';
 
 describe('Game Modals, Screens & UI Widgets Integrity', () => {
   const createMockGameState = (): GameState => ({
@@ -167,29 +168,30 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
   });
 
   describe('Room Code URL Routing & Parsing (getRoomCodeFromLocation)', () => {
-    it('extracts room code from path, query and hash formats accurately', () => {
-      const parseTest = (urlStr: string) => {
+    it('extracts room code from query and hash formats without false positives on GitHub Pages subfolder paths', () => {
+      const parseFromUrl = (urlStr: string) => {
         const u = new URL(urlStr);
-        const params = u.searchParams;
-        const fromQuery = params.get('room') || params.get('code') || params.get('r') || params.get('join');
-        if (fromQuery) return decodeURIComponent(fromQuery).trim().toUpperCase();
-
-        const pathSegment = u.pathname.replace(/^\/+/, '').split('/')[0];
-        if (pathSegment && pathSegment.length >= 3 && pathSegment.length <= 16 && !pathSegment.includes('.') && pathSegment !== 'index.html') {
-          return decodeURIComponent(pathSegment).trim().toUpperCase();
-        }
-
-        const hash = u.hash.replace(/^[#/]+/, '');
-        if (hash) return decodeURIComponent(hash).trim().toUpperCase();
-        return '';
+        return getRoomCodeFromLocation({
+          search: u.search,
+          hash: u.hash,
+          pathname: u.pathname,
+        });
       };
 
-      expect(parseTest('http://localhost:5173/9EHZM?autojoin=1')).toBe('9EHZM');
-      expect(parseTest('http://localhost:5173/9EHZM?&autojoin=1')).toBe('9EHZM');
-      expect(parseTest('http://localhost:5173/9EHZM')).toBe('9EHZM');
-      expect(parseTest('http://localhost:5173/?room=9EHZM&autojoin=1')).toBe('9EHZM');
-      expect(parseTest('http://localhost:5173/#/9EHZM')).toBe('9EHZM');
-      expect(parseTest('http://localhost:5173/')).toBe('');
+      // 1. Subfolder hosting URL should NOT be treated as a room code
+      expect(parseFromUrl('https://example.github.io/game-repo/')).toBe('');
+      expect(parseFromUrl('https://example.github.io/subpath/')).toBe('');
+
+      // 2. Query param invites
+      expect(parseFromUrl('https://example.github.io/game-repo/?room=9EHZM')).toBe('9EHZM');
+      expect(parseFromUrl('http://localhost:5173/?room=9EHZM&autojoin=1')).toBe('9EHZM');
+
+      // 3. Hash routing invites
+      expect(parseFromUrl('https://example.github.io/game-repo/#/9EHZM')).toBe('9EHZM');
+      expect(parseFromUrl('https://example.github.io/game-repo/#/room/K7XY')).toBe('K7XY');
+
+      // 4. Clean localhost
+      expect(parseFromUrl('http://localhost:5173/')).toBe('');
     });
   });
 });
