@@ -12,9 +12,6 @@ import {
   HAT_BANDIT_BALACLAVA,
   HAT_SWAT_POT,
   HAT_CHICKEN_BODY,
-  HAT_ARACHNID_COWL,
-  HAT_ARACHNID_EYE_L,
-  HAT_ARACHNID_EYE_R,
 } from './slugHatPathsPopCulture';
 
 function renderSwampEars(ctx: CanvasRenderingContext2D): void {
@@ -202,68 +199,6 @@ function renderTacticalChicken(ctx: CanvasRenderingContext2D): void {
   ctx.fill();
 }
 
-function renderArachnidMask(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#dc2626';
-  ctx.strokeStyle = '#991b1b';
-  ctx.lineWidth = 1.3;
-  ctx.fill(HAT_ARACHNID_COWL);
-  ctx.stroke(HAT_ARACHNID_COWL);
-
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(4, -18.5); ctx.lineTo(4, 1);
-  ctx.moveTo(-3.5, -9.5); ctx.lineTo(12, -9.5);
-  ctx.stroke();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1.2;
-  ctx.fill(HAT_ARACHNID_EYE_L);
-  ctx.stroke(HAT_ARACHNID_EYE_L);
-  ctx.fill(HAT_ARACHNID_EYE_R);
-  ctx.stroke(HAT_ARACHNID_EYE_R);
-}
-
-function renderAlienSymbiote(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#09090b';
-  ctx.strokeStyle = '#18181b';
-  ctx.lineWidth = 1.4;
-  ctx.fill(HAT_ARACHNID_COWL);
-  ctx.stroke(HAT_ARACHNID_COWL);
-
-  ctx.fillStyle = '#f8fafc';
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 0.8;
-  ctx.fill(HAT_ARACHNID_EYE_L);
-  ctx.stroke(HAT_ARACHNID_EYE_L);
-  ctx.fill(HAT_ARACHNID_EYE_R);
-  ctx.stroke(HAT_ARACHNID_EYE_R);
-}
-
-function renderBioElectricMask(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#18181b';
-  ctx.strokeStyle = '#ef4444';
-  ctx.lineWidth = 1.3;
-  ctx.fill(HAT_ARACHNID_COWL);
-  ctx.stroke(HAT_ARACHNID_COWL);
-
-  ctx.strokeStyle = '#ef4444';
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(4, -18.5); ctx.lineTo(4, 1);
-  ctx.moveTo(-3.5, -9.5); ctx.lineTo(12, -9.5);
-  ctx.stroke();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#ef4444';
-  ctx.lineWidth = 1.2;
-  ctx.fill(HAT_ARACHNID_EYE_L);
-  ctx.stroke(HAT_ARACHNID_EYE_L);
-  ctx.fill(HAT_ARACHNID_EYE_R);
-  ctx.stroke(HAT_ARACHNID_EYE_R);
-}
-
 export const POP_HAT_STRATEGIES: Record<string, HatRendererFn> = {
   swamp_ears: renderSwampEars,
   feline_plume: renderFelinePlume,
@@ -274,7 +209,4 @@ export const POP_HAT_STRATEGIES: Record<string, HatRendererFn> = {
   bandit_balaclava: renderBanditBalaclava,
   swat_helmet: renderSwatHelmet,
   tactical_chicken: renderTacticalChicken,
-  arachnid_mask: renderArachnidMask,
-  alien_symbiote: renderAlienSymbiote,
-  bio_electric_mask: renderBioElectricMask,
 };

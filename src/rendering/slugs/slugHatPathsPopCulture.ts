@@ -112,27 +112,3 @@ export const HAT_CHICKEN_BODY = createPath((p) => {
   p.lineTo(-1, -16.5);
   p.closePath();
 });
-
-// 10. Masques Arachnides
-export const HAT_ARACHNID_COWL = createPath((p) => {
-  p.moveTo(-3.5, 1);
-  p.lineTo(-4, -14.5);
-  p.quadraticCurveTo(4, -19.5, 12, -14.5);
-  p.lineTo(12, 1);
-  p.quadraticCurveTo(4, 3, -3.5, 1);
-  p.closePath();
-});
-
-export const HAT_ARACHNID_EYE_L = createPath((p) => {
-  p.moveTo(-0.5, -12);
-  p.lineTo(4.2, -7.5);
-  p.lineTo(3.8, -12.5);
-  p.closePath();
-});
-
-export const HAT_ARACHNID_EYE_R = createPath((p) => {
-  p.moveTo(5.8, -11.5);
-  p.lineTo(10.5, -7.0);
-  p.lineTo(10.0, -12.0);
-  p.closePath();
-});
