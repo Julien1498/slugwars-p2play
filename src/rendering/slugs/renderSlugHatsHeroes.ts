@@ -1,6 +1,7 @@
 import { HatRendererFn } from './renderSlugHatTypes';
 import {
-  HAT_PATRIOT_SHELL,
+  HAT_PATRIOT_HELMET_DOME,
+  HAT_PATRIOT_EAR_GUARDS,
   HAT_PATRIOT_VISOR_BRIM,
   HAT_PATRIOT_WING_L,
   HAT_PATRIOT_WING_R,
@@ -27,19 +28,7 @@ import {
 } from './slugHatPathsHeroes';
 
 function renderPatriotHelmet(ctx: CanvasRenderingContext2D): void {
-  // 1. Tactical Deep Blue Helmet Shell
-  ctx.fillStyle = '#1d4ed8';
-  ctx.strokeStyle = '#172554';
-  ctx.lineWidth = 1.3;
-  ctx.fill(HAT_PATRIOT_SHELL);
-  ctx.stroke(HAT_PATRIOT_SHELL);
-
-  // 2. Forehead Visor Brow Ridge
-  ctx.fillStyle = '#2563eb';
-  ctx.fill(HAT_PATRIOT_VISOR_BRIM);
-  ctx.stroke(HAT_PATRIOT_VISOR_BRIM);
-
-  // 3. Leather Chinstrap & Brass Buckle
+  // 1. Leather Chinstrap & Brass Buckle (drawn under the jaw)
   ctx.fillStyle = '#3f1f0a';
   ctx.strokeStyle = '#1e0d04';
   ctx.lineWidth = 0.8;
@@ -48,10 +37,27 @@ function renderPatriotHelmet(ctx: CanvasRenderingContext2D): void {
 
   ctx.fillStyle = '#f59e0b';
   ctx.beginPath();
-  ctx.arc(4.0, 3.2, 0.7, 0, Math.PI * 2);
+  ctx.arc(4.0, 2.1, 0.7, 0, Math.PI * 2);
   ctx.fill();
 
-  // 4. Layered Aerodynamic White Wings on Temples
+  // 2. Tactical Deep Blue Helmet Dome (sits proudly on top of skull, eyes completely free)
+  ctx.fillStyle = '#1d4ed8';
+  ctx.strokeStyle = '#172554';
+  ctx.lineWidth = 1.3;
+  ctx.fill(HAT_PATRIOT_HELMET_DOME);
+  ctx.stroke(HAT_PATRIOT_HELMET_DOME);
+
+  // 3. Side Ear Guard Tabs
+  ctx.fillStyle = '#1e40af';
+  ctx.fill(HAT_PATRIOT_EAR_GUARDS);
+  ctx.stroke(HAT_PATRIOT_EAR_GUARDS);
+
+  // 4. Forehead Visor Brow Ridge
+  ctx.fillStyle = '#2563eb';
+  ctx.fill(HAT_PATRIOT_VISOR_BRIM);
+  ctx.stroke(HAT_PATRIOT_VISOR_BRIM);
+
+  // 5. Layered Aerodynamic White Wings on Temples
   ctx.fillStyle = '#f8fafc';
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 0.9;
@@ -60,7 +66,7 @@ function renderPatriotHelmet(ctx: CanvasRenderingContext2D): void {
   ctx.fill(HAT_PATRIOT_WING_R);
   ctx.stroke(HAT_PATRIOT_WING_R);
 
-  // 5. Embossed White Capital "A" with Drop Shadow
+  // 6. Embossed White Capital "A" with Drop Shadow
   ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
   ctx.fill(HAT_PATRIOT_LETTER_A_SHADOW);
 

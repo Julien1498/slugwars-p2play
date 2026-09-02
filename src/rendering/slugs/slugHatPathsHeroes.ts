@@ -1,75 +1,92 @@
 import { createPath } from './slugGradients';
 
 // 1. Casque Super-Patriote
-export const HAT_PATRIOT_SHELL = createPath((p) => {
-  p.moveTo(-3.5, 0.5);
-  p.lineTo(-4.2, -6);
-  p.lineTo(-4.0, -14.0);
-  p.bezierCurveTo(-3, -20.5, 2, -20.5, 5, -19.5);
-  p.bezierCurveTo(9, -19.5, 12.2, -16.5, 12.2, -13);
-  p.lineTo(12.0, 0.5);
-  p.quadraticCurveTo(4.5, 2.5, -3.5, 0.5);
+export const HAT_PATRIOT_HELMET_DOME = createPath((p) => {
+  p.moveTo(-3.5, -11.5);
+  p.lineTo(-4.0, -15.5);
+  p.bezierCurveTo(-3.5, -20.5, 0.5, -21.5, 4.5, -21.0);
+  p.bezierCurveTo(8.5, -21.5, 12.0, -19.5, 12.0, -15.0);
+  p.lineTo(11.5, -11.0);
+  // Visor rim contour over the brow
+  p.quadraticCurveTo(4.5, -13.5, -3.5, -11.5);
+  p.closePath();
+});
+
+export const HAT_PATRIOT_EAR_GUARDS = createPath((p) => {
+  p.moveTo(-3.5, -11.5);
+  p.lineTo(-4.2, -7.5);
+  p.lineTo(-2.2, -7.5);
+  p.lineTo(-2.2, -11.8);
+  p.closePath();
+
+  p.moveTo(11.5, -11.0);
+  p.lineTo(11.8, -7.0);
+  p.lineTo(9.8, -7.0);
+  p.lineTo(9.8, -11.2);
   p.closePath();
 });
 
 export const HAT_PATRIOT_VISOR_BRIM = createPath((p) => {
-  p.moveTo(-3.5, -12.5);
-  p.quadraticCurveTo(4.5, -15.5, 12.0, -12.0);
-  p.quadraticCurveTo(4.5, -13.5, -3.5, -12.5);
+  p.moveTo(-3.8, -11.5);
+  p.quadraticCurveTo(4.5, -14.2, 11.8, -11.0);
+  p.lineTo(11.5, -12.4);
+  p.quadraticCurveTo(4.5, -15.4, -3.5, -12.8);
   p.closePath();
 });
 
 export const HAT_PATRIOT_WING_L = createPath((p) => {
-  p.moveTo(-1.0, -13.5);
-  p.lineTo(-5.5, -18.5); p.lineTo(-3.5, -16.5);
-  p.lineTo(-6.5, -16.0); p.lineTo(-4.0, -14.5);
-  p.lineTo(-5.5, -13.8); p.lineTo(-2.0, -13.0);
+  p.moveTo(-1.0, -14.5);
+  p.lineTo(-5.8, -19.5); p.lineTo(-3.8, -17.5);
+  p.lineTo(-6.8, -17.0); p.lineTo(-4.2, -15.5);
+  p.lineTo(-5.8, -14.8); p.lineTo(-2.0, -14.0);
   p.closePath();
 });
 
 export const HAT_PATRIOT_WING_R = createPath((p) => {
-  p.moveTo(9.5, -13.0);
-  p.lineTo(13.8, -18.0); p.lineTo(11.8, -16.0);
-  p.lineTo(14.8, -15.5); p.lineTo(12.2, -14.0);
-  p.lineTo(13.8, -13.2); p.lineTo(10.5, -12.5);
+  p.moveTo(9.5, -14.0);
+  p.lineTo(14.0, -19.0); p.lineTo(11.8, -17.0);
+  p.lineTo(15.0, -16.5); p.lineTo(12.2, -15.0);
+  p.lineTo(14.0, -14.2); p.lineTo(10.5, -13.5);
   p.closePath();
 });
 
 export const HAT_PATRIOT_LETTER_A = createPath((p) => {
-  p.moveTo(2.2, -13.0);
-  p.lineTo(4.5, -18.5);
-  p.lineTo(6.8, -13.0);
-  p.lineTo(5.4, -13.0);
-  p.lineTo(4.9, -14.5);
-  p.lineTo(4.1, -14.5);
-  p.lineTo(3.6, -13.0);
+  p.moveTo(2.5, -14.5);
+  p.lineTo(4.5, -19.8);
+  p.lineTo(6.5, -14.5);
+  p.lineTo(5.3, -14.5);
+  p.lineTo(4.8, -15.8);
+  p.lineTo(4.2, -15.8);
+  p.lineTo(3.7, -14.5);
   p.closePath();
-  p.moveTo(4.5, -17.2);
-  p.lineTo(4.2, -15.4);
-  p.lineTo(4.8, -15.4);
+  p.moveTo(4.5, -18.6);
+  p.lineTo(4.2, -16.8);
+  p.lineTo(4.8, -16.8);
   p.closePath();
 });
 
 export const HAT_PATRIOT_LETTER_A_SHADOW = createPath((p) => {
-  p.moveTo(2.5, -12.7);
-  p.lineTo(4.8, -18.2);
-  p.lineTo(7.1, -12.7);
-  p.lineTo(5.7, -12.7);
-  p.lineTo(5.2, -14.2);
-  p.lineTo(4.4, -14.2);
-  p.lineTo(3.9, -12.7);
+  p.moveTo(2.8, -14.2);
+  p.lineTo(4.8, -19.5);
+  p.lineTo(6.8, -14.2);
+  p.lineTo(5.6, -14.2);
+  p.lineTo(5.1, -15.5);
+  p.lineTo(4.5, -15.5);
+  p.lineTo(4.0, -14.2);
   p.closePath();
-  p.moveTo(4.8, -16.9);
-  p.lineTo(4.5, -15.1);
-  p.lineTo(5.1, -15.1);
+  p.moveTo(4.8, -18.3);
+  p.lineTo(4.5, -16.5);
+  p.lineTo(5.1, -16.5);
   p.closePath();
 });
 
 export const HAT_PATRIOT_CHINSTRAP = createPath((p) => {
-  p.moveTo(-3.5, 0.0);
-  p.quadraticCurveTo(4.0, 4.0, 11.5, 0.0);
-  p.lineTo(11.0, 1.4);
-  p.quadraticCurveTo(4.0, 5.2, -3.0, 1.4);
+  p.moveTo(-3.2, -7.5);
+  p.quadraticCurveTo(-1.0, 1.5, 4.0, 2.5);
+  p.quadraticCurveTo(9.0, 1.5, 11.0, -7.0);
+  p.lineTo(10.2, -7.0);
+  p.quadraticCurveTo(8.5, 0.7, 4.0, 1.7);
+  p.quadraticCurveTo(-0.5, 0.7, -2.4, -7.5);
   p.closePath();
 });
 
