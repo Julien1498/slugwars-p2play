@@ -9,7 +9,6 @@ import { DevSlugsTab } from './tabs/DevSlugsTab';
 import { DevSpawnsTab } from './tabs/DevSpawnsTab';
 import { DevEnvTab } from './tabs/DevEnvTab';
 import { DevOverlaysTab } from './tabs/DevOverlaysTab';
-import { detectDevModeFromEnvironment } from '../../../network/devSession';
 
 interface DevToolsDrawerProps {
   isOpen: boolean;
@@ -85,9 +84,7 @@ export const DevToolsDrawer: React.FC<DevToolsDrawerProps> = ({
               const currentParams = new URLSearchParams(window.location.search);
               const room = (roomCode || currentParams.get('room') || (window as any).__p2playRoomId || '').trim();
               const base = `${window.location.origin}${window.location.pathname}`.replace(/\/+$/, '');
-              const isDev = detectDevModeFromEnvironment();
-              const devQuery = isDev ? '&dev=1' : '';
-              const url = room ? `${base}/?room=${encodeURIComponent(room)}&autojoin=1${devQuery}` : `${base}/?autojoin=1${devQuery}`;
+              const url = room ? `${base}/?room=${encodeURIComponent(room)}&autojoin=1` : `${base}/?autojoin=1`;
               window.open(url, '_blank');
             }}
             className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition-colors"
