@@ -1,36 +1,23 @@
 import { SolidProp, CraterRecord, ExplosionEvent } from '../../core/types';
-import { drawTreeProp, drawMushroomProp, drawFlowerProp, drawCactusProp } from './renderVegetationProps';
-import { drawBunkerProp, drawTotemProp, drawOilDrumProp, drawLamppostProp } from './renderStructuralProps';
-import { drawCrystalProp } from './renderMineralProps';
-import { drawHedgehogProp, drawChickProp } from './renderCritterProps';
+import { SOLID_PROP_DRAWERS, drawSolidPropWithCache } from './propSpriteCache';
 
-export const SOLID_PROP_DRAWERS: Record<
-  SolidProp['type'],
-  (ctx: CanvasRenderingContext2D, sprop: SolidProp) => void
-> = {
-  hedgehog: (ctx) => drawHedgehogProp(ctx),
-  chick: (ctx) => drawChickProp(ctx),
-  mushroom: (ctx, sprop) => drawMushroomProp(ctx, sprop),
-  flower: (ctx, sprop) => drawFlowerProp(ctx, sprop),
-  tree: (ctx, sprop) => drawTreeProp(ctx, sprop),
-  bunker: (ctx) => drawBunkerProp(ctx),
-  totem: (ctx, sprop) => drawTotemProp(ctx, sprop),
-  cactus: (ctx, sprop) => drawCactusProp(ctx, sprop),
-  crystal: (ctx, sprop) => drawCrystalProp(ctx, sprop),
-  oil_drum: (ctx, sprop) => drawOilDrumProp(ctx, sprop),
-  lamppost: (ctx) => drawLamppostProp(ctx),
-};
+export { SOLID_PROP_DRAWERS };
 
 export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
-  const drawer = SOLID_PROP_DRAWERS[sprop.type];
-  if (!drawer) return;
-
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
   if (sprop.angleRad) {
     ctx.rotate(sprop.angleRad);
   }
-  drawer(ctx, sprop);
+
+  // 1. High-DPI Retina supersampled sprite cache (single fast drawImage blit)
+  const handled = drawSolidPropWithCache(ctx, sprop);
+  if (!handled) {
+    // 2. Seamless fallback to direct vector drawing
+    const drawer = SOLID_PROP_DRAWERS[sprop.type];
+    if (drawer) drawer(ctx, sprop);
+  }
+
   ctx.restore();
 }
 
@@ -92,8 +79,10 @@ export function renderHDDestructibleProp(
   if (craters) {
     for (let i = 0; i < craters.length; i++) {
       const c = craters[i];
-      const dist = Math.hypot(c.x - sprop.x, c.y - propCenterY);
-      if (dist <= c.radius + propRadius) {
+      const dx = c.x - sprop.x;
+      const dy = c.y - propCenterY;
+      const maxDist = c.radius + propRadius;
+      if (dx * dx + dy * dy <= maxDist * maxDist) {
         _overlappingCratersBuffer.push(c);
       }
     }
@@ -101,8 +90,10 @@ export function renderHDDestructibleProp(
   if (explosions) {
     for (let i = 0; i < explosions.length; i++) {
       const ex = explosions[i];
-      const dist = Math.hypot(ex.x - sprop.x, ex.y - propCenterY);
-      if (dist <= ex.radius + propRadius) {
+      const dx = ex.x - sprop.x;
+      const dy = ex.y - propCenterY;
+      const maxDist = ex.radius + propRadius;
+      if (dx * dx + dy * dy <= maxDist * maxDist) {
         _overlappingCratersBuffer.push(ex);
       }
     }

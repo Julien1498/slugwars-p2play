@@ -48,3 +48,10 @@ export {
   drawSolidPropVector,
   renderHDDestructibleProp,
 } from './props/renderDestructibleProp';
+
+export {
+  ENABLE_PROP_SPRITE_CACHE,
+  setPropSpriteCacheEnabled,
+  clearPropSpriteCache,
+  getCachedPropSprite,
+} from './props/propSpriteCache';
