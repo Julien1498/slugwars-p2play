@@ -1,10 +1,9 @@
-import { Slug, GameState } from '../core/types';
+﻿import { GameState } from '../core/types';
 import {
   getTeamBodyGrad,
   SLUG_BODY_PATH,
   SLUG_BELLY_PATH,
   SLUG_SHADOW_PATH,
-  SLUG_ARROW_PATH,
   SLUG_STALKS_PATH,
   SLUG_BLINK_PATH,
   SLUG_LEFT_EYE_NORMAL_PATH,
@@ -17,6 +16,8 @@ import { renderGhostSpirits } from './slugs/renderGhostSpirits';
 import { renderSlugHat } from './slugs/renderSlugHats';
 import { renderHeldWeapon } from './slugs/renderSlugWeapons';
 import { renderSlugJetpack, renderSlugParachute, renderSlugDrill } from './slugs/renderSlugUtilityProps';
+import { renderActiveArrow, renderSlugBadge } from './slugs/renderSlugHud';
+import { perfTracker } from '../core/perfTracker';
 
 export interface SlugsRenderContext {
   ctx: CanvasRenderingContext2D;
@@ -31,7 +32,9 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
   const { ctx, gameState, animTime, slugDeathTimestamps, viewLeft, viewRight } = rc;
 
   if (slugDeathTimestamps && slugDeathTimestamps.size > 0) {
+    const tGhostsStart = performance.now();
     renderGhostSpirits(ctx, gameState.slugs, animTime, slugDeathTimestamps);
+    perfTracker.recordRenderPass('slugs_ghosts', performance.now() - tGhostsStart);
   }
 
   // Fast zero-cost early exit if no slugs are placed yet (e.g. during PLACEMENT phase)
@@ -45,6 +48,12 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
   }
   if (!hasLivingPlaced) return;
 
+  let sumBody = 0;
+  let sumProps = 0;
+  let sumHats = 0;
+  let sumWeapons = 0;
+  let sumHud = 0;
+
   ctx.font = 'bold 9.5px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -53,6 +62,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     if (!slug.isAlive || slug.isPlaced === false) continue;
     if (viewLeft !== undefined && viewRight !== undefined && (slug.x < viewLeft - 60 || slug.x > viewRight + 60)) continue;
 
+    const tHud0 = performance.now();
     const team = gameState.teams.find((t) => t.id === slug.teamId);
     const teamColor = team?.color || '#ec4899';
     const teamIndex = gameState.teams.findIndex((t) => t.id === slug.teamId);
@@ -82,18 +92,11 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     // Active Arrow Indicator
     if (isActive) {
-      const arrowBounce = Math.sin(animTime * 1.5) * 3;
-      const arrowY = slug.y - 46 + arrowBounce;
-      ctx.save();
-      ctx.translate(slug.x, arrowY);
-      ctx.fillStyle = '#facc15';
-      ctx.strokeStyle = '#09090b';
-      ctx.lineWidth = 1.4;
-      ctx.fill(SLUG_ARROW_PATH);
-      ctx.stroke(SLUG_ARROW_PATH);
-      ctx.restore();
+      renderActiveArrow(ctx, slug, animTime);
     }
+    sumHud += performance.now() - tHud0;
 
+    const tBody0 = performance.now();
     const isAirbornePanic = Math.abs(slug.vy || 0) > 1.6 || speed > 2.5;
     const isWalking = !isAirbornePanic && (slug.movingDir !== null && slug.movingDir !== undefined || Math.abs(slug.vx || 0) > 0.6);
     const isFacingLeft = slug.facing === 'left' || (slug as any).facingRight === false;
@@ -143,11 +146,15 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     ctx.lineWidth = isActive ? 2.2 : 1.6;
     ctx.fill(SLUG_BODY_PATH);
     ctx.stroke(SLUG_BODY_PATH);
+    sumBody += performance.now() - tBody0;
 
     // Jetpack & Drill attachments
+    const tProps0 = performance.now();
     renderSlugJetpack(ctx, slug, animTime);
     renderSlugDrill(ctx, slug, animTime);
+    sumProps += performance.now() - tProps0;
 
+    const tBody1 = performance.now();
     // Belly
     ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
     ctx.fill(SLUG_BELLY_PATH);
@@ -203,11 +210,15 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
         ctx.stroke(SLUG_BLINK_PATH);
       }
     }
+    sumBody += performance.now() - tBody1;
 
     // Team Hat
+    const tHat0 = performance.now();
     const hatId = (slug as any).hatId || team?.hat;
     renderSlugHat(ctx, hatId, teamIndex >= 0 ? teamIndex : 0, teamColor, animTime);
+    sumHats += performance.now() - tHat0;
 
+    const tBody2 = performance.now();
     // Mouth
     if (isAirbornePanic) {
       ctx.fillStyle = '#09090b';
@@ -222,48 +233,35 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
       ctx.arc(5, -1, 3, 0.2, Math.PI * 0.7);
       ctx.stroke();
     }
+    sumBody += performance.now() - tBody2;
 
     // Held Weapon
     if (isAiming) {
+      const tWeap0 = performance.now();
       const weaponId = slug.selectedWeaponId || (slug as any).selectedWeapon || 'bazooka';
       renderHeldWeapon(ctx, weaponId, aimRad, animTime);
+      sumWeapons += performance.now() - tWeap0;
     }
 
     ctx.restore();
 
     // Parachute Overlay
+    const tProps1 = performance.now();
     renderSlugParachute(ctx, slug, animTime);
+    sumProps += performance.now() - tProps1;
 
-    // HP Badge
-    const badgeW = 38;
-    const badgeH = 14;
-    const badgeX = slug.x - badgeW / 2;
-    const badgeY = slug.y - 34;
-
-    ctx.fillStyle = 'rgba(9, 9, 11, 0.88)';
-    ctx.strokeStyle = teamColor;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
-    } else {
-      ctx.rect(badgeX, badgeY, badgeW, badgeH);
-    }
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillText(`${slug.hp}`, slug.x, badgeY + badgeH / 2);
-
-    // Jetpack Fuel Gauge Bar
-    if (slug.jetpackState) {
-      const fuelRatio = Math.max(0, Math.min(1, (slug.jetpackState.fuelMs || 0) / 5000));
-      ctx.fillStyle = 'rgba(9, 9, 11, 0.8)';
-      ctx.fillRect(slug.x - 14, badgeY - 5, 28, 3);
-      ctx.fillStyle = fuelRatio > 0.35 ? '#22c55e' : '#ef4444';
-      ctx.fillRect(slug.x - 14, badgeY - 5, 28 * fuelRatio, 3);
-    }
+    // HP Badge & Jetpack Fuel Gauge
+    const tHud1 = performance.now();
+    renderSlugBadge(ctx, slug, teamColor);
+    sumHud += performance.now() - tHud1;
   }
+
+  // Record Granular Micro-Profiling Passes
+  if (sumBody > 0) perfTracker.recordRenderPass('slugs_body', sumBody);
+  if (sumHats > 0) perfTracker.recordRenderPass('slugs_hats', sumHats);
+  if (sumWeapons > 0) perfTracker.recordRenderPass('slugs_weapons', sumWeapons);
+  if (sumProps > 0) perfTracker.recordRenderPass('slugs_props', sumProps);
+  if (sumHud > 0) perfTracker.recordRenderPass('slugs_hud', sumHud);
 }
 
 export { renderAllSlugs as renderSlugs, renderGhostSpirits };

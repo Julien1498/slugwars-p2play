@@ -98,12 +98,11 @@ export function renderForegroundLayer({
   actionCtx.imageSmoothingEnabled = true;
   actionCtx.imageSmoothingQuality = 'high';
 
-  // 1. Ninja Ropes & Slugs
+  // 1. Ninja Ropes & Slugs (sub-passes granularly recorded inside renderAllSlugs)
   const pRopesStart = performance.now();
   renderNinjaRopes(actionCtx, visualState.slugs);
   perfTracker.recordRenderPass('ninja_ropes', performance.now() - pRopesStart);
 
-  const pSlugsStart = performance.now();
   renderAllSlugs({
     ctx: actionCtx,
     gameState: visualState,
@@ -112,7 +111,6 @@ export function renderForegroundLayer({
     viewLeft,
     viewRight,
   });
-  perfTracker.recordRenderPass('slugs_rendering', performance.now() - pSlugsStart);
 
   // 2. Supply Crates, Mines, Magnets, Projectiles & Particle FX
   const pCratesStart = performance.now();

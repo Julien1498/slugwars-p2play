@@ -17,7 +17,13 @@ export const RENDER_PASS_LABELS: Record<string, string> = {
   decor_tombstones: '🪦 Tombes & Âmes',
   // Limaces & Cordes
   ninja_ropes: '🪢 Cordes Ninja',
-  slugs_rendering: '🐌 Limaces & Armes',
+  slugs_rendering: '🐌 Limaces & Armes (Global)',
+  slugs_body: '🐌 Limaces : Corps & Anatomie',
+  slugs_hats: '🎩 Limaces : Chapeaux & Masques',
+  slugs_weapons: '🔫 Limaces : Armes en Main',
+  slugs_props: '🎒 Limaces : Équipements (Jetpack, Foreuse, etc.)',
+  slugs_hud: '🏷️ Limaces : Badges HP & Flèches',
+  slugs_ghosts: '👻 Limaces : Âmes Flottantes',
   // Projectiles & Effets FX
   supply_crates: '📦 Caisses de Largage',
   projectiles: '🚀 Projectiles & Roquettes',
