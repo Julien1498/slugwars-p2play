@@ -20,8 +20,8 @@ describe('Hats Cosmetics & Headwear System', () => {
   });
 
   describe('Hats Registry Integrity', () => {
-    it('contains all 11 defined hats including existing and new ones', () => {
-      expect(HATS.length).toBe(11);
+    it('contains all 27 defined hats including classic, fun, combat and fantasy ones', () => {
+      expect(HATS.length).toBe(27);
       const ids = HATS.map((h) => h.id);
       expect(ids).toContain('military');
       expect(ids).toContain('cowboy');
@@ -33,6 +33,22 @@ describe('Hats Cosmetics & Headwear System', () => {
       expect(ids).toContain('ninja');
       expect(ids).toContain('viking');
       expect(ids).toContain('sombrero');
+      expect(ids).toContain('chef');
+      expect(ids).toContain('wizard');
+      expect(ids).toContain('hard_hat');
+      expect(ids).toContain('detective');
+      expect(ids).toContain('snorkel');
+      expect(ids).toContain('duck');
+      expect(ids).toContain('propeller');
+      expect(ids).toContain('arrow');
+      expect(ids).toContain('colander');
+      expect(ids).toContain('astronaut');
+      expect(ids).toContain('gas_mask');
+      expect(ids).toContain('boxer');
+      expect(ids).toContain('camo_helmet');
+      expect(ids).toContain('mushroom');
+      expect(ids).toContain('frog');
+      expect(ids).toContain('unicorn');
       expect(ids).toContain('none');
     });
 
@@ -180,6 +196,9 @@ describe('Hats Cosmetics & Headwear System', () => {
         moveTo: vi.fn(),
         lineTo: vi.fn(),
         arc: vi.fn(),
+        quadraticCurveTo: vi.fn(),
+        bezierCurveTo: vi.fn(),
+        ellipse: vi.fn(),
         fill: vi.fn(),
         stroke: vi.fn(),
         createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),

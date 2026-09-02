@@ -19,6 +19,9 @@ import {
   HAT_SOMBRERO_BRIM_PATH,
   HAT_SOMBRERO_CROWN_PATH,
 } from './slugHatPaths';
+import { FUN_HAT_STRATEGIES } from './renderSlugHatsFun';
+import { COMBAT_HAT_STRATEGIES } from './renderSlugHatsCombat';
+import { HatRendererFn } from './renderSlugHatTypes';
 
 export {
   HAT_MILITARY_CROWN_PATH,
@@ -41,7 +44,7 @@ export {
   HAT_SOMBRERO_CROWN_PATH,
 };
 
-export type HatRendererFn = (ctx: CanvasRenderingContext2D, teamColor: string, animTime: number) => void;
+export type { HatRendererFn };
 
 function renderMilitaryHat(ctx: CanvasRenderingContext2D): void {
   ctx.save();
@@ -231,6 +234,8 @@ export const HAT_RENDER_STRATEGIES: Record<string, HatRendererFn> = {
   ninja: renderNinjaHat,
   viking: renderVikingHat,
   sombrero: renderSombreroHat,
+  ...FUN_HAT_STRATEGIES,
+  ...COMBAT_HAT_STRATEGIES,
 };
 
 export function renderSlugHat(
