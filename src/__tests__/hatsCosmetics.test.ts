@@ -3,7 +3,8 @@ import { HATS, getHat, getDefaultHatForTeam, DEFAULT_HATS_BY_INDEX } from '../co
 import { saveProfile, loadProfile } from '../core/profile';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { LIFECYCLE_ACTION_REGISTRY } from '../network/actions/actionRegistryLifecycle';
-import { renderSlugHat } from '../rendering/slugs/renderSlugHats';
+import { renderSlugHat, HAT_RENDER_STRATEGIES } from '../rendering/slugs/renderSlugHats';
+import { buildTeamDeltas } from '../network/serializer/stateDeltaTeams';
 
 describe('Hats Cosmetics & Headwear System', () => {
   beforeEach(() => {
@@ -194,6 +195,42 @@ describe('Hats Cosmetics & Headwear System', () => {
       expect(() => {
         renderSlugHat(mockCtx, 2, '#3b82f6', 1.0);
       }).not.toThrow();
+    });
+
+    it('has data-driven renderer strategies for all non-none hat IDs', () => {
+      for (const hat of HATS) {
+        if (hat.id === 'none') continue;
+        expect(typeof HAT_RENDER_STRATEGIES[hat.id]).toBe('function');
+      }
+    });
+  });
+
+  describe('Team Delta Serialization & Meta-Change Detection', () => {
+    it('triggers fullTeams delta when a team hat changes without team count changing', () => {
+      const prevEngine = new SlugWarsEngine();
+      prevEngine.addTeam('t1', 'Team 1', '#ef4444', '🐌', true, 'military');
+
+      const curEngine = new SlugWarsEngine();
+      curEngine.addTeam('t1', 'Team 1', '#ef4444', '🐌', true, 'crown');
+
+      const delta: any = {};
+      buildTeamDeltas(prevEngine.state, curEngine.state, delta);
+
+      expect(delta.fullTeams).toBeDefined();
+      expect(delta.fullTeams[0].hat).toBe('crown');
+    });
+
+    it('does not trigger fullTeams if hat and metadata have not changed', () => {
+      const prevEngine = new SlugWarsEngine();
+      prevEngine.addTeam('t1', 'Team 1', '#ef4444', '🐌', true, 'cowboy');
+
+      const curEngine = new SlugWarsEngine();
+      curEngine.addTeam('t1', 'Team 1', '#ef4444', '🐌', true, 'cowboy');
+
+      const delta: any = {};
+      buildTeamDeltas(prevEngine.state, curEngine.state, delta);
+
+      expect(delta.fullTeams).toBeUndefined();
     });
   });
 });

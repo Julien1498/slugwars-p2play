@@ -1,5 +1,6 @@
 import { GameState, HelicopterVehicle } from '../../core/types';
-import { CompactStateDelta, CompactTeamDelta, CompactSlugDelta, quantizeFloat } from './netSerializerTypes';
+import { CompactStateDelta, CompactSlugDelta, quantizeFloat } from './netSerializerTypes';
+import { buildTeamDeltas } from './stateDeltaTeams';
 
 export function buildStateDelta(prevState: GameState | null, currentState: GameState): CompactStateDelta {
   const delta: CompactStateDelta = {};
@@ -48,37 +49,8 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.solidProps = currentState.solidProps;
   }
 
-  // Team stats, meta (hat, avatar) & inventory delta
-  const teamMetaChanged = currentState.teams.some((t) => {
-    const p = prevState?.teams.find((pt) => pt.id === t.id);
-    return !p || p.hat !== t.hat || p.avatar !== t.avatar || p.color !== t.color;
-  });
-  if (currentState.teams.length !== (prevState?.teams.length ?? 0) || teamMetaChanged) {
-    delta.fullTeams = currentState.teams;
-  }
-  const teamDeltas: CompactTeamDelta[] = [];
-  for (const team of currentState.teams) {
-    const prevTeam = prevState?.teams.find((t) => t.id === team.id);
-    const hasStatsChanged = !prevTeam || prevTeam.stats?.kills !== team.stats?.kills || prevTeam.stats?.deaths !== team.stats?.deaths || prevTeam.stats?.damageDealt !== team.stats?.damageDealt || prevTeam.stats?.damageTaken !== team.stats?.damageTaken;
-    const curInv = team.inventory || {};
-    const prevInv = prevTeam?.inventory || {};
-    const hasInventoryChanged = !prevTeam || JSON.stringify(curInv) !== JSON.stringify(prevInv);
-
-    if (hasStatsChanged || hasInventoryChanged) {
-      const tDelta: CompactTeamDelta = { id: team.id };
-      if (team.stats) {
-        tDelta.kills = team.stats.kills;
-        tDelta.deaths = team.stats.deaths;
-        tDelta.damageDealt = team.stats.damageDealt;
-        tDelta.damageTaken = team.stats.damageTaken;
-      }
-      if (hasInventoryChanged && team.inventory) {
-        tDelta.inventory = { ...team.inventory };
-      }
-      teamDeltas.push(tDelta);
-    }
-  }
-  if (teamDeltas.length > 0) delta.teams = teamDeltas;
+  // Team stats, meta (hat, avatar, color) & inventory delta
+  buildTeamDeltas(prevState, currentState, delta);
 
   if (!prevState || prevState.wind !== currentState.wind) {
     delta.wind = currentState.wind;

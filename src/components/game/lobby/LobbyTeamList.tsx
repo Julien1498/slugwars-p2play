@@ -21,7 +21,8 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
   onStartGame,
   onSetTeamHat,
 }) => {
-  const [selectedTeamForHat, setSelectedTeamForHat] = useState<Team | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null;
 
   return (
     <div className="md:col-span-5 landscape:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
@@ -79,7 +80,7 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
                 <button
                   type="button"
                   disabled={!canCustomize}
-                  onClick={() => canCustomize && setSelectedTeamForHat(t)}
+                  onClick={() => canCustomize && setSelectedTeamId(t.id)}
                   className={`px-2 py-1 rounded-lg border flex items-center gap-1.5 transition text-xs font-bold ${
                     canCustomize
                       ? 'bg-zinc-900 hover:bg-violet-950/60 border-zinc-700 hover:border-violet-500/50 text-zinc-200 cursor-pointer shadow-sm active:scale-95'
@@ -132,15 +133,15 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
         </div>
       </div>
 
-      {selectedTeamForHat && (
+      {selectedTeam && (
         <HatPickerModal
           isOpen={true}
-          onClose={() => setSelectedTeamForHat(null)}
-          currentHatId={selectedTeamForHat.hat}
-          teamName={selectedTeamForHat.name}
-          teamColor={selectedTeamForHat.color}
+          onClose={() => setSelectedTeamId(null)}
+          currentHatId={selectedTeam.hat}
+          teamName={selectedTeam.name}
+          teamColor={selectedTeam.color}
           onSelectHat={(hatId) => {
-            onSetTeamHat?.(selectedTeamForHat.id, hatId);
+            onSetTeamHat?.(selectedTeam.id, hatId);
           }}
         />
       )}

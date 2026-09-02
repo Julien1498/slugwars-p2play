@@ -16,6 +16,7 @@ import { useActionDispatcher } from './game/useActionDispatcher';
 import { TEAM_COLORS } from '../network/protocol';
 import { shouldUpdateReactUi } from '../core/uiSyncUtils';
 import { detectDevModeFromEnvironment } from '../network/devSession';
+import { loadProfile } from '../core/profile';
 
 export function useGame(options?: {
   isEmbedded?: boolean;
@@ -139,7 +140,7 @@ export function useGame(options?: {
           payload: {
             name: options.playerName || peerManager.getTrustedUsername?.(myPeerId),
             avatar: options.playerAvatar || '🐌',
-            hat: (options as any).playerHat || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat : undefined),
+            hat: (options as any).playerHat || loadProfile()?.hat,
           },
         });
         peerManager.sendToHost('ACTION', {
@@ -177,7 +178,7 @@ export function useGame(options?: {
       const engine = new SlugWarsEngine();
       engine.state.isDevHost = detectDevModeFromEnvironment();
       engineRef.current = engine;
-      engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true);
+      engine.addTeam(roomId, name, TEAM_COLORS[0], avatar, true, loadProfile()?.hat);
       syncState();
       broadcastState(engine.state);
     },
@@ -190,7 +191,7 @@ export function useGame(options?: {
       const { peerId } = await joinGame(roomId, { username: name, avatar });
       syncRoomUrlToAddressBar(roomId);
       const sendJoin = () => {
-        const savedHat = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat : undefined;
+        const savedHat = loadProfile()?.hat;
         peerManager.sendToHost('ACTION', {
           actionName: 'JOIN_GAME',
           playerId: peerId,

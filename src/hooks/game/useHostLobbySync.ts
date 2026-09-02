@@ -4,7 +4,7 @@ import { GameState } from '../../core/types';
 import { type PeerManagerLike } from 'p2play-core';
 import { TEAM_COLORS } from '../../network/protocol';
 
-import { resolveLobbyPlayerName } from '../../core/profile';
+import { resolveLobbyPlayerName, loadProfile } from '../../core/profile';
 
 export { resolveLobbyPlayerName };
 
@@ -40,7 +40,7 @@ export function useHostLobbySync({
       if (myPeerId && !engineRef.current.state.teams.some((t) => t.id === myPeerId)) {
         const hostName = playerName || peerManager.getTrustedUsername?.(myPeerId) || 'Hôte';
         const hostAvatar = playerAvatar || '🐌';
-        const savedHat = typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('p2play:profile') || '{}')?.hat) : undefined;
+        const savedHat = loadProfile()?.hat;
         engineRef.current.addTeam(myPeerId, hostName, TEAM_COLORS[0], hostAvatar, true, savedHat);
         changed = true;
       }
