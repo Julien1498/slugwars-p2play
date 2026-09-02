@@ -29,9 +29,6 @@ export function useDevMode(isHost: boolean = false) {
     }
     const isDev = detectDevModeFromEnvironment();
     setIsDevEnabled(isDev);
-    if (isDev) {
-      persistDevModeSession(true);
-    }
   }, [isHost]);
 
   // Global hotkey to toggle dev drawer: '²' (top-left AZERTY), 'F2', or 'Ctrl+Shift+D'
