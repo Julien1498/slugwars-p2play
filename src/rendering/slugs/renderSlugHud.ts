@@ -1,5 +1,5 @@
-﻿import { Slug } from '../../core/types';
-import { SLUG_ARROW_PATH } from './slugGradients';
+import { Slug } from '../../core/types';
+import { SLUG_ARROW_PATH, SLUG_BADGE_PATH } from './slugGradients';
 
 export function renderActiveArrow(
   ctx: CanvasRenderingContext2D,
@@ -23,32 +23,28 @@ export function renderSlugBadge(
   slug: Slug,
   teamColor: string
 ): void {
-  const badgeW = 38;
-  const badgeH = 14;
-  const badgeX = slug.x - badgeW / 2;
-  const badgeY = slug.y - 34;
+  const centerY = slug.y - 27;
+
+  ctx.save();
+  ctx.translate(slug.x, centerY);
 
   ctx.fillStyle = 'rgba(9, 9, 11, 0.88)';
   ctx.strokeStyle = teamColor;
   ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
-  } else {
-    ctx.rect(badgeX, badgeY, badgeW, badgeH);
-  }
-  ctx.fill();
-  ctx.stroke();
+  ctx.fill(SLUG_BADGE_PATH);
+  ctx.stroke(SLUG_BADGE_PATH);
 
   ctx.fillStyle = '#f8fafc';
-  ctx.fillText(`${slug.hp}`, slug.x, badgeY + badgeH / 2);
+  ctx.fillText(`${slug.hp}`, 0, 0);
 
   // Jetpack Fuel Gauge Bar
   if (slug.jetpackState) {
     const fuelRatio = Math.max(0, Math.min(1, (slug.jetpackState.fuelMs || 0) / 5000));
     ctx.fillStyle = 'rgba(9, 9, 11, 0.8)';
-    ctx.fillRect(slug.x - 14, badgeY - 5, 28, 3);
+    ctx.fillRect(-14, -12, 28, 3);
     ctx.fillStyle = fuelRatio > 0.35 ? '#22c55e' : '#ef4444';
-    ctx.fillRect(slug.x - 14, badgeY - 5, 28 * fuelRatio, 3);
+    ctx.fillRect(-14, -12, 28 * fuelRatio, 3);
   }
+
+  ctx.restore();
 }

@@ -27,6 +27,14 @@ export const SLUG_SHADOW_PATH = createPath((p) => {
   }
 });
 
+export const SLUG_BADGE_PATH = createPath((p) => {
+  if (p.roundRect) {
+    p.roundRect(-19, -7, 38, 14, 4);
+  } else {
+    p.rect(-19, -7, 38, 14);
+  }
+});
+
 export const SLUG_ARROW_PATH = createPath((p) => {
   p.moveTo(0, 8);
   p.lineTo(-6, 0);

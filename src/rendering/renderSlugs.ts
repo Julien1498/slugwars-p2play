@@ -1,4 +1,4 @@
-﻿import { GameState } from '../core/types';
+import { GameState } from '../core/types';
 import {
   getTeamBodyGrad,
   SLUG_BODY_PATH,
@@ -48,6 +48,13 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
   }
   if (!hasLivingPlaced) return;
 
+  // Precompute team lookups once per frame (avoids Array.find/findIndex in hot loop)
+  const teamLookup = new Map<string, { color: string; index: number; hat?: string }>();
+  for (let i = 0; i < gameState.teams.length; i++) {
+    const t = gameState.teams[i];
+    teamLookup.set(t.id, { color: t.color || '#ec4899', index: i, hat: t.hat });
+  }
+
   let sumBody = 0;
   let sumProps = 0;
   let sumHats = 0;
@@ -63,19 +70,26 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     if (viewLeft !== undefined && viewRight !== undefined && (slug.x < viewLeft - 60 || slug.x > viewRight + 60)) continue;
 
     const tHud0 = performance.now();
-    const team = gameState.teams.find((t) => t.id === slug.teamId);
-    const teamColor = team?.color || '#ec4899';
-    const teamIndex = gameState.teams.findIndex((t) => t.id === slug.teamId);
+    const teamInfo = teamLookup.get(slug.teamId);
+    const teamColor = teamInfo?.color || '#ec4899';
+    const teamIndex = teamInfo ? teamInfo.index : 0;
     const isActive = slug.id === (gameState.activeSlugId || (gameState as any).currentTurnSlugId);
     const phaseStr = gameState.phase as string;
     const isAiming = isActive && (phaseStr === 'AIMING' || phaseStr === 'TURN_ACTIVE' || phaseStr === 'ATTACK');
     const aimRad = ((slug.aimAngle ?? 0) * Math.PI) / 180;
 
-    const speed = Math.hypot(slug.vx || 0, slug.vy || 0);
+    const vx = slug.vx || 0;
+    const vy = slug.vy || 0;
+    const speedSq = vx * vx + vy * vy;
+    const speed = speedSq > 0.25 ? Math.sqrt(speedSq) : 0;
+
+    // Fast squared-distance danger detection (avoids Math.hypot & square roots)
     let isDangerNear = slug.hp < 35;
     if (!isDangerNear && gameState.projectiles && gameState.projectiles.length > 0) {
       for (const p of gameState.projectiles) {
-        if (Math.hypot(slug.x - p.x, slug.y - p.y) < 70) {
+        const dx = slug.x - p.x;
+        const dy = slug.y - p.y;
+        if (dx * dx + dy * dy < 4900) { // 70^2 = 4900
           isDangerNear = true;
           break;
         }
@@ -83,9 +97,13 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     }
     if (!isDangerNear && gameState.mines && gameState.mines.length > 0) {
       for (const m of gameState.mines) {
-        if (m.isTriggered && Math.hypot(slug.x - m.x, slug.y - m.y) < 55) {
-          isDangerNear = true;
-          break;
+        if (m.isTriggered) {
+          const dx = slug.x - m.x;
+          const dy = slug.y - m.y;
+          if (dx * dx + dy * dy < 3025) { // 55^2 = 3025
+            isDangerNear = true;
+            break;
+          }
         }
       }
     }
@@ -97,22 +115,20 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
     sumHud += performance.now() - tHud0;
 
     const tBody0 = performance.now();
-    const isAirbornePanic = Math.abs(slug.vy || 0) > 1.6 || speed > 2.5;
-    const isWalking = !isAirbornePanic && (slug.movingDir !== null && slug.movingDir !== undefined || Math.abs(slug.vx || 0) > 0.6);
+    const isAirbornePanic = Math.abs(vy) > 1.6 || speed > 2.5;
+    const isWalking = !isAirbornePanic && (slug.movingDir !== null && slug.movingDir !== undefined || Math.abs(vx) > 0.6);
     const isFacingLeft = slug.facing === 'left' || (slug as any).facingRight === false;
 
     // Airborne Speed Trails (only during high-speed air flight/falling)
     if (isAirbornePanic && speed > 2.5) {
-      ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = 1.5;
       for (let s = -1; s <= 1; s++) {
         ctx.beginPath();
-        ctx.moveTo(slug.x - (slug.vx || 0) * 1.8 + s * 4, slug.y - (slug.vy || 0) * 1.8 + s * 3);
-        ctx.lineTo(slug.x - (slug.vx || 0) * 3.6 + s * 4, slug.y - (slug.vy || 0) * 3.6 + s * 3);
+        ctx.moveTo(slug.x - vx * 1.8 + s * 4, slug.y - vy * 1.8 + s * 3);
+        ctx.lineTo(slug.x - vx * 3.6 + s * 4, slug.y - vy * 3.6 + s * 3);
         ctx.stroke();
       }
-      ctx.restore();
     }
 
     const stretchX = isAirbornePanic ? Math.min(0.28, Math.max(0.04, speed * 0.035)) : isWalking ? 0.08 : 0;
@@ -214,7 +230,7 @@ export function renderAllSlugs(rc: SlugsRenderContext) {
 
     // Team Hat
     const tHat0 = performance.now();
-    const hatId = (slug as any).hatId || team?.hat;
+    const hatId = (slug as any).hatId || teamInfo?.hat;
     renderSlugHat(ctx, hatId, teamIndex >= 0 ? teamIndex : 0, teamColor, animTime);
     sumHats += performance.now() - tHat0;
 
