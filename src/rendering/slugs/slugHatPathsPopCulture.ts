@@ -1,19 +1,50 @@
 import { createPath } from './slugGradients';
 
-// 1. Trompes du Marais
-export const HAT_SWAMP_EAR_LEFT = createPath((p) => {
-  p.moveTo(0.5, -12);
-  p.lineTo(-2.5, -20);
-  p.lineTo(-0.5, -21);
-  p.lineTo(2.5, -13);
+// 1. Trompes du Marais (Flared Ogre Trumpet Horns)
+export const HAT_SWAMP_EAR_TUBE_L = createPath((p) => {
+  p.moveTo(0.5, -12.0);
+  p.bezierCurveTo(-1.0, -15.0, -3.2, -18.0, -5.8, -20.5);
+  p.lineTo(-3.6, -22.8);
+  p.bezierCurveTo(-1.5, -19.5, 1.2, -15.5, 2.5, -12.5);
   p.closePath();
 });
 
-export const HAT_SWAMP_EAR_RIGHT = createPath((p) => {
-  p.moveTo(6.5, -12);
-  p.lineTo(9.5, -20);
-  p.lineTo(11.5, -19);
-  p.lineTo(8.5, -13);
+export const HAT_SWAMP_EAR_BELL_L = createPath((p) => {
+  if (p.ellipse) {
+    p.ellipse(-4.7, -21.6, 2.2, 1.3, -0.65, 0, Math.PI * 2);
+  }
+});
+
+export const HAT_SWAMP_EAR_CAVITY_L = createPath((p) => {
+  if (p.ellipse) {
+    p.ellipse(-4.7, -21.6, 1.4, 0.75, -0.65, 0, Math.PI * 2);
+  }
+});
+
+export const HAT_SWAMP_EAR_TUBE_R = createPath((p) => {
+  p.moveTo(6.5, -12.0);
+  p.bezierCurveTo(8.5, -15.0, 11.2, -17.5, 13.8, -19.5);
+  p.lineTo(11.8, -22.0);
+  p.bezierCurveTo(9.5, -19.0, 7.5, -15.0, 8.5, -12.5);
+  p.closePath();
+});
+
+export const HAT_SWAMP_EAR_BELL_R = createPath((p) => {
+  if (p.ellipse) {
+    p.ellipse(12.8, -20.7, 2.2, 1.3, 0.65, 0, Math.PI * 2);
+  }
+});
+
+export const HAT_SWAMP_EAR_CAVITY_R = createPath((p) => {
+  if (p.ellipse) {
+    p.ellipse(12.8, -20.7, 1.4, 0.75, 0.65, 0, Math.PI * 2);
+  }
+});
+
+export const HAT_SWAMP_BROW_RIDGE = createPath((p) => {
+  p.moveTo(-0.5, -13.0);
+  p.quadraticCurveTo(4.5, -15.5, 9.5, -13.0);
+  p.quadraticCurveTo(4.5, -14.2, -0.5, -13.0);
   p.closePath();
 });
 

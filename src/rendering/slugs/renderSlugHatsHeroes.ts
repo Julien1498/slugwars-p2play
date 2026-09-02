@@ -1,7 +1,17 @@
 import { HatRendererFn } from './renderSlugHatTypes';
 import {
-  HAT_PATRIOT_DOME,
+  HAT_PATRIOT_SHELL,
+  HAT_PATRIOT_VISOR_BRIM,
+  HAT_PATRIOT_WING_L,
+  HAT_PATRIOT_WING_R,
+  HAT_PATRIOT_LETTER_A,
+  HAT_PATRIOT_LETTER_A_SHADOW,
+  HAT_PATRIOT_CHINSTRAP,
+  HAT_TITANIUM_HELMET_BASE,
   HAT_TITANIUM_FACEPLATE,
+  HAT_TITANIUM_CHEEK_RECESS,
+  HAT_TITANIUM_EYE_L,
+  HAT_TITANIUM_EYE_R,
   HAT_MISCHIEF_HORN_L,
   HAT_MISCHIEF_HORN_R,
   HAT_THUNDER_WING_L,
@@ -9,53 +19,101 @@ import {
   HAT_VILLAGE_PLATE,
   HAT_SHINOBI_HAIR_SPIKES,
   HAT_RENEGADE_CONE,
-  HAT_SHADOW_MASK,
+  HAT_SHADOW_MASK_PORCELAIN,
+  HAT_SHADOW_MASK_INNER_EARS,
+  HAT_SHADOW_MASK_EYES,
+  HAT_SHADOW_MASK_WARPAINT,
+  HAT_SHADOW_MASK_CORD,
 } from './slugHatPathsHeroes';
 
 function renderPatriotHelmet(ctx: CanvasRenderingContext2D): void {
+  // 1. Tactical Deep Blue Helmet Shell
   ctx.fillStyle = '#1d4ed8';
-  ctx.strokeStyle = '#1e3a8a';
+  ctx.strokeStyle = '#172554';
   ctx.lineWidth = 1.3;
-  ctx.fill(HAT_PATRIOT_DOME);
-  ctx.stroke(HAT_PATRIOT_DOME);
+  ctx.fill(HAT_PATRIOT_SHELL);
+  ctx.stroke(HAT_PATRIOT_SHELL);
 
-  // White "A"
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.3;
-  ctx.beginPath();
-  ctx.moveTo(2.5, -13.5); ctx.lineTo(4, -17.5); ctx.lineTo(5.5, -13.5);
-  ctx.moveTo(3.1, -15); ctx.lineTo(4.9, -15);
-  ctx.stroke();
+  // 2. Forehead Visor Brow Ridge
+  ctx.fillStyle = '#2563eb';
+  ctx.fill(HAT_PATRIOT_VISOR_BRIM);
+  ctx.stroke(HAT_PATRIOT_VISOR_BRIM);
 
-  // White wings
-  ctx.fillStyle = '#ffffff';
+  // 3. Leather Chinstrap & Brass Buckle
+  ctx.fillStyle = '#3f1f0a';
+  ctx.strokeStyle = '#1e0d04';
+  ctx.lineWidth = 0.8;
+  ctx.fill(HAT_PATRIOT_CHINSTRAP);
+  ctx.stroke(HAT_PATRIOT_CHINSTRAP);
+
+  ctx.fillStyle = '#f59e0b';
   ctx.beginPath();
-  ctx.moveTo(-1, -14); ctx.lineTo(-4, -18); ctx.lineTo(-2, -15); ctx.closePath();
-  ctx.moveTo(9, -14); ctx.lineTo(12, -18); ctx.lineTo(10, -15); ctx.closePath();
+  ctx.arc(4.0, 3.2, 0.7, 0, Math.PI * 2);
   ctx.fill();
+
+  // 4. Layered Aerodynamic White Wings on Temples
+  ctx.fillStyle = '#f8fafc';
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 0.9;
+  ctx.fill(HAT_PATRIOT_WING_L);
+  ctx.stroke(HAT_PATRIOT_WING_L);
+  ctx.fill(HAT_PATRIOT_WING_R);
+  ctx.stroke(HAT_PATRIOT_WING_R);
+
+  // 5. Embossed White Capital "A" with Drop Shadow
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+  ctx.fill(HAT_PATRIOT_LETTER_A_SHADOW);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 0.5;
+  ctx.fill(HAT_PATRIOT_LETTER_A);
+  ctx.stroke(HAT_PATRIOT_LETTER_A);
 }
 
 function renderTitaniumMask(ctx: CanvasRenderingContext2D): void {
+  // 1. Glossy Armored Crimson Skull Base
   ctx.fillStyle = '#991b1b';
   ctx.strokeStyle = '#7f1d1d';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.arc(4, -9, 8.5, -Math.PI * 0.8, -Math.PI * 0.2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+  ctx.lineWidth = 1.4;
+  ctx.fill(HAT_TITANIUM_HELMET_BASE);
+  ctx.stroke(HAT_TITANIUM_HELMET_BASE);
 
+  // 2. Sculpted Metallic Gold Faceplate
   ctx.fillStyle = '#eab308';
-  ctx.strokeStyle = '#ca8a04';
+  ctx.strokeStyle = '#a16207';
   ctx.lineWidth = 1.2;
   ctx.fill(HAT_TITANIUM_FACEPLATE);
   ctx.stroke(HAT_TITANIUM_FACEPLATE);
 
-  // Glowing cyan eyes matching real slug eye centers
-  ctx.fillStyle = '#22d3ee';
+  // 3. Recessed Aerodynamic Cheek Indents
+  ctx.fillStyle = '#78350f';
+  ctx.fill(HAT_TITANIUM_CHEEK_RECESS);
+
+  // 4. Forehead Plate Seam
+  ctx.strokeStyle = '#ca8a04';
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.fillRect(0.8, -10.8, 3.2, 1.3);
-  ctx.fillRect(6.6, -9.8, 3.2, 1.3);
+  ctx.moveTo(1.5, -13.0); ctx.lineTo(7.5, -13.0);
+  ctx.moveTo(3.2, -3.2); ctx.lineTo(5.8, -3.2);
+  ctx.stroke();
+
+  // 5. Blazing Cyan Arc-Reactor Eye Slots
+  // Outer cyan glow
+  ctx.strokeStyle = '#06b6d4';
+  ctx.lineWidth = 1.2;
+  ctx.stroke(HAT_TITANIUM_EYE_L);
+  ctx.stroke(HAT_TITANIUM_EYE_R);
+
+  // Neon cyan fill & white core highlight
+  ctx.fillStyle = '#22d3ee';
+  ctx.fill(HAT_TITANIUM_EYE_L);
+  ctx.fill(HAT_TITANIUM_EYE_R);
+
+  ctx.fillStyle = '#f0fdf4';
+  ctx.beginPath();
+  ctx.fillRect(1.5, -10.8, 1.8, 0.8);
+  ctx.fillRect(7.2, -10.1, 1.8, 0.8);
 }
 
 function renderMischiefHorns(ctx: CanvasRenderingContext2D): void {
@@ -160,24 +218,39 @@ function renderRenegadeStraw(ctx: CanvasRenderingContext2D): void {
 }
 
 function renderShadowMask(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#ffffff';
+  // 1. Pristine Ivory Porcelain Mask Shell
+  ctx.fillStyle = '#f8fafc';
   ctx.strokeStyle = '#09090b';
-  ctx.lineWidth = 1.2;
-  ctx.fill(HAT_SHADOW_MASK);
-  ctx.stroke(HAT_SHADOW_MASK);
+  ctx.lineWidth = 1.3;
+  ctx.fill(HAT_SHADOW_MASK_PORCELAIN);
+  ctx.stroke(HAT_SHADOW_MASK_PORCELAIN);
 
-  ctx.strokeStyle = '#dc2626';
-  ctx.lineWidth = 1.0;
-  ctx.beginPath();
-  ctx.moveTo(5.5, -9); ctx.lineTo(7.5, -8); ctx.lineTo(9.5, -9);
-  ctx.moveTo(6, -11); ctx.lineTo(6.8, -10);
-  ctx.moveTo(9, -11); ctx.lineTo(8.2, -10);
-  ctx.stroke();
+  // 2. Soft Pink Inner Ears
+  ctx.fillStyle = '#f472b6';
+  ctx.fill(HAT_SHADOW_MASK_INNER_EARS);
 
+  // 3. Slanted Feline Eye Cutouts
   ctx.fillStyle = '#09090b';
+  ctx.fill(HAT_SHADOW_MASK_EYES);
+
+  // 4. Ceremonial Vermilion Warpaint (Whisker curves, brow flame & snout)
+  ctx.fillStyle = '#dc2626';
+  ctx.strokeStyle = '#b91c1c';
+  ctx.lineWidth = 1.1;
+  ctx.fill(HAT_SHADOW_MASK_WARPAINT);
+  ctx.stroke(HAT_SHADOW_MASK_WARPAINT);
+
+  // 5. Hanging Ceremonial Red Braided Cord & Amber Bead
+  ctx.fillStyle = '#dc2626';
+  ctx.strokeStyle = '#991b1b';
+  ctx.lineWidth = 0.8;
+  ctx.fill(HAT_SHADOW_MASK_CORD);
+  ctx.stroke(HAT_SHADOW_MASK_CORD);
+
+  ctx.fillStyle = '#f59e0b';
   ctx.beginPath();
-  ctx.fillRect(5.8, -10, 1.2, 0.6);
-  ctx.fillRect(8.0, -10, 1.2, 0.6);
+  ctx.arc(-3.0, 1.2, 0.8, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 export const HEROES_HAT_STRATEGIES: Record<string, HatRendererFn> = {

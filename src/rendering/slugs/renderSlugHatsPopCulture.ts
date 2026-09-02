@@ -1,7 +1,12 @@
 import { HatRendererFn } from './renderSlugHatTypes';
 import {
-  HAT_SWAMP_EAR_LEFT,
-  HAT_SWAMP_EAR_RIGHT,
+  HAT_SWAMP_EAR_TUBE_L,
+  HAT_SWAMP_EAR_BELL_L,
+  HAT_SWAMP_EAR_CAVITY_L,
+  HAT_SWAMP_EAR_TUBE_R,
+  HAT_SWAMP_EAR_BELL_R,
+  HAT_SWAMP_EAR_CAVITY_R,
+  HAT_SWAMP_BROW_RIDGE,
   HAT_FELINE_BRIM,
   HAT_FELINE_CROWN,
   HAT_MINI_CORONET,
@@ -15,18 +20,40 @@ import {
 } from './slugHatPathsPopCulture';
 
 function renderSwampEars(ctx: CanvasRenderingContext2D): void {
+  // 1. Heavy Ogre Brow Ridge Fold
   ctx.fillStyle = '#65a30d';
   ctx.strokeStyle = '#365314';
-  ctx.lineWidth = 1.3;
-  ctx.fill(HAT_SWAMP_EAR_LEFT);
-  ctx.stroke(HAT_SWAMP_EAR_LEFT);
-  ctx.fill(HAT_SWAMP_EAR_RIGHT);
-  ctx.stroke(HAT_SWAMP_EAR_RIGHT);
+  ctx.lineWidth = 1.1;
+  ctx.fill(HAT_SWAMP_BROW_RIDGE);
+  ctx.stroke(HAT_SWAMP_BROW_RIDGE);
 
-  ctx.fillStyle = '#4d7c0f';
+  // 2. Tubular Flared Stalks (Left & Right)
+  ctx.fillStyle = '#84cc16';
+  ctx.strokeStyle = '#365314';
+  ctx.lineWidth = 1.3;
+  ctx.fill(HAT_SWAMP_EAR_TUBE_L);
+  ctx.stroke(HAT_SWAMP_EAR_TUBE_L);
+  ctx.fill(HAT_SWAMP_EAR_TUBE_R);
+  ctx.stroke(HAT_SWAMP_EAR_TUBE_R);
+
+  // 3. Flared Outer Trumpet Bell Rims
+  ctx.fillStyle = '#65a30d';
+  ctx.fill(HAT_SWAMP_EAR_BELL_L);
+  ctx.stroke(HAT_SWAMP_EAR_BELL_L);
+  ctx.fill(HAT_SWAMP_EAR_BELL_R);
+  ctx.stroke(HAT_SWAMP_EAR_BELL_R);
+
+  // 4. Deep Hollow Funnel Cavities
+  ctx.fillStyle = '#1a2e05';
+  ctx.fill(HAT_SWAMP_EAR_CAVITY_L);
+  ctx.fill(HAT_SWAMP_EAR_CAVITY_R);
+
+  // 5. Ogre Freckles at base
+  ctx.fillStyle = '#365314';
   ctx.beginPath();
-  ctx.ellipse(-1.5, -20.5, 1.4, 0.8, -0.4, 0, Math.PI * 2);
-  ctx.ellipse(10.5, -19.5, 1.4, 0.8, 0.4, 0, Math.PI * 2);
+  ctx.arc(2.0, -13.5, 0.6, 0, Math.PI * 2);
+  ctx.arc(4.5, -14.2, 0.5, 0, Math.PI * 2);
+  ctx.arc(7.0, -13.6, 0.6, 0, Math.PI * 2);
   ctx.fill();
 }
 

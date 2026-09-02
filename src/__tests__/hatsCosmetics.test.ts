@@ -222,6 +222,7 @@ describe('Hats Cosmetics & Headwear System', () => {
         fill: vi.fn(),
         stroke: vi.fn(),
         fillRect: vi.fn(),
+        translate: vi.fn(),
         createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
       };
 
