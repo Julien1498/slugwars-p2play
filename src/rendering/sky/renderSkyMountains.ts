@@ -27,7 +27,7 @@ function ensureMountainPaths(height: number, waterY: number) {
     return;
   }
 
-  const bottomY = Math.max(waterY + 600, height + 800);
+  const bottomY = waterY + 80;
 
   // 1. Distant Mountain Horizons
   const mtStep1 = 40;
@@ -108,13 +108,13 @@ export function renderSkyMountainsAndHills(p: SkyMountainParams) {
 
   ctx.fillStyle = mtGrad;
   ctx.beginPath();
-  ctx.moveTo(drawLeft, waterY + 100);
+  ctx.moveTo(drawLeft, waterY + 80);
   for (let x = mtStartX1; x <= drawRight + mtStep1 * 2; x += mtStep1) {
     const my = height * 0.46 + Math.sin(x * 0.003 + 0.8) * 65 + Math.cos(x * 0.007) * 35;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(drawRight + mtStep1, drawBottom);
-  ctx.lineTo(drawLeft, drawBottom);
+  ctx.lineTo(drawRight + mtStep1, waterY + 80);
+  ctx.lineTo(drawLeft, waterY + 80);
   ctx.closePath();
   ctx.fill();
 
@@ -125,13 +125,13 @@ export function renderSkyMountainsAndHills(p: SkyMountainParams) {
   const mtStep2 = 30;
   const mtStartX2 = Math.floor(drawLeft / mtStep2) * mtStep2;
   ctx.beginPath();
-  ctx.moveTo(drawLeft, waterY + 100);
+  ctx.moveTo(drawLeft, waterY + 80);
   for (let x = mtStartX2; x <= drawRight + mtStep2 * 2; x += mtStep2) {
     const my = height * 0.62 + Math.sin(x * 0.005 + 2.4) * 45;
     ctx.lineTo(x, my);
   }
-  ctx.lineTo(drawRight + mtStep2, drawBottom);
-  ctx.lineTo(drawLeft, drawBottom);
+  ctx.lineTo(drawRight + mtStep2, waterY + 80);
+  ctx.lineTo(drawLeft, waterY + 80);
   ctx.closePath();
   ctx.fill();
 

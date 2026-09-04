@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { renderForegroundOcean, WaterRenderContext } from '../rendering/renderWater';
 import { renderSkyHorizonOcean, SkyHorizonOceanParams } from '../rendering/sky/renderSkyHorizonOcean';
+import { renderSkyMountainsAndHills, SkyMountainParams } from '../rendering/sky/renderSkyMountains';
 import { rebuildPropsOffscreenCanvas, createTerrainBuffers } from '../rendering/renderTerrain';
 import { drawSolidPropVector } from '../rendering/props/renderDestructibleProp';
 import { getCachedPropSprite, clearPropSpriteCache } from '../rendering/props/propSpriteCache';
@@ -157,6 +158,30 @@ describe('marineDepthsAndPropsSharpness - Underwater Continuity & Zero-Blur Prop
 
       renderSkyHorizonOcean(oceanParams);
       expect(ctx.fill).not.toHaveBeenCalled();
+    });
+
+    it('renderSkyMountainsAndHills constrains mountain polygons to waterY + 80 without deep oceanic plunge', () => {
+      const ctx = createMockContext();
+      const mountainParams: SkyMountainParams = {
+        ctx,
+        height: 1200,
+        waterY: 800,
+        theme: 'ISLAND',
+        isDay: true,
+        drawLeft: 0,
+        drawRight: 1000,
+        drawBottom: 2500,
+      };
+
+      renderSkyMountainsAndHills(mountainParams);
+
+      const yCoords = ctx._calls
+        .filter((c) => c.method === 'moveTo' || c.method === 'lineTo')
+        .map((c) => c.args[1] as number);
+
+      if (yCoords.length > 0) {
+        expect(Math.max(...yCoords)).toBeLessThanOrEqual(880);
+      }
     });
   });
 

@@ -131,7 +131,7 @@ export function renderBackgroundLayer({
   const pSolidsStart = performance.now();
   if (bypass !== 'PROPS' && bypass !== 'ALL_FOUR') {
     if (buffers.propsOffscreenCanvas) {
-      const margin = 32;
+      const margin = 64;
       const psx = Math.max(0, Math.floor(viewLeft - margin));
       const psy = Math.max(0, Math.floor(viewTop - margin));
       const pex = Math.min(width, Math.ceil(viewRight + margin));
