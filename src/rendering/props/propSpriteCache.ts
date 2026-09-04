@@ -37,7 +37,7 @@ export function setPropSpriteCacheEnabled(enabled: boolean): void {
   ENABLE_PROP_SPRITE_CACHE = enabled;
 }
 
-const SUPERSAMPLE_SCALE = 2.0;
+const SUPERSAMPLE_SCALE = 1.0;
 
 const _propSpriteMap = new Map<string, CachedPropSprite>();
 
@@ -67,8 +67,8 @@ export function getCachedPropSprite(sprop: SolidProp): CachedPropSprite | null {
   const padX = 24;
   const padBottom = 12;
   const padTop = 18;
-  const boxW = (sprop.width || 40) + padX * 2;
-  const boxH = (sprop.height || 40) + padTop + padBottom;
+  const boxW = Math.ceil((sprop.width || 40) + padX * 2);
+  const boxH = Math.ceil((sprop.height || 40) + padTop + padBottom);
 
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(boxW * SUPERSAMPLE_SCALE);
@@ -77,11 +77,13 @@ export function getCachedPropSprite(sprop: SolidProp): CachedPropSprite | null {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
-  const originX = boxW / 2;
-  const originY = boxH - padBottom;
+  const originX = Math.round(boxW / 2);
+  const originY = Math.round(boxH - padBottom);
 
   if (typeof ctx.save === 'function') ctx.save();
-  if (typeof ctx.scale === 'function') ctx.scale(SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE);
+  if (typeof ctx.scale === 'function' && SUPERSAMPLE_SCALE !== 1.0) {
+    ctx.scale(SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE);
+  }
   if (typeof ctx.translate === 'function') ctx.translate(originX, originY);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -114,6 +116,9 @@ export function drawSolidPropWithCache(
 
   const sprite = getCachedPropSprite(sprop);
   if (!sprite) return false;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const source: CanvasImageSource = sprite.bitmap ?? sprite.canvas;
   ctx.drawImage(

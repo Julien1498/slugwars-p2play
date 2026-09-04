@@ -6,7 +6,7 @@ export { SOLID_PROP_DRAWERS };
 export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
   if (typeof ctx.save !== 'function') return;
   ctx.save();
-  ctx.translate(sprop.x, sprop.y);
+  ctx.translate(Math.round(sprop.x), Math.round(sprop.y));
   if (sprop.angleRad) {
     ctx.rotate(sprop.angleRad);
   }

@@ -93,7 +93,7 @@ export function renderForegroundLayer({
   ctx.scale(totalScale, totalScale);
   ctx.translate(-width / 2, -height / 2);
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'medium';
+  ctx.imageSmoothingQuality = 'high';
 
   const fgBypass = isolateBenchmark.getActiveBypass();
 

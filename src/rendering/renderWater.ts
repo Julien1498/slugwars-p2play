@@ -90,7 +90,7 @@ export function renderForegroundOcean(rc: WaterRenderContext) {
 
   const clampLeft = viewLeft !== undefined ? viewLeft - 100 : worldLeft;
   const clampRight = viewRight !== undefined ? viewRight + 100 : worldRight;
-  const clampBottom = Math.min(viewBottom !== undefined ? viewBottom + 50 : waterY + 400, waterY + 350);
+  const clampBottom = viewBottom !== undefined ? Math.max(waterY + 400, viewBottom + 100) : worldBottom;
   const span = clampRight - clampLeft;
   const waveStep = Math.max(26, Math.min(52, Math.round(span / 40)));
 

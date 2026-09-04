@@ -21,8 +21,8 @@ export interface SkyHorizonOceanParams {
 export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
   const { ctx, waterY, worldBottom, theme, isDay, slowTime, drawLeft, drawRight, drawBottom } = p;
 
-  const oceanBottom = Math.min(drawBottom, waterY + 120);
-  if (oceanBottom <= waterY - 20) return;
+  if (drawBottom <= waterY - 20) return;
+  const oceanBottom = Math.max(drawBottom, waterY + 600);
 
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
 

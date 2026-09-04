@@ -70,6 +70,8 @@ export function rebuildPropsOffscreenCanvas(
   const pCtx = pCanvas.getContext('2d');
   if (!pCtx) return;
   pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  pCtx.imageSmoothingEnabled = true;
+  pCtx.imageSmoothingQuality = 'high';
   if (solidProps) {
     for (let i = 0; i < solidProps.length; i++) {
       const sp = solidProps[i];
