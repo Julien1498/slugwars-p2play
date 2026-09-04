@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SlugWarsEngine } from '../core/gameEngine';
 import { getWeapon, getAllWeapons, getWeaponsByCategory } from '../core/weapons/registry';
+import { NETWORK_ACTION_REGISTRY, canExecuteInPhase } from '../network/actions';
 
 describe('Weapons Arsenal & Mechanics', () => {
   it('registers all weapons across valid categories', () => {
@@ -258,10 +259,17 @@ describe('Weapons Arsenal & Mechanics', () => {
 
     const initialVx = sheep.vx;
     const initialVy = sheep.vy;
+    // When fired, phase transitions to PROJECTILE_ACTIVE
+    expect(engine.state.phase).toBe('PROJECTILE_ACTIVE');
 
     // Steer sheep left
     engine.steerSheep('left');
     expect(sheep.vx !== initialVx || sheep.vy !== initialVy).toBe(true);
+
+    // Verify action registry allows START_STEER, STOP_STEER, and DETONATE in PROJECTILE_ACTIVE
+    expect(canExecuteInPhase(NETWORK_ACTION_REGISTRY.START_STEER.allowedPhases, engine.state.phase)).toBe(true);
+    expect(canExecuteInPhase(NETWORK_ACTION_REGISTRY.STOP_STEER.allowedPhases, engine.state.phase)).toBe(true);
+    expect(canExecuteInPhase(NETWORK_ACTION_REGISTRY.DETONATE.allowedPhases, engine.state.phase)).toBe(true);
 
     // Detonate sheep manually after arming window
     sheep.behaviorData = { createdAt: Date.now() - 500 };

@@ -15,6 +15,14 @@ export function useBoardModals(phase: GamePhase) {
     }
   }, [phase]);
 
+  const setSafeShowWeaponPicker: React.Dispatch<React.SetStateAction<boolean>> = useCallback((val) => {
+    if (phase !== 'AIMING') {
+      setShowWeaponPicker(false);
+      return;
+    }
+    setShowWeaponPicker(val);
+  }, [phase]);
+
   const handleOpenWeaponPicker = useCallback(() => {
     if (phase !== 'AIMING') return;
     setShowWeaponPicker(true);
@@ -37,7 +45,7 @@ export function useBoardModals(phase: GamePhase) {
     showMetrics,
     showConfirmLobby,
     setShowConfirmLobby,
-    setShowWeaponPicker,
+    setShowWeaponPicker: setSafeShowWeaponPicker,
     handleOpenWeaponPicker,
     handleCloseWeaponPicker,
     handleOpenRules,

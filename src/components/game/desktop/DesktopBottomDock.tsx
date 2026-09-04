@@ -234,9 +234,9 @@ export const DesktopBottomDock: React.FC<DesktopBottomDockProps> = React.memo(({
             <button
               type="button"
               onClick={onOpenWeaponPicker}
-              disabled={!isMyTurn || isRetreat}
+              disabled={!isMyTurn || gameState.phase !== 'AIMING' || isRetreat}
               className={`px-4 py-2.5 rounded-xl border font-black text-xs transition-all shadow-xl flex items-center gap-2 ${
-                isMyTurn && !isRetreat
+                isMyTurn && gameState.phase === 'AIMING' && !isRetreat
                   ? 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white border-violet-400 shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:scale-105 active:scale-95 cursor-pointer'
                   : 'bg-zinc-900/60 border-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'
               }`}

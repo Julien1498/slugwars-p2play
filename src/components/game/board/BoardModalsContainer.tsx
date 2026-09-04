@@ -52,7 +52,7 @@ export const BoardModalsContainer: React.FC<BoardModalsContainerProps> = ({
         </Profiler>
       )}
 
-      {showWeaponPicker && myTeam && (
+      {showWeaponPicker && myTeam && gameState.phase === 'AIMING' && (
         <Profiler id="WeaponPicker" onRender={perfTracker.onReactRender}>
           <WeaponPicker
             inventory={myTeam.inventory}

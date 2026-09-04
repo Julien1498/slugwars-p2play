@@ -155,7 +155,7 @@ export const GAMEPLAY_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Networ
 
   DETONATE: {
     permission: 'ACTIVE_TURN_ONLY',
-    allowedPhases: ['TURN_TIME', 'RESOLVING', 'AIMING'],
+    allowedPhases: ['TURN_TIME', 'RESOLVING', 'AIMING', 'PROJECTILE_ACTIVE'],
     executeHost: ({ engine }) => {
       engine.detonateSheep();
     },
@@ -175,7 +175,10 @@ export const GAMEPLAY_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Networ
 
   START_STEER: {
     permission: 'ACTIVE_TURN_ONLY',
-    allowedPhases: ['TURN_TIME', 'RESOLVING'],
+    allowedPhases: ['TURN_TIME', 'RESOLVING', 'PROJECTILE_ACTIVE'],
+    applyOptimistic: (_state, activeSlug, payload) => {
+      if (payload?.dir) activeSlug.steeringDir = payload.dir;
+    },
     executeHost: ({ engine }, payload) => {
       if (payload?.dir) engine.startSteer(payload.dir);
     },
@@ -183,7 +186,10 @@ export const GAMEPLAY_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Networ
 
   STOP_STEER: {
     permission: 'ACTIVE_TURN_ONLY',
-    allowedPhases: ['TURN_TIME', 'RESOLVING'],
+    allowedPhases: ['TURN_TIME', 'RESOLVING', 'PROJECTILE_ACTIVE'],
+    applyOptimistic: (_state, activeSlug) => {
+      activeSlug.steeringDir = null;
+    },
     executeHost: ({ engine }) => {
       engine.stopSteer();
     },

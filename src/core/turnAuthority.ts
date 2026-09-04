@@ -44,9 +44,12 @@ export function isSenderAuthorizedForTurn(
   return false;
 }
 
-/**
- * Checks if the current game phase allows active player interactions (movement, aiming, placing).
- */
 export function isPlayablePhase(phase: GamePhase | string): boolean {
-  return phase === 'AIMING' || phase === 'TURN_TIME' || phase === 'RETREAT' || phase === 'PLACEMENT';
+  return (
+    phase === 'AIMING' ||
+    phase === 'TURN_TIME' ||
+    phase === 'RETREAT' ||
+    phase === 'PLACEMENT' ||
+    phase === 'PROJECTILE_ACTIVE'
+  );
 }

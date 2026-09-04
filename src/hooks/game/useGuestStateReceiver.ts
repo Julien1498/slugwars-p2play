@@ -143,6 +143,21 @@ export function useGuestStateReceiver(
           }
         }
 
+        // Before applying delta, if this guest is the currently active player, preserve active aim & weapon selection to avoid rubberbanding
+        const isMyActiveTurn = myPeerId && engine.state.activeTeamId === myPeerId && (engine.state.phase === 'AIMING' || engine.state.phase === 'TURN_TIME' || engine.state.phase === 'RETREAT');
+        const myActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
+        const preservedAim = myActiveSlug
+          ? {
+              aimAngle: myActiveSlug.aimAngle,
+              facing: myActiveSlug.facing,
+              selectedWeaponId: myActiveSlug.selectedWeaponId,
+              currentTargetPoint: myActiveSlug.currentTargetPoint,
+              fuseTimerSec: myActiveSlug.fuseTimerSec,
+            }
+          : null;
+
+        applyStateDelta(engine.state, delta);
+
         // Victory sound on Game Over & Fresh Terrain Reset on Match Start
         if (delta.phase && delta.phase !== prevPhaseRef.current) {
           if (delta.phase === 'GAME_OVER') {
@@ -158,21 +173,6 @@ export function useGuestStateReceiver(
           }
           prevPhaseRef.current = delta.phase;
         }
-
-        // Before applying delta, if this guest is the currently active player, preserve active aim & weapon selection to avoid rubberbanding
-        const isMyActiveTurn = myPeerId && engine.state.activeTeamId === myPeerId && (engine.state.phase === 'AIMING' || engine.state.phase === 'TURN_TIME' || engine.state.phase === 'RETREAT');
-        const myActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
-        const preservedAim = myActiveSlug
-          ? {
-              aimAngle: myActiveSlug.aimAngle,
-              facing: myActiveSlug.facing,
-              selectedWeaponId: myActiveSlug.selectedWeaponId,
-              currentTargetPoint: myActiveSlug.currentTargetPoint,
-              fuseTimerSec: myActiveSlug.fuseTimerSec,
-            }
-          : null;
-
-        applyStateDelta(engine.state, delta);
 
         if (preservedAim && myActiveSlug) {
           myActiveSlug.aimAngle = preservedAim.aimAngle;
@@ -216,7 +216,14 @@ export function useGuestStateReceiver(
       } else {
         const newState = unwrapGameState(payload);
         if (newState) {
-          const isMyActiveTurn = getIsLocalPlayerTurn(newState, myPeerId, false) && isPlayablePhase(newState.phase);
+          const isNewMatch = (newState.phase === 'PLACEMENT' && (prevPhaseRef.current === 'LOBBY' || prevPhaseRef.current === 'GAME_OVER')) ||
+            prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+          prevPhaseRef.current = newState.phase;
+
+          const isAimingPhase =
+            !isNewMatch &&
+            (newState.phase === 'AIMING' || newState.phase === 'TURN_TIME' || newState.phase === 'RETREAT');
+          const isMyActiveTurn = isAimingPhase && getIsLocalPlayerTurn(newState, myPeerId, false);
           const prevActiveSlug = isMyActiveTurn ? engine.state.slugs.find((s) => s.id === engine.state.activeSlugId) : null;
           const preservedAim = prevActiveSlug
             ? {
@@ -229,6 +236,15 @@ export function useGuestStateReceiver(
             : null;
 
           engine.state = newState;
+          if (isNewMatch) {
+            prevMapKeyRef.current = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
+            engine.initTerrain();
+            knownGirderIdsRef.current.clear();
+            knownCraterIdsRef.current.clear();
+            knownBuildIdsRef.current.clear();
+            knownProjIdsRef.current.clear();
+            knownExplosionIdsRef.current.clear();
+          }
           if (preservedAim) {
             const newActiveSlug = engine.state.slugs.find((s) => s.id === engine.state.activeSlugId);
             if (newActiveSlug) {
@@ -239,19 +255,6 @@ export function useGuestStateReceiver(
               newActiveSlug.fuseTimerSec = preservedAim.fuseTimerSec;
             }
           }
-
-          const isNewMatch = (newState.phase === 'PLACEMENT' && prevPhaseRef.current === 'LOBBY') ||
-            prevMapKeyRef.current !== `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-          if (isNewMatch) {
-            prevMapKeyRef.current = `${newState.config.mapSeed}_${newState.config.mapTheme}`;
-            engine.initTerrain();
-            knownGirderIdsRef.current.clear();
-            knownCraterIdsRef.current.clear();
-            knownBuildIdsRef.current.clear();
-            knownProjIdsRef.current.clear();
-            knownExplosionIdsRef.current.clear();
-          }
-          prevPhaseRef.current = newState.phase;
 
           if (newState.girders && newState.girders.length > 0) {
             for (const g of newState.girders) {

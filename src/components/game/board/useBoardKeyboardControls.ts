@@ -105,7 +105,7 @@ export function useBoardKeyboardControls({
       }
 
       // 4. Standard Slug Ground Context
-      if (action === 'TOGGLE_WEAPON_PICKER' && gameState.phase !== 'RETREAT') {
+      if (action === 'TOGGLE_WEAPON_PICKER' && gameState.phase === 'AIMING') {
         setShowWeaponPicker((prev) => !prev);
         return;
       }

@@ -150,6 +150,7 @@ describe('Turn Authority & Permissions', () => {
       expect(isPlayablePhase('TURN_TIME')).toBe(true);
       expect(isPlayablePhase('RETREAT')).toBe(true);
       expect(isPlayablePhase('PLACEMENT')).toBe(true);
+      expect(isPlayablePhase('PROJECTILE_ACTIVE')).toBe(true);
     });
 
     it('returns false for non-interactive phases', () => {
