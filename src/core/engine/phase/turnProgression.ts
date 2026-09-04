@@ -2,6 +2,8 @@ import { GameState, JournalEntry } from '../../types';
 import { DestructibleTerrain } from '../../terrain';
 import { startAiming } from './phaseTransitions';
 import { processTurnSupplyDrops } from '../supplyDropSpawner';
+import { getGunGameWeaponForTurn } from '../../gameModes/types';
+import { getWeapon } from '../../weapons/registry';
 
 export function advanceToNextTurn(
   state: GameState,
@@ -61,18 +63,21 @@ export function advanceToNextTurn(
   }
 
   // 5. Handle Water Rising Mechanic
-  const waterSpeed = state.config.waterRiseSpeed;
-  const waterFreq = state.config.waterRiseFreq || 'EVERY_TURN';
-  const shouldRise = waterSpeed && waterSpeed !== 'OFF' && (waterFreq === 'EVERY_TURN' || isRoundCycleCompleted);
+  const isRisingWaterMode = state.config?.gameMode === 'RISING_WATER';
+  const waterSpeed = state.config?.waterRiseSpeed;
+  const waterFreq = state.config?.waterRiseFreq || 'EVERY_TURN';
+  const shouldRise = isRisingWaterMode || (waterSpeed && waterSpeed !== 'OFF' && (waterFreq === 'EVERY_TURN' || isRoundCycleCompleted));
 
   if (shouldRise) {
-    let risePx = 0;
-    if (waterFreq === 'EVERY_TURN') {
-      const perTurnMap: Record<string, number> = { SLOW: 5, NORMAL: 12, FAST: 24 };
-      risePx = perTurnMap[waterSpeed] || 12;
-    } else {
-      const perRoundMap: Record<string, number> = { SLOW: 16, NORMAL: 36, FAST: 68 };
-      risePx = perRoundMap[waterSpeed] || 36;
+    let risePx = isRisingWaterMode ? 30 : 0;
+    if (!isRisingWaterMode) {
+      if (waterFreq === 'EVERY_TURN') {
+        const perTurnMap: Record<string, number> = { SLOW: 5, NORMAL: 12, FAST: 24 };
+        risePx = perTurnMap[waterSpeed || 'NORMAL'] || 12;
+      } else {
+        const perRoundMap: Record<string, number> = { SLOW: 16, NORMAL: 36, FAST: 68 };
+        risePx = perRoundMap[waterSpeed || 'NORMAL'] || 36;
+      }
     }
 
     const minWaterY = Math.max(120, Math.floor(terrain.data.height * 0.18));
@@ -82,7 +87,7 @@ export function advanceToNextTurn(
     if (newWaterY !== currentWaterY) {
       state.waterLevel = newWaterY;
       terrain.data.waterLevel = newWaterY;
-      const roundPrefix = waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
+      const roundPrefix = isRisingWaterMode ? '🌋 Marée Infernale : ' : waterFreq === 'ROUND_CYCLE' ? '⏱️ Fin de cycle : ' : '';
       callbacks.addLog(`🌊 ${roundPrefix}Le niveau de l'eau monte (+${risePx} px) ! Attention à la submersion !`, 'combat');
 
       for (const s of state.slugs) {
@@ -100,9 +105,20 @@ export function advanceToNextTurn(
     }
   }
 
-  // 6. Increment turn count & Randomize wind & start aiming
+  // 6. Increment turn count & Randomize wind
   state.turnCount = (state.turnCount || 0) + 1;
   callbacks.randomizeWind(state);
+
+  // 6b. Gun Game Imposed Weapon Rotation
+  if (state.config?.gameMode === 'GUN_GAME') {
+    const imposedWeapon = getGunGameWeaponForTurn(state.turnCount);
+    const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+    if (activeSlug) {
+      activeSlug.selectedWeaponId = imposedWeapon;
+      const w = getWeapon(imposedWeapon);
+      callbacks.addLog(`🎰 Tour ${state.turnCount} : Arme imposée → ${w ? w.name : imposedWeapon} !`, 'weapon');
+    }
+  }
 
   // 7. Decrement electromagnetic magnets remaining turns
   if (state.magnets && state.magnets.length > 0) {

@@ -40,6 +40,40 @@ export const TacticalChronoHub: React.FC<TacticalChronoHubProps> = ({ gameState 
 
         {/* Aerodynamic Wind Indicator */}
         <WindIndicator wind={gameState.wind} />
+
+        {/* Special Game Mode Capsule */}
+        {gameState.config.gameMode && gameState.config.gameMode !== 'DEATHMATCH' && (
+          <>
+            <div className="w-px h-6 bg-zinc-800/80" />
+            <div
+              className="px-2 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm bg-violet-950/80 border-violet-500/50 text-violet-300"
+              title={`Mode: ${gameState.config.gameMode}`}
+            >
+              <span>
+                {gameState.config.gameMode === 'VIP_HUNT'
+                  ? '👑'
+                  : gameState.config.gameMode === 'GUN_GAME'
+                  ? '🎰'
+                  : gameState.config.gameMode === 'RISING_WATER'
+                  ? '🌊'
+                  : gameState.config.gameMode === 'INSTAGIB'
+                  ? '⚡'
+                  : '⚔️'}
+              </span>
+              <span className="hidden sm:inline">
+                {gameState.config.gameMode === 'VIP_HUNT'
+                  ? 'VIP'
+                  : gameState.config.gameMode === 'GUN_GAME'
+                  ? 'Gun Game'
+                  : gameState.config.gameMode === 'RISING_WATER'
+                  ? 'Marée'
+                  : gameState.config.gameMode === 'INSTAGIB'
+                  ? '1 HP'
+                  : ''}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

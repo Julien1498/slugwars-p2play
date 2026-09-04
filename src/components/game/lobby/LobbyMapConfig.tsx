@@ -5,6 +5,7 @@ import { THEME_CONFIGS } from '../../../core/terrain/themeRegistry';
 import { MapThumbnailPreview } from './MapThumbnailPreview';
 import { LobbyThemeSelector, MAP_THEMES } from './LobbyThemeSelector';
 import { LobbyEnvironmentConfig } from './LobbyEnvironmentConfig';
+import { LobbyGameModeSelector } from './LobbyGameModeSelector';
 import { Dices, Sparkles, Swords, Rocket } from 'lucide-react';
 
 export { MAP_THEMES };
@@ -103,6 +104,12 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
           ))}
         </div>
       </div>
+
+      <LobbyGameModeSelector
+        currentMode={config.gameMode}
+        isHost={isHost}
+        onSelectMode={(gameMode) => onChangeConfig({ gameMode })}
+      />
 
       <LobbyEnvironmentConfig
         config={config}

@@ -46,5 +46,15 @@ export function renderSlugBadge(
     ctx.fillRect(-14, -12, 28 * fuelRatio, 3);
   }
 
+  // VIP Crown
+  if (slug.isVip) {
+    ctx.save();
+    ctx.font = '10px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👑', 0, -13);
+    ctx.restore();
+  }
+
   ctx.restore();
 }

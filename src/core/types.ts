@@ -102,6 +102,7 @@ export interface Slug {
   hasUsedParachute?: boolean;
   fuseTimerSec?: number;
   isGodMode?: boolean;
+  isVip?: boolean;
 }
 
 export interface HelicopterVehicle {
@@ -190,7 +191,11 @@ export interface GameConfig {
   mapSize?: MapSize;
   mapSeed: number;
   turnDelaysEnabled?: boolean;
+  gameMode?: import('./gameModes/types').GameMode;
 }
+
+export type { GameMode, GameModeInfo } from './gameModes/types';
+export { GAME_MODES_CONFIG, GUN_GAME_SEQUENCE, getGunGameWeaponForTurn } from './gameModes/types';
 
 export interface Particle {
   x: number;

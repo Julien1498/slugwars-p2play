@@ -2,6 +2,7 @@ import { GameState, Vector2D, SolidProp } from '../types';
 import { DestructibleTerrain } from '../terrain';
 import { getThemeConfig } from '../terrain/themeRegistry';
 import { getWeaponSet } from '../weapons/weaponSets';
+import { GUN_GAME_SEQUENCE } from '../gameModes/types';
 import { PhaseManager } from './phaseManager';
 import { findSafePlacementPoint } from './turnManager';
 import { sfx } from '../audio';
@@ -17,6 +18,14 @@ export function setupGameStart(
   if (state.config.mapSeed === undefined || state.config.mapSeed === null) {
     state.config.mapSeed = Math.floor(Math.random() * 1_000_000_000);
   }
+
+  // Preset adjustments for special modes
+  if (state.config.gameMode === 'RISING_WATER') {
+    state.config.waterRiseSpeed = 'FAST';
+    state.config.waterRiseFreq = 'EVERY_TURN';
+    state.config.turnDuration = Math.min(state.config.turnDuration || 45, 30);
+  }
+
   initTerrain();
   const terrain = typeof getTerrain === 'function' ? getTerrain() : getTerrain;
   state.slugs = [];
@@ -39,24 +48,38 @@ export function setupGameStart(
   state.journal = [];
   state.turnCount = 0;
 
+  const isVipHunt = state.config.gameMode === 'VIP_HUNT';
+  const isInstagib = state.config.gameMode === 'INSTAGIB';
+  const isGunGame = state.config.gameMode === 'GUN_GAME';
+  const initialWeapon = isGunGame ? GUN_GAME_SEQUENCE[0] : 'bazooka';
+
   for (const team of state.teams) {
     for (let i = 0; i < state.config.slugsPerTeam; i++) {
+      const isVip = isVipHunt && i === 0;
+      let hp = state.config.slugHp;
+      if (isInstagib) {
+        hp = 1;
+      } else if (isVip) {
+        hp = 150;
+      }
+
       state.slugs.push({
         id: `slug_${team.id}_${i}`,
         teamId: team.id,
-        name: `${team.name} #${i + 1}`,
+        name: isVip ? `Général ${team.name}` : `${team.name} #${i + 1}`,
         x: 0,
         y: 0,
         vx: 0,
         vy: 0,
-        hp: state.config.slugHp,
-        maxHp: state.config.slugHp,
+        hp,
+        maxHp: hp,
         isAlive: true,
         isPlaced: false,
         facing: i % 2 === 0 ? 'right' : 'left',
         aimAngle: 45,
         aimPower: 0,
-        selectedWeaponId: 'bazooka',
+        selectedWeaponId: initialWeapon,
+        isVip,
       });
     }
   }

@@ -5,4 +5,5 @@ export { LobbyMapConfig } from './LobbyMapConfig';
 export { LobbyTeamList } from './LobbyTeamList';
 export { LobbyThemeSelector } from './LobbyThemeSelector';
 export { LobbyEnvironmentConfig } from './LobbyEnvironmentConfig';
+export { LobbyGameModeSelector } from './LobbyGameModeSelector';
 export { MapThumbnailPreview } from './MapThumbnailPreview';

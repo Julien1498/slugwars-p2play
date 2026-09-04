@@ -15,6 +15,7 @@ export function createInitialConfig(initialConfig?: Partial<GameConfig>): GameCo
     mapTheme: 'ISLAND',
     mapSize: 'NORMAL',
     mapSeed: Math.floor(Math.random() * 1_000_000_000),
+    gameMode: 'DEATHMATCH',
     ...initialConfig,
   };
 }
@@ -103,22 +104,31 @@ export function registerTeam(
         posY = safePt.y;
       }
 
+      const isVip = state.config.gameMode === 'VIP_HUNT' && i === 0;
+      let baseHp = state.config.slugHp;
+      if (state.config.gameMode === 'INSTAGIB') {
+        baseHp = 1;
+      } else if (isVip) {
+        baseHp = 150;
+      }
+
       state.slugs.push({
         id: `slug_${id}_${i}`,
         teamId: id,
-        name: `${name} #${i + 1}`,
+        name: isVip ? `Général ${name}` : `${name} #${i + 1}`,
         x: posX,
         y: posY,
         vx: 0,
         vy: 0,
-        hp: state.config.slugHp,
-        maxHp: state.config.slugHp,
+        hp: baseHp,
+        maxHp: baseHp,
         isAlive: true,
         isPlaced: !isPlacementPhase,
         facing: i % 2 === 0 ? 'right' : 'left',
         aimAngle: 45,
         aimPower: 0,
         selectedWeaponId: 'bazooka',
+        isVip,
       });
     }
 

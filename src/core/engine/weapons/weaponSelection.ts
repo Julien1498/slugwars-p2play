@@ -50,6 +50,11 @@ export function getWeaponLockDetails(
 }
 
 export function selectWeapon(state: GameState, weaponId: string): boolean {
+  // In Gun Game mode, weapon selection is strictly locked to the imposed weapon of the turn
+  if (state.config?.gameMode === 'GUN_GAME') {
+    return false;
+  }
+
   const activeSlug = state.slugs.find((s) => s.id === state.activeSlugId);
   if (!activeSlug || !activeSlug.isAlive) return false;
   const activeTeam = state.teams.find((t) => t.id === activeSlug.teamId);
@@ -87,6 +92,11 @@ export function consumeWeaponAmmo(
   activeTeam: Team | undefined,
   weaponId: string
 ): boolean {
+  // In Gun Game mode, imposed weapons have infinite ammunition
+  if (state.config?.gameMode === 'GUN_GAME') {
+    return true;
+  }
+
   if (!activeTeam) return true;
 
   const currentAmmo = activeTeam.inventory[weaponId] ?? -1;

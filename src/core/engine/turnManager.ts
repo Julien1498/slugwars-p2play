@@ -150,8 +150,28 @@ export function checkWinner(
   state: GameState,
   addLog?: (msg: string, type: JournalEntry['type']) => void
 ): void {
+  // VIP Hunt Rule: If a team's VIP is dead, all remaining squad members are eliminated
+  if (state.config?.gameMode === 'VIP_HUNT') {
+    for (const team of state.teams) {
+      const vipSlug = state.slugs.find((s) => s.teamId === team.id && s.isVip);
+      if (vipSlug && (!vipSlug.isAlive || vipSlug.hp <= 0)) {
+        let wipedAny = false;
+        for (const s of state.slugs) {
+          if (s.teamId === team.id && s.isAlive) {
+            s.hp = 0;
+            s.isAlive = false;
+            wipedAny = true;
+          }
+        }
+        if (wipedAny) {
+          addLog?.(`💀 Le Général ${vipSlug.name} a péri ! L'escouade ${team.name} est anéantie !`, 'death');
+        }
+      }
+    }
+  }
+
   const aliveTeams = state.teams.filter((t) =>
-    state.slugs.some((s) => s.teamId === t.id && s.isAlive)
+    state.slugs.some((s) => s.teamId === t.id && s.isAlive && s.hp > 0)
   );
 
   if (aliveTeams.length === 1) {
