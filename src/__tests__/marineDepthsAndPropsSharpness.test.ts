@@ -4,7 +4,7 @@ import { renderSkyHorizonOcean, SkyHorizonOceanParams } from '../rendering/sky/r
 import { renderSkyMountainsAndHills, SkyMountainParams } from '../rendering/sky/renderSkyMountains';
 import { rebuildPropsOffscreenCanvas, createTerrainBuffers } from '../rendering/renderTerrain';
 import { drawSolidPropVector } from '../rendering/props/renderDestructibleProp';
-import { getCachedPropSprite, clearPropSpriteCache } from '../rendering/props/propSpriteCache';
+import { getCachedPropSprite, clearPropSpriteCache, SUPERSAMPLE_SCALE } from '../rendering/props/propSpriteCache';
 import { renderBackgroundLayer } from '../components/game/canvas/renderBackgroundLayer';
 import { SolidProp, GameState } from '../core/types';
 import { DestructibleTerrain } from '../core/terrain';
@@ -216,7 +216,7 @@ describe('marineDepthsAndPropsSharpness - Underwater Continuity & Zero-Blur Prop
       expect(mockCtx.translate).toHaveBeenCalledWith(151, 220);
     });
 
-    it('getCachedPropSprite generates supersampled 2.5x high-DPI sprite cache with crisp dimensions', () => {
+    it('getCachedPropSprite generates supersampled high-DPI sprite cache with crisp dimensions', () => {
       clearPropSpriteCache();
       const sprop: SolidProp = {
         id: 'p_tree',
@@ -235,8 +235,8 @@ describe('marineDepthsAndPropsSharpness - Underwater Continuity & Zero-Blur Prop
         expect(Number.isInteger(sprite.originY)).toBe(true);
         expect(Number.isInteger(sprite.boxW)).toBe(true);
         expect(Number.isInteger(sprite.boxH)).toBe(true);
-        expect(sprite.canvas.width).toBe(Math.ceil(sprite.boxW * 2.5));
-        expect(sprite.canvas.height).toBe(Math.ceil(sprite.boxH * 2.5));
+        expect(sprite.canvas.width).toBe(Math.ceil(sprite.boxW * SUPERSAMPLE_SCALE));
+        expect(sprite.canvas.height).toBe(Math.ceil(sprite.boxH * SUPERSAMPLE_SCALE));
       }
     });
 
