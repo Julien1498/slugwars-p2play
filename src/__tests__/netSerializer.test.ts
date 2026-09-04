@@ -495,5 +495,24 @@ describe('Network Serialization & Delta Engine (netSerializer)', () => {
       expect(guestState.floatingDamages).toBeDefined();
       expect(guestState.floatingDamages?.[0].text).toBe('+1 💣 Bazooka');
     });
+
+    it('synchronizes turnCount progression across deltas and binary encoding to unlock weapons for guest', () => {
+      const prevState = createMockGameState();
+      prevState.turnCount = 1;
+      const nextState = createMockGameState();
+      nextState.turnCount = 4;
+
+      const delta = buildStateDelta(prevState, nextState);
+      expect(delta.turnCount).toBe(4);
+
+      const binaryBuffer = encodeBinaryDelta(delta);
+      const decodedDelta = decodeBinaryDelta(binaryBuffer);
+      expect(decodedDelta.turnCount).toBe(4);
+
+      const guestState = createMockGameState();
+      guestState.turnCount = 1;
+      applyStateDelta(guestState, decodedDelta);
+      expect(guestState.turnCount).toBe(4);
+    });
   });
 });

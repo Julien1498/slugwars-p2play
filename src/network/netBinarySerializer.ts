@@ -13,7 +13,7 @@ const TAG_UNDEFINED = 0x0a, TAG_FLOAT32 = 0x0b, TAG_KEY_INDEX = 0x0c;
 // High-speed static dictionary for common delta keys (1 byte instead of 5-15 bytes per key)
 const KNOWN_KEYS = [
   // State keys
-  'phase', 'winnerTeamId', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'wind',
+  'phase', 'winnerTeamId', 'activeTeamId', 'activeSlugId', 'turnTimer', 'retreatTimer', 'turnCount', 'wind',
   'teams', 'slugs', 'helicopters', 'mines', 'projectiles', 'explosions',
   'supplyCrates', 'girders', 'craters',
   // Team / stats keys

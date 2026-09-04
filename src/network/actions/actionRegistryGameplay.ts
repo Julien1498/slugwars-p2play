@@ -140,6 +140,12 @@ export const GAMEPLAY_ACTION_REGISTRY: Partial<Record<SlugWarsActionType, Networ
       if (activeSlug.selectedWeaponId === 'blowtorch') {
         activeSlug.isBlowtorching = true;
         activeSlug.blowtorchTimerMs = 5000;
+      } else if (activeSlug.selectedWeaponId === 'jetpack') {
+        if (!activeSlug.jetpackState) {
+          activeSlug.jetpackState = { fuelMs: 5000, isThrusting: false };
+        } else {
+          activeSlug.jetpackState.isThrusting = !activeSlug.jetpackState.isThrusting;
+        }
       }
     },
     executeHost: ({ engine }, payload) => {

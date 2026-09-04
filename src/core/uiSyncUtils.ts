@@ -25,6 +25,7 @@ export function shouldUpdateReactUi(
   if (prev.phase !== next.phase) return true;
   if (prev.activeTeamId !== next.activeTeamId) return true;
   if (prev.activeSlugId !== next.activeSlugId) return true;
+  if (prev.turnCount !== next.turnCount) return true;
   if (prev.wind !== next.wind) return true;
   if (prev.teams.length !== next.teams.length) return true;
   if (prev.isTimerFrozen !== next.isTimerFrozen) return true;

@@ -39,6 +39,7 @@ export function applyStateDelta(localState: GameState, delta: CompactStateDelta)
   }
   if (delta.wind !== undefined) localState.wind = delta.wind;
   if (delta.waterLevel !== undefined) localState.waterLevel = delta.waterLevel;
+  if (delta.turnCount !== undefined) localState.turnCount = delta.turnCount;
   if (delta.isTimerFrozen !== undefined) localState.isTimerFrozen = delta.isTimerFrozen;
   if (delta.godModeEnabled !== undefined) {
     localState.godModeEnabled = delta.godModeEnabled;

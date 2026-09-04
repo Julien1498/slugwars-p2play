@@ -33,11 +33,12 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
 
       expect(activeSlug.jetpackState).toBeDefined();
       expect(activeSlug.jetpackState?.fuelMs).toBe(5000);
-      expect(activeSlug.jetpackState?.isThrusting).toBe(true);
+      expect(activeSlug.jetpackState?.isThrusting).toBe(false);
 
       // Jump applies upward thrust when jetpack is active
       activeSlug.vy = 2.0;
       engine.jumpSlug();
+      expect(activeSlug.jetpackState?.isThrusting).toBe(true);
       expect(activeSlug.vy).toBeLessThan(2.0);
 
       // Simulates engine tick consuming 50ms fuel per tick when thrusting (20Hz physics loop)
@@ -83,6 +84,7 @@ describe('Section D: Mobility, Melee & Utility Weapons', () => {
       engine.selectWeapon('jetpack');
       engine.fireWeapon();
 
+      engine.jumpSlug();
       activeSlug.jetpackState!.fuelMs = 15;
       engine.tick();
       expect(activeSlug.jetpackState).toBeNull();

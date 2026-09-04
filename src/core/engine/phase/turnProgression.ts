@@ -15,13 +15,15 @@ export function advanceToNextTurn(
     checkWinner: () => void;
   }
 ): void {
-  // 1. Reset all slug input flags and power
+  // 1. Reset all slug input flags, power and residual fall momentum
   for (const slug of state.slugs) {
     slug.isChargingPower = false;
     slug.aimPower = 5;
     slug.movingDir = null;
     slug.steeringDir = null;
     slug.vx = 0;
+    slug.vy = 0;
+    slug.fallStartY = undefined;
     if (slug.hp <= 0) {
       slug.hp = 0;
       slug.isAlive = false;
@@ -32,37 +34,20 @@ export function advanceToNextTurn(
   callbacks.checkWinner();
   if (state.phase === 'GAME_OVER') return;
 
-  // 3. Find alive teams
-  const aliveTeams = state.teams.filter((t) =>
+  // 3. Find alive teams & determine round cycle completion
+  const initialAliveTeams = state.teams.filter((t) =>
     state.slugs.some((s) => s.teamId === t.id && s.isAlive && s.hp > 0)
   );
-  if (aliveTeams.length <= 1) {
+  if (initialAliveTeams.length <= 1) {
     callbacks.checkWinner();
     return;
   }
 
-  // 4. Select next team and slug
-  const currentIdx = aliveTeams.findIndex((t) => t.id === state.activeTeamId);
-  const nextIdx = (currentIdx + 1) % aliveTeams.length;
+  const currentIdx = initialAliveTeams.findIndex((t) => t.id === state.activeTeamId);
+  const nextIdx = (currentIdx + 1) % initialAliveTeams.length;
   const isRoundCycleCompleted = nextIdx === 0;
-  const nextTeam = aliveTeams[nextIdx];
-  state.activeTeamId = nextTeam.id;
 
-  const nextSlugId = callbacks.getNextSlugForTeam(nextTeam.id);
-  if (!nextSlugId) {
-    const fallbackSlug = state.slugs.find((s) => s.isAlive && s.hp > 0 && s.isPlaced);
-    if (fallbackSlug) {
-      state.activeTeamId = fallbackSlug.teamId;
-      state.activeSlugId = fallbackSlug.id;
-    } else {
-      callbacks.checkWinner();
-      return;
-    }
-  } else {
-    state.activeSlugId = nextSlugId;
-  }
-
-  // 5. Handle Water Rising Mechanic
+  // 4. Handle Water Rising Mechanic BEFORE selecting active slug so submerged slugs are not picked
   const isRisingWaterMode = state.config?.gameMode === 'RISING_WATER';
   const waterSpeed = state.config?.waterRiseSpeed;
   const waterFreq = state.config?.waterRiseFreq || 'EVERY_TURN';
@@ -103,6 +88,45 @@ export function advanceToNextTurn(
         }
       }
     }
+  }
+
+  // 5. Re-check winner and select next team and slug from surviving teams
+  callbacks.checkWinner();
+  if ((state.phase as string) === 'GAME_OVER') return;
+
+  const aliveTeams = state.teams.filter((t) =>
+    state.slugs.some((s) => s.teamId === t.id && s.isAlive && s.hp > 0)
+  );
+  if (aliveTeams.length <= 1) {
+    callbacks.checkWinner();
+    return;
+  }
+
+  const desiredTeamId = initialAliveTeams[nextIdx]?.id;
+  const actualNextIdx = aliveTeams.some((t) => t.id === desiredTeamId)
+    ? aliveTeams.findIndex((t) => t.id === desiredTeamId)
+    : nextIdx % aliveTeams.length;
+  const nextTeam = aliveTeams[actualNextIdx];
+  state.activeTeamId = nextTeam.id;
+
+  const nextSlugId = callbacks.getNextSlugForTeam(nextTeam.id);
+  if (!nextSlugId) {
+    const fallbackSlug = state.slugs.find((s) => s.isAlive && s.hp > 0 && s.isPlaced);
+    if (fallbackSlug) {
+      state.activeTeamId = fallbackSlug.teamId;
+      state.activeSlugId = fallbackSlug.id;
+    } else {
+      callbacks.checkWinner();
+      return;
+    }
+  } else {
+    state.activeSlugId = nextSlugId;
+  }
+
+  const chosenSlug = state.slugs.find((s) => s.id === state.activeSlugId);
+  if (chosenSlug) {
+    chosenSlug.fallStartY = undefined;
+    chosenSlug.vy = 0;
   }
 
   // 6. Increment turn count & Randomize wind

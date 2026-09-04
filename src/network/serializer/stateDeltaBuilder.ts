@@ -42,6 +42,11 @@ export function buildStateDelta(prevState: GameState | null, currentState: GameS
     delta.waterLevel = quantizeFloat(currentState.waterLevel, 1);
   }
 
+  // Turn count sync (Weapon unlock progression across rounds)
+  if (!prevState || prevState.turnCount !== currentState.turnCount) {
+    delta.turnCount = currentState.turnCount;
+  }
+
   if (currentState.isTimerFrozen !== prevState?.isTimerFrozen) delta.isTimerFrozen = currentState.isTimerFrozen;
   if (currentState.godModeEnabled !== prevState?.godModeEnabled) delta.godModeEnabled = currentState.godModeEnabled;
   if (currentState.isDevHost !== prevState?.isDevHost) delta.isDevHost = currentState.isDevHost;

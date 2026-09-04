@@ -11,7 +11,7 @@ export function executeJetpack(
     // Toggle thrusting / vol
     activeSlug.jetpackState.isThrusting = !activeSlug.jetpackState.isThrusting;
   } else {
-    activeSlug.jetpackState = { fuelMs: 5000, isThrusting: true };
+    activeSlug.jetpackState = { fuelMs: 5000, isThrusting: false };
     activeSlug.fallStartY = undefined;
     sfx.play('jetpack');
     addLog(`${activeSlug.name} active son Jetpack ! 🎒 (5s de carburant - touches Saut et Déplacement)`, 'weapon');

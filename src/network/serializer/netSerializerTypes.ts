@@ -67,6 +67,7 @@ export interface CompactStateDelta {
   activeSlugId?: string;
   turnTimer?: number;
   retreatTimer?: number | null;
+  turnCount?: number;
   wind?: number;
   waterLevel?: number;
   teams?: CompactTeamDelta[];
