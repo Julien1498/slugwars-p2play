@@ -130,8 +130,18 @@ export function renderBackgroundLayer({
 
   const pSolidsStart = performance.now();
   if (bypass !== 'PROPS' && bypass !== 'ALL_FOUR') {
-    const isZoomedIn = totalScale >= 1.0;
-    if (buffers.propsOffscreenCanvas && !isZoomedIn) {
+    const activeSolids = (gameState.solidProps && gameState.solidProps.length > 0)
+      ? gameState.solidProps
+      : (solidProps || []);
+    if (activeSolids.length > 0) {
+      for (const sprop of activeSolids) {
+        if (!sprop.destroyed) {
+          if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
+          if (sprop.y < viewTop - 100 || sprop.y > viewBottom + 100) continue;
+          renderHDDestructibleProp(ctx, sprop, gameState.craters, gameState.explosions, animTime, grid, width, terrain.revision);
+        }
+      }
+    } else if (buffers.propsOffscreenCanvas) {
       const margin = 64;
       const psx = Math.max(0, Math.floor(viewLeft - margin));
       const psy = Math.max(0, Math.floor(viewTop - margin));
@@ -141,17 +151,6 @@ export function renderBackgroundLayer({
       const psh = pey - psy;
       if (psw > 0 && psh > 0) {
         ctx.drawImage(buffers.propsOffscreenCanvas, psx, psy, psw, psh, psx, psy, psw, psh);
-      }
-    } else if (solidProps || gameState.solidProps) {
-      const activeSolids = (gameState.solidProps && gameState.solidProps.length > 0)
-        ? gameState.solidProps
-        : (solidProps || []);
-      for (const sprop of activeSolids) {
-        if (!sprop.destroyed) {
-          if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
-          if (sprop.y < viewTop - 100 || sprop.y > viewBottom + 100) continue;
-          renderHDDestructibleProp(ctx, sprop, gameState.craters, gameState.explosions, animTime, grid, width, terrain.revision);
-        }
       }
     }
   }
