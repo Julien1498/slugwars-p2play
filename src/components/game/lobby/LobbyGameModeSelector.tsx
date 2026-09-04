@@ -35,7 +35,7 @@ export const LobbyGameModeSelector: React.FC<LobbyGameModeSelectorProps> = ({
               type="button"
               disabled={!isHost}
               onClick={() => onSelectMode(mode.id)}
-              className={`p-2 rounded-xl border text-left transition flex flex-col justify-between ${
+              className={`py-1.5 px-2 rounded-xl border text-left transition flex flex-col justify-between ${
                 isSelected
                   ? 'bg-violet-950/90 border-violet-500 text-violet-200 shadow-md ring-1 ring-violet-500/40'
                   : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
@@ -46,7 +46,7 @@ export const LobbyGameModeSelector: React.FC<LobbyGameModeSelectorProps> = ({
                 <span className="text-sm">{mode.icon}</span>
                 <span className="text-xs font-bold truncate">{mode.shortLabel}</span>
               </div>
-              <div className="text-[9px] text-zinc-500 line-clamp-2 mt-1 leading-tight">
+              <div className="text-[9px] text-zinc-500 line-clamp-1 mt-0.5 leading-tight">
                 {mode.description}
               </div>
             </button>

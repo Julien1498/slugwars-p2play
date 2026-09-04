@@ -13,6 +13,7 @@ export interface SolidProp {
   variant?: number;
   destroyed?: boolean;
   detonatedBySlugId?: string;
+  createdAt?: number;
 }
 
 export interface RopeState {

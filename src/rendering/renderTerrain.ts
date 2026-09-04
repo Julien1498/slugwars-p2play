@@ -3,6 +3,10 @@ import { MapTheme } from '../core/types';
 import { getThemeConfig } from '../core/terrain/themeRegistry';
 import { getPixelHash } from './renderProps';
 import { drawSolidPropVector } from './props/renderDestructibleProp';
+import { TerrainPalette, THEME_PALETTES } from './terrainPalettes';
+
+export type { TerrainPalette };
+export { THEME_PALETTES };
 
 export interface TerrainBuffers {
   offscreenCanvas: HTMLCanvasElement;
@@ -37,11 +41,6 @@ export function lerpColor32(c1: number, c2: number, t: number): number {
   const b = (((c1 >> 16) & 0xff) * invT + ((c2 >> 16) & 0xff) * t + 0.5) | 0;
   return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
 }
-
-import { TerrainPalette, THEME_PALETTES } from './terrainPalettes';
-
-export type { TerrainPalette };
-export { THEME_PALETTES };
 
 let _sharedDirtyImageData: ImageData | null = null;
 let _sharedDirtyData32: Uint32Array | null = null;
@@ -102,15 +101,9 @@ export function redrawOffscreenTerrain(
   const { width, height, grid, theme } = terrain.data;
   const { offscreenCanvas, distMap, propsOffscreenCanvas, terrainHitboxCanvas } = buffers;
 
-  if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) {
-    offscreenCanvas.width = width; offscreenCanvas.height = height;
-  }
-  if (propsOffscreenCanvas && (propsOffscreenCanvas.width !== width || propsOffscreenCanvas.height !== height)) {
-    propsOffscreenCanvas.width = width; propsOffscreenCanvas.height = height;
-  }
-  if (buffers.terrainHitboxCanvas && (buffers.terrainHitboxCanvas.width !== width || buffers.terrainHitboxCanvas.height !== height)) {
-    buffers.terrainHitboxCanvas.width = width; buffers.terrainHitboxCanvas.height = height;
-  }
+  if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) { offscreenCanvas.width = width; offscreenCanvas.height = height; }
+  if (propsOffscreenCanvas && (propsOffscreenCanvas.width !== width || propsOffscreenCanvas.height !== height)) { propsOffscreenCanvas.width = width; propsOffscreenCanvas.height = height; }
+  if (terrainHitboxCanvas && (terrainHitboxCanvas.width !== width || terrainHitboxCanvas.height !== height)) { terrainHitboxCanvas.width = width; terrainHitboxCanvas.height = height; }
   if (buffers.mipmapCanvas && (buffers.mipmapCanvas.width !== Math.round(width / 2) || buffers.mipmapCanvas.height !== Math.round(height / 2))) {
     buffers.mipmapCanvas.width = Math.round(width / 2); buffers.mipmapCanvas.height = Math.round(height / 2);
   }
@@ -160,14 +153,14 @@ export function redrawOffscreenTerrain(
   for (let y = minY; y <= maxY; y++) {
     const rowOffset = y * width;
     const prevRowOffset = (y - 1) * width;
-    const hasTop = y > minY;
+    const hasTop = y > 0;
     for (let x = minX; x <= maxX; x++) {
       const idx = rowOffset + x;
       if (grid[idx] === 0) {
         distMap[idx] = 0;
       } else {
         let d = 99;
-        if (x > minX) {
+        if (x > 0) {
           const leftD = distMap[idx - 1] + 1;
           if (leftD < d) d = leftD;
         }
@@ -175,11 +168,11 @@ export function redrawOffscreenTerrain(
           const topIdx = prevRowOffset + x;
           const topD = distMap[topIdx] + 1;
           if (topD < d) d = topD;
-          if (x > minX) {
+          if (x > 0) {
             const diag1 = distMap[topIdx - 1] + 1.414;
             if (diag1 < d) d = diag1;
           }
-          if (x < maxX) {
+          if (x < width - 1) {
             const diag2 = distMap[topIdx + 1] + 1.414;
             if (diag2 < d) d = diag2;
           }
@@ -192,12 +185,12 @@ export function redrawOffscreenTerrain(
   for (let y = maxY; y >= minY; y--) {
     const rowOffset = y * width;
     const nextRowOffset = (y + 1) * width;
-    const hasBottom = y < maxY;
+    const hasBottom = y < height - 1;
     for (let x = maxX; x >= minX; x--) {
       const idx = rowOffset + x;
       if (grid[idx] === 0) continue;
       let d = distMap[idx];
-      if (x < maxX) {
+      if (x < width - 1) {
         const rightD = distMap[idx + 1] + 1;
         if (rightD < d) d = rightD;
       }
@@ -205,11 +198,11 @@ export function redrawOffscreenTerrain(
         const bottomIdx = nextRowOffset + x;
         const bottomD = distMap[bottomIdx] + 1;
         if (bottomD < d) d = bottomD;
-        if (x < maxX) {
+        if (x < width - 1) {
           const diag1 = distMap[bottomIdx + 1] + 1.414;
           if (diag1 < d) d = diag1;
         }
-        if (x > minX) {
+        if (x > 0) {
           const diag2 = distMap[bottomIdx - 1] + 1.414;
           if (diag2 < d) d = diag2;
         }

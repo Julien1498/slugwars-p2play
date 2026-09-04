@@ -21,7 +21,7 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
   const currentThemeConfig = THEME_CONFIGS[config.mapTheme || 'ISLAND'] || THEME_CONFIGS.ISLAND;
 
   return (
-    <div className="md:col-span-7 landscape:col-span-7 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3">
+    <div className="md:col-span-7 landscape:col-span-7 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-3.5 rounded-2xl shadow-xl space-y-2">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
         <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" /> Zone d'Opérations & Radar
@@ -90,7 +90,7 @@ export const LobbyMapConfig: React.FC<LobbyMapConfigProps> = ({ config, isHost, 
               key={wSet.id}
               disabled={!isHost}
               onClick={() => onChangeConfig({ weaponSetId: wSet.id })}
-              className={`p-2 rounded-xl border text-left transition ${
+              className={`py-1.5 px-2 rounded-xl border text-left transition ${
                 config.weaponSetId === wSet.id
                   ? 'bg-violet-950/90 border-violet-500 text-violet-200 shadow-sm'
                   : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'

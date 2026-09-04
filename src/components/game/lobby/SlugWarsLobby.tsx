@@ -59,7 +59,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
   }, [isDev]);
 
   return (
-    <div className="h-[100dvh] w-full bg-zinc-950 text-zinc-100 flex flex-col items-center p-3 md:p-5 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
+    <div className="h-[100dvh] w-full bg-zinc-950 text-zinc-100 flex flex-col items-center p-2.5 md:p-3.5 relative overflow-x-hidden overflow-y-auto selection:bg-violet-500 selection:text-white">
       {/* Background Fixed HD Vector War Room Canvas */}
       <LobbyBackdropCanvas />
 
@@ -68,9 +68,9 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
       <div className="fixed bottom-10 right-1/4 w-80 h-80 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-5xl w-full space-y-3 my-auto py-4">
+      <div className="relative z-10 max-w-5xl w-full space-y-2.5 my-auto py-1">
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between gap-3 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-4 py-2.5 rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between gap-3 bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 px-3.5 py-2 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
             <span className="text-3xl drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]">🐌</span>
             <div>
@@ -126,7 +126,7 @@ export const SlugWarsLobby: React.FC<SlugWarsLobbyProps> = ({
         </div>
 
         {/* 2-Column Battle Preparation Container */}
-        <div className="grid grid-cols-1 md:grid-cols-12 landscape:grid-cols-12 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-12 landscape:grid-cols-12 gap-3">
           {/* Left Column: Map Radar, Weapons & Modifiers (7 Cols) */}
           <LobbyMapConfig config={config} isHost={isHost} onChangeConfig={onChangeConfig} />
 

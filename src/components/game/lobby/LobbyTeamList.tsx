@@ -26,7 +26,7 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
   const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null;
 
   return (
-    <div className="md:col-span-5 landscape:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-4 rounded-2xl shadow-xl space-y-3.5">
+    <div className="md:col-span-5 landscape:col-span-5 flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-violet-500/30 p-3.5 rounded-2xl shadow-xl space-y-2">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
         <h2 className="text-xs font-black text-zinc-100 uppercase tracking-wider flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-violet-400" /> Escouades Engagées ({teams.length}/6)
@@ -70,7 +70,7 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">
+                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
                     Équipe #{idx + 1} • <span className="text-violet-300 font-semibold">{config.slugsPerTeam} limaces ({config.slugHp} HP)</span>
                   </div>
                 </div>
@@ -117,7 +117,7 @@ export const LobbyTeamList: React.FC<LobbyTeamListProps> = ({
           <button
             onClick={onStartGame}
             disabled={teams.length === 0}
-            className="w-full py-3 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-500 hover:via-fuchsia-500 hover:to-violet-500 text-white font-black text-sm md:text-base rounded-xl shadow-xl shadow-violet-950/60 flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 animate-pulse hover:animate-none"
+            className="w-full py-2.5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-500 hover:via-fuchsia-500 hover:to-violet-500 text-white font-black text-sm md:text-base rounded-xl shadow-xl shadow-violet-950/60 flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-50 animate-pulse hover:animate-none"
           >
             <Play className="w-4 h-4 fill-current" />
             <span>LANCER L'ASSAUT 🚀</span>

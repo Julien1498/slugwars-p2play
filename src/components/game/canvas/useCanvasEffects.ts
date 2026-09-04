@@ -54,12 +54,6 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       if (destroyedProps && destroyedProps.length > 0) {
         for (const dp of destroyedProps) knownDestroyedPropIdsRef.current.add(dp.id);
         rebuildPropsOffscreenCanvas(buffers, activeProps, craters);
-        for (const dp of destroyedProps) {
-          redrawOffscreenTerrain(terrain, buffers, {
-            minX: Math.max(0, Math.floor(dp.x - dp.width - 24)), maxX: Math.min(terrain.data.width - 1, Math.ceil(dp.x + dp.width + 24)),
-            minY: Math.max(0, Math.floor(dp.y - dp.height - 24)), maxY: Math.min(terrain.data.height - 1, Math.ceil(dp.y + 16)),
-          });
-        }
       }
     },
     [terrain, getBuffers]
@@ -132,7 +126,6 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
     let propRebuildNeeded = prevPropsCountRef.current !== -1 && prevPropsCountRef.current !== curPropsCount;
     prevPropsCountRef.current = curPropsCount;
 
-    const newlyDestroyedProps: SolidProp[] = [];
     if (activeProps) {
       for (let i = 0; i < activeProps.length; i++) {
         const sp = activeProps[i];
@@ -140,7 +133,7 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
         const wasDest = knownDestroyedPropIdsRef.current.has(sp.id);
         if (isDest !== wasDest) {
           propRebuildNeeded = true;
-          if (isDest) { knownDestroyedPropIdsRef.current.add(sp.id); newlyDestroyedProps.push(sp); }
+          if (isDest) knownDestroyedPropIdsRef.current.add(sp.id);
           else knownDestroyedPropIdsRef.current.delete(sp.id);
         }
       }
@@ -149,14 +142,6 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
     if (propRebuildNeeded) {
       const buffers = getBuffers();
       rebuildPropsOffscreenCanvas(buffers, activeProps, curState.craters);
-      for (const dp of newlyDestroyedProps) {
-        redrawOffscreenTerrain(terrain, buffers, {
-          minX: Math.max(0, Math.floor(dp.x - dp.width - 24)),
-          maxX: Math.min(terrain.data.width - 1, Math.ceil(dp.x + dp.width + 24)),
-          minY: Math.max(0, Math.floor(dp.y - dp.height - 24)),
-          maxY: Math.min(terrain.data.height - 1, Math.ceil(dp.y + 16)),
-        });
-      }
     }
 
     // 1. Craters

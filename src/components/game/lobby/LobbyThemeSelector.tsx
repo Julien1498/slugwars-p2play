@@ -37,14 +37,14 @@ export const LobbyThemeSelector: React.FC<LobbyThemeSelectorProps> = ({
               key={theme.id}
               disabled={!isHost}
               onClick={() => onSelectTheme(theme.id)}
-              className={`flex-shrink-0 w-[86px] p-1.5 rounded-xl border text-center transition-all duration-200 flex flex-col items-center group relative ${
+              className={`flex-shrink-0 w-[78px] p-1 rounded-xl border text-center transition-all duration-200 flex flex-col items-center group relative ${
                 isSelected
                   ? 'bg-violet-950/80 border-violet-500 ring-1 ring-violet-500/50 text-white shadow-lg shadow-violet-950/60 scale-[1.02]'
                   : 'bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-900/80'
               }`}
             >
               {/* Mini Real Map Preview */}
-              <div className="w-full h-11 rounded-lg overflow-hidden bg-zinc-950 border border-white/10 relative shadow-inner">
+              <div className="w-full h-8 rounded-lg overflow-hidden bg-zinc-950 border border-white/10 relative shadow-inner">
                 <BiomeMiniPreview theme={theme.id} size={size} seed={seed} />
                 {isSelected && (
                   <div className="absolute inset-0 bg-violet-500/10 pointer-events-none ring-1 ring-inset ring-violet-400/30 rounded-lg" />
@@ -52,7 +52,7 @@ export const LobbyThemeSelector: React.FC<LobbyThemeSelectorProps> = ({
               </div>
 
               {/* Biome Title (Wrapped on 2 lines so it never truncates) */}
-              <div className="text-[10px] font-bold text-center w-full px-0.5 mt-1 leading-tight h-[26px] flex items-center justify-center">
+              <div className="text-[9px] font-bold text-center w-full px-0.5 mt-0.5 leading-tight h-[22px] flex items-center justify-center">
                 {theme.label}
               </div>
 

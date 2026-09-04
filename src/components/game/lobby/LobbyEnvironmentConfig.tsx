@@ -14,7 +14,7 @@ export const LobbyEnvironmentConfig: React.FC<LobbyEnvironmentConfigProps> = ({
 }) => {
   return (
     <div className="space-y-1.5 pt-2 border-t border-zinc-800">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-1.5">
         {isHost ? (
           <button
             onClick={() => {
@@ -109,97 +109,75 @@ export const LobbyEnvironmentConfig: React.FC<LobbyEnvironmentConfigProps> = ({
             <div className="text-xs font-black text-amber-300">{(config.dayNightCycle || 'DAY') === 'DAY' ? '☀️ Jour' : '🌙 Nuit'}</div>
           </div>
         )}
-      </div>
 
-      <div className="p-2.5 bg-zinc-950/80 border border-sky-950/80 rounded-xl space-y-1.5">
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-sky-400">
-          <span className="flex items-center gap-1.5">
-            <span>🌊</span> Montée des Eaux (Mort Subite)
-          </span>
-          <span className="text-[9px] font-mono text-zinc-500">
-            {(config.waterRiseSpeed || 'OFF') === 'OFF' ? 'Désactivée' : 'Active'}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          {isHost ? (
+        {/* Mort Subite (Montée des eaux) */}
+        {isHost ? (
+          <div
+            className={`p-2 rounded-xl border text-left transition flex items-center justify-between ${
+              (config.waterRiseSpeed || 'OFF') !== 'OFF'
+                ? 'bg-sky-950/70 border-sky-500/60 text-sky-200 shadow-sm'
+                : 'bg-zinc-950/60 border-zinc-800 text-zinc-400'
+            }`}
+          >
             <button
+              type="button"
               onClick={() => {
                 const speeds: Array<'OFF' | 'SLOW' | 'NORMAL' | 'FAST'> = ['OFF', 'SLOW', 'NORMAL', 'FAST'];
                 const cur = config.waterRiseSpeed || 'OFF';
                 const next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
                 onChangeConfig({ waterRiseSpeed: next });
               }}
-              className={`p-2 rounded-xl border text-left transition ${
-                (config.waterRiseSpeed || 'OFF') !== 'OFF'
-                  ? 'bg-sky-950/80 border-sky-500/70 text-sky-200 shadow-sm'
-                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-400'
-              }`}
+              className="flex-1 text-left cursor-pointer min-w-0"
               title="Vitesse de montée des eaux"
             >
-              <div className="text-[9px] font-bold uppercase">Vitesse Montée</div>
-              <div className="text-xs font-black">
+              <div className="text-[9px] font-bold uppercase text-zinc-400">Mort Subite</div>
+              <div className="text-xs font-black truncate">
                 {config.waterRiseSpeed === 'SLOW'
                   ? '💧 Lente'
                   : config.waterRiseSpeed === 'NORMAL'
                   ? '🌊 Normale'
                   : config.waterRiseSpeed === 'FAST'
                   ? '⚡ Rapide'
-                  : '❌ Désactivée'}
+                  : '❌ Sans'}
               </div>
             </button>
-          ) : (
-            <div className="p-2 bg-zinc-900/60 border border-zinc-800 rounded-xl text-left">
-              <div className="text-[9px] text-zinc-400 font-bold uppercase">Vitesse Montée</div>
-              <div className="text-xs font-black text-sky-300">
-                {config.waterRiseSpeed === 'SLOW'
-                  ? '💧 Lente'
-                  : config.waterRiseSpeed === 'NORMAL'
-                  ? '🌊 Normale'
-                  : config.waterRiseSpeed === 'FAST'
-                  ? '⚡ Rapide'
-                  : '❌ Désactivée'}
-              </div>
-            </div>
-          )}
 
-          {isHost ? (
-            <button
-              disabled={(config.waterRiseSpeed || 'OFF') === 'OFF'}
-              onClick={() => {
-                const curFreq = config.waterRiseFreq || 'EVERY_TURN';
-                const nextFreq = curFreq === 'EVERY_TURN' ? 'ROUND_CYCLE' : 'EVERY_TURN';
-                onChangeConfig({ waterRiseFreq: nextFreq });
-              }}
-              className={`p-2 rounded-xl border text-left transition ${
-                (config.waterRiseSpeed || 'OFF') === 'OFF'
-                  ? 'bg-zinc-900/40 border-zinc-800/60 text-zinc-600 opacity-60 cursor-not-allowed'
-                  : 'bg-cyan-950/80 border-cyan-500/70 text-cyan-200 shadow-sm'
-              }`}
-              title="Fréquence de la montée des eaux (Tour par tour ou Fin de round)"
-            >
-              <div className="text-[9px] font-bold uppercase">Rythme Déclenchement</div>
-              <div className="text-xs font-black">
-                {(config.waterRiseSpeed || 'OFF') === 'OFF'
-                  ? '❌ Inactif'
-                  : (config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE'
-                  ? '⏱️ Fin de round'
-                  : '🔄 Tour par tour'}
-              </div>
-            </button>
-          ) : (
-            <div className="p-2 bg-zinc-900/60 border border-zinc-800 rounded-xl text-left">
-              <div className="text-[9px] text-zinc-400 font-bold uppercase">Rythme Déclenchement</div>
-              <div className="text-xs font-black text-cyan-300">
-                {(config.waterRiseSpeed || 'OFF') === 'OFF'
-                  ? '❌ Inactif'
-                  : (config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE'
-                  ? '⏱️ Fin de round'
-                  : '🔄 Tour par tour'}
+            {(config.waterRiseSpeed || 'OFF') !== 'OFF' && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const curFreq = config.waterRiseFreq || 'EVERY_TURN';
+                  onChangeConfig({ waterRiseFreq: curFreq === 'EVERY_TURN' ? 'ROUND_CYCLE' : 'EVERY_TURN' });
+                }}
+                className="ml-1 px-1.5 py-0.5 rounded bg-sky-900/80 hover:bg-sky-800 text-[9px] font-bold text-sky-200 border border-sky-400/40 cursor-pointer whitespace-nowrap shadow-sm flex-shrink-0"
+                title="Rythme : Tour par tour ou Fin de round"
+              >
+                {(config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE' ? '⏱️ Round' : '🔄 Tour'}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="p-2 bg-zinc-950/60 border border-zinc-800 rounded-xl text-left flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="text-[9px] text-zinc-400 font-bold uppercase">Mort Subite</div>
+              <div className="text-xs font-black text-sky-300 truncate">
+                {config.waterRiseSpeed === 'SLOW'
+                  ? '💧 Lente'
+                  : config.waterRiseSpeed === 'NORMAL'
+                  ? '🌊 Normale'
+                  : config.waterRiseSpeed === 'FAST'
+                  ? '⚡ Rapide'
+                  : '❌ Sans'}
               </div>
             </div>
-          )}
-        </div>
+            {(config.waterRiseSpeed || 'OFF') !== 'OFF' && (
+              <span className="ml-1 text-[9px] font-bold text-sky-400 bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-500/30 whitespace-nowrap flex-shrink-0">
+                {(config.waterRiseFreq || 'EVERY_TURN') === 'ROUND_CYCLE' ? '⏱️ Round' : '🔄 Tour'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
