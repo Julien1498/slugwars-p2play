@@ -128,7 +128,7 @@ describe('PropsOffscreenBuffer - Event-Driven Craters & Dynamic Synchronization'
     expect(mockCtx.arc).toHaveBeenCalledWith(500, 350, 30, 0, Math.PI * 2);
   });
 
-  it('renders propsOffscreenCanvas via single drawImage in renderBackgroundLayer', () => {
+  it('renders propsOffscreenCanvas via single drawImage in renderBackgroundLayer when zoomed out', () => {
     const mockCtx = createMockContext();
     const buffers = createTerrainBuffers(800, 600);
 
@@ -185,7 +185,7 @@ describe('PropsOffscreenBuffer - Event-Driven Craters & Dynamic Synchronization'
       buffers,
       gameState: mockState,
       bgDpr: 1,
-      totalScale: 1,
+      totalScale: 0.8,
       pan: { x: 0, y: 0 },
       waterY: 550,
       animTime: 0,
@@ -197,5 +197,78 @@ describe('PropsOffscreenBuffer - Event-Driven Craters & Dynamic Synchronization'
     // Check that propsOffscreenCanvas was drawn with drawImage
     const drewPropsCanvas = mockCtx.drawImage.mock.calls.some((callArgs: any[]) => callArgs[0] === buffers.propsOffscreenCanvas);
     expect(drewPropsCanvas).toBe(true);
+  });
+
+  it('renders visible props directly via renderHDDestructibleProp when zoomed in (totalScale >= 1.0)', () => {
+    const mockCtx = createMockContext();
+    const buffers = createTerrainBuffers(800, 600);
+
+    const mockTerrain = {
+      data: {
+        width: 800,
+        height: 600,
+        waterLevel: 550,
+        grid: new Uint8Array(800 * 600),
+        solidProps: [{ id: 'sp1', type: 'oil_drum', x: 200, y: 300, width: 24, height: 32, destroyed: false }],
+        decorItems: [],
+        seed: 'test',
+        theme: 'ISLAND',
+      },
+      revision: 0,
+    } as unknown as DestructibleTerrain;
+
+    const mockState: GameState = {
+      phase: 'AIMING',
+      turnTimer: 45,
+      retreatTimer: 0,
+      wind: 0,
+      turnCount: 1,
+      activeTeamId: 't1',
+      activeSlugId: 's1',
+      teams: [],
+      slugs: [],
+      projectiles: [],
+      explosions: [],
+      craters: [],
+      supplyCrates: [],
+      mines: [],
+      helicopters: [],
+      particles: [],
+      floatingDamages: [],
+      journal: [],
+      config: {
+        weaponSetId: 'classic',
+        mapTheme: 'ISLAND',
+        mapSeed: 1,
+        slugsPerTeam: 1,
+        slugHp: 100,
+        turnDuration: 45,
+        windEnabled: false,
+        vehiclesEnabled: false,
+      },
+    };
+
+    renderBackgroundLayer({
+      ctx: mockCtx,
+      canvas: document.createElement('canvas'),
+      containerRect: { width: 800, height: 600 } as DOMRect,
+      terrain: mockTerrain,
+      buffers,
+      gameState: mockState,
+      bgDpr: 1,
+      totalScale: 1.5,
+      pan: { x: 0, y: 0 },
+      waterY: 550,
+      animTime: 0,
+      slowTime: 0,
+      viewBounds: { viewLeft: 0, viewRight: 800, viewTop: 0, viewBottom: 600 },
+      isMyTurn: true,
+    });
+
+    // When zoomed in, propsOffscreenCanvas is bypassed to ensure 2.5x supersampled crispness
+    const drewPropsCanvas = mockCtx.drawImage.mock.calls.some((callArgs: any[]) => callArgs[0] === buffers.propsOffscreenCanvas);
+    expect(drewPropsCanvas).toBe(false);
+    // Directly draws the prop with drawImage from the sprite cache
+    expect(mockCtx.drawImage).toHaveBeenCalled();
   });
 });

@@ -216,7 +216,7 @@ describe('marineDepthsAndPropsSharpness - Underwater Continuity & Zero-Blur Prop
       expect(mockCtx.translate).toHaveBeenCalledWith(151, 220);
     });
 
-    it('getCachedPropSprite generates 1:1 pixel aligned sprite cache', () => {
+    it('getCachedPropSprite generates supersampled 2.5x high-DPI sprite cache with crisp dimensions', () => {
       clearPropSpriteCache();
       const sprop: SolidProp = {
         id: 'p_tree',
@@ -235,8 +235,8 @@ describe('marineDepthsAndPropsSharpness - Underwater Continuity & Zero-Blur Prop
         expect(Number.isInteger(sprite.originY)).toBe(true);
         expect(Number.isInteger(sprite.boxW)).toBe(true);
         expect(Number.isInteger(sprite.boxH)).toBe(true);
-        expect(sprite.canvas.width).toBe(sprite.boxW);
-        expect(sprite.canvas.height).toBe(sprite.boxH);
+        expect(sprite.canvas.width).toBe(Math.ceil(sprite.boxW * 2.5));
+        expect(sprite.canvas.height).toBe(Math.ceil(sprite.boxH * 2.5));
       }
     });
 

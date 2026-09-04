@@ -37,7 +37,8 @@ export function setPropSpriteCacheEnabled(enabled: boolean): void {
   ENABLE_PROP_SPRITE_CACHE = enabled;
 }
 
-const SUPERSAMPLE_SCALE = 1.0;
+// Retina supersampling factor: 2.5x ensures 100% crispness and zero blurriness even under camera zoom
+export const SUPERSAMPLE_SCALE = 2.5;
 
 const _propSpriteMap = new Map<string, CachedPropSprite>();
 

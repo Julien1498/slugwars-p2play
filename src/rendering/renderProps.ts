@@ -51,6 +51,7 @@ export {
 
 export {
   ENABLE_PROP_SPRITE_CACHE,
+  SUPERSAMPLE_SCALE,
   setPropSpriteCacheEnabled,
   clearPropSpriteCache,
   getCachedPropSprite,

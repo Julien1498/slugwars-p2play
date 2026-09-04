@@ -130,7 +130,8 @@ export function renderBackgroundLayer({
 
   const pSolidsStart = performance.now();
   if (bypass !== 'PROPS' && bypass !== 'ALL_FOUR') {
-    if (buffers.propsOffscreenCanvas) {
+    const isZoomedIn = totalScale >= 1.0;
+    if (buffers.propsOffscreenCanvas && !isZoomedIn) {
       const margin = 64;
       const psx = Math.max(0, Math.floor(viewLeft - margin));
       const psy = Math.max(0, Math.floor(viewTop - margin));
@@ -142,7 +143,9 @@ export function renderBackgroundLayer({
         ctx.drawImage(buffers.propsOffscreenCanvas, psx, psy, psw, psh, psx, psy, psw, psh);
       }
     } else if (solidProps || gameState.solidProps) {
-      const activeSolids = gameState.solidProps || solidProps!;
+      const activeSolids = (gameState.solidProps && gameState.solidProps.length > 0)
+        ? gameState.solidProps
+        : (solidProps || []);
       for (const sprop of activeSolids) {
         if (!sprop.destroyed) {
           if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
