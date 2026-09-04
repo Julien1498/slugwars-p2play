@@ -4,6 +4,8 @@ import { WeaponDefinition } from '../../weapons/types';
 import { sfx } from '../../audio';
 import { findSafeTeleportPoint } from '../turnManager';
 import { PhaseManager } from '../phaseManager';
+import { getThemeConfig } from '../../terrain/themeRegistry';
+import { findCavernCeilingAirY } from '../supplyDropSpawner';
 
 export function executeSkipTurn(
   state: GameState,
@@ -149,13 +151,21 @@ export function executeGirder(
 export function executeAirdrop(
   state: GameState,
   targetPoint: Vector2D,
-  addLog: (msg: string, type?: JournalEntry['type']) => void
+  addLog: (msg: string, type?: JournalEntry['type']) => void,
+  terrain?: DestructibleTerrain
 ): boolean {
   if (!state.supplyCrates) state.supplyCrates = [];
+
+  let spawnY = -30;
+  if (terrain?.data?.theme && getThemeConfig(terrain.data.theme).physics.hasSolidCeiling) {
+    const airY = findCavernCeilingAirY(terrain, targetPoint.x);
+    spawnY = airY > 0 ? airY : Math.max(25, targetPoint.y - 80);
+  }
+
   state.supplyCrates.push({
     id: `crate_${Date.now()}_${Math.random()}`,
     x: targetPoint.x,
-    y: -30,
+    y: spawnY,
     vy: 2.2,
     isLanded: false,
     crateType: 'health',

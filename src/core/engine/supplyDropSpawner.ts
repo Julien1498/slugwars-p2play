@@ -1,6 +1,8 @@
 import { GameState, SupplyCrate, JournalEntry } from '../types';
 import { getAllWeapons } from '../weapons/registry';
 import { sfx } from '../audio';
+import { DestructibleTerrain } from '../terrain';
+import { getThemeConfig } from '../terrain/themeRegistry';
 
 export const GLOBAL_CRATE_DROP_CHANCE = 0.50; // 4ème dé maître : 50% de chance d'activer les tirages de caisses
 
@@ -85,10 +87,88 @@ export function pickRandomCrateContent(): {
   }
 }
 
+export function findCavernCeilingAirY(terrain: DestructibleTerrain, x: number): number {
+  const width = terrain.data.width;
+  const height = terrain.data.height;
+  const waterLevel = terrain.data.waterLevel ?? height;
+  const ix = Math.max(0, Math.min(width - 1, Math.round(x)));
+  const isSolid = typeof terrain.isSolid === 'function'
+    ? (px: number, py: number) => terrain.isSolid(px, py)
+    : (px: number, py: number) => (terrain.data?.grid?.[py * width + px] ?? 0) > 0 || py <= 16;
+
+  // Start from y = 17 (bedrock is <= 16) and scan down through solid ceiling rock
+  let ceilingBottomY = 17;
+  while (ceilingBottomY < height && isSolid(ix, ceilingBottomY)) {
+    ceilingBottomY++;
+  }
+
+  // If ceiling reaches the bottom or near water, no cavern air exists at this column
+  if (ceilingBottomY >= waterLevel - 40 || ceilingBottomY >= height - 40) {
+    return -1;
+  }
+
+  // Verify at least 30px of open air below the ceiling before hitting ground or water
+  let openAir = 0;
+  const maxCheckY = Math.min(height, waterLevel - 15);
+  for (let y = ceilingBottomY; y < maxCheckY; y++) {
+    if (!isSolid(ix, y)) {
+      openAir++;
+      if (openAir >= 30) break;
+    } else {
+      break;
+    }
+  }
+
+  return openAir >= 30 ? ceilingBottomY + 4 : -1;
+}
+
+export function findCrateSpawnCoords(
+  terrainOrWidth: number | DestructibleTerrain
+): { x: number; y: number } {
+  if (typeof terrainOrWidth === 'number' || !terrainOrWidth || !terrainOrWidth.data) {
+    const width = typeof terrainOrWidth === 'number' ? terrainOrWidth : 1400;
+    const spawnX = Math.round(80 + Math.random() * Math.max(1, width - 160));
+    return { x: spawnX, y: -30 };
+  }
+
+  const terrain = terrainOrWidth;
+  const width = terrain.data.width || 1400;
+  const theme = terrain.data.theme;
+  const themeConfig = theme ? getThemeConfig(theme) : undefined;
+  const hasCeiling = themeConfig?.physics.hasSolidCeiling ?? false;
+
+  if (!hasCeiling) {
+    const spawnX = Math.round(80 + Math.random() * Math.max(1, width - 160));
+    return { x: spawnX, y: -30 };
+  }
+
+  // Underground / cavern map with solid ceiling: find clear air inside the cave
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const testX = Math.round(80 + Math.random() * Math.max(1, width - 160));
+    const airY = findCavernCeilingAirY(terrain, testX);
+    if (airY > 0) {
+      return { x: testX, y: airY };
+    }
+  }
+
+  // Fallback: spawn above a known slug spawn point
+  const spawnPoints = terrain.data.spawnPoints;
+  if (spawnPoints && spawnPoints.length > 0) {
+    const sp = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+    const airY = findCavernCeilingAirY(terrain, sp.x);
+    if (airY > 0) {
+      return { x: sp.x, y: airY };
+    }
+    return { x: sp.x, y: Math.max(25, sp.y - 80) };
+  }
+
+  return { x: Math.round(width / 2), y: 35 };
+}
+
 export function spawnSupplyCrateOfType(
   state: GameState,
   type: SupplyCrate['crateType'],
-  terrainWidth: number,
+  terrainOrWidth: number | DestructibleTerrain,
   addLog?: (msg: string, type?: JournalEntry['type']) => void
 ): boolean {
   if (!state.supplyCrates) state.supplyCrates = [];
@@ -101,11 +181,11 @@ export function spawnSupplyCrateOfType(
       ? pickWeaponCrateContent()
       : pickUtilityCrateContent();
 
-  const spawnX = Math.round(80 + Math.random() * (terrainWidth - 160));
+  const coords = findCrateSpawnCoords(terrainOrWidth);
   const newCrate: SupplyCrate = {
     id: `crate_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    x: spawnX,
-    y: -30,
+    x: coords.x,
+    y: coords.y,
     vy: 2.2,
     isLanded: false,
     ...content,
@@ -122,15 +202,15 @@ export function spawnSupplyCrateOfType(
 
 export function spawnTurnSupplyCrate(
   state: GameState,
-  terrainWidth: number,
+  terrainOrWidth: number | DestructibleTerrain,
   addLog?: (msg: string, type?: JournalEntry['type']) => void
 ): boolean {
-  return spawnSupplyCrateOfType(state, 'weapon', terrainWidth, addLog);
+  return spawnSupplyCrateOfType(state, 'weapon', terrainOrWidth, addLog);
 }
 
 export function processTurnSupplyDrops(
   state: GameState,
-  terrainWidth: number,
+  terrainOrWidth: number | DestructibleTerrain,
   addLog?: (msg: string, type?: JournalEntry['type']) => void
 ): number {
   if (!state.supplyCrates) state.supplyCrates = [];
@@ -145,21 +225,21 @@ export function processTurnSupplyDrops(
 
   // 1. Independent roll for Weapon crate (~55%)
   if (Math.random() < CRATE_DROP_RATES.WEAPON) {
-    if (spawnSupplyCrateOfType(state, 'weapon', terrainWidth, addLog)) {
+    if (spawnSupplyCrateOfType(state, 'weapon', terrainOrWidth, addLog)) {
       spawnedCount++;
     }
   }
 
   // 2. Independent roll for Utility crate (~25%)
   if (Math.random() < CRATE_DROP_RATES.UTILITY) {
-    if (spawnSupplyCrateOfType(state, 'utility', terrainWidth, addLog)) {
+    if (spawnSupplyCrateOfType(state, 'utility', terrainOrWidth, addLog)) {
       spawnedCount++;
     }
   }
 
   // 3. Independent roll for Health crate (~15%)
   if (Math.random() < CRATE_DROP_RATES.HEALTH) {
-    if (spawnSupplyCrateOfType(state, 'health', terrainWidth, addLog)) {
+    if (spawnSupplyCrateOfType(state, 'health', terrainOrWidth, addLog)) {
       spawnedCount++;
     }
   }

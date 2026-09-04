@@ -153,7 +153,7 @@ export function advanceToNextTurn(
   }
 
   // 8. Independent category rolls for turn supply crate drops
-  processTurnSupplyDrops(state, terrain.data.width, callbacks.addLog);
+  processTurnSupplyDrops(state, terrain, callbacks.addLog);
 
   startAiming(state);
 }

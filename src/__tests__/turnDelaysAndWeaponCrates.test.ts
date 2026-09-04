@@ -10,7 +10,9 @@ import {
   CRATE_DROP_RATES,
   MAX_SUPPLY_CRATES_ON_MAP,
   updateSupplyCrates,
+  stepSupplyCrateDescent,
 } from '../core/engine/supplyDropManager';
+import { executeAirdrop } from '../core/engine/weapons/specialWeaponExecutors';
 import { GameState } from '../core/types';
 
 describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
@@ -266,6 +268,53 @@ describe('Weapon Turn Delays & Supply Crates (Standard Rules)', () => {
       // Crate detonated into a secondary explosion
       expect(engine.state.supplyCrates.length).toBe(0);
       expect(engine.state.explosions.length).toBeGreaterThan(1);
+    });
+
+    it('spawns supply crates inside the cavern ceiling on underground cavern maps', () => {
+      const cavernEngine = new SlugWarsEngine({
+        turnDuration: 45,
+        slugsPerTeam: 2,
+        mapTheme: 'CAVERN',
+        mapSeed: 999,
+      });
+
+      cavernEngine.state.supplyCrates = [];
+      const spawned = spawnTurnSupplyCrate(cavernEngine.state, cavernEngine.terrain);
+      expect(spawned).toBe(true);
+      expect(cavernEngine.state.supplyCrates?.length).toBe(1);
+
+      const crate = cavernEngine.state.supplyCrates![0];
+      // Crate must NOT spawn in the negative sky above the ceiling bedrock
+      expect(crate.y).toBeGreaterThan(16);
+      // Crate must spawn in open air inside the cave
+      expect(cavernEngine.terrain.isSolid(crate.x, crate.y)).toBe(false);
+      expect(crate.isLanded).toBe(false);
+
+      // Verify that stepSupplyCrateDescent allows the crate to descend rather than instantly landing
+      const isSolidFn = (x: number, y: number) => cavernEngine.terrain.isSolid(x, y);
+      const moved = stepSupplyCrateDescent(crate, 0, isSolidFn, cavernEngine.terrain.data.waterLevel);
+      expect(moved).toBe(true);
+      expect(crate.y).toBeGreaterThan(16);
+      expect(crate.isLanded).toBe(false);
+    });
+
+    it('handles player airdrop inside caverns below the solid bedrock ceiling', () => {
+      const cavernEngine = new SlugWarsEngine({
+        turnDuration: 45,
+        slugsPerTeam: 2,
+        mapTheme: 'CAVERN',
+        mapSeed: 999,
+      });
+      cavernEngine.state.supplyCrates = [];
+
+      executeAirdrop(cavernEngine.state, { x: 500, y: 350 }, () => {}, cavernEngine.terrain);
+
+      expect(cavernEngine.state.supplyCrates?.length).toBe(1);
+      const crate = cavernEngine.state.supplyCrates![0];
+      expect(crate.x).toBe(500);
+      expect(crate.y).toBeGreaterThan(16);
+      expect(crate.isLanded).toBe(false);
+      expect(cavernEngine.terrain.isSolid(crate.x, crate.y)).toBe(false);
     });
   });
 });

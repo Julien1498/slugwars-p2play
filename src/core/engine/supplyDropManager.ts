@@ -10,6 +10,8 @@ export {
   spawnTurnSupplyCrate,
   spawnSupplyCrateOfType,
   processTurnSupplyDrops,
+  findCavernCeilingAirY,
+  findCrateSpawnCoords,
   GLOBAL_CRATE_DROP_CHANCE,
   CRATE_DROP_RATES,
   MAX_SUPPLY_CRATES_ON_MAP,
