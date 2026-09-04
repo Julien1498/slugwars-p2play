@@ -1,14 +1,15 @@
-﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getCachedPropSprite,
   drawSolidPropWithCache,
   ENABLE_PROP_SPRITE_CACHE,
   setPropSpriteCacheEnabled,
   clearPropSpriteCache,
+  warmupPropSpriteCache,
 } from '../rendering/props/propSpriteCache';
 import { SolidProp } from '../core/types';
 
-describe('PropSpriteCache - Retina Supersampled Cache', () => {
+describe('PropSpriteCache - Retina Supersampled Cache & ImageBitmap', () => {
   beforeEach(() => {
     clearPropSpriteCache();
     setPropSpriteCacheEnabled(true);
@@ -58,4 +59,47 @@ describe('PropSpriteCache - Retina Supersampled Cache', () => {
     expect(sprite1).not.toBeNull();
     expect(sprite1).toBe(sprite2);
   });
+
+  it('closes ImageBitmap objects upon clearPropSpriteCache', () => {
+    if (typeof document === 'undefined') return;
+
+    const sprite = getCachedPropSprite(sampleProp);
+    if (sprite) {
+      const mockClose = vi.fn();
+      sprite.bitmap = { close: mockClose } as unknown as ImageBitmap;
+
+      clearPropSpriteCache();
+      expect(mockClose).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('prefers sprite.bitmap over sprite.canvas in drawSolidPropWithCache when available', () => {
+    if (typeof document === 'undefined') return;
+
+    const mockCtx = {
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D;
+
+    const sprite = getCachedPropSprite(sampleProp);
+    if (sprite) {
+      const dummyBitmap = { id: 'gpu_texture_bitmap' } as unknown as ImageBitmap;
+      sprite.bitmap = dummyBitmap;
+
+      drawSolidPropWithCache(mockCtx, sampleProp);
+      expect(mockCtx.drawImage).toHaveBeenCalledWith(
+        dummyBitmap,
+        -sprite.originX,
+        -sprite.originY,
+        sprite.boxW,
+        sprite.boxH
+      );
+    }
+  });
+
+  it('executes warmupPropSpriteCache without errors', () => {
+    expect(() => {
+      warmupPropSpriteCache();
+    }).not.toThrow();
+  });
 });
+

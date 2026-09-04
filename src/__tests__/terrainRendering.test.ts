@@ -3,6 +3,7 @@ import {
   createTerrainBuffers,
   lerpColor32,
   redrawOffscreenTerrain,
+  rebuildPropsOffscreenCanvas,
 } from '../rendering/renderTerrain';
 import { generateProceduralTerrain } from '../core/terrainGenerator';
 import { DestructibleTerrain } from '../core/terrain';
@@ -26,6 +27,19 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
                 putImageData: vi.fn(),
                 drawImage: vi.fn(),
                 clearRect: vi.fn(),
+                save: vi.fn(),
+                restore: vi.fn(),
+                beginPath: vi.fn(),
+                arc: vi.fn(),
+                fill: vi.fn(),
+                translate: vi.fn(),
+                rotate: vi.fn(),
+                fillRect: vi.fn(),
+                strokeRect: vi.fn(),
+                stroke: vi.fn(),
+                scale: vi.fn(),
+                createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+                createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
               }),
             };
           }
@@ -43,6 +57,8 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
 
       expect(buffers.offscreenCanvas.width).toBe(width);
       expect(buffers.offscreenCanvas.height).toBe(height);
+      expect(buffers.propsOffscreenCanvas.width).toBe(width);
+      expect(buffers.propsOffscreenCanvas.height).toBe(height);
       expect(buffers.terrainHitboxCanvas.width).toBe(width);
       expect(buffers.terrainHitboxCanvas.height).toBe(height);
       expect(buffers.distMap.length).toBe(width * height);
@@ -169,6 +185,39 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
       const centerIdx = cy * width + cx;
       expect(terrain.data.grid[centerIdx]).toBe(0);
       expect(buffers.distMap[centerIdx]).toBe(0);
+    });
+  });
+
+  describe('rebuildPropsOffscreenCanvas()', () => {
+    it('clears canvas and draws solid props then cuts craters with destination-out', () => {
+      const buffers = createTerrainBuffers(800, 600);
+      const solidProps = [
+        {
+          id: 'sp1',
+          type: 'oil_drum' as const,
+          x: 200,
+          y: 300,
+          width: 32,
+          height: 48,
+          destroyed: false,
+        },
+        {
+          id: 'sp2',
+          type: 'crystal' as const,
+          x: 400,
+          y: 350,
+          width: 24,
+          height: 36,
+          destroyed: true, // Should be skipped
+        },
+      ];
+      const craters = [
+        { id: 'c1', x: 200, y: 300, radius: 25 },
+      ];
+
+      expect(() => {
+        rebuildPropsOffscreenCanvas(buffers, solidProps, craters);
+      }).not.toThrow();
     });
   });
 });

@@ -21,6 +21,9 @@ export interface SkyHorizonOceanParams {
 export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
   const { ctx, waterY, worldBottom, theme, isDay, slowTime, drawLeft, drawRight, drawBottom } = p;
 
+  const oceanBottom = Math.min(drawBottom, waterY + 120);
+  if (oceanBottom <= waterY - 20) return;
+
   ctx.fillStyle = getCachedBgWaterGradient(ctx, waterY, worldBottom, theme, isDay);
 
   const span = drawRight - drawLeft;
@@ -29,13 +32,13 @@ export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
 
   // Layer 1: Back Ocean Deep Body Polygon
   ctx.beginPath();
-  ctx.moveTo(drawLeft, drawBottom);
+  ctx.moveTo(drawLeft, oceanBottom);
   for (let x = waveStartX; x <= drawRight + waveStep * 2; x += waveStep) {
     const wy1 = waterY + Math.sin(x * 0.008 + slowTime * 1.5) * 10 + Math.cos(x * 0.016 - slowTime * 1.0) * 4;
     ctx.lineTo(x, wy1);
   }
-  ctx.lineTo(drawRight + waveStep, drawBottom);
-  ctx.lineTo(drawLeft, drawBottom);
+  ctx.lineTo(drawRight + waveStep, oceanBottom);
+  ctx.lineTo(drawLeft, oceanBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -46,13 +49,13 @@ export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
     ? config.rendering.water.midWaveColor.day
     : config.rendering.water.midWaveColor.night;
   ctx.beginPath();
-  ctx.moveTo(drawLeft, drawBottom);
+  ctx.moveTo(drawLeft, oceanBottom);
   for (let x = waveStartX; x <= drawRight + waveStep * 2; x += waveStep) {
     const wy2 = waterY + 3 + Math.sin(x * 0.012 + slowTime * 2.2 + 2.0) * 8 + Math.sin(x * 0.024 - slowTime * 1.4) * 3;
     ctx.lineTo(x, wy2);
   }
-  ctx.lineTo(drawRight + waveStep, drawBottom);
-  ctx.lineTo(drawLeft, drawBottom);
+  ctx.lineTo(drawRight + waveStep, oceanBottom);
+  ctx.lineTo(drawLeft, oceanBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -75,12 +78,12 @@ export function renderSkyHorizonOcean(p: SkyHorizonOceanParams) {
     ? config.rendering.water.frontWaveColor.day
     : config.rendering.water.frontWaveColor.night;
   ctx.beginPath();
-  ctx.moveTo(drawLeft, drawBottom);
+  ctx.moveTo(drawLeft, oceanBottom);
   for (let i = 0; i < bgPtCount; i++) {
     ctx.lineTo(_bgWaveX[i], _bgWaveY[i]);
   }
-  ctx.lineTo(drawRight + waveStep, drawBottom);
-  ctx.lineTo(drawLeft, drawBottom);
+  ctx.lineTo(drawRight + waveStep, oceanBottom);
+  ctx.lineTo(drawLeft, oceanBottom);
   ctx.closePath();
   ctx.fill();
 

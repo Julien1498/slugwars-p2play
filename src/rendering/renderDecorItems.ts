@@ -57,6 +57,12 @@ const BUTTERFLY_ANTENNAE = createPath((p) => {
   p.lineTo(2.5, -7);
 });
 
+interface VineSolidCache {
+  revision: number;
+  isSolid: boolean;
+}
+const _vineSolidCache = new WeakMap<DecorItem, VineSolidCache>();
+
 export function renderDecorItems(
   ctx: CanvasRenderingContext2D,
   terrain: DestructibleTerrain,
@@ -76,11 +82,18 @@ export function renderDecorItems(
 
     if (item.type === 'hanging_leaf') {
       // Verify ceiling anchor is still solid (disappears if ceiling is destroyed!)
-      const topSolid =
-        terrain.isSolid(item.x, item.y - 1) ||
-        terrain.isSolid(item.x, item.y - 2) ||
-        terrain.isSolid(item.x - 2, item.y - 1) ||
-        terrain.isSolid(item.x + 2, item.y - 1);
+      const cached = _vineSolidCache.get(item);
+      let topSolid: boolean;
+      if (cached && cached.revision === terrain.revision) {
+        topSolid = cached.isSolid;
+      } else {
+        topSolid =
+          terrain.isSolid(item.x, item.y - 1) ||
+          terrain.isSolid(item.x, item.y - 2) ||
+          terrain.isSolid(item.x - 2, item.y - 1) ||
+          terrain.isSolid(item.x + 2, item.y - 1);
+        _vineSolidCache.set(item, { revision: terrain.revision, isSolid: topSolid });
+      }
 
       if (!topSolid) {
         item.destroyed = true;

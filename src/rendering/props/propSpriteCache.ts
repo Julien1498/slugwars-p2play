@@ -1,4 +1,5 @@
 import { SolidProp } from '../../core/types';
+import { renderSettings } from '../../core/perf/renderSettings';
 import { drawTreeProp, drawMushroomProp, drawFlowerProp, drawCactusProp } from './renderVegetationProps';
 import { drawBunkerProp, drawTotemProp, drawOilDrumProp, drawLamppostProp } from './renderStructuralProps';
 import { drawCrystalProp } from './renderMineralProps';
@@ -23,6 +24,7 @@ export const SOLID_PROP_DRAWERS: Record<
 
 export interface CachedPropSprite {
   canvas: HTMLCanvasElement;
+  bitmap: ImageBitmap | null;
   originX: number;
   originY: number;
   boxW: number;
@@ -35,12 +37,20 @@ export function setPropSpriteCacheEnabled(enabled: boolean): void {
   ENABLE_PROP_SPRITE_CACHE = enabled;
 }
 
-// Retina supersampling factor: 2.5x ensures 100% crispness and zero blurriness even under camera zoom
-const SUPERSAMPLE_SCALE = 2.5;
+const SUPERSAMPLE_SCALE = 2.0;
 
 const _propSpriteMap = new Map<string, CachedPropSprite>();
 
 export function clearPropSpriteCache(): void {
+  for (const sprite of _propSpriteMap.values()) {
+    if (sprite.bitmap && typeof sprite.bitmap.close === 'function') {
+      try {
+        sprite.bitmap.close();
+      } catch {
+        // Safe disposal
+      }
+    }
+  }
   _propSpriteMap.clear();
 }
 
@@ -70,17 +80,28 @@ export function getCachedPropSprite(sprop: SolidProp): CachedPropSprite | null {
   const originX = boxW / 2;
   const originY = boxH - padBottom;
 
-  ctx.save();
-  ctx.scale(SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE);
-  ctx.translate(originX, originY);
+  if (typeof ctx.save === 'function') ctx.save();
+  if (typeof ctx.scale === 'function') ctx.scale(SUPERSAMPLE_SCALE, SUPERSAMPLE_SCALE);
+  if (typeof ctx.translate === 'function') ctx.translate(originX, originY);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
   drawer(ctx, sprop);
-  ctx.restore();
+  if (typeof ctx.restore === 'function') ctx.restore();
 
-  cached = { canvas, originX, originY, boxW, boxH };
+  cached = { canvas, bitmap: null, originX, originY, boxW, boxH };
   _propSpriteMap.set(key, cached);
+
+  if (typeof createImageBitmap === 'function') {
+    createImageBitmap(canvas)
+      .then((bmp) => {
+        if (cached) cached.bitmap = bmp;
+      })
+      .catch(() => {
+        // Fallback to canvas
+      });
+  }
+
   return cached;
 }
 
@@ -88,17 +109,60 @@ export function drawSolidPropWithCache(
   ctx: CanvasRenderingContext2D,
   sprop: SolidProp
 ): boolean {
-  if (!ENABLE_PROP_SPRITE_CACHE) return false;
+  if (!ENABLE_PROP_SPRITE_CACHE && !renderSettings.getPropsMipmapEnabled()) return false;
+  if (typeof ctx.drawImage !== 'function') return false;
 
   const sprite = getCachedPropSprite(sprop);
   if (!sprite) return false;
 
+  const source: CanvasImageSource = sprite.bitmap ?? sprite.canvas;
   ctx.drawImage(
-    sprite.canvas,
+    source,
     -sprite.originX,
     -sprite.originY,
     sprite.boxW,
     sprite.boxH
   );
   return true;
+}
+
+export function warmupPropSpriteCache(): void {
+  if (typeof document === 'undefined') return;
+  const dummyProps: SolidProp[] = [
+    { id: 'w_bunker_0', type: 'bunker', x: 0, y: 0, width: 38, height: 26, variant: 0 },
+    { id: 'w_bunker_1', type: 'bunker', x: 0, y: 0, width: 38, height: 26, variant: 1 },
+    { id: 'w_totem_0', type: 'totem', x: 0, y: 0, width: 26, height: 36, variant: 0 },
+    { id: 'w_totem_1', type: 'totem', x: 0, y: 0, width: 26, height: 36, variant: 1 },
+    { id: 'w_cactus_0', type: 'cactus', x: 0, y: 0, width: 24, height: 38, variant: 0 },
+    { id: 'w_cactus_1', type: 'cactus', x: 0, y: 0, width: 24, height: 38, variant: 1 },
+    { id: 'w_cactus_2', type: 'cactus', x: 0, y: 0, width: 24, height: 38, variant: 2 },
+    { id: 'w_crystal_0', type: 'crystal', x: 0, y: 0, width: 28, height: 26, variant: 0 },
+    { id: 'w_crystal_1', type: 'crystal', x: 0, y: 0, width: 28, height: 26, variant: 1 },
+    { id: 'w_crystal_2', type: 'crystal', x: 0, y: 0, width: 28, height: 26, variant: 2 },
+    { id: 'w_oil_drum_0', type: 'oil_drum', x: 0, y: 0, width: 20, height: 26, variant: 0 },
+    { id: 'w_oil_drum_1', type: 'oil_drum', x: 0, y: 0, width: 20, height: 26, variant: 1 },
+    { id: 'w_lamppost_0', type: 'lamppost', x: 0, y: 0, width: 18, height: 42 },
+    { id: 'w_tree_0', type: 'tree', x: 0, y: 0, width: 32, height: 48, variant: 0 },
+    { id: 'w_tree_1', type: 'tree', x: 0, y: 0, width: 32, height: 48, variant: 1 },
+    { id: 'w_hedgehog_0', type: 'hedgehog', x: 0, y: 0, width: 26, height: 22 },
+    { id: 'w_chick_0', type: 'chick', x: 0, y: 0, width: 28, height: 24 },
+    { id: 'w_mushroom_0', type: 'mushroom', x: 0, y: 0, width: 22, height: 22, variant: 0 },
+    { id: 'w_mushroom_1', type: 'mushroom', x: 0, y: 0, width: 22, height: 22, variant: 1 },
+    { id: 'w_mushroom_2', type: 'mushroom', x: 0, y: 0, width: 22, height: 22, variant: 2 },
+    { id: 'w_flower_0', type: 'flower', x: 0, y: 0, width: 20, height: 24, variant: 0 },
+    { id: 'w_flower_1', type: 'flower', x: 0, y: 0, width: 20, height: 24, variant: 1 },
+    { id: 'w_flower_2', type: 'flower', x: 0, y: 0, width: 20, height: 24, variant: 2 },
+    { id: 'w_flower_3', type: 'flower', x: 0, y: 0, width: 20, height: 24, variant: 3 },
+  ];
+  for (let i = 0; i < dummyProps.length; i++) {
+    getCachedPropSprite(dummyProps[i]);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => warmupPropSpriteCache());
+  } else {
+    setTimeout(() => warmupPropSpriteCache(), 100);
+  }
 }

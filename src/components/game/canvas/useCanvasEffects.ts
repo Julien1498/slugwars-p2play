@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react';
 import { GameState } from '../../../core/types';
 import { DestructibleTerrain } from '../../../core/terrain';
 import { sfx } from '../../../core/audio';
-import { TerrainBuffers, redrawOffscreenTerrain } from '../../../rendering/renderTerrain';
+import { TerrainBuffers, redrawOffscreenTerrain, rebuildPropsOffscreenCanvas } from '../../../rendering/renderTerrain';
 import { WaterBubble, WaterRipple, WaterSplash } from '../../../rendering/renderWater';
 import { ClientParticle, ClientExplosion, ClientFloatingDamage } from '../../../rendering/renderEffects';
 
@@ -34,18 +34,30 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       const safeRadius = Math.max(0, radius || 0);
       if (safeRadius <= 0) return;
 
-      terrain.carveExplosion(x, y, safeRadius);
-
+      const { destroyedProps } = terrain.carveExplosion(x, y, safeRadius);
       const buffers = getBuffers();
-      if (buffers.offscreenCanvas) {
-        const offCtx = buffers.offscreenCanvas.getContext('2d');
-        if (offCtx) {
-          offCtx.save();
-          offCtx.globalCompositeOperation = 'destination-out';
-          offCtx.beginPath();
-          offCtx.arc(x, y, safeRadius, 0, Math.PI * 2);
-          offCtx.fill();
-          offCtx.restore();
+
+      const applyDestOut = (canvas: HTMLCanvasElement | undefined, scale: number) => {
+        if (!canvas) return;
+        const c = canvas.getContext('2d');
+        if (!c || typeof c.save !== 'function') return;
+        c.save(); c.globalCompositeOperation = 'destination-out';
+        c.beginPath(); c.arc(x * scale, y * scale, safeRadius * scale, 0, Math.PI * 2);
+        c.fill(); c.restore();
+      };
+      applyDestOut(buffers.offscreenCanvas, 1.0);
+      applyDestOut(buffers.mipmapCanvas, 0.5);
+      applyDestOut(buffers.propsOffscreenCanvas, 1.0);
+
+      if (destroyedProps && destroyedProps.length > 0) {
+        rebuildPropsOffscreenCanvas(buffers, terrain.data.solidProps);
+        for (const dp of destroyedProps) {
+          redrawOffscreenTerrain(terrain, buffers, {
+            minX: Math.max(0, Math.floor(dp.x - dp.width - 24)),
+            maxX: Math.min(terrain.data.width - 1, Math.ceil(dp.x + dp.width + 24)),
+            minY: Math.max(0, Math.floor(dp.y - dp.height - 24)),
+            maxY: Math.min(terrain.data.height - 1, Math.ceil(dp.y + 16)),
+          });
         }
       }
     },
@@ -80,24 +92,18 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.3;
       const speed = (Math.random() * 5.0 + 3.0) * scale;
       clientWaterSplashesRef.current.push({
-        x: x + (Math.random() - 0.5) * 12,
-        y: y + (Math.random() - 0.5) * 4,
-        vx: Math.cos(angle) * speed * 0.75,
-        vy: Math.sin(angle) * speed,
-        size: Math.random() * 3.5 + 2.0,
-        life: 1.0,
+        x: x + (Math.random() - 0.5) * 12, y: y + (Math.random() - 0.5) * 4,
+        vx: Math.cos(angle) * speed * 0.75, vy: Math.sin(angle) * speed,
+        size: Math.random() * 3.5 + 2.0, life: 1.0,
         color: Math.random() < 0.5 ? 'rgba(255, 255, 255, 0.95)' : 'rgba(56, 189, 248, 0.9)',
       });
     }
 
     for (let i = 0; i < 8; i++) {
       clientWaterBubblesRef.current.push({
-        x: x + (Math.random() - 0.5) * 16,
-        y: y + Math.random() * 10 + 2,
-        vx: (Math.random() - 0.5) * 1.4,
-        vy: -Math.random() * 1.8 - 0.8,
-        size: Math.random() * 2.5 + 1.5,
-        life: 1.0,
+        x: x + (Math.random() - 0.5) * 16, y: y + Math.random() * 10 + 2,
+        vx: (Math.random() - 0.5) * 1.4, vy: -Math.random() * 1.8 - 0.8,
+        size: Math.random() * 2.5 + 1.5, life: 1.0,
       });
     }
 
@@ -141,6 +147,7 @@ export function useCanvasEffects({ terrain, getBuffers }: UseCanvasEffectsProps)
       }
     } else if (knownCraterIdsCanvasRef.current.size > 0) {
       knownCraterIdsCanvasRef.current.clear();
+      rebuildPropsOffscreenCanvas(getBuffers(), terrain.data.solidProps);
     }
 
     // 1b. Terrain Builds (Dev Mode ground placement)

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { GameState, Vector2D } from '../../../core/types';
 import { DestructibleTerrain } from '../../../core/terrain';
-import { perfTracker } from '../../../core/perfTracker';
+import { perfTracker, isolateBenchmark } from '../../../core/perfTracker';
 import { createInterpolationCache, interpolateVisualState } from '../../../rendering/interpolationUtils';
 import { createTerrainBuffers, redrawOffscreenTerrain, TerrainBuffers } from '../../../rendering/renderTerrain';
 import { useCanvasEffects } from './useCanvasEffects';
@@ -11,7 +11,6 @@ import { renderForegroundLayer } from './renderForegroundLayer';
 
 export interface UseCanvasRenderLoopProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  actionCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   containerRectRef: React.RefObject<{ width: number; height: number }>;
   terrain: DestructibleTerrain;
   gameStateRef: React.MutableRefObject<GameState>;
@@ -31,7 +30,6 @@ export interface UseCanvasRenderLoopProps {
 
 export function useCanvasRenderLoop({
   canvasRef,
-  actionCanvasRef,
   containerRectRef,
   terrain,
   gameStateRef,
@@ -66,7 +64,7 @@ export function useCanvasRenderLoop({
   const redrawTerrain = useCallback(
     (dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }) => {
       const buffers = getBuffers();
-      redrawOffscreenTerrain(terrain, buffers, dirtyBox);
+      redrawOffscreenTerrain(terrain, buffers, dirtyBox, gameStateRef.current?.craters);
     },
     [terrain, getBuffers]
   );
@@ -102,11 +100,9 @@ export function useCanvasRenderLoop({
     }
 
     const canvas = canvasRef.current;
-    const actionCanvas = actionCanvasRef.current;
-    if (!canvas || !actionCanvas) return;
+    if (!canvas) return;
     const ctx = (canvas.getContext('2d', { alpha: false }) || canvas.getContext('2d')) as CanvasRenderingContext2D | null;
-    const actionCtx = actionCanvas.getContext('2d') as CanvasRenderingContext2D | null;
-    if (!ctx || !actionCtx) return;
+    if (!ctx) return;
 
     let animId: number;
 
@@ -124,26 +120,17 @@ export function useCanvasRenderLoop({
       const curState = gameStateRef.current;
       const { width, height, waterLevel } = terrain.data;
 
-      // Dynamic Resolution Scaling (DRS) with native HiDPI / Retina devicePixelRatio support
+      // Native 1:1 Pixel-Perfect Device DPR (Zero bilinear browser upscaling, DirectFlip enabled)
       const deviceDpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
-      const baseDpr = Math.min(2.0, Math.max(1.0, deviceDpr));
-      const bgDpr = Math.round(baseDpr * Math.min(1.0, Math.max(0.75, zoomRef.current * 0.4 + 0.6)) * 100) / 100;
-      const actionDpr = Math.round(baseDpr * Math.min(1.0, Math.max(0.90, zoomRef.current * 0.2 + 0.8)) * 100) / 100;
-      perfTracker.setLiveDprs(bgDpr, actionDpr);
+      const targetDpr = Math.min(2.0, Math.max(1.0, deviceDpr));
+      perfTracker.setLiveDprs(targetDpr, targetDpr);
       const cRect = containerRectRef.current;
 
-      const targetW_bg = Math.max(100, Math.round(cRect.width * bgDpr));
-      const targetH_bg = Math.max(100, Math.round(cRect.height * bgDpr));
-      if (canvas.width !== targetW_bg || canvas.height !== targetH_bg) {
-        canvas.width = targetW_bg;
-        canvas.height = targetH_bg;
-      }
-
-      const targetW_act = Math.max(100, Math.round(cRect.width * actionDpr));
-      const targetH_act = Math.max(100, Math.round(cRect.height * actionDpr));
-      if (actionCanvas.width !== targetW_act || actionCanvas.height !== targetH_act) {
-        actionCanvas.width = targetW_act;
-        actionCanvas.height = targetH_act;
+      const targetW = Math.max(100, Math.round(cRect.width * targetDpr));
+      const targetH = Math.max(100, Math.round(cRect.height * targetDpr));
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
       }
 
       // Camera follow logic
@@ -185,62 +172,69 @@ export function useCanvasRenderLoop({
       const buffers = getBuffers();
       const viewBounds = { viewLeft, viewRight, viewTop, viewBottom };
 
-      // 1. Render Background Layer
-      renderBackgroundLayer({
-        ctx,
-        canvas,
-        containerRect: cRect,
-        terrain,
-        buffers,
-        gameState: curState,
-        bgDpr,
-        totalScale,
-        pan: panRef.current,
-        waterY,
-        animTime,
-        slowTime,
-        viewBounds,
-        isMyTurn: isMyTurnRef.current,
-      });
+      if (isolateBenchmark.getActiveBypass() === 'TOTAL_BLACK') {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      } else {
+        // 1. Render Background Layer (Sky, Terrain Buffer, Props, Horizon Ocean)
+        renderBackgroundLayer({
+          ctx,
+          canvas,
+          containerRect: cRect,
+          terrain,
+          buffers,
+          gameState: curState,
+          bgDpr: targetDpr,
+          totalScale,
+          pan: panRef.current,
+          waterY,
+          animTime,
+          slowTime,
+          viewBounds,
+          isMyTurn: isMyTurnRef.current,
+        });
 
-      // 2. Visual State 144 FPS Interpolation
-      const now = performance.now();
-      const lastTime = lastRenderTimeRef.current || now;
-      const dtSec = Math.min(0.1, (now - lastTime) / 1000);
-      lastRenderTimeRef.current = now;
-      const alpha = 1 - Math.exp(-24.0 * dtSec);
+        // 2. Visual State 144 FPS Interpolation
+        const now = performance.now();
+        const lastTime = lastRenderTimeRef.current || now;
+        const dtSec = Math.min(0.1, (now - lastTime) / 1000);
+        lastRenderTimeRef.current = now;
+        const alpha = 1 - Math.exp(-24.0 * dtSec);
 
-      const visualState = interpolateVisualState(curState, interpolationCacheRef.current, alpha);
+        const visualState = interpolateVisualState(curState, interpolationCacheRef.current, alpha);
 
-      // 3. Render Foreground Layer
-      renderForegroundLayer({
-        actionCtx,
-        actionCanvas,
-        containerRect: cRect,
-        terrain,
-        buffers,
-        visualState,
-        curState,
-        actionDpr,
-        totalScale,
-        pan: panRef.current,
-        waterY,
-        animTime,
-        slowTime,
-        viewBounds,
-        slugDeathTimestamps: slugDeathTimestampsRef.current,
-        clientParticles: clientParticlesRef.current,
-        clientExplosions: clientExplosionsRef.current,
-        clientFloatingDamages: clientFloatingDamagesRef.current,
-        clientWaterBubbles: clientWaterBubblesRef.current,
-        clientWaterRipples: clientWaterRipplesRef.current,
-        clientWaterSplashes: clientWaterSplashesRef.current,
-        mousePos: mousePosRef.current,
-        lockedTarget: lockedTargetRef.current,
-        pendingPlacementPoint,
-        isMyTurn: isMyTurnRef.current,
-        showHitboxes: showHitboxesRef.current,
-      });
+        // 3. Render Foreground Layer (Slugs, Projectiles, FX, Foreground Waves onto Unified Canvas)
+        renderForegroundLayer({
+          ctx,
+          containerRect: cRect,
+          terrain,
+          buffers,
+          visualState,
+          curState,
+          dpr: targetDpr,
+          totalScale,
+          pan: panRef.current,
+          waterY,
+          animTime,
+          slowTime,
+          viewBounds,
+          slugDeathTimestamps: slugDeathTimestampsRef.current,
+          clientParticles: clientParticlesRef.current,
+          clientExplosions: clientExplosionsRef.current,
+          clientFloatingDamages: clientFloatingDamagesRef.current,
+          clientWaterBubbles: clientWaterBubblesRef.current,
+          clientWaterRipples: clientWaterRipplesRef.current,
+          clientWaterSplashes: clientWaterSplashesRef.current,
+          mousePos: mousePosRef.current,
+          lockedTarget: lockedTargetRef.current,
+          pendingPlacementPoint,
+          isMyTurn: isMyTurnRef.current,
+          showHitboxes: showHitboxesRef.current,
+        });
+      }
 
       const dt = performance.now() - renderStart;
       perfTracker.markFrame(dt, {
@@ -265,7 +259,6 @@ export function useCanvasRenderLoop({
     processFrameEffects,
     getBuffers,
     canvasRef,
-    actionCanvasRef,
     containerRectRef,
     gameStateRef,
     isMyTurnRef,

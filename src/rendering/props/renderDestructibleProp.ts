@@ -4,6 +4,7 @@ import { SOLID_PROP_DRAWERS, drawSolidPropWithCache } from './propSpriteCache';
 export { SOLID_PROP_DRAWERS };
 
 export function drawSolidPropVector(ctx: CanvasRenderingContext2D, sprop: SolidProp, _animTime: number = 0) {
+  if (typeof ctx.save !== 'function') return;
   ctx.save();
   ctx.translate(sprop.x, sprop.y);
   if (sprop.angleRad) {
@@ -27,7 +28,6 @@ interface FoundationCache {
 }
 
 const _propFoundationCache = new WeakMap<SolidProp, FoundationCache>();
-const _overlappingCratersBuffer: { x: number; y: number; radius: number }[] = [];
 
 export function renderHDDestructibleProp(
   ctx: CanvasRenderingContext2D,
@@ -70,49 +70,5 @@ export function renderHDDestructibleProp(
       return;
     }
   }
-
-  const propRadius = Math.max(sprop.width, sprop.height) * 0.85;
-  const propCenterY = sprop.y - sprop.height / 2;
-
-  _overlappingCratersBuffer.length = 0;
-
-  if (craters) {
-    for (let i = 0; i < craters.length; i++) {
-      const c = craters[i];
-      const dx = c.x - sprop.x;
-      const dy = c.y - propCenterY;
-      const maxDist = c.radius + propRadius;
-      if (dx * dx + dy * dy <= maxDist * maxDist) {
-        _overlappingCratersBuffer.push(c);
-      }
-    }
-  }
-  if (explosions) {
-    for (let i = 0; i < explosions.length; i++) {
-      const ex = explosions[i];
-      const dx = ex.x - sprop.x;
-      const dy = ex.y - propCenterY;
-      const maxDist = ex.radius + propRadius;
-      if (dx * dx + dy * dy <= maxDist * maxDist) {
-        _overlappingCratersBuffer.push(ex);
-      }
-    }
-  }
-
-  if (_overlappingCratersBuffer.length === 0) {
-    drawSolidPropVector(ctx, sprop, animTime);
-    return;
-  }
-
-  ctx.save();
-  for (let i = 0; i < _overlappingCratersBuffer.length; i++) {
-    const c = _overlappingCratersBuffer[i];
-    const notCircle = new Path2D();
-    notCircle.rect(sprop.x - 200, sprop.y - 200, 400, 400);
-    notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
-    ctx.clip(notCircle, 'evenodd');
-  }
-
   drawSolidPropVector(ctx, sprop, animTime);
-  ctx.restore();
 }

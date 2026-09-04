@@ -54,4 +54,5 @@ export {
   setPropSpriteCacheEnabled,
   clearPropSpriteCache,
   getCachedPropSprite,
+  warmupPropSpriteCache,
 } from './props/propSpriteCache';

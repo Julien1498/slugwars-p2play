@@ -102,3 +102,48 @@ export function getCachedBgWaterGradient(
   _cachedBgIsDay = isDay;
   return grad;
 }
+
+let _cachedSunGrad: CanvasGradient | null = null;
+let _cachedSunKey = '';
+
+export function getCachedSunGlowGradient(
+  ctx: CanvasRenderingContext2D,
+  sunX: number,
+  sunY: number,
+  sunR: number
+): CanvasGradient {
+  const key = `${sunX}_${sunY}_${sunR}`;
+  if (_cachedSunKey === key && _cachedSunGrad) return _cachedSunGrad;
+
+  const grad = ctx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 4.0);
+  grad.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
+  grad.addColorStop(0.3, 'rgba(250, 204, 21, 0.5)');
+  grad.addColorStop(0.7, 'rgba(253, 224, 71, 0.15)');
+  grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  _cachedSunGrad = grad;
+  _cachedSunKey = key;
+  return grad;
+}
+
+let _cachedMoonGrad: CanvasGradient | null = null;
+let _cachedMoonKey = '';
+
+export function getCachedMoonGlowGradient(
+  ctx: CanvasRenderingContext2D,
+  moonX: number,
+  moonY: number,
+  moonR: number
+): CanvasGradient {
+  const key = `${moonX}_${moonY}_${moonR}`;
+  if (_cachedMoonKey === key && _cachedMoonGrad) return _cachedMoonGrad;
+
+  const grad = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3.2);
+  grad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+  grad.addColorStop(0.5, 'rgba(129, 140, 248, 0.15)');
+  grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+  _cachedMoonGrad = grad;
+  _cachedMoonKey = key;
+  return grad;
+}

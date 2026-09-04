@@ -1,5 +1,6 @@
 import { MapTheme } from '../../core/types';
 import { getThemeConfig } from '../../core/terrain/themeRegistry';
+import { getCachedSunGlowGradient, getCachedMoonGlowGradient } from './skyGradients';
 
 export interface SkyAtmosphereParams {
   ctx: CanvasRenderingContext2D;
@@ -27,6 +28,7 @@ export function renderCloudsAndStars(p: SkyAtmosphereParams) {
       ctx.fillStyle = 'rgba(254, 240, 138, 0.18)';
       for (let b = 0; b < 9; b++) {
         const bx = worldLeft + ((b * 750 + 400) % (worldRight - worldLeft));
+        if (bx + 180 < drawLeft || bx - 40 > drawRight) continue;
         ctx.beginPath();
         ctx.moveTo(bx - 20, worldTop);
         ctx.lineTo(bx + 20, worldTop);
@@ -37,18 +39,26 @@ export function renderCloudsAndStars(p: SkyAtmosphereParams) {
       }
     } else {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
       for (let c = 0; c < 12; c++) {
         const cx = (((Date.now() * 0.014 + c * 620) % (worldRight - worldLeft + 400)) + worldLeft) - 200;
         const cy = -250 + (c * 42) % (Math.max(160, height * 0.22) + 250);
         const cSize = 28 + (c * 7) % 18;
 
-        ctx.beginPath();
+        // Viewport Culling: Skip clouds completely offscreen
+        if (cx + cSize * 2.5 < drawLeft || cx - cSize * 1.5 > drawRight) continue;
+        if (cy + cSize * 1.5 < drawTop || cy - cSize * 1.5 > waterY) continue;
+
+        ctx.moveTo(cx + cSize, cy);
         ctx.arc(cx, cy, cSize, 0, Math.PI * 2);
+        ctx.moveTo(cx + cSize * 0.7 + cSize * 0.8, cy - cSize * 0.25);
         ctx.arc(cx + cSize * 0.7, cy - cSize * 0.25, cSize * 0.8, 0, Math.PI * 2);
+        ctx.moveTo(cx + cSize * 1.4 + cSize * 0.65, cy + cSize * 0.1);
         ctx.arc(cx + cSize * 1.4, cy + cSize * 0.1, cSize * 0.65, 0, Math.PI * 2);
+        ctx.moveTo(cx - cSize * 0.6 + cSize * 0.6, cy + cSize * 0.1);
         ctx.arc(cx - cSize * 0.6, cy + cSize * 0.1, cSize * 0.6, 0, Math.PI * 2);
-        ctx.fill();
       }
+      ctx.fill();
     }
   } else {
     for (let i = 0; i < 180; i++) {
@@ -59,9 +69,11 @@ export function renderCloudsAndStars(p: SkyAtmosphereParams) {
 
       const starAlpha = 0.15 + 0.65 * Math.abs(Math.sin(animTime * 0.7 + i * 1.6));
       const sz = i % 7 === 0 ? 2.2 : i % 3 === 0 ? 1.6 : 1.0;
-      ctx.fillStyle = i % 5 === 0 ? `rgba(165, 243, 252, ${starAlpha})` : `rgba(255, 255, 255, ${starAlpha})`;
+      ctx.globalAlpha = starAlpha;
+      ctx.fillStyle = i % 5 === 0 ? '#a5f3fc' : '#ffffff';
       ctx.fillRect(sx, sy, sz, sz);
     }
+    ctx.globalAlpha = 1.0;
   }
 }
 
@@ -75,12 +87,7 @@ export function renderCelestialBodies(p: SkyAtmosphereParams) {
       const sunY = height * 0.16;
       const sunR = 28;
 
-      const sunGlow = ctx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 4.0);
-      sunGlow.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
-      sunGlow.addColorStop(0.3, 'rgba(250, 204, 21, 0.5)');
-      sunGlow.addColorStop(0.7, 'rgba(253, 224, 71, 0.15)');
-      sunGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = sunGlow;
+      ctx.fillStyle = getCachedSunGlowGradient(ctx, sunX, sunY, sunR);
       ctx.beginPath();
       ctx.arc(sunX, sunY, sunR * 4.0, 0, Math.PI * 2);
       ctx.fill();
@@ -116,11 +123,7 @@ export function renderCelestialBodies(p: SkyAtmosphereParams) {
       const moonY = height * 0.16;
       const moonR = 26;
 
-      const glow = ctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3.2);
-      glow.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
-      glow.addColorStop(0.5, 'rgba(129, 140, 248, 0.15)');
-      glow.addColorStop(1, 'rgba(15, 23, 42, 0)');
-      ctx.fillStyle = glow;
+      ctx.fillStyle = getCachedMoonGlowGradient(ctx, moonX, moonY, moonR);
       ctx.beginPath();
       ctx.arc(moonX, moonY, moonR * 3.2, 0, Math.PI * 2);
       ctx.fill();

@@ -1,7 +1,8 @@
 import { GameState } from '../../../core/types';
 import { DestructibleTerrain } from '../../../core/terrain';
-import { perfTracker } from '../../../core/perfTracker';
+import { perfTracker, isolateBenchmark } from '../../../core/perfTracker';
 import { TerrainBuffers } from '../../../rendering/renderTerrain';
+import { renderSettings } from '../../../core/perf/renderSettings';
 import { renderSkyAndAtmosphere } from '../../../rendering/renderSky';
 import { renderHDDestructibleGirder, renderHDDestructibleProp } from '../../../rendering/renderProps';
 import { renderDecorItems } from '../../../rendering/renderDecorItems';
@@ -48,6 +49,7 @@ export function renderBackgroundLayer({
   const { width, height, decorItems, grid, solidProps } = terrain.data;
   const theme = gameState.config?.mapTheme || 'ISLAND';
   const isDay = (gameState.config?.dayNightCycle || 'DAY') === 'DAY';
+  const bypass = isolateBenchmark.getActiveBypass();
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -58,7 +60,7 @@ export function renderBackgroundLayer({
   ctx.scale(totalScale, totalScale);
   ctx.translate(-width / 2, -height / 2);
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = 'medium';
 
   const worldLeft = -3500;
   const worldRight = width + 3500;
@@ -83,21 +85,43 @@ export function renderBackgroundLayer({
     viewRight,
     viewTop,
     viewBottom,
+    bypass,
   });
 
-  // 2. Offscreen Terrain Buffer
+  // 2. Offscreen Terrain Buffer (Clipped to Viewport & Solid Content Bounds)
   const pTerrainStart = performance.now();
-  if (buffers.offscreenCanvas) {
-    ctx.drawImage(buffers.offscreenCanvas, 0, 0);
+  if (bypass !== 'TERRAIN' && bypass !== 'ALL_FOUR' && buffers.offscreenCanvas) {
+    const margin = 16;
+    const bounds = buffers.contentBounds || { minX: 0, maxX: width, minY: 0, maxY: height };
+    const sx = Math.max(bounds.minX, Math.floor(viewLeft - margin));
+    const sy = Math.max(bounds.minY, Math.floor(viewTop - margin));
+    const ex = Math.min(bounds.maxX, Math.ceil(viewRight + margin));
+    const ey = Math.min(bounds.maxY, Math.ceil(viewBottom + margin));
+    const sw = ex - sx;
+    const sh = ey - sy;
+    if (sw > 0 && sh > 0) {
+      const threshold = renderSettings.getTerrainMipmapThreshold();
+      const useMipmap = renderSettings.getTerrainMipmapEnabled() && totalScale <= threshold && buffers.mipmapCanvas;
+      if (useMipmap && buffers.mipmapCanvas) {
+        const sxM = Math.floor(sx / 2);
+        const syM = Math.floor(sy / 2);
+        const swM = Math.ceil(sw / 2);
+        const shM = Math.ceil(sh / 2);
+        ctx.drawImage(buffers.mipmapCanvas, sxM, syM, swM, shM, sx, sy, sw, sh);
+      } else {
+        ctx.drawImage(buffers.offscreenCanvas, sx, sy, sw, sh, sx, sy, sw, sh);
+      }
+    }
   }
   perfTracker.recordRenderPass('terrain_buffer', performance.now() - pTerrainStart);
 
   // 3. Girders & Solid Props
   const pGirdersStart = performance.now();
-  if (gameState.girders) {
+  if (bypass !== 'DECOR' && gameState.girders) {
     for (const g of gameState.girders) {
       if (!g.destroyed) {
         if (g.x < viewLeft - 100 || g.x > viewRight + 100) continue;
+        if (g.y < viewTop - 100 || g.y > viewBottom + 100) continue;
         renderHDDestructibleGirder(ctx, g, gameState.craters, gameState.explosions, grid, width, terrain.revision);
       }
     }
@@ -105,11 +129,25 @@ export function renderBackgroundLayer({
   perfTracker.recordRenderPass('props_girders', performance.now() - pGirdersStart);
 
   const pSolidsStart = performance.now();
-  if (solidProps) {
-    for (const sprop of solidProps) {
-      if (!sprop.destroyed) {
-        if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
-        renderHDDestructibleProp(ctx, sprop, gameState.craters, gameState.explosions, animTime, grid, width, terrain.revision);
+  if (bypass !== 'PROPS' && bypass !== 'ALL_FOUR') {
+    if (buffers.propsOffscreenCanvas) {
+      const margin = 32;
+      const psx = Math.max(0, Math.floor(viewLeft - margin));
+      const psy = Math.max(0, Math.floor(viewTop - margin));
+      const pex = Math.min(width, Math.ceil(viewRight + margin));
+      const pey = Math.min(height, Math.ceil(viewBottom + margin));
+      const psw = pex - psx;
+      const psh = pey - psy;
+      if (psw > 0 && psh > 0) {
+        ctx.drawImage(buffers.propsOffscreenCanvas, psx, psy, psw, psh, psx, psy, psw, psh);
+      }
+    } else if (solidProps) {
+      for (const sprop of solidProps) {
+        if (!sprop.destroyed) {
+          if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
+          if (sprop.y < viewTop - 100 || sprop.y > viewBottom + 100) continue;
+          renderHDDestructibleProp(ctx, sprop, gameState.craters, gameState.explosions, animTime, grid, width, terrain.revision);
+        }
       }
     }
   }
@@ -117,17 +155,21 @@ export function renderBackgroundLayer({
 
   // 4. Decor Foliage, Helicopters & Tombstones
   const pDecorStart = performance.now();
-  renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
+  if (bypass !== 'DECOR') {
+    renderDecorItems(ctx, terrain, decorItems, animTime, viewLeft, viewRight);
+  }
   perfTracker.recordRenderPass('decor_foliage', performance.now() - pDecorStart);
 
   const pHelisStart = performance.now();
-  if (gameState.helicopters) {
+  if (bypass !== 'DECOR' && gameState.helicopters) {
     renderHelicopters(ctx, gameState.helicopters, gameState, animTime, isMyTurn, viewLeft, viewRight);
   }
   perfTracker.recordRenderPass('decor_helicopters', performance.now() - pHelisStart);
 
   const pTombsStart = performance.now();
-  renderTombstones(ctx, gameState.slugs, terrain.data.waterLevel, viewLeft, viewRight);
+  if (bypass !== 'DECOR') {
+    renderTombstones(ctx, gameState.slugs, terrain.data.waterLevel, viewLeft, viewRight);
+  }
   perfTracker.recordRenderPass('decor_tombstones', performance.now() - pTombsStart);
 
   ctx.restore();

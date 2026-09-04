@@ -9,6 +9,7 @@ import { useCanvasTouchGestures } from './useCanvasTouchGestures';
 import { useCanvasMouseControls } from './useCanvasMouseControls';
 import { useCanvasRenderLoop } from './useCanvasRenderLoop';
 import { screenToWorldCoords } from '../../../rendering/cameraUtils';
+import { warmupPropSpriteCache } from '../../../rendering/renderProps';
 
 export interface SlugWarsCanvasProps {
   gameState: GameState;
@@ -35,7 +36,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const containerRectRef = useRef<{ width: number; height: number }>({ width: 1400, height: 700 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const actionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const gameStateRef = useRef(gameState); gameStateRef.current = gameState;
   const isMyTurnRef = useRef(isMyTurn); isMyTurnRef.current = isMyTurn;
@@ -83,6 +83,10 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
       if (ro) ro.disconnect();
       window.removeEventListener('resize', updateRect);
     };
+  }, []);
+
+  useEffect(() => {
+    warmupPropSpriteCache();
   }, []);
 
   // 1. Hardware Profiler & FPS HUD Hook
@@ -157,7 +161,6 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
   // 5. Canvas Render Loop Hook
   useCanvasRenderLoop({
     canvasRef,
-    actionCanvasRef,
     containerRectRef,
     terrain,
     gameStateRef,
@@ -239,27 +242,13 @@ const SlugWarsCanvasComponent: React.FC<SlugWarsCanvasProps> = ({
         </div>
       </div>
 
-      {/* Layer 1: Background Canvas (Sky, Mountains, Distant Ocean, Offscreen Terrain, Props & Foliage - Dynamic DRS DPR) */}
+      {/* Unified Hardware Canvas (Painter's Algorithm - Zero Compositor Overhead) */}
       <canvas
         ref={canvasRef}
         style={{
           position: 'absolute',
           inset: 0,
           contain: 'strict',
-          willChange: 'transform',
-          transform: 'translateZ(0)',
-        }}
-        className="block w-full h-full"
-      />
-
-      {/* Layer 2: Action Canvas (Slugs, Weapons, Aiming, Particles, Explosions, Floating HP, Water Waves - Crisp 1.0x DPR) */}
-      <canvas
-        ref={actionCanvasRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          contain: 'strict',
-          pointerEvents: 'none',
           willChange: 'transform',
           transform: 'translateZ(0)',
         }}

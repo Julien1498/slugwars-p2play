@@ -15,9 +15,17 @@ import {
 } from './perf/captureSession';
 import { FpsHudConfigManager } from './perf/fpsHudConfig';
 import { buildFrameLogEntry } from './perf/frameSampler';
+import {
+  isolateBenchmark,
+  IsolateBypassTarget,
+  IsolateStepResult,
+  IsolateBenchmarkReport,
+  IsolateProgress,
+} from './perf/isolateBenchmark';
 
 export {
   RENDER_PASS_LABELS,
+  isolateBenchmark,
 };
 export type {
   RenderPassMetric,
@@ -27,6 +35,10 @@ export type {
   EnvironmentMetrics,
   CpuGpuBreakdown,
   PerfCaptureReport,
+  IsolateBypassTarget,
+  IsolateStepResult,
+  IsolateBenchmarkReport,
+  IsolateProgress,
 };
 
 class PerformanceTracker {
@@ -158,6 +170,7 @@ class PerformanceTracker {
     this.sessionState.lastFrameMarkedTime = now;
     const frameIntervalMs = this.lastRafTime > 0 ? now - this.lastRafTime : 16.6;
     this.lastRafTime = now;
+    isolateBenchmark.recordFrame(frameIntervalMs);
 
     const fpsInstant = frameIntervalMs > 0 ? Math.min(360, Math.round(1000 / frameIntervalMs)) : 60;
     this.currentFps = fpsInstant;
@@ -183,11 +196,11 @@ class PerformanceTracker {
 
     const timeOffsetMs = Math.round(now - this.sessionState.captureStartTime);
 
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    if (this.sessionState.nextFrameId % 30 === 0 && typeof window !== 'undefined' && 'requestIdleCallback' in window) {
       try {
         (window as any).requestIdleCallback((deadline: any) => {
           this.lastSampledIdleMs = Math.max(0, Math.round(deadline.timeRemaining() * 10) / 10);
-        }, { timeout: 16 });
+        }, { timeout: 30 });
       } catch {}
     }
 

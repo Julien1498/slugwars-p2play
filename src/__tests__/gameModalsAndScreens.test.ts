@@ -3,6 +3,9 @@ import { getWeaponsByCategory } from '../core/weapons/registry';
 import { WeaponCategory } from '../core/weapons/types';
 import { GameState } from '../core/types';
 import { getRoomCodeFromLocation } from '../components/game/connection/connectionUrlUtils';
+import { VictoryCelebrationCanvas } from '../components/game/modals/gameOver/VictoryCelebrationCanvas';
+import { Top1SpotlightCard } from '../components/game/modals/gameOver/Top1SpotlightCard';
+import { SlugWarsLobby } from '../components/game/lobby/SlugWarsLobby';
 
 vi.mock('p2play-core', () => ({
   RoomCodeBadge: () => null,
@@ -200,17 +203,14 @@ describe('Game Modals, Screens & UI Widgets Integrity', () => {
   });
 
   describe('Victory Celebration Canvas & Top 1 Card', () => {
-    it('exports VictoryCelebrationCanvas and Top1SpotlightCard cleanly without runtime errors', async () => {
-      const { VictoryCelebrationCanvas } = await import('../components/game/modals/gameOver/VictoryCelebrationCanvas');
-      const { Top1SpotlightCard } = await import('../components/game/modals/gameOver/Top1SpotlightCard');
+    it('exports VictoryCelebrationCanvas and Top1SpotlightCard cleanly without runtime errors', () => {
       expect(typeof VictoryCelebrationCanvas).toBe('function');
       expect(typeof Top1SpotlightCard).toBe('function');
     });
   });
 
   describe('Lobby Dev Mode Metrics Integration', () => {
-    it('exports SlugWarsLobby cleanly and supports dev metrics mode', async () => {
-      const { SlugWarsLobby } = await import('../components/game/lobby/SlugWarsLobby');
+    it('exports SlugWarsLobby cleanly and supports dev metrics mode', () => {
       expect(typeof SlugWarsLobby).toBe('function');
     });
   });

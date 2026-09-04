@@ -8,6 +8,38 @@ interface GirderFoundationCache {
 const _girderFoundationCache = new WeakMap<PlacedGirder, GirderFoundationCache>();
 const _girderCratersBuffer: { x: number; y: number; radius: number }[] = [];
 
+interface GirderClipCache {
+  fingerprint: string;
+  paths: Path2D[];
+}
+
+const _girderClipCache = new WeakMap<PlacedGirder, GirderClipCache>();
+
+function drawGirderBody(
+  ctx: CanvasRenderingContext2D,
+  halfL: number,
+  halfT: number,
+  length: number,
+  thickness: number
+) {
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(-halfL, -halfT, length, thickness);
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-halfL, -halfT, length, thickness);
+
+  ctx.fillStyle = '#facc15';
+  for (let i = -halfL + 6; i < halfL - 6; i += 16) {
+    ctx.fillRect(i, -halfT + 2, 6, thickness - 4);
+  }
+
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath();
+  ctx.arc(-halfL + 4, 0, 1.5, 0, Math.PI * 2);
+  ctx.arc(halfL - 4, 0, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export function renderHDDestructibleGirder(
   ctx: CanvasRenderingContext2D,
   g: PlacedGirder,
@@ -63,7 +95,6 @@ export function renderHDDestructibleGirder(
     const minIndex = g.initialCraterCount !== undefined ? g.initialCraterCount : 0;
     for (let i = 0; i < craters.length; i++) {
       const c = craters[i];
-      // Ignore craters that existed before this girder was placed
       if (g.initialCraterCount !== undefined) {
         if (i < minIndex) continue;
       } else if (g.createdAt && c.createdAt && c.createdAt < g.createdAt) {
@@ -88,35 +119,37 @@ export function renderHDDestructibleGirder(
 
   ctx.save();
 
-  if (_girderCratersBuffer.length > 0) {
+  // Memoize crater clipping geometry to eliminate per-frame Path2D allocations
+  if (_girderCratersBuffer.length > 0 && typeof ctx.clip === 'function') {
+    let fp = '';
     for (let i = 0; i < _girderCratersBuffer.length; i++) {
       const c = _girderCratersBuffer[i];
-      const notCircle = new Path2D();
-      notCircle.rect(g.x - 200, g.y - 200, 400, 400);
-      notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
-      ctx.clip(notCircle, 'evenodd');
+      fp += `${c.x | 0}_${c.y | 0}_${c.radius | 0},`;
+    }
+
+    let clipCache = _girderClipCache.get(g);
+    if (!clipCache || clipCache.fingerprint !== fp) {
+      const paths: Path2D[] = [];
+      for (let i = 0; i < _girderCratersBuffer.length; i++) {
+        const c = _girderCratersBuffer[i];
+        if (typeof Path2D !== 'undefined') {
+          const notCircle = new Path2D();
+          if (typeof notCircle.rect === 'function') notCircle.rect(g.x - 200, g.y - 200, 400, 400);
+          if (typeof notCircle.arc === 'function') notCircle.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+          paths.push(notCircle);
+        }
+      }
+      clipCache = { fingerprint: fp, paths };
+      _girderClipCache.set(g, clipCache);
+    }
+
+    for (let i = 0; i < clipCache.paths.length; i++) {
+      ctx.clip(clipCache.paths[i], 'evenodd');
     }
   }
 
   ctx.translate(g.x, g.y);
   ctx.rotate(rad);
-
-  ctx.fillStyle = '#475569';
-  ctx.fillRect(-halfL, -halfT, g.length, g.thickness);
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(-halfL, -halfT, g.length, g.thickness);
-
-  ctx.fillStyle = '#facc15';
-  for (let i = -halfL + 6; i < halfL - 6; i += 16) {
-    ctx.fillRect(i, -halfT + 2, 6, g.thickness - 4);
-  }
-
-  ctx.fillStyle = '#cbd5e1';
-  ctx.beginPath();
-  ctx.arc(-halfL + 4, 0, 1.5, 0, Math.PI * 2);
-  ctx.arc(halfL - 4, 0, 1.5, 0, Math.PI * 2);
-  ctx.fill();
-
+  drawGirderBody(ctx, halfL, halfT, g.length, g.thickness);
   ctx.restore();
 }

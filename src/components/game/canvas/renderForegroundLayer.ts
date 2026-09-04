@@ -1,6 +1,6 @@
 import { GameState, Vector2D } from '../../../core/types';
 import { DestructibleTerrain } from '../../../core/terrain';
-import { perfTracker } from '../../../core/perfTracker';
+import { perfTracker, isolateBenchmark } from '../../../core/perfTracker';
 import { TerrainBuffers } from '../../../rendering/renderTerrain';
 import { renderForegroundOcean, WaterBubble, WaterRipple, WaterSplash } from '../../../rendering/renderWater';
 import { renderAllSlugs } from '../../../rendering/renderSlugs';
@@ -22,14 +22,13 @@ import {
 } from '../../../rendering/renderEffects';
 
 export interface RenderForegroundLayerParams {
-  actionCtx: CanvasRenderingContext2D;
-  actionCanvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
   containerRect: { width: number; height: number };
   terrain: DestructibleTerrain;
   buffers: TerrainBuffers;
   visualState: GameState;
   curState: GameState;
-  actionDpr: number;
+  dpr: number;
   totalScale: number;
   pan: { x: number; y: number };
   waterY: number;
@@ -56,14 +55,13 @@ export interface RenderForegroundLayerParams {
 }
 
 export function renderForegroundLayer({
-  actionCtx,
-  actionCanvas,
+  ctx,
   containerRect,
   terrain,
   buffers,
   visualState,
   curState,
-  actionDpr,
+  dpr,
   totalScale,
   pan,
   waterY,
@@ -87,136 +85,141 @@ export function renderForegroundLayer({
   const theme = curState.config?.mapTheme || 'ISLAND';
   const isDay = (curState.config?.dayNightCycle || 'DAY') === 'DAY';
 
-  actionCtx.save();
-  actionCtx.setTransform(1, 0, 0, 1, 0, 0);
-  actionCtx.clearRect(0, 0, actionCanvas.width, actionCanvas.height);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  actionCtx.scale(actionDpr, actionDpr);
-  actionCtx.translate(containerRect.width / 2 + pan.x, containerRect.height / 2 + pan.y);
-  actionCtx.scale(totalScale, totalScale);
-  actionCtx.translate(-width / 2, -height / 2);
-  actionCtx.imageSmoothingEnabled = true;
-  actionCtx.imageSmoothingQuality = 'high';
+  ctx.scale(dpr, dpr);
+  ctx.translate(containerRect.width / 2 + pan.x, containerRect.height / 2 + pan.y);
+  ctx.scale(totalScale, totalScale);
+  ctx.translate(-width / 2, -height / 2);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'medium';
 
-  // 1. Ninja Ropes & Slugs (sub-passes granularly recorded inside renderAllSlugs)
-  const pRopesStart = performance.now();
-  renderNinjaRopes(actionCtx, visualState.slugs);
-  perfTracker.recordRenderPass('ninja_ropes', performance.now() - pRopesStart);
+  const fgBypass = isolateBenchmark.getActiveBypass();
 
-  renderAllSlugs({
-    ctx: actionCtx,
-    gameState: visualState,
-    animTime,
-    slugDeathTimestamps,
-    viewLeft,
-    viewRight,
-  });
+  if (fgBypass !== 'ENTITIES') {
+    // 1. Ninja Ropes & Slugs (sub-passes granularly recorded inside renderAllSlugs)
+    const pRopesStart = performance.now();
+    renderNinjaRopes(ctx, visualState.slugs);
+    perfTracker.recordRenderPass('ninja_ropes', performance.now() - pRopesStart);
 
-  // 2. Supply Crates, Mines, Magnets, Projectiles & Particle FX
-  const pCratesStart = performance.now();
-  if (visualState.supplyCrates) {
-    renderSupplyCrates(actionCtx, visualState.supplyCrates, animTime, viewLeft, viewRight);
-  }
-  if (visualState.mines) {
-    renderMines(actionCtx, visualState.mines, viewLeft, viewRight);
-  }
-  if (visualState.magnets) {
-    renderMagnets(actionCtx, visualState.magnets, animTime, viewLeft, viewRight);
-  }
-  perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
+    renderAllSlugs({
+      ctx,
+      gameState: visualState,
+      animTime,
+      slugDeathTimestamps,
+      viewLeft,
+      viewRight,
+    });
 
-  const pProjStart = performance.now();
-  renderProjectiles({ ctx: actionCtx, projectiles: visualState.projectiles || [], animTime, viewLeft, viewRight });
-  perfTracker.recordRenderPass('projectiles', performance.now() - pProjStart);
+    // 2. Supply Crates, Mines, Magnets, Projectiles & Particle FX
+    const pCratesStart = performance.now();
+    if (visualState.supplyCrates) {
+      renderSupplyCrates(ctx, visualState.supplyCrates, animTime, viewLeft, viewRight);
+    }
+    if (visualState.mines) {
+      renderMines(ctx, visualState.mines, viewLeft, viewRight);
+    }
+    if (visualState.magnets) {
+      renderMagnets(ctx, visualState.magnets, animTime, viewLeft, viewRight);
+    }
+    perfTracker.recordRenderPass('supply_crates', performance.now() - pCratesStart);
 
-  const pPartsStart = performance.now();
-  if (visualState.projectiles && visualState.projectiles.length > 0) {
-    for (const proj of visualState.projectiles) {
-      if (Math.hypot(proj.vx, proj.vy) > 0.5 && clientParticles.length < 60) {
-        clientParticles.push({
-          x: proj.x - proj.vx * 0.8,
-          y: proj.y - proj.vy * 0.8,
-          vx: (Math.random() - 0.5) * 0.6,
-          vy: (Math.random() - 0.5) * 0.6,
-          color: Math.random() < 0.4 ? '#f59e0b' : '#71717a',
-          size: 2.5 + Math.random() * 3,
-          life: 1.0,
-        });
+    const pProjStart = performance.now();
+    renderProjectiles({ ctx, projectiles: visualState.projectiles || [], animTime, viewLeft, viewRight });
+    perfTracker.recordRenderPass('projectiles', performance.now() - pProjStart);
+
+    const pPartsStart = performance.now();
+    if (visualState.projectiles && visualState.projectiles.length > 0) {
+      for (const proj of visualState.projectiles) {
+        if (Math.hypot(proj.vx, proj.vy) > 0.5 && clientParticles.length < 60) {
+          clientParticles.push({
+            x: proj.x - proj.vx * 0.8,
+            y: proj.y - proj.vy * 0.8,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: (Math.random() - 0.5) * 0.6,
+            color: Math.random() < 0.4 ? '#f59e0b' : '#71717a',
+            size: 2.5 + Math.random() * 3,
+            life: 1.0,
+          });
+        }
       }
     }
-  }
-  renderParticles(actionCtx, clientParticles, viewLeft, viewRight);
-  perfTracker.recordRenderPass('particles_fx', performance.now() - pPartsStart);
+    renderParticles(ctx, clientParticles, viewLeft, viewRight);
+    perfTracker.recordRenderPass('particles_fx', performance.now() - pPartsStart);
 
-  const pExplosionsStart = performance.now();
-  renderClientExplosions(actionCtx, clientExplosions, viewLeft, viewRight);
-  perfTracker.recordRenderPass('explosions_fx', performance.now() - pExplosionsStart);
+    const pExplosionsStart = performance.now();
+    renderClientExplosions(ctx, clientExplosions, viewLeft, viewRight);
+    perfTracker.recordRenderPass('explosions_fx', performance.now() - pExplosionsStart);
 
-  const pDamagesStart = performance.now();
-  renderFloatingDamages(actionCtx, clientFloatingDamages, viewLeft, viewRight);
-  perfTracker.recordRenderPass('floating_damages', performance.now() - pDamagesStart);
+    const pDamagesStart = performance.now();
+    renderFloatingDamages(ctx, clientFloatingDamages, viewLeft, viewRight);
+    perfTracker.recordRenderPass('floating_damages', performance.now() - pDamagesStart);
 
-  // 3. Aim Guides & Placement Preview
-  const pAimStart = performance.now();
-  const activeSlug = visualState.slugs.find((s) => s.id === curState.activeSlugId);
-  if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
-    renderAimGuides({
-      ctx: actionCtx,
-      activeSlug,
-      isMyTurn,
-      terrain,
-      mousePos,
-      lockedTarget: lockedTarget || activeSlug.currentTargetPoint || null,
-      animTime,
-    });
-  }
-  perfTracker.recordRenderPass('aim_guides', performance.now() - pAimStart);
+    // 3. Aim Guides & Placement Preview
+    const pAimStart = performance.now();
+    const activeSlug = visualState.slugs.find((s) => s.id === curState.activeSlugId);
+    if (activeSlug && (curState.phase === 'AIMING' || curState.phase === 'TURN_TIME')) {
+      renderAimGuides({
+        ctx,
+        activeSlug,
+        isMyTurn,
+        terrain,
+        mousePos,
+        lockedTarget: lockedTarget || activeSlug.currentTargetPoint || null,
+        animTime,
+      });
+    }
+    perfTracker.recordRenderPass('aim_guides', performance.now() - pAimStart);
 
-  if (curState.phase === 'PLACEMENT' && isMyTurn) {
-    const pGhostStart = performance.now();
-    renderPlacementGhost(
-      actionCtx,
-      curState,
-      terrain,
-      pendingPlacementPoint || mousePos,
-      isMyTurn,
-      animTime
-    );
-    perfTracker.recordRenderPass('placement_ghost', performance.now() - pGhostStart);
+    if (curState.phase === 'PLACEMENT' && isMyTurn) {
+      const pGhostStart = performance.now();
+      renderPlacementGhost(
+        ctx,
+        curState,
+        terrain,
+        pendingPlacementPoint || mousePos,
+        isMyTurn,
+        animTime
+      );
+      perfTracker.recordRenderPass('placement_ghost', performance.now() - pGhostStart);
+    }
   }
 
   // 4. Foreground Ocean Waves
   const pOceanStart = performance.now();
-  const worldLeft = -3500;
-  const worldRight = width + 3500;
-  const worldBottom = height + 3500;
+  if (fgBypass !== 'WATER' && fgBypass !== 'ALL_FOUR') {
+    const worldLeft = -3500;
+    const worldRight = width + 3500;
+    const worldBottom = height + 3500;
 
-  renderForegroundOcean({
-    ctx: actionCtx,
-    height,
-    waterY,
-    theme,
-    isDay,
-    slowTime,
-    animTime,
-    worldLeft,
-    worldRight,
-    worldBottom,
-    viewLeft,
-    viewRight,
-    viewTop,
-    viewBottom,
-    bubbles: clientWaterBubbles,
-    ripples: clientWaterRipples,
-    splashes: clientWaterSplashes,
-  });
+    renderForegroundOcean({
+      ctx,
+      height,
+      waterY,
+      theme,
+      isDay,
+      slowTime,
+      animTime,
+      worldLeft,
+      worldRight,
+      worldBottom,
+      viewLeft,
+      viewRight,
+      viewTop,
+      viewBottom,
+      bubbles: clientWaterBubbles,
+      ripples: clientWaterRipples,
+      splashes: clientWaterSplashes,
+    });
+  }
   perfTracker.recordRenderPass('ocean_waves', performance.now() - pOceanStart);
 
   // 5. Debug Hitboxes Overlay
   if (showHitboxes) {
     const pHitboxStart = performance.now();
     renderHitboxDebugOverlay({
-      ctx: actionCtx,
+      ctx,
       gameState: curState,
       terrain,
       terrainHitboxCanvas: buffers.terrainHitboxCanvas,
@@ -227,5 +230,5 @@ export function renderForegroundLayer({
     perfTracker.recordRenderPass('debug_hitboxes', performance.now() - pHitboxStart);
   }
 
-  actionCtx.restore();
+  ctx.restore();
 }

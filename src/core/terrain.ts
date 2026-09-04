@@ -44,10 +44,11 @@ export class DestructibleTerrain {
     cx: number,
     cy: number,
     radius: number
-  ): { carvedPixels: number; destroyedOilDrums: import('./types').SolidProp[] } {
+  ): { carvedPixels: number; destroyedOilDrums: import('./types').SolidProp[]; destroyedProps: import('./types').SolidProp[] } {
     this.revision++;
     let carvedPixels = 0;
     const destroyedOilDrums: import('./types').SolidProp[] = [];
+    const destroyedProps: import('./types').SolidProp[] = [];
     const icx = Math.floor(cx);
     const icy = Math.floor(cy);
     const rSq = radius * radius;
@@ -113,6 +114,7 @@ export class DestructibleTerrain {
 
         // If the prop is now destroyed, erase ALL its physics pixels from the grid so no phantom hitbox remains!
         if (sprop.destroyed) {
+          destroyedProps.push(sprop);
           const pWidth = sprop.width;
           const pHeight = sprop.height;
           const angleRad = sprop.angleRad || 0;
@@ -156,7 +158,7 @@ export class DestructibleTerrain {
       }
     }
 
-    return { carvedPixels, destroyedOilDrums };
+    return { carvedPixels, destroyedOilDrums, destroyedProps };
   }
 
   public buildTerrain(
