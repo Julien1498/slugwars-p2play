@@ -64,7 +64,13 @@ export function useCanvasRenderLoop({
   const redrawTerrain = useCallback(
     (dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number }) => {
       const buffers = getBuffers();
-      redrawOffscreenTerrain(terrain, buffers, dirtyBox, gameStateRef.current?.craters);
+      redrawOffscreenTerrain(
+        terrain,
+        buffers,
+        dirtyBox,
+        gameStateRef.current?.craters,
+        gameStateRef.current?.solidProps
+      );
     },
     [terrain, getBuffers]
   );
@@ -94,7 +100,7 @@ export function useCanvasRenderLoop({
       lastTerrainRevisionRef.current = terrain.revision;
       prevTerrainRef.current = terrain;
       buffersRef.current = null;
-      resetEffectsCache();
+      resetEffectsCache(gameStateRef.current?.craters?.map((c) => c.id));
       lockedTargetRef.current = null;
       redrawTerrain();
     }

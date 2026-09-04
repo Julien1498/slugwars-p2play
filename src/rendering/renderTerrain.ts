@@ -76,11 +76,12 @@ export function rebuildPropsOffscreenCanvas(
       if (!sp.destroyed) drawSolidPropVector(pCtx, sp);
     }
   }
-  if (craters && craters.length > 0) {
+  if (craters && craters.length > 0 && typeof pCtx.save === 'function') {
     pCtx.save();
     pCtx.globalCompositeOperation = 'destination-out';
     for (let i = 0; i < craters.length; i++) {
       const c = craters[i];
+      if (!c || c.radius <= 0) continue;
       pCtx.beginPath();
       pCtx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
       pCtx.fill();
@@ -93,18 +94,23 @@ export function redrawOffscreenTerrain(
   terrain: DestructibleTerrain,
   buffers: TerrainBuffers,
   dirtyBox?: { minX: number; maxX: number; minY: number; maxY: number },
-  craters?: import('../core/types').CraterRecord[]
+  craters?: import('../core/types').CraterRecord[],
+  solidProps?: import('../core/types').SolidProp[]
 ) {
   const { width, height, grid, theme } = terrain.data;
-  const { offscreenCanvas, terrainHitboxCanvas, distMap, propsOffscreenCanvas } = buffers;
+  const { offscreenCanvas, distMap, propsOffscreenCanvas, terrainHitboxCanvas } = buffers;
 
   if (offscreenCanvas.width !== width || offscreenCanvas.height !== height) {
-    offscreenCanvas.width = width;
-    offscreenCanvas.height = height;
+    offscreenCanvas.width = width; offscreenCanvas.height = height;
   }
   if (propsOffscreenCanvas && (propsOffscreenCanvas.width !== width || propsOffscreenCanvas.height !== height)) {
-    propsOffscreenCanvas.width = width;
-    propsOffscreenCanvas.height = height;
+    propsOffscreenCanvas.width = width; propsOffscreenCanvas.height = height;
+  }
+  if (buffers.terrainHitboxCanvas && (buffers.terrainHitboxCanvas.width !== width || buffers.terrainHitboxCanvas.height !== height)) {
+    buffers.terrainHitboxCanvas.width = width; buffers.terrainHitboxCanvas.height = height;
+  }
+  if (buffers.mipmapCanvas && (buffers.mipmapCanvas.width !== Math.round(width / 2) || buffers.mipmapCanvas.height !== Math.round(height / 2))) {
+    buffers.mipmapCanvas.width = Math.round(width / 2); buffers.mipmapCanvas.height = Math.round(height / 2);
   }
   const offCtx = offscreenCanvas.getContext('2d');
   if (!offCtx) return;
@@ -117,7 +123,7 @@ export function redrawOffscreenTerrain(
 
   if (isFullScan) {
     offCtx.clearRect(0, 0, width, height);
-    rebuildPropsOffscreenCanvas(buffers, terrain.data.solidProps, craters);
+    rebuildPropsOffscreenCanvas(buffers, solidProps ?? terrain.data.solidProps, craters);
 
     let bMinX = width;
     let bMaxX = 0;
@@ -263,10 +269,8 @@ export function redrawOffscreenTerrain(
   offCtx.putImageData(imgData, minX, minY, 0, 0, dirtyW, dirtyH);
 
   if (isFullScan) {
-    // Pre-render Exact Ground Collision Hitbox Mask
     if (terrainHitboxCanvas.width !== width || terrainHitboxCanvas.height !== height) {
-      terrainHitboxCanvas.width = width;
-      terrainHitboxCanvas.height = height;
+      terrainHitboxCanvas.width = width; terrainHitboxCanvas.height = height;
     }
     const tbCtx = terrainHitboxCanvas.getContext('2d');
     if (tbCtx) {
@@ -281,16 +285,11 @@ export function redrawOffscreenTerrain(
     }
   }
 
-  // Update 0.5x Mipmap for high-efficiency dezoom
   if (buffers.mipmapCanvas) {
-    const mW = Math.round(width / 2);
-    const mH = Math.round(height / 2);
+    const mW = Math.round(width / 2); const mH = Math.round(height / 2);
     if (buffers.mipmapCanvas.width !== mW) buffers.mipmapCanvas.width = mW;
     if (buffers.mipmapCanvas.height !== mH) buffers.mipmapCanvas.height = mH;
     const mCtx = buffers.mipmapCanvas.getContext('2d');
-    if (mCtx) {
-      mCtx.clearRect(0, 0, mW, mH);
-      mCtx.drawImage(offscreenCanvas, 0, 0, mW, mH);
-    }
+    if (mCtx) { mCtx.clearRect(0, 0, mW, mH); mCtx.drawImage(offscreenCanvas, 0, 0, mW, mH); }
   }
 }

@@ -141,8 +141,9 @@ export function renderBackgroundLayer({
       if (psw > 0 && psh > 0) {
         ctx.drawImage(buffers.propsOffscreenCanvas, psx, psy, psw, psh, psx, psy, psw, psh);
       }
-    } else if (solidProps) {
-      for (const sprop of solidProps) {
+    } else if (solidProps || gameState.solidProps) {
+      const activeSolids = gameState.solidProps || solidProps!;
+      for (const sprop of activeSolids) {
         if (!sprop.destroyed) {
           if (sprop.x < viewLeft - 80 || sprop.x > viewRight + 80) continue;
           if (sprop.y < viewTop - 100 || sprop.y > viewBottom + 100) continue;

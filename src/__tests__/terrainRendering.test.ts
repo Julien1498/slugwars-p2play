@@ -219,5 +219,37 @@ describe('Terrain Rendering & Offscreen Strata Pipeline', () => {
         rebuildPropsOffscreenCanvas(buffers, solidProps, craters);
       }).not.toThrow();
     });
+
+    it('defensively ignores craters with radius <= 0 without errors', () => {
+      const buffers = createTerrainBuffers(800, 600);
+      const craters = [
+        { id: 'c_neg', x: 200, y: 300, radius: -10 },
+        { id: 'c_zero', x: 200, y: 300, radius: 0 },
+        { id: 'c_valid', x: 200, y: 300, radius: 20 },
+      ];
+      expect(() => {
+        rebuildPropsOffscreenCanvas(buffers, [], craters);
+      }).not.toThrow();
+    });
+
+    it('passes explicit solidProps through redrawOffscreenTerrain', () => {
+      const terrainData = generateProceduralTerrain(1234, 'ISLAND', 600, 400);
+      const terrain = new DestructibleTerrain(terrainData);
+      const buffers = createTerrainBuffers(600, 400);
+      const dynamicProps = [
+        {
+          id: 'sp_dyn_1',
+          type: 'oil_drum' as const,
+          x: 250,
+          y: 200,
+          width: 32,
+          height: 48,
+          destroyed: false,
+        },
+      ];
+      expect(() => {
+        redrawOffscreenTerrain(terrain, buffers, undefined, undefined, dynamicProps);
+      }).not.toThrow();
+    });
   });
 });
