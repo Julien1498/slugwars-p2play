@@ -61,6 +61,7 @@ export const HATS: readonly HatDefinition[] = [
   { id: 'arachnid_mask', name: "Masque de l'Arachnide Rouge" },
   { id: 'alien_symbiote', name: 'Masque du Parasite Obscur' },
   { id: 'bio_electric_mask', name: 'Masque Volt-Arachnéen' },
+  { id: 'west_coast_bandana', name: 'Bandana Légende West Coast' },
 
   // Naturel
   { id: 'none', name: 'Aucun (Tête nue)' },

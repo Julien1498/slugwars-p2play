@@ -143,3 +143,19 @@ export const HAT_CHICKEN_BODY = createPath((p) => {
   p.lineTo(-1, -16.5);
   p.closePath();
 });
+
+// 10. Bandana Légende West Coast (Front-tied bandana with rabbit-ear knots)
+export const HAT_WEST_COAST_BAND = createPath((p) => {
+  p.moveTo(-3, -11.5);
+  p.quadraticCurveTo(3, -16.5, 10, -11.5);
+  p.lineTo(10.5, -9.5);
+  p.quadraticCurveTo(3, -13.5, -2.5, -9.5);
+  p.closePath();
+});
+
+export const HAT_WEST_COAST_CAP = createPath((p) => {
+  p.moveTo(-3, -11.5);
+  p.quadraticCurveTo(3.5, -17.5, 9.5, -11.5);
+  p.quadraticCurveTo(3.5, -14.5, -3, -11.5);
+  p.closePath();
+});

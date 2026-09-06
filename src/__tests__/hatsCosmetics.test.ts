@@ -20,8 +20,8 @@ describe('Hats Cosmetics & Headwear System', () => {
   });
 
   describe('Hats Registry Integrity', () => {
-    it('contains all 47 defined hats including classic, fun, combat, fantasy and pop culture ones', () => {
-      expect(HATS.length).toBe(47);
+    it('contains all 48 defined hats including classic, fun, combat, fantasy and pop culture ones', () => {
+      expect(HATS.length).toBe(48);
       const ids = HATS.map((h) => h.id);
       expect(ids).toContain('military');
       expect(ids).toContain('cowboy');
@@ -69,6 +69,7 @@ describe('Hats Cosmetics & Headwear System', () => {
       expect(ids).toContain('arachnid_mask');
       expect(ids).toContain('alien_symbiote');
       expect(ids).toContain('bio_electric_mask');
+      expect(ids).toContain('west_coast_bandana');
       expect(ids).toContain('none');
     });
 

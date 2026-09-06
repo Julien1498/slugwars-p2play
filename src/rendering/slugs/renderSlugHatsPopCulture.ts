@@ -17,6 +17,8 @@ import {
   HAT_BANDIT_BALACLAVA,
   HAT_SWAT_POT,
   HAT_CHICKEN_BODY,
+  HAT_WEST_COAST_BAND,
+  HAT_WEST_COAST_CAP,
 } from './slugHatPathsPopCulture';
 
 function renderSwampEars(ctx: CanvasRenderingContext2D): void {
@@ -29,26 +31,21 @@ function renderSwampEars(ctx: CanvasRenderingContext2D): void {
 
   // 2. Tubular Flared Stalks (Left & Right)
   ctx.fillStyle = '#84cc16';
-  ctx.strokeStyle = '#365314';
   ctx.lineWidth = 1.3;
   ctx.fill(HAT_SWAMP_EAR_TUBE_L);
   ctx.stroke(HAT_SWAMP_EAR_TUBE_L);
   ctx.fill(HAT_SWAMP_EAR_TUBE_R);
   ctx.stroke(HAT_SWAMP_EAR_TUBE_R);
 
-  // 3. Flared Outer Trumpet Bell Rims
+  // 3. Flared Outer Trumpet Bell Rims & Cavities
   ctx.fillStyle = '#65a30d';
-  ctx.fill(HAT_SWAMP_EAR_BELL_L);
-  ctx.stroke(HAT_SWAMP_EAR_BELL_L);
-  ctx.fill(HAT_SWAMP_EAR_BELL_R);
-  ctx.stroke(HAT_SWAMP_EAR_BELL_R);
-
-  // 4. Deep Hollow Funnel Cavities
+  ctx.fill(HAT_SWAMP_EAR_BELL_L); ctx.stroke(HAT_SWAMP_EAR_BELL_L);
+  ctx.fill(HAT_SWAMP_EAR_BELL_R); ctx.stroke(HAT_SWAMP_EAR_BELL_R);
   ctx.fillStyle = '#1a2e05';
   ctx.fill(HAT_SWAMP_EAR_CAVITY_L);
   ctx.fill(HAT_SWAMP_EAR_CAVITY_R);
 
-  // 5. Ogre Freckles at base
+  // 4. Ogre Freckles at base
   ctx.fillStyle = '#365314';
   ctx.beginPath();
   ctx.arc(2.0, -13.5, 0.6, 0, Math.PI * 2);
@@ -226,6 +223,48 @@ function renderTacticalChicken(ctx: CanvasRenderingContext2D): void {
   ctx.fill();
 }
 
+function renderWestCoastBandana(ctx: CanvasRenderingContext2D, _teamColor: string, animTime: number): void {
+  // 1. Skull cap & main bandana wrap (rich charcoal fabric)
+  ctx.fillStyle = '#18181b'; ctx.strokeStyle = '#09090b'; ctx.lineWidth = 1.3;
+  ctx.fill(HAT_WEST_COAST_CAP); ctx.stroke(HAT_WEST_COAST_CAP);
+  ctx.fill(HAT_WEST_COAST_BAND); ctx.stroke(HAT_WEST_COAST_BAND);
+
+  // 2. White paisley micro-dots across the headband
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  for (const [px, py] of [[-1, -10.8], [1.5, -12.2], [4, -12.8], [6.5, -12], [2, -15], [5, -15.2]]) {
+    ctx.beginPath(); ctx.arc(px, py, 0.55, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 3. Iconic Front Knot ("Rabbit Ears" upright on the forehead)
+  const sway = Math.sin(animTime * 3) * 0.4;
+  ctx.fillStyle = '#18181b'; ctx.strokeStyle = '#09090b'; ctx.lineWidth = 1.2;
+
+  // Flap 1 (angled up-back) & Flap 2 (angled up-forward)
+  ctx.beginPath();
+  ctx.moveTo(7.5, -12.5);
+  ctx.quadraticCurveTo(5.5, -15.5 + sway, 5.0, -19.0 + sway);
+  ctx.quadraticCurveTo(7.2, -16.5 + sway, 8.5, -13.0);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(8.0, -13.0);
+  ctx.quadraticCurveTo(10.0, -16.0 - sway, 11.2, -19.2 - sway);
+  ctx.quadraticCurveTo(10.8, -15.2 - sway, 8.8, -12.2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // Central knot ring + white accent
+  ctx.fillStyle = '#27272a';
+  ctx.beginPath(); ctx.arc(8.2, -12.8, 1.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(8.2, -12.8, 0.5, 0, Math.PI * 2); ctx.fill();
+
+  // 4. Iconic Gold Hoop Earring
+  ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.arc(-2.5, -8.5, 1.5, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath(); ctx.arc(-3.2, -9.2, 0.5, 0, Math.PI * 2); ctx.fill();
+}
+
 export const POP_HAT_STRATEGIES: Record<string, HatRendererFn> = {
   swamp_ears: renderSwampEars,
   feline_plume: renderFelinePlume,
@@ -236,4 +275,5 @@ export const POP_HAT_STRATEGIES: Record<string, HatRendererFn> = {
   bandit_balaclava: renderBanditBalaclava,
   swat_helmet: renderSwatHelmet,
   tactical_chicken: renderTacticalChicken,
+  west_coast_bandana: renderWestCoastBandana,
 };
