@@ -24,6 +24,8 @@ import { COMBAT_HAT_STRATEGIES } from './renderSlugHatsCombat';
 import { POP_HAT_STRATEGIES } from './renderSlugHatsPopCulture';
 import { HEROES_HAT_STRATEGIES } from './renderSlugHatsHeroes';
 import { ARACHNID_HAT_STRATEGIES } from './renderSlugHatsArachnid';
+import { TOONS_HAT_STRATEGIES } from './renderSlugHatsToons';
+import { ANIMATION_HAT_STRATEGIES } from './renderSlugHatsAnimation';
 import { HatRendererFn } from './renderSlugHatTypes';
 
 export {
@@ -242,6 +244,8 @@ export const HAT_RENDER_STRATEGIES: Record<string, HatRendererFn> = {
   ...POP_HAT_STRATEGIES,
   ...HEROES_HAT_STRATEGIES,
   ...ARACHNID_HAT_STRATEGIES,
+  ...TOONS_HAT_STRATEGIES,
+  ...ANIMATION_HAT_STRATEGIES,
 };
 
 export function renderSlugHat(

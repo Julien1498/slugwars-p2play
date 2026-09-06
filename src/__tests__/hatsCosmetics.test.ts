@@ -20,57 +20,27 @@ describe('Hats Cosmetics & Headwear System', () => {
   });
 
   describe('Hats Registry Integrity', () => {
-    it('contains all 48 defined hats including classic, fun, combat, fantasy and pop culture ones', () => {
-      expect(HATS.length).toBe(48);
+    it('contains all 72 defined hats including classic, fun, combat, fantasy, pop culture, toons and animation ones', () => {
+      expect(HATS.length).toBe(72);
       const ids = HATS.map((h) => h.id);
-      expect(ids).toContain('military');
-      expect(ids).toContain('cowboy');
-      expect(ids).toContain('bandana');
-      expect(ids).toContain('cyber');
-      expect(ids).toContain('crown');
-      expect(ids).toContain('pirate');
-      expect(ids).toContain('tophat');
-      expect(ids).toContain('ninja');
-      expect(ids).toContain('viking');
-      expect(ids).toContain('sombrero');
-      expect(ids).toContain('chef');
-      expect(ids).toContain('wizard');
-      expect(ids).toContain('hard_hat');
-      expect(ids).toContain('detective');
-      expect(ids).toContain('snorkel');
-      expect(ids).toContain('duck');
-      expect(ids).toContain('propeller');
-      expect(ids).toContain('arrow');
-      expect(ids).toContain('colander');
-      expect(ids).toContain('astronaut');
-      expect(ids).toContain('gas_mask');
-      expect(ids).toContain('boxer');
-      expect(ids).toContain('camo_helmet');
-      expect(ids).toContain('mushroom');
-      expect(ids).toContain('frog');
-      expect(ids).toContain('unicorn');
-      expect(ids).toContain('swamp_ears');
-      expect(ids).toContain('feline_plume');
-      expect(ids).toContain('mini_coronet');
-      expect(ids).toContain('patriot_helmet');
-      expect(ids).toContain('titanium_mask');
-      expect(ids).toContain('mischief_horns');
-      expect(ids).toContain('thunder_wings');
-      expect(ids).toContain('supersonic_quills');
-      expect(ids).toContain('twinfox_ears');
-      expect(ids).toContain('mad_scientist');
-      expect(ids).toContain('village_headband');
-      expect(ids).toContain('super_shinobi_hair');
-      expect(ids).toContain('renegade_straw');
-      expect(ids).toContain('shadow_mask');
-      expect(ids).toContain('bandit_balaclava');
-      expect(ids).toContain('swat_helmet');
-      expect(ids).toContain('tactical_chicken');
-      expect(ids).toContain('arachnid_mask');
-      expect(ids).toContain('alien_symbiote');
-      expect(ids).toContain('bio_electric_mask');
-      expect(ids).toContain('west_coast_bandana');
-      expect(ids).toContain('none');
+      const expectedIds = [
+        'military', 'cowboy', 'bandana', 'cyber', 'crown', 'pirate', 'tophat', 'ninja', 'viking', 'sombrero',
+        'chef', 'wizard', 'hard_hat', 'detective', 'snorkel', 'duck', 'propeller', 'arrow', 'colander',
+        'astronaut', 'gas_mask', 'boxer', 'camo_helmet', 'mushroom', 'frog', 'unicorn', 'swamp_ears',
+        'feline_plume', 'mini_coronet', 'patriot_helmet', 'titanium_mask', 'mischief_horns', 'thunder_wings',
+        'supersonic_quills', 'twinfox_ears', 'mad_scientist', 'village_headband', 'super_shinobi_hair',
+        'renegade_straw', 'shadow_mask', 'bandit_balaclava', 'swat_helmet', 'tactical_chicken',
+        'arachnid_mask', 'alien_symbiote', 'bio_electric_mask', 'west_coast_bandana',
+        'marine_cook_cap', 'porous_yellow_dome', 'starfish_pink_cone', 'soda_dispenser_cap',
+        'crimson_hero_ribbon', 'bouncy_blonde_twintails', 'rebel_raven_crop', 'trio_colored_hearts',
+        'adventurer_fringe_bob', 'playful_monkey_crest', 'cheerful_satchel', 'safari_field_hat',
+        'mono_goggle_tuft', 'binocular_spectacles', 'cozy_striped_beanie', 'builders_safety_helmet',
+        'specimen_blue_ears', 'cosmic_charmer_antennas', 'island_hibiscus_garland', 'alien_companion_hood',
+        'braided_cowboy_stetson', 'cosmo_ranger_cowl', 'tri_ocular_antenna', 'toy_black_derby', 'none',
+      ];
+      for (const expectedId of expectedIds) {
+        expect(ids).toContain(expectedId);
+      }
     });
 
     it('returns default hat when getHat is passed null or undefined', () => {
@@ -223,6 +193,8 @@ describe('Hats Cosmetics & Headwear System', () => {
         fill: vi.fn(),
         stroke: vi.fn(),
         fillRect: vi.fn(),
+        strokeRect: vi.fn(),
+        rect: vi.fn(),
         translate: vi.fn(),
         createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
       };

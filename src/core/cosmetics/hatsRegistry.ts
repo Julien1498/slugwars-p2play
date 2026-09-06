@@ -63,6 +63,34 @@ export const HATS: readonly HatDefinition[] = [
   { id: 'bio_electric_mask', name: 'Masque Volt-Arachnéen' },
   { id: 'west_coast_bandana', name: 'Bandana Légende West Coast' },
 
+  // Dessins Animés & Univers Culte
+  { id: 'marine_cook_cap', name: 'Toque de Cuistot Subaquatique' },
+  { id: 'porous_yellow_dome', name: "Calotte d'Éponge Alvéolée" },
+  { id: 'starfish_pink_cone', name: "Pointe d'Étoile Pastel" },
+  { id: 'soda_dispenser_cap', name: 'Casquette Soda du Premier' },
+  { id: 'crimson_hero_ribbon', name: 'Grand Nœud Papillon Écarlate' },
+  { id: 'bouncy_blonde_twintails', name: 'Couettes Blondes Élastiques' },
+  { id: 'rebel_raven_crop', name: 'Coupe Ébouriffée Noire' },
+  { id: 'trio_colored_hearts', name: 'Diadème aux Trois Cœurs' },
+  { id: 'adventurer_fringe_bob', name: 'Coupe au Bol Aventurière' },
+  { id: 'playful_monkey_crest', name: 'Houppette du Petit Compagnon' },
+  { id: 'cheerful_satchel', name: 'Besace Souriante Perchée' },
+  { id: 'safari_field_hat', name: "Chapeau Toile d'Exploration" },
+
+  // Créatures & Compagnons Animés
+  { id: 'mono_goggle_tuft', name: 'Optique Cyclope & Trois Épis' },
+  { id: 'binocular_spectacles', name: "Bésicles d'Atelier & Palmier" },
+  { id: 'cozy_striped_beanie', name: 'Bonnet Laine à Pompon' },
+  { id: 'builders_safety_helmet', name: 'Casque de Chantier Protecteur' },
+  { id: 'specimen_blue_ears', name: 'Grandes Oreilles Galactiques' },
+  { id: 'cosmic_charmer_antennas', name: "Antennes & Pavillons d'Angelot" },
+  { id: 'island_hibiscus_garland', name: "Couronne Tropicale d'Hibiscus" },
+  { id: 'alien_companion_hood', name: "Passe-Montagne Bleuté d'Alien" },
+  { id: 'braided_cowboy_stetson', name: 'Stetson Shérif à Surpiqûres' },
+  { id: 'cosmo_ranger_cowl', name: "Cagoule d'Astronaute Galactique" },
+  { id: 'tri_ocular_antenna', name: 'Triple-Regard & Sonde Spatiale' },
+  { id: 'toy_black_derby', name: 'Chapeau Melon Jouet Lustré' },
+
   // Naturel
   { id: 'none', name: 'Aucun (Tête nue)' },
 ] as const;
